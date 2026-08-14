@@ -1,0 +1,58 @@
+schema_version: "1.0"
+kind: component
+id: common-cathode-rgb-led
+name: 4-pin common-cathode RGB LED
+category: output
+interface: three-channel-pwm
+supply_voltage:
+  minimum: 1.8
+  maximum: 3.4
+sources:
+  - title: Adafruit Arduino Lesson 3 - RGB LEDs
+    url: https://learn.adafruit.com/adafruit-arduino-lesson-3-rgb-leds/overview
+  - title: Arduino Fade built-in example
+    url: https://docs.arduino.cc/built-in-examples/basics/Fade/
+verification:
+  source_reviewed:
+    status: verified
+    checked_at: "2026-08-14"
+    evidence: Reviewed the Adafruit RGB LED guide and Arduino PWM example; this record is limited to a confirmed common-cathode four-pin LED.
+  code_compiled:
+    status: verified
+    checked_at: "2026-08-14"
+    evidence: The Nano rgb-led-cycle example compiled with Mind+ 2.x; see docs/verification/2026-08-14-nano-mindplus-compilation.md.
+  firmware_uploaded: &unverified
+    status: unverified
+    checked_at: null
+    evidence: null
+  physical_effect_verified: *unverified
+pins:
+  - id: RED
+    role: red-channel
+  - id: GREEN
+    role: green-channel
+  - id: BLUE
+    role: blue-channel
+  - id: COMMON_CATHODE
+    role: ground
+supported_boards:
+  - arduino-nano-classic
+constraints:
+  - Confirm common-cathode versus common-anode and identify the package pinout before wiring; they require opposite output logic.
+  - Put a separate 220 to 330 ohm current-limiting resistor in series with each red, green, and blue channel.
+  - Do not infer the channel order from lead length alone; use the datasheet or a current-limited identification test.
+identification:
+  - Confirm four leads and whether the shared lead is the cathode; product drawings and a multimeter diode test are stronger evidence than lead length alone.
+libraries:
+  - name: Arduino core PWM API
+    headers: []
+    status: builtin
+    notes: The example uses pinMode and analogWrite; no external library is required.
+example_files:
+  - examples/chatduino/nano/rgb-led-cycle/rgb-led-cycle.ino
+common_failures:
+  - A common-anode LED wired as common-cathode stays dark or shows inverted colors.
+  - Omitting one resistor per color can overcurrent the LED or Nano output pin.
+  - Different packages use different lead orders, causing colors to be swapped.
+board_notes:
+  arduino-nano-classic: The example uses PWM pins D9, D10, and D11 through three separate resistors; connect the confirmed common cathode to GND.

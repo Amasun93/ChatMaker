@@ -1,0 +1,62 @@
+schema_version: "1.0"
+kind: component
+id: one-channel-relay-module-5v
+name: 5 V one-channel relay module, confirmed low-voltage control side
+category: actuator
+interface: digital-control
+supply_voltage:
+  minimum: 5.0
+  maximum: 5.0
+sources:
+  - title: Seeed Studio Grove Relay documentation
+    url: https://wiki.seeedstudio.com/Grove-Relay/
+  - title: Arduino Blink Without Delay built-in example
+    url: https://docs.arduino.cc/built-in-examples/digital/BlinkWithoutDelay/
+verification:
+  source_reviewed:
+    status: verified
+    checked_at: "2026-08-14"
+    evidence: Reviewed a documented 5 V relay module and Arduino digital-output timing; generic modules still require label, trigger-level, and load-rating confirmation.
+  code_compiled:
+    status: verified
+    checked_at: "2026-08-14"
+    evidence: The Nano relay-control-side example compiled with Mind+ 2.x; see docs/verification/2026-08-14-nano-mindplus-compilation.md.
+  firmware_uploaded: &unverified
+    status: unverified
+    checked_at: null
+    evidence: null
+  physical_effect_verified: *unverified
+pins:
+  - id: VCC
+    role: control-power
+  - id: GND
+    role: control-ground
+  - id: IN
+    role: digital-control
+  - id: COM
+    role: switched-common
+  - id: NO
+    role: normally-open-contact
+  - id: NC
+    role: normally-closed-contact
+supported_boards:
+  - arduino-nano-classic
+constraints:
+  - Use this record only after confirming a 5 V module and its VCC, GND, IN, COM, NO, and NC labels; active-high and active-low variants differ.
+  - The training example leaves COM, NO, and NC disconnected and never switches mains voltage.
+  - Check the module input-current requirement and use a driver stage when the board cannot safely drive IN.
+identification:
+  - Confirm the relay coil or module marking says 5 V, locate the isolated screw-terminal side, and determine whether IN is active HIGH or active LOW from the product information or a low-voltage test.
+libraries:
+  - name: Arduino core digital API
+    headers: []
+    status: builtin
+    notes: The example uses pinMode and digitalWrite; no external library is required.
+example_files:
+  - examples/chatduino/nano/relay-control-side/relay-control-side.ino
+common_failures:
+  - An active-low module behaves opposite to an active-high example and may click during reset.
+  - Confusing control-side GND with the switched COM terminal can damage equipment.
+  - Driving an unsuitable bare relay coil directly from a GPIO can overcurrent the Nano and cause resets.
+board_notes:
+  arduino-nano-classic: The example assumes a confirmed active-high 5 V module on D7 and tests only its low-voltage control side with no load connected.

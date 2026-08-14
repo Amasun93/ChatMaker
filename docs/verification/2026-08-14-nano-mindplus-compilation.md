@@ -3,8 +3,8 @@
 ## 验证对象
 
 ```text
-ChatMaker 提交分支
-feat/nano-mindplus-migration
+ChatMaker 当前开发分支
+main
 
 示例目录
 D:\Projects\ChatMaker\examples\chatduino\nano
@@ -39,15 +39,19 @@ Amasun93/arduino-nano-mindplus@9ebc6bf
 | DHT11 串口 | 通过 | `dht11-serial.ino.hex` |
 | 光敏控制 LED | 通过 | `light-led.ino.hex` |
 | SSD1306 OLED 光线显示 | 通过 | `oled-light.ino.hex` |
+| 电位器控制 LED 亮度 | 通过 | `potentiometer-led.ino.hex` |
+| 5 V 继电器低压控制端 | 通过 | `relay-control-side.ino.hex` |
+| 共阴 RGB LED 变色 | 通过 | `rgb-led-cycle.ino.hex` |
 | 按钮控制 SG90 | 通过 | `servo-button.ino.hex` |
 | HC-SR04 蜂鸣器 | 通过 | `ultrasonic-buzzer.ino.hex` |
+| WS2812B 单灯低亮度测试 | 通过 | `ws2812-one-pixel.ino.hex` |
 
-汇总结果为 6 个示例、6 个通过、0 个失败。编译后端与六个结果中的 FQBN 均一致。
+汇总结果为 10 个示例、10 个通过、0 个失败。编译后端与十个结果中的 FQBN 均一致。WS2812B 示例实际使用 Mind+ 2.x 中的 `DFRobot_Mindplus_NeoPixel 1.0.0`。
 
 ## 证据边界
 
 - 资料来源和迁移哈希已核对。
-- 六个示例已在当前 ChatMaker 路径真实编译。
+- 十个示例已在当前 ChatMaker 路径真实编译。
 - 没有发现有线 Nano，未执行烧录。
 - 串口运行、断电重启和实物效果仍未验证。
 - 本次验证不能用于宣称固件已写入或硬件已经运行。

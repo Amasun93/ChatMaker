@@ -34,6 +34,10 @@ pins:
     capabilities: [digital, input, output]
   - id: D9
     capabilities: [digital, pwm, input, output]
+  - id: D10
+    capabilities: [digital, pwm, input, output]
+  - id: D11
+    capabilities: [digital, pwm, input, output]
   - id: A0
     capabilities: [analog-input, digital]
   - id: A4

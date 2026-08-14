@@ -120,6 +120,8 @@ def upload_nano(hex_file: Path, candidate: PortCandidate) -> UploadReport: ...
 
 **Output:** Versioned records and minimum examples for LED, RGB LED, button, light sensor, buzzer, HC-SR04, DHT11, SG90, SSD1306 OLED, relay, potentiometer, and WS2812.
 
+**Status:** Implemented for all twelve planned component types. Ten Nano examples compile with Mind+ 2.x; upload and physical-effect gates remain independent and open without hardware.
+
 **Acceptance:**
 
 - Each record covers observable identification, pin labels, supply constraints, board differences, libraries, minimal code, common failures, sources, and evidence gates.
@@ -208,10 +210,10 @@ doctor.py
 ## Current Execution Boundary
 
 Phase 1 and Phase 2 are complete. Phase 3 has migrated the reviewed Nano/Mind+
-runtime, regression tests, WorkBuddy MCP bridge, and six examples. All six
+runtime, regression tests, WorkBuddy MCP bridge, and ten examples. All ten
 examples compile from their new ChatMaker paths with Mind+ 2.x. The first
-structured learning pack now maps those examples to eight component records and
-seven recipes with identification, library, example, failure, and board notes.
+structured learning pack now maps those examples to twelve component records and
+eleven recipes with identification, library, example, failure, and board notes.
 Upload, serial, power-cycle, and physical-effect evidence remain open until a
 wired Nano is available. ChatWeb single-file generation, localhost preview,
 classroom interaction, and explicit hardware simulation have passed browser

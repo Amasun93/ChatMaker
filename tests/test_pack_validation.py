@@ -249,6 +249,28 @@ class PackValidationTests(unittest.TestCase):
         self.assertGreaterEqual(report.counts["component"], 1)
         self.assertGreaterEqual(report.counts["recipe"], 1)
 
+    def test_first_component_pack_contains_the_planned_twelve_modules(self):
+        expected_ids = {
+            "basic-led",
+            "common-cathode-rgb-led",
+            "momentary-button-two-pin",
+            "analog-light-sensor-module",
+            "active-buzzer-module",
+            "hc-sr04",
+            "dht11-three-pin-module",
+            "sg90-micro-servo",
+            "ssd1306-i2c-128x64-module",
+            "one-channel-relay-module-5v",
+            "linear-potentiometer-10k",
+            "ws2812b-addressable-rgb",
+        }
+        component_ids = {
+            yaml.safe_load(path.read_text(encoding="utf-8"))["id"]
+            for path in sorted((ROOT / "packs" / "components").glob("*.yaml"))
+        }
+
+        self.assertTrue(expected_ids.issubset(component_ids), expected_ids - component_ids)
+
     def test_migrated_nano_examples_have_recipe_records(self):
         expected_source_files = {
             "examples/chatduino/nano/blink/blink.ino",

@@ -1,0 +1,43 @@
+schema_version: "1.0"
+kind: recipe
+id: nano-rgb-led-cycle
+name: Nano common-cathode RGB LED color cycle
+summary: Cycle a confirmed common-cathode RGB LED through dim red, green, blue, and off states.
+sources:
+  - title: Adafruit Arduino Lesson 3 - RGB LEDs
+    url: https://learn.adafruit.com/adafruit-arduino-lesson-3-rgb-leds/overview
+  - title: Arduino Fade built-in example
+    url: https://docs.arduino.cc/built-in-examples/basics/Fade/
+verification:
+  source_reviewed:
+    status: verified
+    checked_at: "2026-08-14"
+    evidence: Reviewed the linked common-cathode RGB LED and PWM guidance.
+  code_compiled:
+    status: verified
+    checked_at: "2026-08-14"
+    evidence: Compiled with Mind+ 2.x using Nano FQBN mindplus:avr:nano:cpu=atmega328; see docs/verification/2026-08-14-nano-mindplus-compilation.md.
+  firmware_uploaded: &unverified
+    status: unverified
+    checked_at: null
+    evidence: null
+  physical_effect_verified: *unverified
+boards:
+  - arduino-nano-classic
+components:
+  - common-cathode-rgb-led
+wiring:
+  - component: common-cathode-rgb-led
+    component_pin: RED
+    board_pin: D9
+  - component: common-cathode-rgb-led
+    component_pin: GREEN
+    board_pin: D10
+  - component: common-cathode-rgb-led
+    component_pin: BLUE
+    board_pin: D11
+  - component: common-cathode-rgb-led
+    component_pin: COMMON_CATHODE
+    board_pin: GND
+source_file: examples/chatduino/nano/rgb-led-cycle/rgb-led-cycle.ino
+expected_effect: With a separate resistor on each color channel, the LED shows dim red, green, and blue in sequence before turning off.

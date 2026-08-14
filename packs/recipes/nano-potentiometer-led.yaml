@@ -1,0 +1,49 @@
+schema_version: "1.0"
+kind: recipe
+id: nano-potentiometer-led
+name: Nano potentiometer-controlled LED brightness
+summary: Read a confirmed 10 kOhm potentiometer and map its position to an external LED brightness.
+sources:
+  - title: Arduino Analog Input built-in example
+    url: https://docs.arduino.cc/built-in-examples/analog/AnalogInput/
+  - title: Arduino Fade built-in example
+    url: https://docs.arduino.cc/built-in-examples/basics/Fade/
+verification:
+  source_reviewed:
+    status: verified
+    checked_at: "2026-08-14"
+    evidence: Reviewed the Arduino voltage-divider input and PWM output examples.
+  code_compiled:
+    status: verified
+    checked_at: "2026-08-14"
+    evidence: Compiled with Mind+ 2.x using Nano FQBN mindplus:avr:nano:cpu=atmega328; see docs/verification/2026-08-14-nano-mindplus-compilation.md.
+  firmware_uploaded: &unverified
+    status: unverified
+    checked_at: null
+    evidence: null
+  physical_effect_verified: *unverified
+boards:
+  - arduino-nano-classic
+components:
+  - linear-potentiometer-10k
+  - basic-led
+wiring:
+  - component: linear-potentiometer-10k
+    component_pin: VCC
+    board_pin: 5V
+  - component: linear-potentiometer-10k
+    component_pin: GND
+    board_pin: GND
+    shared: true
+  - component: linear-potentiometer-10k
+    component_pin: OUT
+    board_pin: A0
+  - component: basic-led
+    component_pin: anode
+    board_pin: D6
+  - component: basic-led
+    component_pin: cathode
+    board_pin: GND
+    shared: true
+source_file: examples/chatduino/nano/potentiometer-led/potentiometer-led.ino
+expected_effect: Rotating the potentiometer changes the external LED brightness while raw readings appear at 9600 baud.

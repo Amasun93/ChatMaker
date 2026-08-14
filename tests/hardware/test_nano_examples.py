@@ -17,13 +17,17 @@ EXPECTED = {
     "dht11-serial",
     "light-led",
     "oled-light",
+    "potentiometer-led",
+    "relay-control-side",
+    "rgb-led-cycle",
     "servo-button",
     "ultrasonic-buzzer",
+    "ws2812-one-pixel",
 }
 
 
 class NanoExampleTests(unittest.TestCase):
-    def test_checked_in_examples_match_the_migrated_set(self):
+    def test_checked_in_examples_match_the_supported_set(self):
         example_root = ROOT / "examples" / "chatduino" / "nano"
         found = {
             path.name
@@ -62,8 +66,8 @@ class NanoExampleTests(unittest.TestCase):
 
         self.assertEqual(set(calls), EXPECTED)
         self.assertFalse(report["success"])
-        self.assertEqual(report["compiled"], 6)
-        self.assertEqual(report["passed"], 5)
+        self.assertEqual(report["compiled"], len(EXPECTED))
+        self.assertEqual(report["passed"], len(EXPECTED) - 1)
         self.assertEqual(report["failed"], 1)
         self.assertEqual(
             [item["name"] for item in report["results"] if not item["success"]],

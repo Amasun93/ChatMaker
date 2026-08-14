@@ -13,8 +13,12 @@ EXAMPLE_NAMES = (
     "dht11-serial",
     "light-led",
     "oled-light",
+    "potentiometer-led",
+    "relay-control-side",
+    "rgb-led-cycle",
     "servo-button",
     "ultrasonic-buzzer",
+    "ws2812-one-pixel",
 )
 
 
@@ -74,7 +78,7 @@ def compile_examples(
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Compile the six migrated Nano examples.")
+    parser = argparse.ArgumentParser(description="Compile the supported Nano examples.")
     parser.add_argument("--root", type=Path, required=True)
     args = parser.parse_args(argv)
     report = compile_examples(args.root)

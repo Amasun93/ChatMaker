@@ -1,0 +1,40 @@
+schema_version: "1.0"
+kind: recipe
+id: nano-ws2812-one-pixel
+name: Nano one-pixel WS2812B color test
+summary: Drive one confirmed WS2812B-compatible 5 V pixel at low brightness through the Mind+ NeoPixel library.
+sources:
+  - title: Worldsemi WS2812B datasheet
+    url: https://cdn-shop.adafruit.com/datasheets/WS2812B.pdf
+  - title: Adafruit NeoPixel best practices
+    url: https://learn.adafruit.com/adafruit-neopixel-uberguide/best-practices
+verification:
+  source_reviewed:
+    status: verified
+    checked_at: "2026-08-14"
+    evidence: Reviewed the linked WS2812B data direction, electrical limits, and NeoPixel wiring guidance.
+  code_compiled:
+    status: verified
+    checked_at: "2026-08-14"
+    evidence: Compiled with Mind+ 2.x and DFRobot_Mindplus_NeoPixel 1.0.0 using Nano FQBN mindplus:avr:nano:cpu=atmega328; see docs/verification/2026-08-14-nano-mindplus-compilation.md.
+  firmware_uploaded: &unverified
+    status: unverified
+    checked_at: null
+    evidence: null
+  physical_effect_verified: *unverified
+boards:
+  - arduino-nano-classic
+components:
+  - ws2812b-addressable-rgb
+wiring:
+  - component: ws2812b-addressable-rgb
+    component_pin: 5V
+    board_pin: 5V
+  - component: ws2812b-addressable-rgb
+    component_pin: GND
+    board_pin: GND
+  - component: ws2812b-addressable-rgb
+    component_pin: DIN
+    board_pin: D6
+source_file: examples/chatduino/nano/ws2812-one-pixel/ws2812-one-pixel.ino
+expected_effect: One pixel cycles through dim red, green, blue, and off states; DOUT remains unconnected unless another confirmed pixel follows.

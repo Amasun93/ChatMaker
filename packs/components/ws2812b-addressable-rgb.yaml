@@ -1,0 +1,62 @@
+schema_version: "1.0"
+kind: component
+id: ws2812b-addressable-rgb
+name: WS2812B-compatible addressable RGB pixel or strip
+category: output
+interface: single-wire-800khz
+supply_voltage:
+  minimum: 4.5
+  maximum: 5.5
+sources:
+  - title: Worldsemi WS2812B datasheet
+    url: https://cdn-shop.adafruit.com/datasheets/WS2812B.pdf
+  - title: Adafruit NeoPixel library
+    url: https://github.com/adafruit/Adafruit_NeoPixel
+  - title: Adafruit NeoPixel best practices
+    url: https://learn.adafruit.com/adafruit-neopixel-uberguide/best-practices
+verification:
+  source_reviewed:
+    status: verified
+    checked_at: "2026-08-14"
+    evidence: Reviewed the WS2812B electrical/timing datasheet, the maintained NeoPixel library, and Adafruit wiring and power guidance.
+  code_compiled:
+    status: verified
+    checked_at: "2026-08-14"
+    evidence: The Nano ws2812-one-pixel example compiled with Mind+ 2.x and DFRobot_Mindplus_NeoPixel 1.0.0; see docs/verification/2026-08-14-nano-mindplus-compilation.md.
+  firmware_uploaded: &unverified
+    status: unverified
+    checked_at: null
+    evidence: null
+  physical_effect_verified: *unverified
+pins:
+  - id: 5V
+    role: power
+  - id: GND
+    role: ground
+  - id: DIN
+    role: data-input
+  - id: DOUT
+    role: data-output
+supported_boards:
+  - arduino-nano-classic
+constraints:
+  - Confirm the DIN arrow direction; data must enter DIN rather than DOUT.
+  - Use a 300 to 500 ohm series resistor near DIN and follow the documented power-input capacitor guidance.
+  - Power more than a minimal low-brightness test from a suitable external 5 V supply and connect its ground to Nano GND.
+  - Never power a strip from a GPIO pin, and calculate the supply for the number of pixels and intended brightness.
+identification:
+  - Confirm a WS2812B-compatible 5 V pixel or strip, the DIN/DOUT arrows, the number of pixels, and whether the color order is GRB or another documented order.
+libraries:
+  - name: Mind+ DFRobot NeoPixel library
+    headers: [DFRobot_NeoPixel.h]
+    status: compile_verified
+    notes: The checked-in Nano example compiled with Mind+ 2.x and DFRobot_Mindplus_NeoPixel 1.0.0.
+example_files:
+  - examples/chatduino/nano/ws2812-one-pixel/ws2812-one-pixel.ino
+common_failures:
+  - Reversing DIN and DOUT prevents the strip from responding.
+  - Missing shared ground causes random or absent data even when the 5 V supply is present.
+  - Wrong RGB/GRB order produces different colors from the requested values.
+  - Powering many pixels from the Nano 5 V pin causes resets, voltage drop, or overheated wiring.
+board_notes:
+  arduino-nano-classic: The example uses D6, one pixel, and brightness 32; use an external 5 V supply with shared ground before expanding the pixel count.

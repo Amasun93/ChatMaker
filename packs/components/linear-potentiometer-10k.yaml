@@ -1,0 +1,53 @@
+schema_version: "1.0"
+kind: component
+id: linear-potentiometer-10k
+name: 10 kOhm linear potentiometer or three-pin module
+category: input
+interface: analog-voltage-divider
+supply_voltage:
+  minimum: 0.0
+  maximum: 5.0
+sources:
+  - title: Arduino Analog Input built-in example
+    url: https://docs.arduino.cc/built-in-examples/analog/AnalogInput/
+verification:
+  source_reviewed:
+    status: verified
+    checked_at: "2026-08-14"
+    evidence: Reviewed the Arduino Analog Input example for the three-terminal voltage-divider wiring and analogRead behavior.
+  code_compiled:
+    status: verified
+    checked_at: "2026-08-14"
+    evidence: The Nano potentiometer-led example compiled with Mind+ 2.x; see docs/verification/2026-08-14-nano-mindplus-compilation.md.
+  firmware_uploaded: &unverified
+    status: unverified
+    checked_at: null
+    evidence: null
+  physical_effect_verified: *unverified
+pins:
+  - id: VCC
+    role: high-side
+  - id: GND
+    role: low-side
+  - id: OUT
+    role: wiper-output
+supported_boards:
+  - arduino-nano-classic
+constraints:
+  - Confirm which terminal is the wiper; a bare potentiometer may not use VCC, GND, and OUT labels.
+  - Keep the analog input between GND and the Nano 5 V rail.
+identification:
+  - Confirm a three-terminal linear potentiometer near 10 kOhm or a three-pin module labelled VCC, GND, and AO or OUT; measure the wiper if the labels are absent.
+libraries:
+  - name: Arduino core analog API
+    headers: []
+    status: builtin
+    notes: The example uses analogRead, map, and analogWrite; no external library is required.
+example_files:
+  - examples/chatduino/nano/potentiometer-led/potentiometer-led.ino
+common_failures:
+  - Connecting the wiper to 5 V instead of A0 makes the reading stay near maximum.
+  - Leaving one outer terminal disconnected makes the value unstable over part of the rotation.
+  - A logarithmic audio potentiometer does not change linearly with rotation.
+board_notes:
+  arduino-nano-classic: Connect the wiper to A0 and the two outer terminals to 5V and GND; the example drives an external LED from PWM pin D6 through a resistor.
