@@ -1,5 +1,8 @@
 import importlib.util
 import json
+import os
+import subprocess
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -50,6 +53,23 @@ class WorkBuddyBridgeTests(unittest.TestCase):
         self.assertIn("自动", upload_tool["description"])
         self.assertIn("接入", upload_tool["description"])
 
+    def test_stdio_server_answers_ping_in_a_real_subprocess(self):
+        environment = dict(os.environ)
+        environment["PYTHONPATH"] = str(ROOT / "runtime")
+        completed = subprocess.run(
+            [sys.executable, str(ROOT / "runtime/chatmaker/integrations/workbuddy_mcp.py")],
+            input='{"jsonrpc":"2.0","id":1,"method":"ping"}\n',
+            text=True,
+            capture_output=True,
+            cwd=ROOT,
+            env=environment,
+            timeout=10,
+        )
+
+        self.assertEqual(completed.returncode, 0, completed.stderr)
+        response = json.loads(completed.stdout)
+        self.assertEqual(response, {"jsonrpc": "2.0", "id": 1, "result": {}})
+
     def test_installer_preserves_existing_servers(self):
         with tempfile.TemporaryDirectory() as temporary:
             config = Path(temporary) / "mcp.json"
@@ -82,6 +102,41 @@ class WorkBuddyBridgeTests(unittest.TestCase):
             self.server.bridge.execute_request = original
 
         self.assertFalse(result["isError"])
+
+    def test_install_and_uninstall_restore_config_and_existing_skill(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            workbuddy_home = Path(temporary) / ".workbuddy"
+            config = workbuddy_home / "mcp.json"
+            config.parent.mkdir(parents=True)
+            original = {"mcpServers": {"existing": {"command": "keep-me"}}}
+            config.write_text(json.dumps(original), encoding="utf-8")
+            old_chatweb = workbuddy_home / "skills" / "chatweb"
+            old_chatweb.mkdir(parents=True)
+            (old_chatweb / "old-marker.txt").write_text("restore me", encoding="utf-8")
+
+            try:
+                installed = self.installer.install(
+                    config,
+                    python_executable="python",
+                    source_skills=ROOT / "skills",
+                )
+            except TypeError as exc:
+                self.fail(f"WorkBuddy installer does not support Skill installation: {exc}")
+
+            self.assertTrue(installed["success"])
+            self.assertTrue((workbuddy_home / "skills" / "chatmaker" / "SKILL.md").is_file())
+            self.assertTrue(Path(installed["manifest"]).is_file())
+
+            removed = self.installer.uninstall(config)
+            restored_config = json.loads(config.read_text(encoding="utf-8"))
+
+            self.assertTrue(removed["success"])
+            self.assertEqual(restored_config, original)
+            self.assertEqual(
+                (old_chatweb / "old-marker.txt").read_text(encoding="utf-8"),
+                "restore me",
+            )
+            self.assertFalse((workbuddy_home / "skills" / "chatmaker").exists())
 
 
 if __name__ == "__main__":

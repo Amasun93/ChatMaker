@@ -208,5 +208,9 @@ examples compile from their new ChatMaker paths with Mind+ 2.x. The first
 structured learning pack now maps those examples to eight component records and
 seven recipes with identification, library, example, failure, and board notes.
 Upload, serial, power-cycle, and physical-effect evidence remain open until a
-wired Nano is available. The next execution batch begins the ChatWeb single-file
-generator and local preview runtime while module coverage continues to expand.
+wired Nano is available. ChatWeb single-file generation, localhost preview,
+classroom interaction, and explicit hardware simulation have passed browser
+verification. Reversible Codex and WorkBuddy installation plus live Blink
+compile smoke tests have passed. The remaining executable release-candidate
+work is deterministic archive/checksum generation and GitHub prerelease
+verification; host UI discovery requires restarting Codex and WorkBuddy.

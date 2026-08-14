@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import json
+import sys
 from typing import Any
 
 from chatmaker.hardware import nano_mindplus as bridge
