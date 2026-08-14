@@ -174,7 +174,7 @@ def main(argv: list[str] | None = None) -> int:
             "error": "catalog_request_failed",
             "detail": f"{type(exc).__name__}: {exc}",
         }
-    print(json.dumps(result, ensure_ascii=False))
+    print(json.dumps(result, ensure_ascii=True))
     return 0 if result.get("success") else 1
 
 

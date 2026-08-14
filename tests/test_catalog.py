@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import os
 import subprocess
 import sys
 import unittest
@@ -60,6 +61,8 @@ class CatalogTests(unittest.TestCase):
 
     def test_json_cli_searches_the_checked_in_catalog(self):
         self.assertIsNotNone(self.catalog, "catalog runtime is missing")
+        environment = dict(os.environ)
+        environment["PYTHONIOENCODING"] = "cp1252"
 
         completed = subprocess.run(
             [
@@ -71,6 +74,7 @@ class CatalogTests(unittest.TestCase):
             text=True,
             capture_output=True,
             cwd=ROOT,
+            env=environment,
             timeout=10,
         )
 
