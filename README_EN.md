@@ -34,7 +34,7 @@ Compilation, firmware upload, browser interaction, serial evidence, and physical
 
 ## Development preview
 
-Version `v0.1.0-rc1` is a release candidate for supervised teacher-training trials. See the [installation guide](docs/installation.md). Physical upload and effects still require separate on-site evidence.
+Version [`v0.1.0-rc1`](https://github.com/Amasun93/ChatMaker/releases/tag/v0.1.0-rc1) is a published prerelease for supervised teacher-training trials. See the [installation guide](docs/installation.md). Physical upload and effects still require separate on-site evidence.
 
 ```powershell
 git clone https://github.com/Amasun93/ChatMaker.git
