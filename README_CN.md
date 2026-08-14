@@ -25,4 +25,4 @@ ChatMaker 面向没有专业编程背景的老师、学生和黑客松参与者�
 
 资料核对、代码编译、固件上传、串口信息和实物效果是不同的验收门。ChatMaker 不会因为“编译成功”就说“烧录成功”，也不会因为网页打开就说硬件已经响应。
 
-开发命令和完整路线见 [README.md](README.md) 与 [实施计划](docs/plans/2026-08-14-chatmaker-v0.1-implementation.md)。
+面向非专业开发者的中文路线见 [ChatMaker v0.1 中文说明版](docs/plans/2026-08-14-chatmaker-v0.1-中文说明版.md)。技术开发命令和完整英文任务表见 [README.md](README.md) 与 [英文实施计划](docs/plans/2026-08-14-chatmaker-v0.1-implementation.md)。
