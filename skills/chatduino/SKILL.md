@@ -24,7 +24,7 @@ Help the user turn an effect or rough idea into a safe physical project without 
 5. In the first release, discover and reuse an existing Mind+ 1.x or 2.x toolchain. Do not install or switch toolchains silently. Treat a managed standalone toolchain as a later development phase.
 6. Compile with the selected board identity and record the command, exit code, and artifact path.
 7. Upload only when one high-confidence wired port remains. Close serial handles before upload.
-8. Reopen serial after the board returns, inspect expected and failure markers, and ask for physical confirmation.
+8. Reopen serial after the board returns. Use `serial_read` or `serial_expect` to inspect expected markers, empty output, malformed text, and restart loops; use `serial_write` only when the project defines an input command. Ask for physical confirmation separately.
 
 Read [beginner-hardware-contract.md](references/beginner-hardware-contract.md) whenever producing wiring or code. Read [verification-gates.md](references/verification-gates.md) before any success claim.
 
@@ -39,6 +39,9 @@ Read [nano-board-and-pins.md](references/nano-board-and-pins.md) and [nano-wirin
 - 编译通过且没有检测到硬件时，提示接入 Nano 后自动上传，不等待老师额外确认，也不能报告烧录成功。
 - 编译失败时只修改完整程序，最多自动修改并重试 2 次。
 - 先尝试 57600；只有典型 Bootloader 同步失败时才尝试 115200。
+- WorkBuddy 使用 `serial_list/open/read/expect/write/close`；Codex 可启动 `chatmaker-serial` JSONL 会话使用同一套运行层。
+- `nano_compile_upload` 会先暂停已打开的串口会话，烧录流程结束后再尝试恢复，避免端口占用。
+- 串口没有输出、只出现启动文字或模拟数据，都不能升级为实物效果已验证。
 
 ## Safety boundaries
 

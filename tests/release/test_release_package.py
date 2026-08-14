@@ -24,8 +24,8 @@ class ReleasePackageTests(unittest.TestCase):
     def test_release_zip_is_deterministic_and_contains_installable_project(self):
         builder = load_builder()
         with tempfile.TemporaryDirectory() as directory:
-            first = builder.build_release(ROOT, Path(directory) / "first", "0.1.0-rc1")
-            second = builder.build_release(ROOT, Path(directory) / "second", "0.1.0-rc1")
+            first = builder.build_release(ROOT, Path(directory) / "first", "0.1.0-rc2")
+            second = builder.build_release(ROOT, Path(directory) / "second", "0.1.0-rc2")
 
             first_zip = Path(first["archive"])
             second_zip = Path(second["archive"])
@@ -34,7 +34,7 @@ class ReleasePackageTests(unittest.TestCase):
             with zipfile.ZipFile(first_zip) as archive:
                 names = set(archive.namelist())
 
-        prefix = "ChatMaker-0.1.0-rc1/"
+        prefix = "ChatMaker-0.1.0-rc2/"
         self.assertEqual(first_hash, second_hash)
         self.assertEqual(first_hash, first["sha256"])
         self.assertIn(prefix + "README.md", names)

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "chatmaker"
-version = "0.1.0rc1"
+version = "0.1.0rc2"
 description = "AI-native beginner maker workflows for hardware and native web projects"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -12,12 +12,14 @@ license = {text = "Apache-2.0"}
 dependencies = [
   "PyYAML>=6.0,<7",
   "jsonschema>=4.20,<5",
+  "pyserial>=3.5,<4",
 ]
 
 [project.scripts]
 chatmaker-doctor = "chatmaker.doctor:main"
 chatmaker-nano = "chatmaker.hardware.nano_mindplus:main"
 chatmaker-nano-examples = "chatmaker.hardware.nano_examples:main"
+chatmaker-serial = "chatmaker.hardware.serial_monitor:main"
 chatmaker-workbuddy-mcp = "chatmaker.integrations.workbuddy_mcp:main"
 chatmaker-install-workbuddy = "chatmaker.installers.workbuddy:main"
 chatmaker-install-codex = "chatmaker.installers.codex:main"

@@ -8,6 +8,7 @@ import sys
 from typing import Any
 
 from chatmaker.hardware import nano_mindplus as bridge
+from chatmaker.hardware import serial_monitor
 
 
 SERVER_NAME = "arduino-nano-mindplus"
@@ -80,10 +81,120 @@ TOOLS = [
             "additionalProperties": False,
         },
     },
+    {
+        "name": "serial_list",
+        "description": "列出串口和当前打开的会话；保留蓝牙标记，不能把蓝牙串口当作 Nano 证据。",
+        "inputSchema": {"type": "object", "properties": {}, "additionalProperties": False},
+    },
+    {
+        "name": "serial_open",
+        "description": "按明确端口和波特率打开串口会话；拒绝蓝牙端口和未枚举端口。",
+        "inputSchema": {
+            "type": "object",
+            "required": ["port"],
+            "properties": {
+                "port": {"type": "string"},
+                "baudrate": {"type": "integer", "minimum": 300, "maximum": 2000000, "default": 9600},
+                "timeout": {"type": "number", "minimum": 0, "maximum": 10, "default": 0.1},
+            },
+            "additionalProperties": False,
+        },
+    },
+    {
+        "name": "serial_read",
+        "description": "读取串口文本并识别空输出、乱码和疑似不断重启；空输出不算串口证据。",
+        "inputSchema": {
+            "type": "object",
+            "required": ["session_id"],
+            "properties": {
+                "session_id": {"type": "string"},
+                "timeout": {"type": "number", "minimum": 0, "maximum": 60, "default": 1},
+                "max_lines": {"type": "integer", "minimum": 1, "maximum": 500, "default": 100},
+            },
+            "additionalProperties": False,
+        },
+    },
+    {
+        "name": "serial_expect",
+        "description": "在限定时间内等待指定串口标记，并返回实际读到的行。",
+        "inputSchema": {
+            "type": "object",
+            "required": ["session_id", "marker"],
+            "properties": {
+                "session_id": {"type": "string"},
+                "marker": {"type": "string", "minLength": 1},
+                "timeout": {"type": "number", "minimum": 0, "maximum": 60, "default": 5},
+                "max_lines": {"type": "integer", "minimum": 1, "maximum": 500, "default": 200},
+            },
+            "additionalProperties": False,
+        },
+    },
+    {
+        "name": "serial_write",
+        "description": "向已打开的串口会话发送 UTF-8 文本，可选择追加换行。",
+        "inputSchema": {
+            "type": "object",
+            "required": ["session_id", "text"],
+            "properties": {
+                "session_id": {"type": "string"},
+                "text": {"type": "string"},
+                "newline": {"type": "boolean", "default": False},
+            },
+            "additionalProperties": False,
+        },
+    },
+    {
+        "name": "serial_close",
+        "description": "关闭串口会话并释放端口，烧录前必须先关闭。",
+        "inputSchema": {
+            "type": "object",
+            "required": ["session_id"],
+            "properties": {"session_id": {"type": "string"}},
+            "additionalProperties": False,
+        },
+    },
 ]
 
 
 def _tool_result(name: str, arguments: dict[str, Any]) -> dict[str, Any]:
+    if name == "serial_list":
+        result = serial_monitor.SERIAL_MANAGER.list()
+    elif name == "serial_open":
+        result = serial_monitor.SERIAL_MANAGER.open(
+            arguments.get("port", ""),
+            baudrate=arguments.get("baudrate", 9600),
+            timeout=arguments.get("timeout", 0.1),
+        )
+    elif name == "serial_read":
+        result = serial_monitor.SERIAL_MANAGER.read(
+            arguments.get("session_id", ""),
+            timeout=arguments.get("timeout", 1),
+            max_lines=arguments.get("max_lines", 100),
+        )
+    elif name == "serial_expect":
+        result = serial_monitor.SERIAL_MANAGER.expect(
+            arguments.get("session_id", ""),
+            arguments.get("marker", ""),
+            timeout=arguments.get("timeout", 5),
+            max_lines=arguments.get("max_lines", 200),
+        )
+    elif name == "serial_write":
+        result = serial_monitor.SERIAL_MANAGER.write(
+            arguments.get("session_id", ""),
+            arguments.get("text", ""),
+            newline=arguments.get("newline", False),
+        )
+    elif name == "serial_close":
+        result = serial_monitor.SERIAL_MANAGER.close(arguments.get("session_id", ""))
+    else:
+        result = None
+    if result is not None:
+        expected_empty = result.get("error") in {"no_serial_output", "serial_marker_not_seen"}
+        return {
+            "content": [{"type": "text", "text": json.dumps(result, ensure_ascii=False)}],
+            "isError": not bool(result.get("success")) and not expected_empty,
+        }
+
     if name == "nano_prepare_environment":
         request = {
             "action": "prepare-environment",
@@ -101,7 +212,16 @@ def _tool_result(name: str, arguments: dict[str, Any]) -> dict[str, Any]:
         request = {"action": "compile-upload", **arguments}
     else:
         raise ValueError(f"unknown_tool: {name}")
+    suspended: list[dict[str, Any]] = []
+    if name == "nano_compile_upload":
+        suspended = serial_monitor.SERIAL_MANAGER.suspend_all()
     result = bridge.execute_request(request)
+    if name == "nano_compile_upload":
+        resumed = serial_monitor.SERIAL_MANAGER.resume_all(suspended)
+        result["serial_sessions"] = {
+            "closed_before_upload": suspended,
+            "reopened_after_upload": resumed,
+        }
     expected_pause = result.get("stage") == "awaiting-hardware"
     return {
         "content": [{"type": "text", "text": json.dumps(result, ensure_ascii=False)}],
@@ -125,6 +245,7 @@ def handle(request: dict[str, Any]) -> dict[str, Any] | None:
                 "只处理经典 Arduino Nano ATmega328P 和杜邦线通用模块。先调用 nano_doctor；"
                 "没有 Mind+ 时调用 nano_prepare_environment。编程前核对模块型号/丝印和引脚，"
                 "代码完成后默认调用 nano_compile_upload：有硬件就自动上传，没有硬件就提示接入。"
+                "需要运行日志时使用 serial_open/read/expect/write/close；空输出不算实物证据。"
             ),
         }
     elif method == "tools/list":

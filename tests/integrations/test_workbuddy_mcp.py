@@ -32,7 +32,7 @@ class WorkBuddyBridgeTests(unittest.TestCase):
             "runtime/chatmaker/installers/workbuddy.py",
         )
 
-    def test_server_exposes_nano_tools_only(self):
+    def test_server_exposes_nano_and_serial_tools_only(self):
         names = {tool["name"] for tool in self.server.TOOLS}
 
         self.assertEqual(
@@ -43,6 +43,12 @@ class WorkBuddyBridgeTests(unittest.TestCase):
                 "nano_ports",
                 "nano_compile",
                 "nano_compile_upload",
+                "serial_list",
+                "serial_open",
+                "serial_read",
+                "serial_expect",
+                "serial_write",
+                "serial_close",
             },
         )
         self.assertFalse(any("starcore" in name for name in names))
@@ -102,6 +108,43 @@ class WorkBuddyBridgeTests(unittest.TestCase):
             self.server.bridge.execute_request = original
 
         self.assertFalse(result["isError"])
+
+    def test_compile_upload_suspends_and_resumes_serial_sessions(self):
+        class FakeSerialManager:
+            def __init__(self):
+                self.suspended = False
+                self.resumed = None
+
+            def suspend_all(self):
+                self.suspended = True
+                return [{"port": "COM9", "baudrate": 9600, "timeout": 0.1}]
+
+            def resume_all(self, settings):
+                self.resumed = settings
+                return [{"success": True, "session_id": "serial-COM9-restored"}]
+
+        manager = FakeSerialManager()
+        original_manager = self.server.serial_monitor.SERIAL_MANAGER
+        original_execute = self.server.bridge.execute_request
+        self.server.serial_monitor.SERIAL_MANAGER = manager
+        self.server.bridge.execute_request = lambda request: {
+            "success": True,
+            "stage": "complete",
+        }
+        try:
+            result = self.server._tool_result(
+                "nano_compile_upload",
+                {"code": "void setup(){} void loop(){}"},
+            )
+        finally:
+            self.server.serial_monitor.SERIAL_MANAGER = original_manager
+            self.server.bridge.execute_request = original_execute
+
+        payload = json.loads(result["content"][0]["text"])
+        self.assertTrue(manager.suspended)
+        self.assertEqual(manager.resumed[0]["port"], "COM9")
+        self.assertTrue(payload["serial_sessions"]["closed_before_upload"])
+        self.assertTrue(payload["serial_sessions"]["reopened_after_upload"][0]["success"])
 
     def test_install_and_uninstall_restore_config_and_existing_skill(self):
         with tempfile.TemporaryDirectory() as temporary:

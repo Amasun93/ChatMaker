@@ -1,4 +1,4 @@
-# ChatMaker v0.1.0-rc1
+# ChatMaker v0.1.0-rc2
 
 这是面向教师培训和入门黑客松试运行的首个发布候选。
 
@@ -11,6 +11,8 @@
 - ChatWeb 可推荐 3 套方向、生成单文件课堂页和模拟硬件页，并仅在 localhost 预览。
 - 课堂页和模拟硬件页通过真实浏览器点击、手机视口、触控尺寸与零控制台错误检查。
 - Codex 与 WorkBuddy 支持可逆安装；干净环境和当前电脑上的 Blink 编译烟测通过。
+- WorkBuddy 新增 `serial_list/open/read/expect/write/close`，Codex 新增持久 JSONL 串口入口 `chatmaker-serial`。
+- 串口层会拒绝蓝牙端口，空输出不算证据，并识别乱码与疑似重启循环；烧录前暂停会话，结束后再尝试恢复。
 
 ## 仍需现场验证
 

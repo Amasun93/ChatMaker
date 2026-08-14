@@ -22,3 +22,4 @@ Initial records deliberately use `unverified`. Adding an official URL is not the
 
 Runtime reports may add environment discovery, serial evidence, page rendering, and browser interaction. These help diagnose a project but do not replace the four pack gates.
 
+Serial reports keep `serial_evidence`, observed lines, expected-marker match, malformed-text warnings, and restart-loop suspicion separate from upload and physical effect. A timeout or empty read remains an explicit unverified result.

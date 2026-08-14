@@ -7,5 +7,4 @@ Report each gate separately:
 3. `firmware_uploaded`: The upload command exited successfully for one identified wired device.
 4. `physical_effect_verified`: The expected real-world behavior was observed and recorded.
 
-Serial evidence is useful diagnostic evidence but does not replace physical confirmation. An upload exit code does not prove the sketch survived restart. Record failures and unverified gates without upgrading them.
-
+Serial evidence is useful diagnostic evidence but does not replace physical confirmation. Record `serial_evidence` separately with the port, baud rate, observed lines, expected marker, timeout, and diagnostics. Empty output is `no_serial_output`, not success. `malformed_serial_text` and `restart_loop_suspected` are diagnostic warnings. An upload exit code does not prove the sketch survived restart. Record failures and unverified gates without upgrading them.

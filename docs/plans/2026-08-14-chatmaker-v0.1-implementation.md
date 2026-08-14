@@ -130,6 +130,11 @@ def upload_nano(hex_file: Path, candidate: PortCandidate) -> UploadReport: ...
 
 **Output:** Structured serial tools exposed through the shared runtime.
 
+**Status:** Implemented for WorkBuddy MCP and the Codex JSONL CLI. Automated
+session lifecycle, empty-output, malformed-text, restart-loop, Bluetooth
+rejection, and upload suspend/resume checks pass. Real Nano log evidence remains
+open because no wired board is connected.
+
 **Interfaces:**
 
 ```text
