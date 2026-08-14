@@ -8,7 +8,7 @@
 
 ChatMaker helps teachers, students, and hackathon participants move from a clear request or a rough idea to an implemented and verified project. The user chooses the direction and judges the visible result. ChatMaker handles concept development, professional implementation, tools, and evidence.
 
-> Early development status: the repository foundation and Skill contracts are validated. Nano Mind+ migration, module knowledge packs, and the ChatWeb runtime are still in development.
+> Early development status: the repository foundation and Skill contracts are validated. The migrated Nano runtime passes its original behavior suite and all six examples compile through Mind+ 2.x; physical upload, broader module packs, and the ChatWeb runtime are still in development.
 
 ## Architecture
 
@@ -40,6 +40,8 @@ cd ChatMaker
 python -m pip install -e .
 python -m unittest discover -s tests -v
 python runtime/doctor.py
+chatmaker-nano --request-json '{"action":"doctor"}'
+chatmaker-nano-examples --root examples/chatduino/nano
 ```
 
 Read the [creative partner design](docs/plans/2026-08-14-chatmaker-creative-partner-design.md) and [implementation plan](docs/plans/2026-08-14-chatmaker-v0.1-implementation.md) for current scope and evidence.

@@ -13,6 +13,7 @@ Help the user turn an effect or rough idea into a safe physical project without 
 - If the idea is vague, ask one or two observable questions and offer two or three achievable hardware concepts.
 - Explain what each concept does before discussing board IDs, libraries, or protocols.
 - Keep professional implementation work internal unless a choice changes cost, safety, or the visible effect.
+- 照片不是必需条件。用户说不出模块名称时，每轮只问 1-2 个容易观察的问题，例如针脚数量、丝印、外形和用途。
 
 ## Workflow
 
@@ -26,6 +27,18 @@ Help the user turn an effect or rough idea into a safe physical project without 
 8. Reopen serial after the board returns, inspect expected and failure markers, and ask for physical confirmation.
 
 Read [beginner-hardware-contract.md](references/beginner-hardware-contract.md) whenever producing wiring or code. Read [verification-gates.md](references/verification-gates.md) before any success claim.
+
+## Classic Nano with Mind+
+
+For a classic Arduino Nano ATmega328P, read [nano-beginner-guidance.md](references/nano-beginner-guidance.md) and [nano-teacher-output-contract.md](references/nano-teacher-output-contract.md). Use the shared ChatMaker Nano runtime for environment discovery, compilation, port selection, and upload.
+
+Read [nano-board-and-pins.md](references/nano-board-and-pins.md) and [nano-wiring-and-safety.md](references/nano-wiring-and-safety.md) before assigning pins or power. When the selected project uses a supported module, read [nano-common-module-cards.md](references/nano-common-module-cards.md) and [nano-mindplus-libraries.md](references/nano-mindplus-libraries.md). Read [nano-mindplus-installation.md](references/nano-mindplus-installation.md) only when no usable Mind+ toolchain is found.
+
+- 完成程序后默认调用 `nano_compile_upload`，把真实编译和安全自动烧录作为同一条连续流程。
+- 只有一个高置信度有线 Nano 时才自动选择端口；蓝牙端口必须排除，多个候选必须让用户选择。
+- 编译通过且没有检测到硬件时，提示接入 Nano 后自动上传，不等待老师额外确认，也不能报告烧录成功。
+- 编译失败时只修改完整程序，最多自动修改并重试 2 次。
+- 先尝试 57600；只有典型 Bootloader 同步失败时才尝试 115200。
 
 ## Safety boundaries
 

@@ -202,4 +202,10 @@ doctor.py
 
 ## Current Execution Boundary
 
-This session implements Phase 1 and Phase 2 only. Phase 3 begins after the new repository has a passing foundation and a reviewed copy manifest for the existing Nano adapter.
+Phase 1 and Phase 2 are complete. Phase 3 has migrated the reviewed Nano/Mind+
+runtime, regression tests, WorkBuddy MCP bridge, and six examples. All six
+examples compile from their new ChatMaker paths with Mind+ 2.x. Upload, serial,
+power-cycle, and physical-effect evidence remain open until a wired Nano is
+available. The next execution batch turns these examples into structured
+component/recipe packs, then begins the ChatWeb single-file generator and local
+preview runtime.

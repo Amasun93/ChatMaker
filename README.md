@@ -103,8 +103,8 @@ Skill 负责告诉 AI 应该怎样判断、哪些技术事实不能猜、什么�
 | ChatMaker、ChatDuino、ChatWeb 结构 | 已验证 | 项目校验和 Skill 格式校验通过 |
 | 创作伙伴对话规则 | 已写入 | 尚需独立前向测试 |
 | 数据包和证据状态 | 已验证 | 自动测试与项目 doctor 通过 |
-| Nano Mind+ 编译和烧录迁移 | 开发中 | 旧项目保持只读，等待迁移验收 |
-| 常用模块、库和示例 | 计划支持 | 第一批数据结构已建立 |
+| Nano Mind+ 编译和烧录迁移 | 部分验证 | 原 33 项行为测试已迁移；6 个示例从 ChatMaker 路径真实编译；烧录等待有线 Nano |
+| 常用模块、库和示例 | 开发中 | 6 个 Nano 示例和首批模块参考已迁移，结构化模块数据仍在扩充 |
 | ChatWeb 生成和本地预览 | 计划支持 | Skill 设计已建立，运行工具尚未开发 |
 | 不依赖 Mind+ 的环境 | 下一阶段 | 尚未实现 |
 
@@ -118,6 +118,8 @@ cd ChatMaker
 python -m pip install -e .
 python -m unittest discover -s tests -v
 python runtime/doctor.py
+chatmaker-nano --request-json '{"action":"doctor"}'
+chatmaker-nano-examples --root examples/chatduino/nano
 ```
 
 ## 项目结构

@@ -16,6 +16,10 @@ dependencies = [
 
 [project.scripts]
 chatmaker-doctor = "chatmaker.doctor:main"
+chatmaker-nano = "chatmaker.hardware.nano_mindplus:main"
+chatmaker-nano-examples = "chatmaker.hardware.nano_examples:main"
+chatmaker-workbuddy-mcp = "chatmaker.integrations.workbuddy_mcp:main"
+chatmaker-install-workbuddy = "chatmaker.installers.workbuddy:main"
 
 [tool.setuptools]
 package-dir = {"" = "runtime"}

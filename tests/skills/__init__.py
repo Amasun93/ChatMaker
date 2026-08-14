@@ -1,0 +1,1 @@
+"""Skill behavior contract tests."""
