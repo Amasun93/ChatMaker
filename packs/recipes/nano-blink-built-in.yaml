@@ -1,0 +1,25 @@
+schema_version: "1.0"
+kind: recipe
+id: nano-blink-built-in
+name: Nano built-in LED blink
+summary: Blink the classic Nano built-in LED and print a ready marker.
+sources:
+  - title: Arduino built-in Blink example
+    url: https://docs.arduino.cc/built-in-examples/basics/Blink/
+verification:
+  source_reviewed: &unverified
+    status: unverified
+    checked_at: null
+    evidence: null
+  code_compiled:
+    status: verified
+    checked_at: "2026-08-14"
+    evidence: Compiled with Mind+ 2.x using mindplus:avr:nano:cpu=atmega328; see docs/verification/2026-08-14-nano-mindplus-compilation.md.
+  firmware_uploaded: *unverified
+  physical_effect_verified: *unverified
+boards:
+  - arduino-nano-classic
+components: []
+wiring: []
+source_file: examples/chatduino/nano/blink/blink.ino
+expected_effect: The Nano built-in LED alternates on and off about every 300 milliseconds.

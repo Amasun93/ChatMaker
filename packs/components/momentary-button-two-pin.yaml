@@ -1,0 +1,47 @@
+schema_version: "1.0"
+kind: component
+id: momentary-button-two-pin
+name: Two-pin momentary push button
+category: input
+interface: digital
+supply_voltage:
+  minimum: 0.0
+  maximum: 5.0
+sources:
+  - title: Arduino InputPullupSerial example
+    url: https://docs.arduino.cc/built-in-examples/digital/InputPullupSerial/
+verification:
+  source_reviewed: &unverified
+    status: unverified
+    checked_at: null
+    evidence: null
+  code_compiled:
+    status: verified
+    checked_at: "2026-08-14"
+    evidence: The Nano servo-button example using INPUT_PULLUP compiled with Mind+ 2.x; see docs/verification/2026-08-14-nano-mindplus-compilation.md.
+  firmware_uploaded: *unverified
+  physical_effect_verified: *unverified
+pins:
+  - id: terminal-1
+    role: switch-contact
+  - id: terminal-2
+    role: switch-contact
+supported_boards:
+  - arduino-nano-classic
+constraints:
+  - With INPUT_PULLUP, connect one terminal to the input and the other to GND; pressed reads LOW.
+  - A four-leg tactile switch has internally paired legs, so confirm which legs are opposite sides.
+identification:
+  - Confirm a normally open two-terminal switch, or use continuity mode to identify opposite sides of a four-leg tactile button.
+libraries:
+  - name: Arduino core digital input
+    headers: []
+    status: builtin
+    notes: Uses INPUT_PULLUP and digitalRead; no external library is required.
+example_files:
+  - examples/chatduino/nano/servo-button/servo-button.ino
+common_failures:
+  - Wiring two internally connected legs of a four-leg button makes the input appear permanently pressed or released.
+  - INPUT_PULLUP reverses the intuitive logic, so pressed is LOW.
+board_notes:
+  arduino-nano-classic: The compiled example connects the button between D2 and GND.

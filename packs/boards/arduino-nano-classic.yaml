@@ -22,12 +22,30 @@ verification:
 pins:
   - id: D13
     capabilities: [digital, output, builtin-led]
+  - id: D2
+    capabilities: [digital, interrupt, input, output]
+  - id: D4
+    capabilities: [digital, input, output]
+  - id: D6
+    capabilities: [digital, pwm, input, output]
+  - id: D7
+    capabilities: [digital, input, output]
+  - id: D8
+    capabilities: [digital, input, output]
+  - id: D9
+    capabilities: [digital, pwm, input, output]
   - id: A0
     capabilities: [analog-input, digital]
+  - id: A4
+    capabilities: [analog-input, digital, i2c-sda]
+  - id: A5
+    capabilities: [analog-input, digital, i2c-scl]
   - id: D0
     capabilities: [digital, serial-rx]
   - id: D1
     capabilities: [digital, serial-tx]
+  - id: 5V
+    capabilities: [power, shared]
   - id: GND
     capabilities: [ground, shared]
 constraints:

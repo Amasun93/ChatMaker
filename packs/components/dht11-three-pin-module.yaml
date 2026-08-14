@@ -1,0 +1,49 @@
+schema_version: "1.0"
+kind: component
+id: dht11-three-pin-module
+name: DHT11 three-pin temperature and humidity module
+category: input
+interface: single-wire-digital
+supply_voltage:
+  minimum: 3.3
+  maximum: 5.0
+sources:
+  - title: Aosong DHT11 product manual
+    url: https://www.aosong.com/userfiles/files/media/DHT11%E8%AF%B4%E6%98%8E%E4%B9%A6%EF%BC%88%E7%A8%8B%E5%BA%8F%E7%89%88%EF%BC%89.pdf
+verification:
+  source_reviewed: &unverified
+    status: unverified
+    checked_at: null
+    evidence: null
+  code_compiled:
+    status: verified
+    checked_at: "2026-08-14"
+    evidence: The Nano dht11-serial example using DFRobot_DHT.h compiled with Mind+ 2.x; see docs/verification/2026-08-14-nano-mindplus-compilation.md.
+  firmware_uploaded: *unverified
+  physical_effect_verified: *unverified
+pins:
+  - id: VCC
+    role: power
+  - id: DATA
+    role: signal
+  - id: GND
+    role: ground
+supported_boards:
+  - arduino-nano-classic
+constraints:
+  - Confirm that the part is a three-pin module; a bare four-pin sensor has a different pinout and may need a pull-up resistor.
+  - Wait at least about two seconds between readings.
+identification:
+  - Confirm DHT11 marking and a three-pin module labelled VCC, DATA, and GND; do not use this pin map for the bare four-pin package.
+libraries:
+  - name: Mind+ DFRobot DHT library
+    headers: [DFRobot_DHT.h]
+    status: compile_verified
+    notes: The checked-in Nano example compiled with DFRobot_DHT.h and the DFRobot_DHT API supplied by Mind+ 2.x.
+example_files:
+  - examples/chatduino/nano/dht11-serial/dht11-serial.ino
+common_failures:
+  - Reading more frequently than about every two seconds can repeat stale values or fail.
+  - A bare sensor without the expected pull-up or with a different pin order does not match this module recipe.
+board_notes:
+  arduino-nano-classic: The compiled example uses DATA on D4 and Serial at 9600 baud.

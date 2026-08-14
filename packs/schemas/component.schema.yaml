@@ -1,6 +1,6 @@
 $schema: https://json-schema.org/draft/2020-12/schema
 type: object
-required: [schema_version, kind, id, name, category, interface, supply_voltage, sources, verification, pins, supported_boards, constraints]
+required: [schema_version, kind, id, name, category, interface, supply_voltage, sources, verification, pins, supported_boards, constraints, identification, libraries, example_files, common_failures, board_notes]
 properties:
   schema_version: {const: "1.0"}
   kind: {const: component}
@@ -14,6 +14,23 @@ properties:
   pins: {type: array, minItems: 1, items: {type: object, required: [id, role]}}
   supported_boards: {type: array, items: {type: string}}
   constraints: {type: array, items: {type: string}}
+  identification: {type: array, minItems: 1, items: {type: string, minLength: 1}}
+  libraries:
+    type: array
+    items:
+      type: object
+      required: [name, headers, status, notes]
+      properties:
+        name: {type: string, minLength: 1}
+        headers: {type: array, items: {type: string, minLength: 1}}
+        status: {enum: [builtin, compile_verified, unverified]}
+        notes: {type: string, minLength: 1}
+  example_files: {type: array, minItems: 1, items: {type: string, minLength: 1}}
+  common_failures: {type: array, minItems: 1, items: {type: string, minLength: 1}}
+  board_notes:
+    type: object
+    minProperties: 1
+    additionalProperties: {type: string, minLength: 1}
 $defs:
   sources:
     type: array
@@ -34,4 +51,3 @@ $defs:
       code_compiled: {$ref: "#/$defs/gate"}
       firmware_uploaded: {$ref: "#/$defs/gate"}
       physical_effect_verified: {$ref: "#/$defs/gate"}
-

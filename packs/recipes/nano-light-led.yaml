@@ -1,0 +1,44 @@
+schema_version: "1.0"
+kind: recipe
+id: nano-light-led
+name: Nano light-controlled LED
+summary: Read a confirmed analog light sensor module and turn on a current-limited LED below a calibrated threshold.
+sources:
+  - title: Arduino Analog Read Serial example
+    url: https://docs.arduino.cc/built-in-examples/basics/AnalogReadSerial/
+verification:
+  source_reviewed: &unverified
+    status: unverified
+    checked_at: null
+    evidence: null
+  code_compiled:
+    status: verified
+    checked_at: "2026-08-14"
+    evidence: Compiled with Mind+ 2.x using only the AVR core; see docs/verification/2026-08-14-nano-mindplus-compilation.md.
+  firmware_uploaded: *unverified
+  physical_effect_verified: *unverified
+boards:
+  - arduino-nano-classic
+components:
+  - analog-light-sensor-module
+  - basic-led
+wiring:
+  - component: analog-light-sensor-module
+    component_pin: VCC
+    board_pin: 5V
+  - component: analog-light-sensor-module
+    component_pin: GND
+    board_pin: GND
+    shared: true
+  - component: analog-light-sensor-module
+    component_pin: AO
+    board_pin: A0
+  - component: basic-led
+    component_pin: anode
+    board_pin: D6
+  - component: basic-led
+    component_pin: cathode
+    board_pin: GND
+    shared: true
+source_file: examples/chatduino/nano/light-led/light-led.ino
+expected_effect: The LED turns on when the observed light reading falls below the calibrated threshold.

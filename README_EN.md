@@ -8,7 +8,7 @@
 
 ChatMaker helps teachers, students, and hackathon participants move from a clear request or a rough idea to an implemented and verified project. The user chooses the direction and judges the visible result. ChatMaker handles concept development, professional implementation, tools, and evidence.
 
-> Early development status: the repository foundation and Skill contracts are validated. The migrated Nano runtime passes its original behavior suite and all six examples compile through Mind+ 2.x; physical upload, broader module packs, and the ChatWeb runtime are still in development.
+> Early development status: the Nano/Mind+ runtime and six compiled examples are on public `main`. The first structured pack contains eight components and seven recipes. Physical upload, broader module coverage, and the ChatWeb runtime are still in development.
 
 ## Architecture
 

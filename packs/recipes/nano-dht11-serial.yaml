@@ -1,0 +1,35 @@
+schema_version: "1.0"
+kind: recipe
+id: nano-dht11-serial
+name: Nano DHT11 serial readings
+summary: Read a confirmed three-pin DHT11 module and print temperature and humidity every two seconds.
+sources:
+  - title: Aosong DHT11 product manual
+    url: https://www.aosong.com/userfiles/files/media/DHT11%E8%AF%B4%E6%98%8E%E4%B9%A6%EF%BC%88%E7%A8%8B%E5%BA%8F%E7%89%88%EF%BC%89.pdf
+verification:
+  source_reviewed: &unverified
+    status: unverified
+    checked_at: null
+    evidence: null
+  code_compiled:
+    status: verified
+    checked_at: "2026-08-14"
+    evidence: Compiled with Mind+ 2.x using DFRobot_DHT.h; see docs/verification/2026-08-14-nano-mindplus-compilation.md.
+  firmware_uploaded: *unverified
+  physical_effect_verified: *unverified
+boards:
+  - arduino-nano-classic
+components:
+  - dht11-three-pin-module
+wiring:
+  - component: dht11-three-pin-module
+    component_pin: VCC
+    board_pin: 5V
+  - component: dht11-three-pin-module
+    component_pin: DATA
+    board_pin: D4
+  - component: dht11-three-pin-module
+    component_pin: GND
+    board_pin: GND
+source_file: examples/chatduino/nano/dht11-serial/dht11-serial.ino
+expected_effect: Serial output shows temperature and humidity values about every two seconds.

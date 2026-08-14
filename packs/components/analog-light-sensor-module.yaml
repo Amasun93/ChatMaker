@@ -1,0 +1,52 @@
+schema_version: "1.0"
+kind: component
+id: analog-light-sensor-module
+name: Analog light sensor module with AO output
+category: input
+interface: analog
+supply_voltage:
+  minimum: 3.3
+  maximum: 5.0
+sources:
+  - title: Arduino Analog Read Serial example
+    url: https://docs.arduino.cc/built-in-examples/basics/AnalogReadSerial/
+verification:
+  source_reviewed: &unverified
+    status: unverified
+    checked_at: null
+    evidence: null
+  code_compiled:
+    status: verified
+    checked_at: "2026-08-14"
+    evidence: The Nano light-led and oled-light examples using A0 compiled with Mind+ 2.x; see docs/verification/2026-08-14-nano-mindplus-compilation.md.
+  firmware_uploaded: *unverified
+  physical_effect_verified: *unverified
+pins:
+  - id: VCC
+    role: power
+  - id: GND
+    role: ground
+  - id: AO
+    role: analog-output
+  - id: DO
+    role: threshold-digital-output
+supported_boards:
+  - arduino-nano-classic
+constraints:
+  - Use this record only when AO is visible on the module; a bare photoresistor requires an external voltage divider.
+  - Calibrate the light threshold from observed readings because module orientation and the onboard comparator can invert expectations.
+identification:
+  - Confirm VCC, GND, and AO labels; a fourth DO pin and a small potentiometer indicate a comparator output is also available.
+libraries:
+  - name: Arduino core analog input
+    headers: []
+    status: builtin
+    notes: Uses analogRead on AO; no external library is required.
+example_files:
+  - examples/chatduino/nano/light-led/light-led.ino
+  - examples/chatduino/nano/oled-light/oled-light.ino
+common_failures:
+  - Using DO when the program expects AO produces only thresholded HIGH or LOW values.
+  - The direction of the reading can differ between modules, so hard-coded dark thresholds need calibration.
+board_notes:
+  arduino-nano-classic: Connect AO to A0 and record several light and dark readings before choosing a threshold.

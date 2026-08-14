@@ -1,0 +1,51 @@
+schema_version: "1.0"
+kind: component
+id: hc-sr04
+name: HC-SR04 ultrasonic distance sensor
+category: input
+interface: pulse
+supply_voltage:
+  minimum: 5.0
+  maximum: 5.0
+sources:
+  - title: SparkFun HC-SR04 datasheet mirror
+    url: https://cdn.sparkfun.com/datasheets/Sensors/Proximity/HCSR04.pdf
+verification:
+  source_reviewed: &unverified
+    status: unverified
+    checked_at: null
+    evidence: null
+  code_compiled:
+    status: verified
+    checked_at: "2026-08-14"
+    evidence: The Nano ultrasonic-buzzer example using timed TRIG and ECHO pulses compiled with Mind+ 2.x; see docs/verification/2026-08-14-nano-mindplus-compilation.md.
+  firmware_uploaded: *unverified
+  physical_effect_verified: *unverified
+pins:
+  - id: VCC
+    role: power
+  - id: TRIG
+    role: trigger-input
+  - id: ECHO
+    role: echo-output
+  - id: GND
+    role: ground
+supported_boards:
+  - arduino-nano-classic
+constraints:
+  - Use a pulse timeout so a missing echo cannot block the program forever.
+  - The 5 V ECHO signal needs level shifting before use with a 3.3 V-only board.
+identification:
+  - Two round transducers and four labels VCC, TRIG, ECHO, and GND identify the common HC-SR04 layout; confirm the printed order.
+libraries:
+  - name: Arduino core pulse timing
+    headers: []
+    status: builtin
+    notes: The compiled example uses digitalWrite, delayMicroseconds, and pulseIn with a timeout; no external library is required.
+example_files:
+  - examples/chatduino/nano/ultrasonic-buzzer/ultrasonic-buzzer.ino
+common_failures:
+  - Omitting the pulseIn timeout can freeze the loop when no echo returns.
+  - Soft fabric, angled surfaces, or targets outside the useful range can produce timeouts or unstable readings.
+board_notes:
+  arduino-nano-classic: The compiled 5 V Nano example uses TRIG D7 and ECHO D8.

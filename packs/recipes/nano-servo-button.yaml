@@ -1,0 +1,46 @@
+schema_version: "1.0"
+kind: recipe
+id: nano-servo-button
+name: Nano button-controlled SG90 servo
+summary: Move a confirmed SG90-class servo between two safe angles while a pull-up button is pressed or released.
+sources:
+  - title: Arduino InputPullupSerial example
+    url: https://docs.arduino.cc/built-in-examples/digital/InputPullupSerial/
+  - title: Arduino Servo library reference
+    url: https://docs.arduino.cc/libraries/servo/
+verification:
+  source_reviewed: &unverified
+    status: unverified
+    checked_at: null
+    evidence: null
+  code_compiled:
+    status: verified
+    checked_at: "2026-08-14"
+    evidence: Compiled with Mind+ 2.x using DFRobot_Servo.h; see docs/verification/2026-08-14-nano-mindplus-compilation.md.
+  firmware_uploaded: *unverified
+  physical_effect_verified: *unverified
+boards:
+  - arduino-nano-classic
+components:
+  - momentary-button-two-pin
+  - sg90-micro-servo
+wiring:
+  - component: momentary-button-two-pin
+    component_pin: terminal-1
+    board_pin: D2
+  - component: momentary-button-two-pin
+    component_pin: terminal-2
+    board_pin: GND
+    shared: true
+  - component: sg90-micro-servo
+    component_pin: SIGNAL
+    board_pin: D9
+  - component: sg90-micro-servo
+    component_pin: VCC
+    board_pin: 5V
+  - component: sg90-micro-servo
+    component_pin: GND
+    board_pin: GND
+    shared: true
+source_file: examples/chatduino/nano/servo-button/servo-button.ino
+expected_effect: The servo holds about 20 degrees when released and moves to about 90 degrees while the button is pressed.

@@ -30,4 +30,20 @@ supported_boards:
 constraints:
   - Use a current-limiting resistor sized for the LED and board voltage.
   - Confirm anode and cathode orientation before applying power.
-
+identification:
+  - Two leads; the shorter lead or flat package edge usually marks the cathode, but confirm before power.
+libraries:
+  - name: Arduino core digital I/O
+    headers: []
+    status: builtin
+    notes: Uses pinMode and digitalWrite; no external library is required.
+example_files:
+  - examples/chatduino/blink-external-led/blink-external-led.ino
+  - examples/chatduino/nano/light-led/light-led.ino
+common_failures:
+  - Reversed polarity prevents light output.
+  - A missing resistor can damage the LED or board pin.
+board_notes:
+  arduino-uno-r3: Use a current-limited digital output and GND.
+  arduino-nano-classic: D6 is used by the compiled light-led example; D13 is also tied to the onboard LED.
+  esp32-devkit-v1: Recalculate the resistor for 3.3 V logic and verify the exact board pin label.

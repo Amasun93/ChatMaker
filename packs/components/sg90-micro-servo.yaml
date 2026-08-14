@@ -1,0 +1,49 @@
+schema_version: "1.0"
+kind: component
+id: sg90-micro-servo
+name: SG90-class 9 g micro servo
+category: actuator
+interface: servo-pulse
+supply_voltage:
+  minimum: 4.8
+  maximum: 6.0
+sources:
+  - title: Arduino Servo library reference
+    url: https://docs.arduino.cc/libraries/servo/
+verification:
+  source_reviewed: &unverified
+    status: unverified
+    checked_at: null
+    evidence: null
+  code_compiled:
+    status: verified
+    checked_at: "2026-08-14"
+    evidence: The Nano servo-button example using DFRobot_Servo.h compiled with Mind+ 2.x; see docs/verification/2026-08-14-nano-mindplus-compilation.md.
+  firmware_uploaded: *unverified
+  physical_effect_verified: *unverified
+pins:
+  - id: VCC
+    role: power
+  - id: GND
+    role: ground
+  - id: SIGNAL
+    role: control
+supported_boards:
+  - arduino-nano-classic
+constraints:
+  - Never power the servo from a GPIO pin; use a suitable 5 V supply and connect grounds together.
+  - Confirm wire colors and mechanical limits before commanding a wide sweep.
+identification:
+  - Confirm an SG90-class three-wire servo and its signal, positive, and ground wires from the product information; color alone is supporting evidence.
+libraries:
+  - name: Mind+ DFRobot Servo library
+    headers: [DFRobot_Servo.h]
+    status: compile_verified
+    notes: The checked-in Nano example compiled with DFRobot_Servo.h and the Servo angle API supplied by Mind+ 2.x.
+example_files:
+  - examples/chatduino/nano/servo-button/servo-button.ino
+common_failures:
+  - Powering the servo from an undersized USB or board rail can reset the Nano or cause jitter.
+  - Sending angles beyond the mechanism limits can stall and overheat the servo.
+board_notes:
+  arduino-nano-classic: The compiled example uses D9 for the signal; use an adequate 5 V supply and a shared ground for loaded motion.

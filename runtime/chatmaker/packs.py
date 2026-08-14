@@ -108,11 +108,15 @@ def validate_repository(pack_root: Path, schema_dir: Path) -> ValidationReport:
         if len(paths) > 1:
             errors.append(f"duplicate id '{record_id}': {', '.join(str(path) for path in paths)}")
 
+    project_root = pack_root.parent if pack_root.name == "packs" else pack_root
     for path, record in records:
         if record.get("kind") == "component":
             for board_id in record.get("supported_boards", []):
                 if board_id not in by_kind["board"]:
                     errors.append(f"{path}: unknown board '{board_id}'")
+            for example_file in record.get("example_files", []):
+                if isinstance(example_file, str) and not (project_root / example_file).is_file():
+                    errors.append(f"{path}: example_file '{example_file}' does not exist")
         if record.get("kind") != "recipe":
             continue
         for board_id in record.get("boards", []):
@@ -123,7 +127,6 @@ def validate_repository(pack_root: Path, schema_dir: Path) -> ValidationReport:
                 errors.append(f"{path}: unknown component '{component_id}'")
 
         source_file = record.get("source_file")
-        project_root = pack_root.parent if pack_root.name == "packs" else pack_root
         if isinstance(source_file, str) and not (project_root / source_file).is_file():
             errors.append(f"{path}: source_file '{source_file}' does not exist")
 

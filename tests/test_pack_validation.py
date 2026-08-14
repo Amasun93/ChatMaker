@@ -70,6 +70,11 @@ def component(record_id: str = "basic-led") -> dict:
         "pins": [{"id": "anode", "role": "signal"}, {"id": "cathode", "role": "ground"}],
         "supported_boards": ["board-one"],
         "constraints": ["Use a current-limiting resistor."],
+        "identification": ["Two leads with a flat edge marking the cathode."],
+        "libraries": [],
+        "example_files": ["examples/blink/blink.ino"],
+        "common_failures": ["Reversed polarity prevents light output."],
+        "board_notes": {"board-one": "Use a current-limited digital output."},
     }
 
 
@@ -186,6 +191,19 @@ class PackValidationTests(unittest.TestCase):
         self.assertFalse(report.ok)
         self.assertTrue(any("source_file" in error and "does not exist" in error for error in report.errors))
 
+    def test_missing_component_example_file_fails(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self.make_repository(root)
+            invalid = component()
+            invalid["example_files"] = ["examples/missing/missing.ino"]
+            write_yaml(root / "components" / "basic-led.yaml", invalid)
+
+            report = self.validate(root)
+
+        self.assertFalse(report.ok)
+        self.assertTrue(any("example_file" in error and "does not exist" in error for error in report.errors))
+
     def test_unknown_component_and_board_pins_fail(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -202,6 +220,27 @@ class PackValidationTests(unittest.TestCase):
         self.assertTrue(any("component pin 'mystery'" in error for error in report.errors))
         self.assertTrue(any("board pin 'D12'" in error for error in report.errors))
 
+    def test_component_learning_fields_are_required(self):
+        required_learning_fields = (
+            "identification",
+            "libraries",
+            "example_files",
+            "common_failures",
+            "board_notes",
+        )
+        for field in required_learning_fields:
+            with self.subTest(field=field), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                self.make_repository(root)
+                invalid = component()
+                invalid.pop(field)
+                write_yaml(root / "components" / "basic-led.yaml", invalid)
+
+                report = self.validate(root)
+
+                self.assertFalse(report.ok)
+                self.assertTrue(any(field in error for error in report.errors), report.errors)
+
     def test_checked_in_pack_repository_is_valid(self):
         report = self.validate(ROOT / "packs")
 
@@ -209,6 +248,27 @@ class PackValidationTests(unittest.TestCase):
         self.assertGreaterEqual(report.counts["board"], 3)
         self.assertGreaterEqual(report.counts["component"], 1)
         self.assertGreaterEqual(report.counts["recipe"], 1)
+
+    def test_migrated_nano_examples_have_recipe_records(self):
+        expected_source_files = {
+            "examples/chatduino/nano/blink/blink.ino",
+            "examples/chatduino/nano/dht11-serial/dht11-serial.ino",
+            "examples/chatduino/nano/light-led/light-led.ino",
+            "examples/chatduino/nano/oled-light/oled-light.ino",
+            "examples/chatduino/nano/servo-button/servo-button.ino",
+            "examples/chatduino/nano/ultrasonic-buzzer/ultrasonic-buzzer.ino",
+        }
+        recipes = [
+            yaml.safe_load(path.read_text(encoding="utf-8"))
+            for path in sorted((ROOT / "packs" / "recipes").glob("*.yaml"))
+        ]
+
+        actual_source_files = {record["source_file"] for record in recipes}
+
+        self.assertTrue(
+            expected_source_files.issubset(actual_source_files),
+            expected_source_files - actual_source_files,
+        )
 
 
 if __name__ == "__main__":

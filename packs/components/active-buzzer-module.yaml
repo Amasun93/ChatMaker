@@ -1,0 +1,49 @@
+schema_version: "1.0"
+kind: component
+id: active-buzzer-module
+name: Three-pin active buzzer module
+category: output
+interface: digital
+supply_voltage:
+  minimum: 3.3
+  maximum: 5.0
+sources:
+  - title: Arduino tone reference for distinguishing tone-driven passive buzzers
+    url: https://docs.arduino.cc/language-reference/en/functions/advanced-io/tone/
+verification:
+  source_reviewed: &unverified
+    status: unverified
+    checked_at: null
+    evidence: null
+  code_compiled:
+    status: verified
+    checked_at: "2026-08-14"
+    evidence: The Nano ultrasonic-buzzer example using a digital on/off signal compiled with Mind+ 2.x; see docs/verification/2026-08-14-nano-mindplus-compilation.md.
+  firmware_uploaded: *unverified
+  physical_effect_verified: *unverified
+pins:
+  - id: VCC
+    role: power
+  - id: GND
+    role: ground
+  - id: SIG
+    role: signal
+supported_boards:
+  - arduino-nano-classic
+constraints:
+  - Confirm that the module is active; a passive buzzer needs a frequency signal instead of simple HIGH and LOW control.
+  - Confirm the printed pin labels and trigger polarity before wiring.
+identification:
+  - Look for a three-pin board with VCC, GND, and signal labels; do not infer active versus passive from the black cylinder alone.
+libraries:
+  - name: Arduino core digital I/O
+    headers: []
+    status: builtin
+    notes: A confirmed active module uses digitalWrite; a passive buzzer needs tone or another frequency source.
+example_files:
+  - examples/chatduino/nano/ultrasonic-buzzer/ultrasonic-buzzer.ino
+common_failures:
+  - A passive buzzer driven as active only clicks or stays silent.
+  - Some modules are active-low, so an assumed HIGH trigger can invert the result.
+board_notes:
+  arduino-nano-classic: The compiled example drives SIG from D6 and powers only a small confirmed module.
