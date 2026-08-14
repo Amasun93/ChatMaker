@@ -1,0 +1,109 @@
+from __future__ import annotations
+
+from dataclasses import dataclass
+
+
+@dataclass(frozen=True)
+class DesignDirection:
+    id: str
+    name: str
+    feeling: str
+    primary_interaction: str
+    best_for: str
+    tradeoff: str
+    palette: tuple[str, ...]
+    typography: str
+    motion: str
+
+
+_DIRECTIONS: dict[str, tuple[DesignDirection, ...]] = {
+    "classroom-tool": (
+        DesignDirection(
+            id="editorial-signal",
+            name="编辑部信号板",
+            feeling="清醒、有观点，像一张会回应的课堂海报",
+            primary_interaction="学生轻触主按钮，数字与状态立即回应",
+            best_for="投票、反馈、提问收集和大屏展示",
+            tradeoff="强调一件核心事情，不适合同时堆很多统计卡片",
+            palette=("#f3ead8", "#18201c", "#e5482e", "#f5b942"),
+            typography="serif-display",
+            motion="staggered-reveal",
+        ),
+        DesignDirection(
+            id="tactile-spark",
+            name="触感实验台",
+            feeling="活泼、像可以按动的教具，但不幼稚",
+            primary_interaction="大尺寸控件带来按压、回弹和即时计数反馈",
+            best_for="低龄课堂、热身活动和快速分组",
+            tradeoff="动感更强，长时间投屏时需要减少连续动画",
+            palette=("#fff7d6", "#24213a", "#ff6b5d", "#54c6a9"),
+            typography="rounded-display",
+            motion="spring-press",
+        ),
+        DesignDirection(
+            id="quiet-focus",
+            name="安静聚焦页",
+            feeling="克制、平静，让全班注意力集中在一个问题上",
+            primary_interaction="单一选择区配合柔和的进度变化",
+            best_for="计时、反思、阅读和安静反馈",
+            tradeoff="视觉刺激较少，不适合作为热闹的活动开场",
+            palette=("#e8eee9", "#17221d", "#547567", "#d2a85a"),
+            typography="humanist-display",
+            motion="slow-fade",
+        ),
+    ),
+    "hardware-interface": (
+        DesignDirection(
+            id="device-console",
+            name="设备状态台",
+            feeling="可靠、清楚，像一台经过设计的科学仪器",
+            primary_interaction="先看清连接状态，再发送控制命令并等待设备回执",
+            best_for="传感器看板、灯光控制和课堂硬件演示",
+            tradeoff="状态信息优先，装饰性会主动让位给可读性",
+            palette=("#e7ece8", "#101714", "#2e7d62", "#f0a43c"),
+            typography="technical-editorial",
+            motion="state-transition",
+        ),
+        DesignDirection(
+            id="tactile-control",
+            name="触控遥控器",
+            feeling="直接、有力，像手里握着一块专用控制面板",
+            primary_interaction="用大按钮和滑杆发送动作，页面持续显示模拟或真实状态",
+            best_for="手机控制灯光、舵机和互动装置",
+            tradeoff="主动作突出，因此复杂数据分析需要另开详情区",
+            palette=("#f4efe5", "#1f2430", "#d84b36", "#69a88d"),
+            typography="condensed-display",
+            motion="physical-press",
+        ),
+        DesignDirection(
+            id="field-monitor",
+            name="现场观察窗",
+            feeling="冷静、连续，适合盯住变化而不是频繁操作",
+            primary_interaction="连接后观察时间线、最新读数和异常提示",
+            best_for="环境数据、长期传感器观察和实验记录",
+            tradeoff="控制动作较弱，更适合读数据而不是玩互动",
+            palette=("#e9e7df", "#182126", "#4d7483", "#c96947"),
+            typography="monospace-accent",
+            motion="data-pulse",
+        ),
+    ),
+}
+
+
+def suggest_directions(
+    kind: str,
+    desired_feeling: str | None = None,
+    limit: int = 3,
+) -> list[DesignDirection]:
+    try:
+        directions = list(_DIRECTIONS[kind])
+    except KeyError as exc:
+        raise ValueError(f"unsupported ChatWeb project kind: {kind}") from exc
+
+    if desired_feeling:
+        needle = desired_feeling.casefold()
+        directions.sort(
+            key=lambda item: needle not in f"{item.name} {item.feeling} {item.best_for}".casefold()
+        )
+
+    return directions[: max(1, min(3, limit))]
