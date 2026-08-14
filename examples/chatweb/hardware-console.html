@@ -3,9 +3,9 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>课堂脉冲</title>
+  <title>灯光控制台</title>
   <style>
-    :root { --paper:#f3ead8; --ink:#18201c; --accent:#e5482e; --glow:#f5b942; }
+    :root { --paper:#e7ece8; --ink:#101714; --accent:#2e7d62; --glow:#f0a43c; }
     * { box-sizing:border-box; }
     body { margin:0; min-height:100vh; color:var(--ink); background:
       radial-gradient(circle at 14% 8%, color-mix(in srgb,var(--glow) 42%,transparent), transparent 28rem),
@@ -38,17 +38,17 @@
 <body>
   <main>
     <section>
-      <span class="eyebrow">ChatWeb · 编辑部信号板</span>
-      <h1>课堂脉冲</h1>
-      <p class="prompt">今天哪一步最需要再讲一次？</p>
+      <span class="eyebrow">ChatWeb · 设备状态台</span>
+      <h1>灯光控制台</h1>
+      <p class="prompt">先连接模拟设备，再测试控制状态。</p>
     </section>
-    <section class="card" data-state="ready" data-mode="classroom" aria-label="互动区">
+    <section class="card" data-state="disconnected" data-mode="simulation" aria-label="互动区">
       <output class="count" id="count">0</output>
-      <p class="caption">条课堂信号已经收到</p>
-      <button id="primary" type="button">我需要再讲一次</button>
-      <p class="status" id="status" aria-live="polite">页面已准备好</p>
+      <p class="caption">模拟设备连接状态</p>
+      <button id="primary" type="button">连接模拟设备</button>
+      <p class="status" id="status" aria-live="polite">模拟设备未连接</p>
     </section>
-    <p class="note">每次轻触都会留下一个清楚、可撤销的课堂信号。</p>
+    <p class="note">本页只演示浏览器交互，不代表任何硬件已经连接。</p>
   </main>
   <script>
     const card=document.querySelector('.card');
@@ -56,9 +56,11 @@
     const status=document.querySelector('#status');
     const primary=document.querySelector('#primary');
     document.querySelector('#primary').addEventListener('click',()=>{
-      count.value=String(Number(count.value)+1); card.dataset.state='active';
-      status.textContent=`已收到第 ${count.value} 条信号`;
-      window.setTimeout(()=>{card.dataset.state='ready';},360);
+      const connected=card.dataset.state==='connected';
+      card.dataset.state=connected?'disconnected':'connected';
+      count.value=connected?'0':'1';
+      status.textContent=connected?'模拟设备未连接':'模拟设备已连接（仅浏览器演示）';
+      primary.textContent=connected?'连接模拟设备':'断开模拟设备';
     });
   </script>
 </body>

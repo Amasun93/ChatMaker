@@ -105,7 +105,7 @@ Skill 负责告诉 AI 应该怎样判断、哪些技术事实不能猜、什么�
 | 数据包和证据状态 | 已验证 | 自动测试与项目 doctor 通过 |
 | Nano Mind+ 编译和烧录迁移 | 部分验证 | 原 33 项行为测试已迁移；6 个示例从 ChatMaker 路径真实编译；烧录等待有线 Nano |
 | 常用模块、库和示例 | 首批已验证 | 8 种元器件、7 个配方通过资料校验；6 个 Nano 示例真实编译，模块来源仍按条目保留核对状态 |
-| ChatWeb 生成和本地预览 | 计划支持 | Skill 设计已建立，运行工具尚未开发 |
+| ChatWeb 生成和本地预览 | 部分验证 | 3 套方案推荐、单文件生成、课堂页、模拟硬件页和 localhost 预览已通过真实浏览器检查 |
 | 不依赖 Mind+ 的环境 | 下一阶段 | 尚未实现 |
 
 ## 开发预览
@@ -120,6 +120,8 @@ python -m unittest discover -s tests -v
 python runtime/doctor.py
 chatmaker-nano --request-json '{"action":"doctor"}'
 chatmaker-nano-examples --root examples/chatduino/nano
+chatmaker-web --request-json '{"kind":"classroom-tool","title":"课堂脉冲","prompt":"今天哪一步最需要再讲一次？","primary_label":"我需要再讲一次","direction_id":"editorial-signal"}' --output examples/chatweb/classroom-pulse.html
+chatmaker-web-preview examples/chatweb/classroom-pulse.html
 ```
 
 ## 项目结构

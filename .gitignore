@@ -9,4 +9,4 @@ build/
 *.egg-info/
 .DS_Store
 Thumbs.db
-
+.playwright-cli/

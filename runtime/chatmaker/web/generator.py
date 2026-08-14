@@ -39,10 +39,26 @@ def _render(request: WebProjectRequest, direction: DesignDirection) -> str:
     title = html.escape(request.title, quote=True)
     prompt = html.escape(request.prompt, quote=True)
     label = html.escape(request.primary_label, quote=True)
+    is_hardware = request.kind == "hardware-interface"
     mode_note = (
         "本页只演示浏览器交互，不代表任何硬件已经连接。"
-        if request.kind == "hardware-interface"
+        if is_hardware
         else "每次轻触都会留下一个清楚、可撤销的课堂信号。"
+    )
+    initial_state = "disconnected" if is_hardware else "ready"
+    mode = "simulation" if is_hardware else "classroom"
+    caption = "模拟设备连接状态" if is_hardware else "条课堂信号已经收到"
+    initial_status = "模拟设备未连接" if is_hardware else "页面已准备好"
+    interaction_script = (
+        """const connected=card.dataset.state==='connected';
+      card.dataset.state=connected?'disconnected':'connected';
+      count.value=connected?'0':'1';
+      status.textContent=connected?'模拟设备未连接':'模拟设备已连接（仅浏览器演示）';
+      primary.textContent=connected?'连接模拟设备':'断开模拟设备';"""
+        if is_hardware
+        else """count.value=String(Number(count.value)+1); card.dataset.state='active';
+      status.textContent=`已收到第 ${count.value} 条信号`;
+      window.setTimeout(()=>{card.dataset.state='ready';},360);"""
     )
     paper, ink, accent, glow = direction.palette
     return f'''<!doctype html>
@@ -89,11 +105,11 @@ def _render(request: WebProjectRequest, direction: DesignDirection) -> str:
       <h1>{title}</h1>
       <p class="prompt">{prompt}</p>
     </section>
-    <section class="card" data-state="ready" aria-label="互动区">
+    <section class="card" data-state="{initial_state}" data-mode="{mode}" aria-label="互动区">
       <output class="count" id="count">0</output>
-      <p class="caption">条课堂信号已经收到</p>
+      <p class="caption">{caption}</p>
       <button id="primary" type="button">{label}</button>
-      <p class="status" id="status" aria-live="polite">页面已准备好</p>
+      <p class="status" id="status" aria-live="polite">{initial_status}</p>
     </section>
     <p class="note">{html.escape(mode_note)}</p>
   </main>
@@ -101,10 +117,9 @@ def _render(request: WebProjectRequest, direction: DesignDirection) -> str:
     const card=document.querySelector('.card');
     const count=document.querySelector('#count');
     const status=document.querySelector('#status');
+    const primary=document.querySelector('#primary');
     document.querySelector('#primary').addEventListener('click',()=>{{
-      count.value=String(Number(count.value)+1); card.dataset.state='active';
-      status.textContent=`已收到第 ${{count.value}} 条信号`;
-      window.setTimeout(()=>{{card.dataset.state='ready';}},360);
+      {interaction_script}
     }});
   </script>
 </body>

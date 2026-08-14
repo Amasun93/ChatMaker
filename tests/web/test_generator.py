@@ -48,6 +48,25 @@ class SingleFileGeneratorTests(unittest.TestCase):
         self.assertNotIn('<script id="attack">', text)
         self.assertIn("&lt;script", text)
 
+    def test_hardware_page_starts_disconnected_and_labels_simulation(self):
+        request = WebProjectRequest(
+            kind="hardware-interface",
+            title="灯光控制台",
+            prompt="先连接模拟设备，再测试开关。",
+            primary_label="连接模拟设备",
+            direction_id="device-console",
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory) / "hardware-console.html"
+
+            project = generate_single_file(request, output)
+            text = output.read_text(encoding="utf-8")
+
+        self.assertIn('data-state="disconnected"', text)
+        self.assertIn('data-mode="simulation"', text)
+        self.assertIn("模拟设备未连接", text)
+        self.assertEqual(project.evidence["hardware_connectivity"], "unverified")
+
 
 if __name__ == "__main__":
     unittest.main()

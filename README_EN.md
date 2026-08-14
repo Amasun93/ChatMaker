@@ -8,7 +8,7 @@
 
 ChatMaker helps teachers, students, and hackathon participants move from a clear request or a rough idea to an implemented and verified project. The user chooses the direction and judges the visible result. ChatMaker handles concept development, professional implementation, tools, and evidence.
 
-> Early development status: the Nano/Mind+ runtime and six compiled examples are on public `main`. The first structured pack contains eight components and seven recipes. Physical upload, broader module coverage, and the ChatWeb runtime are still in development.
+> Early development status: the Nano/Mind+ runtime and six compiled examples are on public `main`. The first structured pack contains eight components and seven recipes. ChatWeb now generates and previews self-contained classroom and simulated-hardware pages; physical upload, real hardware connectivity, and broader module coverage remain in development.
 
 ## Architecture
 
@@ -42,6 +42,8 @@ python -m unittest discover -s tests -v
 python runtime/doctor.py
 chatmaker-nano --request-json '{"action":"doctor"}'
 chatmaker-nano-examples --root examples/chatduino/nano
+chatmaker-web --request-json '{"kind":"classroom-tool","title":"Class pulse","prompt":"Which step needs another explanation?","primary_label":"Explain it again","direction_id":"editorial-signal"}' --output examples/chatweb/classroom-pulse.html
+chatmaker-web-preview examples/chatweb/classroom-pulse.html
 ```
 
 Read the [creative partner design](docs/plans/2026-08-14-chatmaker-creative-partner-design.md) and [implementation plan](docs/plans/2026-08-14-chatmaker-v0.1-implementation.md) for current scope and evidence.

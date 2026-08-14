@@ -32,7 +32,7 @@
 - Produces: `DesignDirection(id: str, name: str, feeling: str, primary_interaction: str, best_for: str, tradeoff: str, palette: tuple[str, ...], typography: str, motion: str)`.
 - Produces: `suggest_directions(kind: str, desired_feeling: str | None = None, limit: int = 3) -> list[DesignDirection]`.
 
-- [ ] **Step 1: Write the failing behavior tests**
+- [x] **Step 1: Write the failing behavior tests**
 
 ```python
 def test_vague_classroom_request_returns_three_distinct_directions():
@@ -46,17 +46,17 @@ def test_hardware_request_prioritizes_visible_connection_feedback():
     self.assertIn("连接", result[0].primary_interaction)
 ```
 
-- [ ] **Step 2: Run the tests and verify RED**
+- [x] **Step 2: Run the tests and verify RED**
 
 Run: `python tests/web/test_directions.py -v`
 
 Expected: import failure because `chatmaker.web.directions` does not exist.
 
-- [ ] **Step 3: Implement the immutable catalog and selector**
+- [x] **Step 3: Implement the immutable catalog and selector**
 
 Create three deliberately different directions for each kind: an editorial classroom board, a playful tactile tool, and a calm projection-first tool; for hardware, prioritize a clear device-state console. Reject unknown kinds and clamp `limit` to 1-3.
 
-- [ ] **Step 4: Run targeted and full tests**
+- [x] **Step 4: Run targeted and full tests**
 
 Run: `python tests/web/test_directions.py -v`
 
@@ -79,7 +79,7 @@ Expected: all tests pass.
 - Produces: `generate_single_file(request: WebProjectRequest, output: Path) -> GeneratedWebProject`.
 - Produces CLI: `chatmaker-web --request-json <json> --output <file>`.
 
-- [ ] **Step 1: Write failing generator tests**
+- [x] **Step 1: Write failing generator tests**
 
 ```python
 def test_generator_writes_one_self_contained_html_file():
@@ -99,21 +99,21 @@ def test_generator_escapes_user_text():
     self.assertIn("&lt;script", text)
 ```
 
-- [ ] **Step 2: Run tests and verify RED**
+- [x] **Step 2: Run tests and verify RED**
 
 Run: `python tests/web/test_generator.py -v`
 
 Expected: import failure because `chatmaker.web.generator` does not exist.
 
-- [ ] **Step 3: Implement the minimal generator**
+- [x] **Step 3: Implement the minimal generator**
 
 Render one complete document with CSS variables supplied by the selected direction. Include a strong display type stack without remote fonts, a textured background, one memorable asymmetric composition, a 44 px primary control, keyboard focus, reduced-motion handling, and a live status region. Classroom mode increments a visible response count. Hardware mode starts disconnected, lets the preview toggle a simulated connection, and labels it as simulation.
 
-- [ ] **Step 4: Add CLI and checked-in example**
+- [x] **Step 4: Add CLI and checked-in example**
 
 Add `chatmaker-web = "chatmaker.web.generator:main"` to `[project.scripts]`. Generate `examples/chatweb/classroom-pulse.html` through the CLI, never by manually maintaining a second template.
 
-- [ ] **Step 5: Run generator tests, CLI smoke test, and full suite**
+- [x] **Step 5: Run generator tests, CLI smoke test, and full suite**
 
 Run: `python tests/web/test_generator.py -v`
 
@@ -138,7 +138,7 @@ Expected: one HTML file is written and all tests pass.
 - Produces: `serve_preview(file: Path, host: str = "127.0.0.1", port: int = 0, allow_network: bool = False) -> tuple[ThreadingHTTPServer, PreviewAddress]`.
 - Produces CLI: `chatmaker-web-preview <file> [--port N] [--allow-network]`.
 
-- [ ] **Step 1: Write failing preview safety tests**
+- [x] **Step 1: Write failing preview safety tests**
 
 ```python
 def test_preview_defaults_to_loopback_and_serves_only_requested_file():
@@ -152,21 +152,21 @@ def test_non_loopback_host_requires_explicit_network_flag():
         serve_preview(html_file, host="0.0.0.0")
 ```
 
-- [ ] **Step 2: Run tests and verify RED**
+- [x] **Step 2: Run tests and verify RED**
 
 Run: `python tests/web/test_preview.py -v`
 
 Expected: import failure because `chatmaker.web.preview` does not exist.
 
-- [ ] **Step 3: Implement a focused preview server and CLI**
+- [x] **Step 3: Implement a focused preview server and CLI**
 
 Serve only the chosen file and return 404 for unrelated paths. Start the server thread as a daemon, emit the exact local URL, and refuse non-loopback binding unless `allow_network=True`.
 
-- [ ] **Step 4: Update the ChatWeb workflow and verification contract**
+- [x] **Step 4: Update the ChatWeb workflow and verification contract**
 
 Require the runtime sequence: suggest directions, record the user's selected direction or explicit direct-build assumption, generate one file, start localhost preview, inspect console output, exercise the main control, and report rendering separately from any hardware claim.
 
-- [ ] **Step 5: Run automated and browser verification**
+- [x] **Step 5: Run automated and browser verification**
 
 Run: `python -m unittest discover -s tests -v`
 
@@ -176,7 +176,7 @@ Run: `PYTHONUTF8=1 python C:/Users/asus/.codex/skills/.system/skill-creator/scri
 
 Open the generated localhost URL in Playwright. Verify the title renders, the primary button increases the visible count, the status live region changes, touch target height is at least 44 px, and the browser console has no errors. Save the exact observations under `docs/verification/` without claiming hardware connectivity.
 
-- [ ] **Step 6: Final repository gate**
+- [x] **Step 6: Final repository gate**
 
 Run: `git diff --check`
 
