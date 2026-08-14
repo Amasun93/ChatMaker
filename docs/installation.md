@@ -7,7 +7,7 @@
 ```text
 1. 安装 Python 3.11 或更高版本
 2. 安装 Mind+ 1.x 或 2.x
-3. 下载并解压 ChatMaker-0.1.0-rc2.zip
+3. 下载并解压 ChatMaker-0.1.0-rc3.zip
 4. 把这个文件夹放在长期保留的位置，不要安装后删除或移动
 5. 在解压后的 ChatMaker 文件夹打开 PowerShell
 ```
@@ -64,8 +64,8 @@ chatmaker-web-preview examples/chatweb/classroom-pulse.html
 ## 校验下载包
 
 ```powershell
-Get-FileHash .\ChatMaker-0.1.0-rc2.zip -Algorithm SHA256
-Get-Content .\ChatMaker-0.1.0-rc2.zip.sha256
+Get-FileHash .\ChatMaker-0.1.0-rc3.zip -Algorithm SHA256
+Get-Content .\ChatMaker-0.1.0-rc3.zip.sha256
 ```
 
 两处哈希必须完全一致。

@@ -221,4 +221,6 @@ verification. Reversible Codex and WorkBuddy installation plus live Blink
 compile smoke tests have passed. The deterministic archive, checksum, clean
 extraction test, GitHub rc2 tag, and two prerelease assets are complete. Host UI
 discovery still requires restarting Codex and WorkBuddy; physical Nano gates
-remain open until a wired board is available.
+remain open until a wired board is available. Public main now adds the complete
+twelve-component pack, ten compiled Nano examples, and catalog search/get
+interfaces; these additions are being packaged as rc3.

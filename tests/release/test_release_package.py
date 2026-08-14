@@ -3,12 +3,14 @@ from __future__ import annotations
 import hashlib
 import importlib.util
 import tempfile
+import tomllib
 import unittest
 import zipfile
 from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[2]
+RELEASE_VERSION = "0.1.0-rc3"
 
 
 def load_builder():
@@ -24,8 +26,8 @@ class ReleasePackageTests(unittest.TestCase):
     def test_release_zip_is_deterministic_and_contains_installable_project(self):
         builder = load_builder()
         with tempfile.TemporaryDirectory() as directory:
-            first = builder.build_release(ROOT, Path(directory) / "first", "0.1.0-rc2")
-            second = builder.build_release(ROOT, Path(directory) / "second", "0.1.0-rc2")
+            first = builder.build_release(ROOT, Path(directory) / "first", RELEASE_VERSION)
+            second = builder.build_release(ROOT, Path(directory) / "second", RELEASE_VERSION)
 
             first_zip = Path(first["archive"])
             second_zip = Path(second["archive"])
@@ -34,7 +36,10 @@ class ReleasePackageTests(unittest.TestCase):
             with zipfile.ZipFile(first_zip) as archive:
                 names = set(archive.namelist())
 
-        prefix = "ChatMaker-0.1.0-rc2/"
+        prefix = f"ChatMaker-{RELEASE_VERSION}/"
+        metadata = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
+
+        self.assertEqual(metadata["project"]["version"], "0.1.0rc3")
         self.assertEqual(first_hash, second_hash)
         self.assertEqual(first_hash, first["sha256"])
         self.assertIn(prefix + "README.md", names)
