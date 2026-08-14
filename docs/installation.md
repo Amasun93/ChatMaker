@@ -54,6 +54,7 @@ chatmaker-install-workbuddy uninstall
 ```powershell
 chatmaker-nano --request-json '{"action":"doctor"}'
 chatmaker-nano-examples --root examples/chatduino/nano
+chatmaker-catalog --request-json '{"action":"search","query":"继电器","kind":"component"}'
 chatmaker-serial --request-json '{"action":"list"}'
 chatmaker-web-preview examples/chatweb/classroom-pulse.html
 ```

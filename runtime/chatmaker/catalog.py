@@ -1,0 +1,182 @@
+from __future__ import annotations
+
+import argparse
+import json
+from pathlib import Path
+import sys
+from typing import Any
+
+try:
+    from .packs import load_record
+except ImportError:  # Allow direct execution from a checked-out release folder.
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    from chatmaker.packs import load_record
+
+
+CATALOG_FOLDERS = {
+    "board": "boards",
+    "component": "components",
+    "recipe": "recipes",
+}
+
+
+def _root(project_root: Path | None = None) -> Path:
+    if project_root is not None:
+        return Path(project_root).resolve()
+    return Path(__file__).resolve().parents[2]
+
+
+def _records(project_root: Path | None = None) -> list[tuple[Path, dict[str, Any]]]:
+    root = _root(project_root)
+    records: list[tuple[Path, dict[str, Any]]] = []
+    for folder in CATALOG_FOLDERS.values():
+        for path in sorted((root / "packs" / folder).glob("*.yaml")):
+            records.append((path, load_record(path)))
+    return records
+
+
+def _search_text(record: dict[str, Any]) -> list[str]:
+    values: list[Any] = [
+        record.get("id"),
+        record.get("name"),
+        record.get("category"),
+        record.get("interface"),
+        record.get("summary"),
+        record.get("aliases", []),
+        record.get("boards", []),
+        record.get("supported_boards", []),
+        record.get("components", []),
+    ]
+    flattened: list[str] = []
+    for value in values:
+        if isinstance(value, str):
+            flattened.append(value)
+        elif isinstance(value, list):
+            flattened.extend(str(item) for item in value)
+    return flattened
+
+
+def _score(record: dict[str, Any], query: str) -> int:
+    if not query:
+        return 1
+    normalized = query.casefold().strip()
+    score = 0
+    for text in _search_text(record):
+        candidate = text.casefold()
+        if candidate == normalized:
+            score = max(score, 100)
+        elif candidate.startswith(normalized):
+            score = max(score, 60)
+        elif normalized in candidate:
+            score = max(score, 30)
+    return score
+
+
+def _summary(record: dict[str, Any]) -> dict[str, Any]:
+    verification = record.get("verification", {})
+    return {
+        "id": record.get("id"),
+        "kind": record.get("kind"),
+        "name": record.get("name"),
+        "aliases": record.get("aliases", []),
+        "category": record.get("category"),
+        "interface": record.get("interface"),
+        "summary": record.get("summary"),
+        "verification": {
+            name: gate.get("status")
+            for name, gate in verification.items()
+            if isinstance(gate, dict)
+        },
+    }
+
+
+def search_catalog(
+    query: str = "",
+    *,
+    kind: str | None = None,
+    limit: int = 20,
+    project_root: Path | None = None,
+) -> dict[str, Any]:
+    if kind is not None and kind not in CATALOG_FOLDERS:
+        return {"success": False, "error": "unknown_catalog_kind", "kind": kind}
+    bounded_limit = max(1, min(int(limit), 50))
+    matches: list[tuple[int, dict[str, Any]]] = []
+    for _, record in _records(project_root):
+        if kind is not None and record.get("kind") != kind:
+            continue
+        score = _score(record, query)
+        if score:
+            matches.append((score, record))
+    matches.sort(key=lambda item: (-item[0], str(item[1].get("id", ""))))
+    summaries = [_summary(record) for _, record in matches[:bounded_limit]]
+    return {
+        "success": True,
+        "action": "search",
+        "query": query,
+        "kind": kind,
+        "match_count": len(matches),
+        "matches": summaries,
+    }
+
+
+def get_catalog_record(
+    record_id: str,
+    *,
+    project_root: Path | None = None,
+) -> dict[str, Any]:
+    for path, record in _records(project_root):
+        if record.get("id") == record_id:
+            root = _root(project_root)
+            return {
+                "success": True,
+                "action": "get",
+                "record": record,
+                "source_path": path.relative_to(root).as_posix(),
+            }
+    return {
+        "success": False,
+        "action": "get",
+        "error": "catalog_record_not_found",
+        "id": record_id,
+    }
+
+
+def execute_request(
+    request: dict[str, Any],
+    *,
+    project_root: Path | None = None,
+) -> dict[str, Any]:
+    action = request.get("action")
+    if action == "search":
+        return search_catalog(
+            str(request.get("query", "")),
+            kind=request.get("kind"),
+            limit=int(request.get("limit", 20)),
+            project_root=project_root,
+        )
+    if action == "get":
+        return get_catalog_record(str(request.get("id", "")), project_root=project_root)
+    return {"success": False, "error": "unknown_catalog_action", "action": action}
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description="Search and read the ChatMaker learning catalog.")
+    parser.add_argument("--request-json", required=True)
+    args = parser.parse_args(argv)
+    try:
+        request = json.loads(args.request_json)
+        if not isinstance(request, dict):
+            raise ValueError("request must be an object")
+        result = execute_request(request)
+    except Exception as exc:
+        result = {
+            "success": False,
+            "error": "catalog_request_failed",
+            "detail": f"{type(exc).__name__}: {exc}",
+        }
+    print(json.dumps(result, ensure_ascii=False))
+    return 0 if result.get("success") else 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

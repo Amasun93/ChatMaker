@@ -2,6 +2,7 @@ schema_version: "1.0"
 kind: component
 id: common-cathode-rgb-led
 name: 4-pin common-cathode RGB LED
+aliases: [RGB灯, 三色灯, 共阴RGB灯]
 category: output
 interface: three-channel-pwm
 supply_voltage:

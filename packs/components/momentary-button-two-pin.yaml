@@ -2,6 +2,7 @@ schema_version: "1.0"
 kind: component
 id: momentary-button-two-pin
 name: Two-pin momentary push button
+aliases: [按钮, 按键]
 category: input
 interface: digital
 supply_voltage:

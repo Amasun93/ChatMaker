@@ -2,6 +2,7 @@ schema_version: "1.0"
 kind: component
 id: analog-light-sensor-module
 name: Analog light sensor module with AO output
+aliases: [光敏传感器模块, 光敏模块]
 category: input
 interface: analog
 supply_voltage:

@@ -2,6 +2,7 @@ schema_version: "1.0"
 kind: component
 id: ws2812b-addressable-rgb
 name: WS2812B-compatible addressable RGB pixel or strip
+aliases: [WS2812灯带, 全彩灯珠, 可编程灯带]
 category: output
 interface: single-wire-800khz
 supply_voltage:

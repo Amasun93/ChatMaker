@@ -104,7 +104,7 @@ Skill 负责告诉 AI 应该怎样判断、哪些技术事实不能猜、什么�
 | 创作伙伴对话规则 | 已写入 | 尚需独立前向测试 |
 | 数据包和证据状态 | 已验证 | 自动测试与项目 doctor 通过 |
 | Nano Mind+ 编译和烧录迁移 | 部分验证 | 原 33 项行为测试已迁移；10 个示例从 ChatMaker 路径真实编译；烧录等待有线 Nano |
-| 常用模块、库和示例 | 首批已验证 | 12 种元器件、11 个配方通过资料校验；10 个 Nano 示例真实编译，模块来源仍按条目保留核对状态 |
+| 常用模块、库和示例 | 首批已验证 | 12 种元器件、11 个配方通过资料校验；支持中文搜索与完整资料读取；10 个 Nano 示例真实编译 |
 | ChatWeb 生成和本地预览 | 部分验证 | 3 套方案推荐、单文件生成、课堂页、模拟硬件页和 localhost 预览已通过真实浏览器检查 |
 | Codex / WorkBuddy 安装 | 已验证 | 三个 Skill、配置备份、卸载恢复、真实 stdio MCP 和两条 Blink 编译烟测通过；宿主需重启后显示 |
 | 串口运行诊断 | 已实现待硬件 | WorkBuddy 6 个串口工具与 Codex JSONL 会话通过自动测试；当前无有线 Nano，真实日志待现场读取 |
@@ -123,6 +123,7 @@ cd ChatMaker
 python -m pip install -e .
 python -m unittest discover -s tests -v
 python runtime/doctor.py
+chatmaker-catalog --request-json '{"action":"search","query":"继电器","kind":"component"}'
 chatmaker-nano --request-json '{"action":"doctor"}'
 chatmaker-nano-examples --root examples/chatduino/nano
 chatmaker-web --request-json '{"kind":"classroom-tool","title":"课堂脉冲","prompt":"今天哪一步最需要再讲一次？","primary_label":"我需要再讲一次","direction_id":"editorial-signal"}' --output examples/chatweb/classroom-pulse.html

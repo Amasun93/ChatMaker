@@ -2,6 +2,7 @@ schema_version: "1.0"
 kind: component
 id: basic-led
 name: Basic two-lead LED
+aliases: [LED灯, 发光二极管]
 category: output
 interface: digital
 supply_voltage:

@@ -2,6 +2,7 @@ schema_version: "1.0"
 kind: component
 id: hc-sr04
 name: HC-SR04 ultrasonic distance sensor
+aliases: [HC-SR04超声波模块, 超声波测距]
 category: input
 interface: pulse
 supply_voltage:

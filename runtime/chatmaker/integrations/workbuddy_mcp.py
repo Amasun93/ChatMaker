@@ -7,15 +7,40 @@ import json
 import sys
 from typing import Any
 
+from chatmaker import catalog
 from chatmaker.hardware import nano_mindplus as bridge
 from chatmaker.hardware import serial_monitor
 
 
 SERVER_NAME = "arduino-nano-mindplus"
-SERVER_VERSION = "1.2.0"
+SERVER_VERSION = "1.3.0"
 PROTOCOL_VERSION = "2024-11-05"
 
 TOOLS = [
+    {
+        "name": "catalog_search",
+        "description": "用中文或英文搜索 ChatMaker 的板卡、常用模块和项目配方，先找到候选，再读取完整资料。",
+        "inputSchema": {
+            "type": "object",
+            "required": ["query"],
+            "properties": {
+                "query": {"type": "string"},
+                "kind": {"type": "string", "enum": ["board", "component", "recipe"]},
+                "limit": {"type": "integer", "minimum": 1, "maximum": 50, "default": 20},
+            },
+            "additionalProperties": False,
+        },
+    },
+    {
+        "name": "catalog_get",
+        "description": "按稳定 ID 读取一条完整资料，包括识别方法、供电、引脚、库、示例、常见故障和分层证据。",
+        "inputSchema": {
+            "type": "object",
+            "required": ["id"],
+            "properties": {"id": {"type": "string"}},
+            "additionalProperties": False,
+        },
+    },
     {
         "name": "nano_prepare_environment",
         "description": (
@@ -157,7 +182,15 @@ TOOLS = [
 
 
 def _tool_result(name: str, arguments: dict[str, Any]) -> dict[str, Any]:
-    if name == "serial_list":
+    if name == "catalog_search":
+        result = catalog.search_catalog(
+            str(arguments.get("query", "")),
+            kind=arguments.get("kind"),
+            limit=int(arguments.get("limit", 20)),
+        )
+    elif name == "catalog_get":
+        result = catalog.get_catalog_record(str(arguments.get("id", "")))
+    elif name == "serial_list":
         result = serial_monitor.SERIAL_MANAGER.list()
     elif name == "serial_open":
         result = serial_monitor.SERIAL_MANAGER.open(
@@ -242,8 +275,9 @@ def handle(request: dict[str, Any]) -> dict[str, Any] | None:
             "capabilities": {"tools": {"listChanged": False}},
             "serverInfo": {"name": SERVER_NAME, "version": SERVER_VERSION},
             "instructions": (
-                "只处理经典 Arduino Nano ATmega328P 和杜邦线通用模块。先调用 nano_doctor；"
-                "没有 Mind+ 时调用 nano_prepare_environment。编程前核对模块型号/丝印和引脚，"
+                "只处理经典 Arduino Nano ATmega328P 和杜邦线通用模块。先用 catalog_search/get "
+                "读取匹配资料，再调用 nano_doctor；没有 Mind+ 时调用 nano_prepare_environment。"
+                "编程前核对模块型号/丝印和引脚，"
                 "代码完成后默认调用 nano_compile_upload：有硬件就自动上传，没有硬件就提示接入。"
                 "需要运行日志时使用 serial_open/read/expect/write/close；空输出不算实物证据。"
             ),

@@ -18,7 +18,7 @@ Help the user turn an effect or rough idea into a safe physical project without 
 ## Workflow
 
 1. Identify the exact board variant, controller, USB interface, component labels, supply voltage, and desired effect.
-2. Read the matching records under `packs/boards`, `packs/components`, and `packs/recipes` through the shared runtime. Treat unverified records as leads, not facts.
+2. Read the matching records under `packs/boards`, `packs/components`, and `packs/recipes` through the shared runtime. In WorkBuddy, call `catalog_search` and then `catalog_get`; in Codex, use `chatmaker-catalog` with `search` and `get` requests. Treat unverified records as leads, not facts.
 3. Resolve pin, voltage, current, boot, serial, and shared-ground constraints before writing code.
 4. Present one visible disconnected-power `text` wiring block, then a complete `cpp` block. Do not generate SVG or another wiring graphic unless the user explicitly asks for an image.
 5. In the first release, discover and reuse an existing Mind+ 1.x or 2.x toolchain. Do not install or switch toolchains silently. Treat a managed standalone toolchain as a later development phase.

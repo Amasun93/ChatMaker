@@ -11,7 +11,7 @@ serial_write
 serial_close
 ```
 
-WorkBuddy MCP 暴露上述 6 个工具，加上 5 个 Nano 环境、编译和烧录工具，共 11 个。Codex 使用 `chatmaker-serial` 启动同一运行层的持久 JSONL 会话。
+WorkBuddy MCP 暴露上述 6 个工具，加上 5 个 Nano 环境、编译和烧录工具，以及 2 个资料目录工具，共 13 个。Codex 使用 `chatmaker-serial` 启动同一运行层的持久 JSONL 会话，并使用 `chatmaker-catalog` 搜索和读取模块资料。
 
 ## 自动测试
 

@@ -32,7 +32,7 @@ class WorkBuddyBridgeTests(unittest.TestCase):
             "runtime/chatmaker/installers/workbuddy.py",
         )
 
-    def test_server_exposes_nano_and_serial_tools_only(self):
+    def test_server_exposes_catalog_nano_and_serial_tools_only(self):
         names = {tool["name"] for tool in self.server.TOOLS}
 
         self.assertEqual(
@@ -49,6 +49,8 @@ class WorkBuddyBridgeTests(unittest.TestCase):
                 "serial_expect",
                 "serial_write",
                 "serial_close",
+                "catalog_search",
+                "catalog_get",
             },
         )
         self.assertFalse(any("starcore" in name for name in names))
@@ -58,6 +60,17 @@ class WorkBuddyBridgeTests(unittest.TestCase):
         )
         self.assertIn("自动", upload_tool["description"])
         self.assertIn("接入", upload_tool["description"])
+
+    def test_catalog_tools_read_the_real_component_pack(self):
+        self.assertIn("catalog_search", {tool["name"] for tool in self.server.TOOLS})
+        result = self.server._tool_result(
+            "catalog_search", {"query": "继电器", "kind": "component"}
+        )
+
+        payload = json.loads(result["content"][0]["text"])
+        self.assertFalse(result["isError"])
+        self.assertTrue(payload["success"], payload)
+        self.assertEqual(payload["matches"][0]["id"], "one-channel-relay-module-5v")
 
     def test_stdio_server_answers_ping_in_a_real_subprocess(self):
         environment = dict(os.environ)

@@ -2,6 +2,7 @@ schema_version: "1.0"
 kind: component
 id: dht11-three-pin-module
 name: DHT11 three-pin temperature and humidity module
+aliases: [DHT11温湿度模块, 温湿度传感器]
 category: input
 interface: single-wire-digital
 supply_voltage:

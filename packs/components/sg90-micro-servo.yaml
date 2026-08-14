@@ -2,6 +2,7 @@ schema_version: "1.0"
 kind: component
 id: sg90-micro-servo
 name: SG90-class 9 g micro servo
+aliases: [SG90舵机, 微型舵机]
 category: actuator
 interface: servo-pulse
 supply_voltage:

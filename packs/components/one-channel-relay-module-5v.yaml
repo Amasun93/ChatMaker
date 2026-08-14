@@ -2,6 +2,7 @@ schema_version: "1.0"
 kind: component
 id: one-channel-relay-module-5v
 name: 5 V one-channel relay module, confirmed low-voltage control side
+aliases: [继电器, 单路继电器模块, 5V继电器]
 category: actuator
 interface: digital-control
 supply_voltage:

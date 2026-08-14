@@ -2,6 +2,7 @@ schema_version: "1.0"
 kind: component
 id: ssd1306-i2c-128x64-module
 name: Confirmed SSD1306 128x64 four-pin I2C OLED module
+aliases: [0.96寸OLED, SSD1306显示屏, OLED屏幕]
 category: display
 interface: i2c
 supply_voltage:

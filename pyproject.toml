@@ -17,6 +17,7 @@ dependencies = [
 
 [project.scripts]
 chatmaker-doctor = "chatmaker.doctor:main"
+chatmaker-catalog = "chatmaker.catalog:main"
 chatmaker-nano = "chatmaker.hardware.nano_mindplus:main"
 chatmaker-nano-examples = "chatmaker.hardware.nano_examples:main"
 chatmaker-serial = "chatmaker.hardware.serial_monitor:main"

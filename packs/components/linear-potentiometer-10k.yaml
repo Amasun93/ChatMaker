@@ -2,6 +2,7 @@ schema_version: "1.0"
 kind: component
 id: linear-potentiometer-10k
 name: 10 kOhm linear potentiometer or three-pin module
+aliases: [电位器, 旋钮, 10K电位器]
 category: input
 interface: analog-voltage-divider
 supply_voltage:

@@ -2,6 +2,7 @@ schema_version: "1.0"
 kind: component
 id: active-buzzer-module
 name: Three-pin active buzzer module
+aliases: [有源蜂鸣器模块, 蜂鸣器]
 category: output
 interface: digital
 supply_voltage:
