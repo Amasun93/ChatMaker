@@ -1,0 +1,4 @@
+interface:
+  display_name: "ChatWeb"
+  short_description: "Create polished classroom and hardware interfaces"
+  default_prompt: "Use $chatweb to help me choose and build an interactive web project."

@@ -1,4 +1,0 @@
-interface:
-  display_name: "ChatMaker Web"
-  short_description: "Build and verify native interactive web projects"
-  default_prompt: "Use $chatmaker-web to build and verify my interactive web project."

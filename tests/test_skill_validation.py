@@ -76,7 +76,7 @@ class SkillValidationTests(unittest.TestCase):
     def test_checked_in_skills_are_valid(self):
         skill_dirs = sorted(path for path in (ROOT / "skills").iterdir() if path.is_dir())
 
-        self.assertEqual([path.name for path in skill_dirs], ["chatduino", "chatmaker", "chatmaker-web"])
+        self.assertEqual([path.name for path in skill_dirs], ["chatduino", "chatmaker", "chatweb"])
         for skill in skill_dirs:
             with self.subTest(skill=skill.name):
                 self.assertEqual(validate_skill_directory(skill), [])
@@ -84,4 +84,3 @@ class SkillValidationTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-

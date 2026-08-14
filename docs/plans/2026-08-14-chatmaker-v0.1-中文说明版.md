@@ -41,7 +41,7 @@ ChatMaker 以后需要继续完成下面这些动作。
 
 - `ChatMaker` 负责听懂用户想做什么，再把任务交给合适的模块。
 - `ChatDuino` 负责 Arduino、Nano、ESP32、接线、编译、烧录和串口流程。
-- `ChatMaker Web` 负责 HTML、CSS、JavaScript 页面和浏览器检查。
+- `ChatWeb` 负责前端创作、课堂工具、硬件界面和浏览器检查。
 
 这三个 Skill 已经通过格式校验。它们目前提供工作规则和任务路线，还没有接入完整的硬件执行能力。
 

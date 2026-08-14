@@ -1,48 +1,147 @@
-# ChatMaker
+<p align="right">
+  <a href="README_EN.md">English</a> · <b>简体中文</b>
+</p>
 
-ChatMaker helps beginners build hardware and native-web projects by talking to an AI workspace such as Codex or WorkBuddy. The conversation is the development interface; Mind+, Arduino CLI, serial tools, and the browser are background tools.
+<h1 align="center">ChatMaker</h1>
 
-> Product: **ChatMaker** · Hardware module: **ChatDuino** · Core experience: **build by talking**
+<p align="center">
+  <b>让不懂专业开发的人，也能和 AI 一起做出有趣、好看、可以运行的作品。</b>
+</p>
 
-## Current status
+ChatMaker 是面向老师、学生和黑客松参与者的 AI 创作伙伴。用户说出想法、选择喜欢的方向并确认实际效果。ChatMaker 负责启发创意、设计方案、生成代码、调用工具和检查结果。
 
-ChatMaker is in foundation development. The following labels are strict:
+对话窗口就是创作环境。Mind+、编译器、串口和浏览器在后台完成专业工作，用户不需要先学习一套 IDE。
 
-- **Verified:** the named acceptance check has current evidence.
-- **Partially verified:** only explicitly listed gates have evidence.
-- **Planned:** structure or intent exists, but the behavior is not implemented or validated.
+> 当前处于早期开发阶段。项目结构和 Skill 规则已经通过验证，Nano Mind+ 能力、模块知识包和 ChatWeb 运行工具正在按路线迁移与开发。
 
-| Area | Status | Current evidence |
-| --- | --- | --- |
-| Repository and three Skill structure | Verified | All three Skills pass project validation and Codex `quick_validate.py`. |
-| Board/component/recipe data contract | Verified | Twelve automated contract tests and the project doctor pass; hardware facts remain unreviewed. |
-| Nano Mind+ adapter migration | Planned | Existing repository remains separate and unchanged. |
-| Uno and ESP32 compile/upload | Planned | No current hardware evidence in this repository. |
-| Native web generation and preview | Planned | Skill workflow only. |
-| Codex and WorkBuddy installation | Planned | Installers do not exist yet. |
+## 它补上的能力
 
-## Architecture
+普通代码生成器通常从一条技术指令开始。小白用户更常见的起点是“我想让课堂有趣一点”“我有一块板子，不知道能做什么”。
+
+ChatMaker 补上四件事。
+
+| 能力 | ChatMaker 怎样处理 |
+| --- | --- |
+| 创意引导 | 想法模糊时每轮只问一两个问题，再提供两到三套经过筛选的方案 |
+| 专业实现 | 把用户选择变成接线、程序、页面、编译、烧录和浏览器操作 |
+| 渐进复杂度 | 小白默认看到最少选项，需要更多时才展开样式库和高级游乐场 |
+| 真实验证 | 分开报告资料核对、代码编译、固件烧录、串口或浏览器结果和实物效果 |
+
+## 三个创作伙伴
 
 ```text
-chatmaker        routes and keeps the beginner project contract
-├─ chatduino     hardware, wiring, compile, upload, serial, physical checks
-└─ chatmaker-web native HTML/CSS/JS, local preview, browser checks
-
-shared runtime   deterministic tools used by both AI hosts
-data packs       boards, components, recipes, and evidence gates
+ChatMaker
+├─ ChatDuino   硬件、接线、固件、编译、烧录、串口
+└─ ChatWeb     前端创作、课堂工具、设备界面、浏览器验证
 ```
 
-## Development checks
+### ChatMaker
+
+理解用户想完成的作品，帮助整理目标并选择路线。需要软硬件协作时，它会先约定页面发送什么、设备返回什么，再让两个模块分别实现。
+
+### ChatDuino
+
+帮助用户识别板卡和模块，给出简单直白的文字接线、完整程序和真实编译结果。第一阶段复用 Mind+ 工具链，下一阶段再开发不依赖 Mind+ 的托管环境。
+
+默认接线长这样。
+
+```text
+【先断电】
+
+1. 光敏模块 VCC → Nano 5V
+2. 光敏模块 GND → Nano GND
+3. 光敏模块 AO → Nano A0
+4. Nano D6 → 330Ω 电阻 → LED 长脚
+5. LED 短脚 → Nano GND
+
+接好以后先检查 VCC 和 GND，再插 USB。
+```
+
+SVG 和其他图形接线不会默认生成。用户明确需要图片时才作为额外交付物，文字接线始终保留。
+
+### ChatWeb
+
+帮助用户选择视觉与交互方向，制作课堂工具、创意页面和硬件控制界面。小白项目默认生成一个可直接打开的 HTML 文件；复杂项目才拆分文件。更多样式和高级游乐场按需出现。
+
+## 可以怎样使用
+
+从一个清楚的需求开始。
+
+```text
+我有一块经典 Nano、光敏模块和 LED，想让天黑后自动亮灯。
+```
+
+也可以只有一个模糊方向。
+
+```text
+我想做一个能让课堂更有参与感的小工具，但还没有想好形式。
+```
+
+或者让网页和硬件一起工作。
+
+```text
+帮我设计一个适合手机操作的灯光控制页面，先给我三种视觉方向，
+页面确认以后再和 ESP32 的控制程序连接。
+```
+
+## 设计哲学
+
+> ChatMaker = 创作伙伴哲学 + 专业事实 + 可执行工具 + 验证证据
+
+ChatMaker 先理解用户要创造什么，再选择合适的模块和工具。每一步结果都是下一步判断的证据。遇到阻碍时，它会根据实际结果调整路线，不在错误方法上反复重试。
+
+Skill 负责告诉 AI 应该怎样判断、哪些技术事实不能猜、什么状态才算完成。容易出错和需要重复执行的动作交给脚本与运行工具。板卡、元器件、程序库、案例和视觉方案放在按需加载的知识包里。
+
+这套结构让 AI 保留判断能力，同时在接线安全、端口选择、编译烧录和完成状态上受到明确约束。
+
+完整设计见 [ChatMaker 创作伙伴设计](docs/plans/2026-08-14-chatmaker-creative-partner-design.md)。
+
+## 当前开发状态
+
+| 范围 | 状态 | 已有证据 |
+| --- | --- | --- |
+| ChatMaker、ChatDuino、ChatWeb 结构 | 已验证 | 项目校验和 Skill 格式校验通过 |
+| 创作伙伴对话规则 | 已写入 | 尚需独立前向测试 |
+| 数据包和证据状态 | 已验证 | 自动测试与项目 doctor 通过 |
+| Nano Mind+ 编译和烧录迁移 | 开发中 | 旧项目保持只读，等待迁移验收 |
+| 常用模块、库和示例 | 计划支持 | 第一批数据结构已建立 |
+| ChatWeb 生成和本地预览 | 计划支持 | Skill 设计已建立，运行工具尚未开发 |
+| 不依赖 Mind+ 的环境 | 下一阶段 | 尚未实现 |
+
+## 开发预览
+
+当前版本面向贡献者和内部验证，还不是培训现场安装包。
 
 ```powershell
+git clone https://github.com/Amasun93/ChatMaker.git
+cd ChatMaker
 python -m pip install -e .
 python -m unittest discover -s tests -v
 python runtime/doctor.py
-python scripts/validate_skills.py
 ```
 
-The implementation plan is in [docs/plans/2026-08-14-chatmaker-v0.1-implementation.md](docs/plans/2026-08-14-chatmaker-v0.1-implementation.md).
+## 项目结构
+
+```text
+skills/       三个创作伙伴的判断方式与工作流程
+runtime/      编译、烧录、串口、预览等确定性工具
+packs/        板卡、模块、案例和视觉方案知识包
+examples/     经过验证的完整作品
+tests/        自动测试和行为契约
+docs/         设计、路线和贡献说明
+```
+
+## 路线
+
+1. 迁移并回归验证 Nano Mind+ 能力。
+2. 扩充常用模块、可靠程序库和真实编译示例。
+3. 建立 ChatWeb 单文件生成、方案推荐和本地预览。
+4. 增加 Uno、ESP32、串口和软硬件旗舰案例。
+5. 开发不依赖 Mind+ 的独立工具链和驱动诊断。
+6. 完成 Codex、WorkBuddy 安装器和公开发布包。
+
+详细路线见 [中文说明版](docs/plans/2026-08-14-chatmaker-v0.1-中文说明版.md) 和 [技术实施计划](docs/plans/2026-08-14-chatmaker-v0.1-implementation.md)。
 
 ## License
 
-Apache-2.0. See [LICENSE](LICENSE).
+Apache-2.0

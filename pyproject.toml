@@ -3,7 +3,7 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "chatmaker-ai"
+name = "chatmaker"
 version = "0.1.0.dev0"
 description = "AI-native beginner maker workflows for hardware and native web projects"
 readme = "README.md"
@@ -22,4 +22,3 @@ package-dir = {"" = "runtime"}
 
 [tool.setuptools.packages.find]
 where = ["runtime"]
-

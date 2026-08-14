@@ -4,16 +4,16 @@
 
 **Goal:** Build an open-source AI-native maker workflow that lets beginners use natural language in Codex or WorkBuddy to create, compile, upload, observe, and verify simple hardware and native-web projects.
 
-**Architecture:** Keep `chatmaker` as the thin router, `chatduino` as the hardware workflow, and `chatmaker-web` as the native HTML/CSS/JavaScript workflow. Put deterministic operations in the shared Python runtime and put board, component, recipe, and UI knowledge in versioned data packs loaded only when needed.
+**Architecture:** Keep `chatmaker` as the thin creative-partner router, `chatduino` as the hardware workflow, and `chatweb` as the classroom-tool and hardware-interface workflow. Put deterministic operations in the shared Python runtime and put board, component, recipe, and UI knowledge in versioned data packs loaded only when needed.
 
 **Tech Stack:** Python 3.11+, PyYAML, jsonschema, Arduino/Mind+ toolchains, serial ports, native HTML/CSS/JavaScript, unittest, GitHub Actions.
 
 ## Global Constraints
 
-- Product name: `ChatMaker`; GitHub repository name: `chatmaker-ai`; hardware module: `ChatDuino`.
+- Product name and GitHub repository name: `ChatMaker`; modules: `ChatDuino` and `ChatWeb`.
 - Core experience: use natural language in an AI environment; do not build a separate IDE.
 - v0.1 targets Windows x64, Arduino Uno R3, classic Arduino Nano ATmega328P, and ESP32 DevKit V1 / ESP-WROOM-32.
-- Reuse an existing Mind+ or Arduino CLI environment before offering an isolated toolchain.
+- Use an existing Mind+ 1.x or 2.x environment in the first release. Build a managed standalone toolchain in the next development phase.
 - Keep environment discovery, compilation, upload, serial evidence, and physical-effect confirmation as separate truth gates.
 - Never auto-upload when the connected board or port is ambiguous.
 - Start web work with native HTML, CSS, and JavaScript; no React, Vue, authentication, database, or cloud deployment in v0.1.
@@ -26,7 +26,7 @@
 
 - `skills/chatmaker/`: user-facing router and shared beginner workflow.
 - `skills/chatduino/`: Arduino, Nano, ESP32, wiring, compile, upload, and serial workflow.
-- `skills/chatmaker-web/`: native web prototype and ESP32 web-control workflow.
+- `skills/chatweb/`: classroom tools, native web prototypes, and hardware-control interfaces.
 - `runtime/chatmaker/`: deterministic Python APIs shared by Codex and WorkBuddy.
 - `runtime/doctor.py`: command-line environment and pack diagnostics.
 - `packs/schemas/`: JSON Schemas for versioned YAML records.
@@ -49,8 +49,8 @@
 
 **Implementation steps:**
 
-- [x] Initialize `main`, add `.gitignore`, Apache-2.0 `LICENSE`, `README.md`, and `README_CN.md`.
-- [x] Run `init_skill.py` for `chatmaker`, `chatduino`, and `chatmaker-web` with deterministic UI metadata.
+- [x] Initialize `main`, add `.gitignore`, Apache-2.0 `LICENSE`, `README.md`, and `README_EN.md`.
+- [x] Run `init_skill.py` for `chatmaker`, `chatduino`, and `chatweb` with deterministic UI metadata.
 - [x] Replace generated placeholders with router and specialist workflows.
 - [x] Add `.github/workflows/ci.yml` that installs the package and runs all tests plus Skill validation.
 - [x] Run local validation before creating the first commit.
@@ -147,9 +147,9 @@ serial_close
 - Detect expected markers, watchdog messages, restart loops, malformed text, and timeouts.
 - Empty serial output never becomes evidence of physical success.
 
-## Phase 7: ChatMaker Web
+## Phase 7: ChatWeb
 
-**Output:** A mobile-first native-web generator, local preview server, and browser verification workflow.
+**Output:** A mobile-first classroom and hardware-interface generator, local preview server, optional advanced playground, and browser verification workflow.
 
 **Acceptance:**
 

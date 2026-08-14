@@ -15,6 +15,8 @@ Use the heading `## 🔌 接线说明（先断电）` followed immediately by on
 
 Write every connection as `component printed label → board printed label`. Include resistor, external-power, shared-ground, and polarity requirements where relevant.
 
+This text block is the default and complete wiring deliverable. Do not create SVG, Fritzing, or another rendered wiring diagram unless the user explicitly requests an image. If an image is requested, keep the text block as the source of truth.
+
 ## Program block
 
 Use the heading `## 💻 完整程序（可整段复制）` followed immediately by one complete `cpp` block. Put adjustable values near the top, choose a safe startup state, and use comments that explain the observable effect.
@@ -22,4 +24,3 @@ Use the heading `## 💻 完整程序（可整段复制）` followed immediately
 ## Unknown components
 
 Ask one or two observable questions per turn: pin or wire count, printed letters, distinctive shape, wire colors, and intended use. A photo is optional. If controller, interface, or voltage remains ambiguous, provide the next identification step and do not provide potentially destructive wiring.
-
