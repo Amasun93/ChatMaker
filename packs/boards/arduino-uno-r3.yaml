@@ -1,0 +1,34 @@
+schema_version: "1.0"
+kind: board
+id: arduino-uno-r3
+name: Arduino Uno Rev3
+family: avr
+mcu: ATmega328P
+logic_voltage: 5.0
+sources:
+  - title: Arduino Uno Rev3 documentation
+    url: https://docs.arduino.cc/hardware/uno-rev3/
+verification:
+  source_reviewed: &unverified
+    status: unverified
+    checked_at: null
+    evidence: null
+  code_compiled: *unverified
+  firmware_uploaded: *unverified
+  physical_effect_verified: *unverified
+pins:
+  - id: D13
+    capabilities: [digital, output, builtin-led]
+  - id: A0
+    capabilities: [analog-input, digital]
+  - id: GND
+    capabilities: [ground, shared]
+constraints:
+  - Confirm the exact board identity before compiling or uploading.
+  - Do not drive high-current loads directly from a GPIO pin.
+toolchains:
+  - id: arduino-cli-avr
+    status: planned
+  - id: mindplus-avr
+    status: planned
+

@@ -1,0 +1,31 @@
+schema_version: "1.0"
+kind: recipe
+id: blink-external-led
+name: External LED Blink
+summary: Blink one current-limited external LED from a digital output.
+sources:
+  - title: Arduino built-in Blink example
+    url: https://docs.arduino.cc/built-in-examples/basics/Blink/
+verification:
+  source_reviewed: &unverified
+    status: unverified
+    checked_at: null
+    evidence: null
+  code_compiled: *unverified
+  firmware_uploaded: *unverified
+  physical_effect_verified: *unverified
+boards:
+  - arduino-uno-r3
+  - arduino-nano-classic
+components:
+  - basic-led
+wiring:
+  - component: basic-led
+    component_pin: anode
+    board_pin: D13
+  - component: basic-led
+    component_pin: cathode
+    board_pin: GND
+source_file: examples/chatduino/blink-external-led/blink-external-led.ino
+expected_effect: The external LED alternates on and off once per second.
+

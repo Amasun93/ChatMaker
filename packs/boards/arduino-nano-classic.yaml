@@ -1,0 +1,41 @@
+schema_version: "1.0"
+kind: board
+id: arduino-nano-classic
+name: Arduino Nano Classic ATmega328P
+family: avr
+mcu: ATmega328P
+logic_voltage: 5.0
+sources:
+  - title: Arduino Nano documentation
+    url: https://docs.arduino.cc/hardware/nano/
+verification:
+  source_reviewed: &unverified
+    status: unverified
+    checked_at: null
+    evidence: null
+  code_compiled: *unverified
+  firmware_uploaded: *unverified
+  physical_effect_verified: *unverified
+pins:
+  - id: D13
+    capabilities: [digital, output, builtin-led]
+  - id: A0
+    capabilities: [analog-input, digital]
+  - id: D0
+    capabilities: [digital, serial-rx]
+  - id: D1
+    capabilities: [digital, serial-tx]
+  - id: GND
+    capabilities: [ground, shared]
+constraints:
+  - Confirm ATmega328P and the bootloader/upload speed before uploading.
+  - Avoid D0 and D1 when USB serial communication is required.
+  - Filter Bluetooth virtual ports before selecting a wired upload device.
+toolchains:
+  - id: mindplus-1-arduino-builder
+    status: planned
+  - id: mindplus-2-arduino-cli
+    status: planned
+  - id: arduino-cli-avr
+    status: planned
+

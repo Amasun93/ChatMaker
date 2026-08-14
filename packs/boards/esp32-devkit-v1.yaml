@@ -1,0 +1,35 @@
+schema_version: "1.0"
+kind: board
+id: esp32-devkit-v1
+name: ESP32 DevKit V1 / ESP-WROOM-32
+family: esp32
+mcu: ESP32
+logic_voltage: 3.3
+sources:
+  - title: Espressif ESP32-DevKitC user guide
+    url: https://docs.espressif.com/projects/esp-dev-kits/en/latest/esp32/esp32-devkitc/user_guide.html
+verification:
+  source_reviewed: &unverified
+    status: unverified
+    checked_at: null
+    evidence: null
+  code_compiled: *unverified
+  firmware_uploaded: *unverified
+  physical_effect_verified: *unverified
+pins:
+  - id: GPIO2
+    capabilities: [digital, input, output, boot-sensitive]
+  - id: GPIO34
+    capabilities: [digital, analog-input, input-only]
+  - id: GND
+    capabilities: [ground, shared]
+constraints:
+  - Treat GPIO logic as 3.3 V and verify every connected module.
+  - Confirm the exact board variant and header labels before wiring.
+  - Review strapping and input-only pins before assigning outputs.
+toolchains:
+  - id: arduino-cli-esp32
+    status: planned
+  - id: mindplus-esp32
+    status: planned
+

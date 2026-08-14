@@ -1,0 +1,4 @@
+interface:
+  display_name: "ChatMaker"
+  short_description: "Route beginner-friendly hardware and web projects"
+  default_prompt: "Use $chatmaker to turn my idea into a verified maker project."

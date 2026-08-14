@@ -1,0 +1,37 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+type: object
+required: [schema_version, kind, id, name, category, interface, supply_voltage, sources, verification, pins, supported_boards, constraints]
+properties:
+  schema_version: {const: "1.0"}
+  kind: {const: component}
+  id: {type: string, pattern: "^[a-z0-9][a-z0-9-]+$"}
+  name: {type: string, minLength: 1}
+  category: {type: string, minLength: 1}
+  interface: {type: string, minLength: 1}
+  supply_voltage: {type: object, required: [minimum, maximum]}
+  sources: {$ref: "#/$defs/sources"}
+  verification: {$ref: "#/$defs/verification"}
+  pins: {type: array, minItems: 1, items: {type: object, required: [id, role]}}
+  supported_boards: {type: array, items: {type: string}}
+  constraints: {type: array, items: {type: string}}
+$defs:
+  sources:
+    type: array
+    minItems: 1
+    items: {type: object, required: [title, url], properties: {title: {type: string}, url: {type: string, format: uri}}}
+  gate:
+    type: object
+    required: [status, checked_at, evidence]
+    properties:
+      status: {enum: [unverified, verified, failed, not_applicable]}
+      checked_at: {type: [string, "null"], format: date}
+      evidence: {type: [string, "null"]}
+  verification:
+    type: object
+    required: [source_reviewed, code_compiled, firmware_uploaded, physical_effect_verified]
+    properties:
+      source_reviewed: {$ref: "#/$defs/gate"}
+      code_compiled: {$ref: "#/$defs/gate"}
+      firmware_uploaded: {$ref: "#/$defs/gate"}
+      physical_effect_verified: {$ref: "#/$defs/gate"}
+
