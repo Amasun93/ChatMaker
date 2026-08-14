@@ -39,10 +39,11 @@ compile success: true
 安装前检测到 6 个 MCP。安装器只替换同名 `arduino-nano-mindplus`，保留另外 5 个，并先备份原 `mcp.json`。
 
 - 安装目录：`C:\Users\asus\.workbuddy\skills\chatmaker|chatduino|chatweb`
-- 配置备份：`C:\Users\asus\.workbuddy\mcp.json.backup-1786702496978737800`
+- 最新配置备份：`C:\Users\asus\.workbuddy\mcp.json.backup-1786704917447418700`
 - 安装清单：`C:\Users\asus\.workbuddy\chatmaker-workbuddy-install.json`
 - MCP 初始化协议：`2025-03-26`
-- MCP 工具数量：5
+- MCP 工具数量：11（5 个 Nano 工具 + 6 个串口工具）
+- `serial_list`：成功列出 6 个端口，均标记为蓝牙且不可用于 Nano 烧录
 - Blink `nano_compile`：成功，`isError: false`
 - 编译后端：Mind+ 2.x
 

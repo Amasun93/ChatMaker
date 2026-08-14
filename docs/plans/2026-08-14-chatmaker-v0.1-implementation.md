@@ -216,7 +216,7 @@ Upload, serial, power-cycle, and physical-effect evidence remain open until a
 wired Nano is available. ChatWeb single-file generation, localhost preview,
 classroom interaction, and explicit hardware simulation have passed browser
 verification. Reversible Codex and WorkBuddy installation plus live Blink
-compile smoke tests have passed. The deterministic archive, checksum, clean
-extraction test, GitHub tag, and prerelease assets are complete. Host UI
-discovery still requires restarting Codex and WorkBuddy; physical Nano gates
-remain open until a wired board is available.
+compile smoke tests have passed. The deterministic archive, checksum, and clean
+extraction test are complete; the GitHub rc2 tag and prerelease assets remain
+pending. Host UI discovery still requires restarting Codex and WorkBuddy;
+physical Nano gates remain open until a wired board is available.
