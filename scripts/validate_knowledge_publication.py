@@ -25,7 +25,7 @@ def _safe_published_path(path: Any, board_id: str) -> bool:
     if candidate.is_absolute() or any(part in {"", ".", ".."} for part in candidate.parts):
         return False
     expected_prefix = ("published", "boards", board_id)
-    return candidate.parts[:3] == expected_prefix and candidate.suffix == ".md" and len(candidate.parts) >= 4
+    return candidate.parts[:3] == expected_prefix and candidate.suffix == ".md" and len(candidate.parts) == 4
 
 
 def _is_link_or_reparse(path: Path) -> bool:
@@ -200,6 +200,8 @@ def validate_knowledge_publication(root: Path) -> dict[str, Any]:
         )
         if frontmatter.get("kind") != "llmwiki-page" or missing or invalid_types:
             errors.append(f"{page_path}: malformed frontmatter: invalid page identity or missing {missing}")
+        if isinstance(frontmatter.get("section_id"), str) and frontmatter["section_id"] != page_path.stem:
+            errors.append(f"{page_path}: section_id does not match Markdown filename stem")
         declared = declarations.get(relative)
         if declared is not None:
             _, manifest, declaration = declared

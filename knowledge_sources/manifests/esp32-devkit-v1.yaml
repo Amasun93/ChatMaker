@@ -21,7 +21,26 @@ source_reviewed:
     Reviewed the official Arduino-ESP32 3.3.11 DOIT board definition; see the
     canonical packs/boards/esp32-devkit-v1.yaml source_reviewed record.
 publication_approved:
-  status: unverified
-  date: null
-  evidence: null
-page_declarations: []
+  status: verified
+  date: "2026-08-16"
+  evidence: >-
+    Approved only these governed derivative navigation pages. They route readers
+    to canonical board, component, and recipe records and preserve every
+    unverified runtime gate; this approval does not promote runtime evidence.
+page_declarations:
+  - stable_id: esp32-devkit-v1-start-here
+    path: published/boards/esp32-devkit-v1/start-here.md
+  - stable_id: esp32-devkit-v1-identify-and-safety
+    path: published/boards/esp32-devkit-v1/identify-and-safety.md
+  - stable_id: esp32-devkit-v1-pins-and-electrical
+    path: published/boards/esp32-devkit-v1/pins-and-electrical.md
+  - stable_id: esp32-devkit-v1-toolchains-and-upload
+    path: published/boards/esp32-devkit-v1/toolchains-and-upload.md
+  - stable_id: esp32-devkit-v1-components-and-wiring
+    path: published/boards/esp32-devkit-v1/components-and-wiring.md
+  - stable_id: esp32-devkit-v1-libraries-and-examples
+    path: published/boards/esp32-devkit-v1/libraries-and-examples.md
+  - stable_id: esp32-devkit-v1-web-and-protocol
+    path: published/boards/esp32-devkit-v1/web-and-protocol.md
+  - stable_id: esp32-devkit-v1-troubleshooting
+    path: published/boards/esp32-devkit-v1/troubleshooting.md

@@ -19,7 +19,26 @@ source_reviewed:
   date: null
   evidence: null
 publication_approved:
-  status: unverified
-  date: null
-  evidence: null
-page_declarations: []
+  status: verified
+  date: "2026-08-16"
+  evidence: >-
+    Approved only these governed derivative navigation pages. They route readers
+    to canonical board, component, and recipe records and preserve unverified
+    source and runtime gates; this approval is not source validation.
+page_declarations:
+  - stable_id: arduino-nano-classic-start-here
+    path: published/boards/arduino-nano-classic/start-here.md
+  - stable_id: arduino-nano-classic-identify-and-safety
+    path: published/boards/arduino-nano-classic/identify-and-safety.md
+  - stable_id: arduino-nano-classic-pins-and-electrical
+    path: published/boards/arduino-nano-classic/pins-and-electrical.md
+  - stable_id: arduino-nano-classic-toolchains-and-upload
+    path: published/boards/arduino-nano-classic/toolchains-and-upload.md
+  - stable_id: arduino-nano-classic-components-and-wiring
+    path: published/boards/arduino-nano-classic/components-and-wiring.md
+  - stable_id: arduino-nano-classic-libraries-and-examples
+    path: published/boards/arduino-nano-classic/libraries-and-examples.md
+  - stable_id: arduino-nano-classic-web-and-protocol
+    path: published/boards/arduino-nano-classic/web-and-protocol.md
+  - stable_id: arduino-nano-classic-troubleshooting
+    path: published/boards/arduino-nano-classic/troubleshooting.md

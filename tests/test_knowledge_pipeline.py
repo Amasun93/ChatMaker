@@ -44,6 +44,16 @@ class KnowledgePublicationPipelineTests(unittest.TestCase):
     def make_workspace(self, root: Path) -> Path:
         workspace = root / "knowledge_sources"
         shutil.copytree(ROOT / "knowledge_sources", workspace)
+        shutil.rmtree(workspace / "published", ignore_errors=True)
+        for manifest_path in (workspace / "manifests").glob("*.yaml"):
+            manifest = yaml.safe_load(manifest_path.read_text(encoding="utf-8"))
+            manifest["publication_approved"] = {
+                "status": "unverified",
+                "date": None,
+                "evidence": None,
+            }
+            manifest["page_declarations"] = []
+            write_yaml(manifest_path, manifest)
         return workspace
 
     def manifest(self, workspace: Path, board_id: str = "arduino-nano-classic") -> tuple[Path, dict]:
@@ -103,11 +113,11 @@ class KnowledgePublicationPipelineTests(unittest.TestCase):
             check=False,
         )
 
-    def test_checked_in_manifests_cover_exact_boards_without_promoting_unverified_gates(self):
+    def test_checked_in_manifests_cover_exact_governed_pages_without_promoting_source_gates(self):
         result = self.validate(ROOT)
 
         self.assertTrue(result["success"], result["errors"])
-        self.assertEqual(result["counts"], {"manifests": 3, "pages": 0})
+        self.assertEqual(result["counts"], {"manifests": 3, "pages": 24})
         expected_boards = {
             "arduino-nano-classic",
             "arduino-uno-r3",
@@ -118,8 +128,37 @@ class KnowledgePublicationPipelineTests(unittest.TestCase):
             manifest = yaml.safe_load(path.read_text(encoding="utf-8"))
             actual_boards.add(manifest["board_id"])
             self.assertEqual(manifest["cleaning_verified"]["status"], "unverified")
-            self.assertEqual(manifest["publication_approved"]["status"], "unverified")
+            self.assertEqual(manifest["publication_approved"]["status"], "verified")
+            self.assertEqual(len(manifest["page_declarations"]), 8)
+            if manifest["board_id"] in {"arduino-nano-classic", "arduino-uno-r3"}:
+                self.assertEqual(manifest["source_reviewed"]["status"], "unverified")
         self.assertEqual(actual_boards, expected_boards)
+
+    def test_page_path_is_exact_board_filename_depth_and_section_matches_stem(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            workspace = self.make_workspace(root)
+            nested = self.declare_page(
+                workspace,
+                path="published/boards/arduino-nano-classic/nested/start-here.md",
+            )
+            self.write_page(nested)
+
+            nested_result = self.validate(root)
+
+        self.assertFalse(nested_result["success"])
+        self.assertTrue(any("unsafe page path" in error for error in nested_result["errors"]))
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            workspace = self.make_workspace(root)
+            page_path = self.declare_page(workspace)
+            self.write_page(page_path, section_id="troubleshooting")
+
+            mismatch_result = self.validate(root)
+
+        self.assertFalse(mismatch_result["success"])
+        self.assertTrue(any("filename stem" in error for error in mismatch_result["errors"]))
 
     def test_page_requires_a_separate_publication_approval(self):
         with tempfile.TemporaryDirectory() as directory:

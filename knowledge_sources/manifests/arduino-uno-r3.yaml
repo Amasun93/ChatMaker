@@ -19,7 +19,26 @@ source_reviewed:
   date: null
   evidence: null
 publication_approved:
-  status: unverified
-  date: null
-  evidence: null
-page_declarations: []
+  status: verified
+  date: "2026-08-16"
+  evidence: >-
+    Approved only these governed derivative navigation pages. They route readers
+    to canonical board, component, and recipe records and preserve unverified
+    source and runtime gates; this approval is not source validation.
+page_declarations:
+  - stable_id: arduino-uno-r3-start-here
+    path: published/boards/arduino-uno-r3/start-here.md
+  - stable_id: arduino-uno-r3-identify-and-safety
+    path: published/boards/arduino-uno-r3/identify-and-safety.md
+  - stable_id: arduino-uno-r3-pins-and-electrical
+    path: published/boards/arduino-uno-r3/pins-and-electrical.md
+  - stable_id: arduino-uno-r3-toolchains-and-upload
+    path: published/boards/arduino-uno-r3/toolchains-and-upload.md
+  - stable_id: arduino-uno-r3-components-and-wiring
+    path: published/boards/arduino-uno-r3/components-and-wiring.md
+  - stable_id: arduino-uno-r3-libraries-and-examples
+    path: published/boards/arduino-uno-r3/libraries-and-examples.md
+  - stable_id: arduino-uno-r3-web-and-protocol
+    path: published/boards/arduino-uno-r3/web-and-protocol.md
+  - stable_id: arduino-uno-r3-troubleshooting
+    path: published/boards/arduino-uno-r3/troubleshooting.md

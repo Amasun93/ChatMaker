@@ -34,6 +34,7 @@ chatmaker-web-playground = "chatmaker.web.playground:main"
 chatmaker-web-preview = "chatmaker.web.preview:main"
 chatmaker-web-embed = "chatmaker.web.embed:main"
 chatmaker-pack = "chatmaker.pack_cli:main"
+chatmaker-llmwiki = "chatmaker.llmwiki:main"
 
 [tool.setuptools]
 package-dir = {"" = "runtime"}
