@@ -39,13 +39,15 @@ compile success: true
 安装前检测到 6 个 MCP。安装器只替换同名 `arduino-nano-mindplus`，保留另外 5 个，并先备份原 `mcp.json`。
 
 - 安装目录：`C:\Users\asus\.workbuddy\skills\chatmaker|chatduino|chatweb`
-- 最新配置备份：`C:\Users\asus\.workbuddy\mcp.json.backup-1786706457209787800`
+- 最新配置备份：`C:\Users\asus\.workbuddy\mcp.json.backup-1786762081832939100`
 - 安装清单：`C:\Users\asus\.workbuddy\chatmaker-workbuddy-install.json`
 - MCP 初始化协议：`2025-03-26`
-- MCP 工具数量：13（2 个资料目录工具 + 5 个 Nano 工具 + 6 个串口工具）
+- MCP 服务：`chatmaker-hardware` 1.4.0
+- MCP 工具数量：18（2 个资料目录工具 + 5 个 Nano 工具 + 5 个 Uno 工具 + 6 个串口工具）
 - `catalog_search("继电器")`：成功找到 `one-channel-relay-module-5v`
 - `serial_list`：成功列出 6 个端口，均标记为蓝牙且不可用于 Nano 烧录
 - Blink `nano_compile`：成功，`isError: false`
+- Blink `uno_compile`：成功，`isError: false`，FQBN 为 `mindplus:avr:uno`
 - 编译后端：Mind+ 2.x
 
 第一次真实复制时，Windows 拒绝把临时目录重命名为 `chatduino`，暴露了部分安装风险。随后新增并验证：

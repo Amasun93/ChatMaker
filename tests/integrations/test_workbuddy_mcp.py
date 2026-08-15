@@ -32,7 +32,7 @@ class WorkBuddyBridgeTests(unittest.TestCase):
             "runtime/chatmaker/installers/workbuddy.py",
         )
 
-    def test_server_exposes_catalog_nano_and_serial_tools_only(self):
+    def test_server_exposes_catalog_uno_nano_and_serial_tools_only(self):
         names = {tool["name"] for tool in self.server.TOOLS}
 
         self.assertEqual(
@@ -43,6 +43,11 @@ class WorkBuddyBridgeTests(unittest.TestCase):
                 "nano_ports",
                 "nano_compile",
                 "nano_compile_upload",
+                "uno_prepare_environment",
+                "uno_doctor",
+                "uno_ports",
+                "uno_compile",
+                "uno_compile_upload",
                 "serial_list",
                 "serial_open",
                 "serial_read",
@@ -121,6 +126,26 @@ class WorkBuddyBridgeTests(unittest.TestCase):
             self.server.bridge.execute_request = original
 
         self.assertFalse(result["isError"])
+
+    def test_uno_waiting_for_hardware_is_a_prompt_not_an_mcp_tool_error(self):
+        self.assertIn("uno_compile_upload", {tool["name"] for tool in self.server.TOOLS})
+        original = self.server.uno_bridge.execute_request
+        self.server.uno_bridge.execute_request = lambda request: {
+            "success": False,
+            "stage": "awaiting-hardware",
+            "hardware_connection_required": True,
+            "teacher_message": "请接入 Uno，接入后自动上传。",
+        }
+        try:
+            result = self.server._tool_result(
+                "uno_compile_upload", {"code": "void setup(){} void loop(){}"}
+            )
+        finally:
+            self.server.uno_bridge.execute_request = original
+
+        self.assertFalse(result["isError"])
+        payload = json.loads(result["content"][0]["text"])
+        self.assertEqual(payload["stage"], "awaiting-hardware")
 
     def test_compile_upload_suspends_and_resumes_serial_sessions(self):
         class FakeSerialManager:

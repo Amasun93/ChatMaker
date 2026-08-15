@@ -43,6 +43,16 @@ Read [nano-board-and-pins.md](references/nano-board-and-pins.md) and [nano-wirin
 - `nano_compile_upload` 会先暂停已打开的串口会话，烧录流程结束后再尝试恢复，避免端口占用。
 - 串口没有输出、只出现启动文字或模拟数据，都不能升级为实物效果已验证。
 
+## Arduino Uno Rev3 with Mind+
+
+For a confirmed Arduino Uno Rev3 / Genuino Uno with ATmega328P, use the shared ChatMaker Uno runtime rather than the Nano runtime.
+
+- WorkBuddy uses `uno_prepare_environment`, `uno_doctor`, `uno_ports`, `uno_compile`, and `uno_compile_upload`; Codex uses `chatmaker-uno`.
+- Mind+ 1.x compiles with `arduino:avr:uno`; Mind+ 2.x compiles with `mindplus:avr:uno`.
+- Uno upload uses the board definition's fixed 115200 baud. Never apply the Nano 57600/115200 Bootloader fallback to Uno.
+- Reject Bluetooth ports. Auto-select only one confirmed Uno or one remaining wired candidate; require a choice when multiple wired ports remain.
+- Keep compile, upload, serial marker, reboot, and visible LED effect as separate evidence gates.
+
 ## Safety boundaries
 
 - Keep USB and external power disconnected while wiring.

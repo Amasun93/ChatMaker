@@ -13,7 +13,10 @@ verification:
     status: unverified
     checked_at: null
     evidence: null
-  code_compiled: *unverified
+  code_compiled:
+    status: verified
+    checked_at: "2026-08-15"
+    evidence: The dedicated Uno Blink example compiled with Mind+ 2.x and FQBN mindplus:avr:uno; see docs/verification/2026-08-15-uno-mindplus-compilation.md.
   firmware_uploaded: *unverified
   physical_effect_verified: *unverified
 pins:
@@ -30,5 +33,4 @@ toolchains:
   - id: arduino-cli-avr
     status: planned
   - id: mindplus-avr
-    status: planned
-
+    status: compile_verified

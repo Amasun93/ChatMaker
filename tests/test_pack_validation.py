@@ -292,6 +292,21 @@ class PackValidationTests(unittest.TestCase):
             expected_source_files - actual_source_files,
         )
 
+    def test_uno_blink_has_a_dedicated_recipe_and_source_file(self):
+        recipes = [
+            yaml.safe_load(path.read_text(encoding="utf-8"))
+            for path in sorted((ROOT / "packs" / "recipes").glob("*.yaml"))
+        ]
+        matches = [record for record in recipes if record["id"] == "uno-blink-built-in"]
+
+        self.assertEqual(len(matches), 1, "Uno Blink recipe is missing")
+        self.assertEqual(matches[0]["boards"], ["arduino-uno-r3"])
+        self.assertEqual(
+            matches[0]["source_file"],
+            "examples/chatduino/uno/blink/blink.ino",
+        )
+        self.assertTrue((ROOT / matches[0]["source_file"]).is_file())
+
 
 if __name__ == "__main__":
     unittest.main()

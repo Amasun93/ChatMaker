@@ -109,6 +109,8 @@ def upload_nano(hex_file: Path, candidate: PortCandidate) -> UploadReport: ...
 
 **Output:** Separate board adapters and verified Blink matrices for Uno, Nano, and ESP32.
 
+**Status:** Uno now has a separate Mind+ adapter, dedicated Blink example, Codex/WorkBuddy interfaces, fixed 115200 upload strategy, and a Mind+ 2.x compile result. Uno upload and physical gates remain open without hardware. ESP32 DevKit V1 remains open because the installed Mind+ core exposes FireBeetle variants but no generic DevKit V1 FQBN; those variants are not treated as equivalent.
+
 **Acceptance:**
 
 - Uno reuses compatible AVR tooling without inheriting Nano upload parameters.

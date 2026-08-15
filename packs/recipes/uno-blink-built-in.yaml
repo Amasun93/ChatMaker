@@ -1,0 +1,25 @@
+schema_version: "1.0"
+kind: recipe
+id: uno-blink-built-in
+name: Uno Rev3 built-in LED Blink
+summary: Blink the confirmed Arduino Uno Rev3 built-in LED once per second and emit a serial ready marker.
+sources:
+  - title: Arduino built-in Blink example
+    url: https://docs.arduino.cc/built-in-examples/basics/Blink/
+verification:
+  source_reviewed: &unverified
+    status: unverified
+    checked_at: null
+    evidence: null
+  code_compiled:
+    status: verified
+    checked_at: "2026-08-15"
+    evidence: Compiled with Mind+ 2.x using FQBN mindplus:avr:uno; see docs/verification/2026-08-15-uno-mindplus-compilation.md.
+  firmware_uploaded: *unverified
+  physical_effect_verified: *unverified
+boards:
+  - arduino-uno-r3
+components: []
+wiring: []
+source_file: examples/chatduino/uno/blink/blink.ino
+expected_effect: After upload, the confirmed Uno built-in LED alternates on and off once per second and the serial port emits UNO_BLINK_READY once after reset.

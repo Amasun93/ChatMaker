@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Dependency-free stdio MCP server for Arduino Nano + Mind+ training."""
+"""Dependency-free stdio MCP server for ChatMaker hardware training."""
 
 from __future__ import annotations
 
@@ -10,10 +10,11 @@ from typing import Any
 from chatmaker import catalog
 from chatmaker.hardware import nano_mindplus as bridge
 from chatmaker.hardware import serial_monitor
+from chatmaker.hardware import uno_mindplus as uno_bridge
 
 
-SERVER_NAME = "arduino-nano-mindplus"
-SERVER_VERSION = "1.3.0"
+SERVER_NAME = "chatmaker-hardware"
+SERVER_VERSION = "1.4.0"
 PROTOCOL_VERSION = "2024-11-05"
 
 TOOLS = [
@@ -99,6 +100,66 @@ TOOLS = [
             "properties": {
                 "code": {"type": "string"},
                 "project_name": {"type": "string", "default": "nano-project"},
+                "port": {"type": "string", "pattern": "^COM[0-9]+$"},
+                "timeout": {"type": "integer", "minimum": 30, "maximum": 900, "default": 600},
+                "upload_timeout": {"type": "integer", "minimum": 30, "maximum": 300, "default": 180},
+            },
+            "additionalProperties": False,
+        },
+    },
+    {
+        "name": "uno_prepare_environment",
+        "description": "检查并复用 Mind+ 1.x/2.x 的 Uno 编译环境；没有环境时沿用安全的官方 Mind+ 准备流程。",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "download": {"type": "boolean", "default": False},
+                "launch_installer": {"type": "boolean", "default": False},
+                "download_dir": {"type": "string"},
+            },
+            "additionalProperties": False,
+        },
+    },
+    {
+        "name": "uno_doctor",
+        "description": "检查 Arduino Uno Rev3 的 Mind+ 1.x/2.x FQBN、115200 上传规则和可用串口。",
+        "inputSchema": {"type": "object", "properties": {}, "additionalProperties": False},
+    },
+    {
+        "name": "uno_ports",
+        "description": "列出 Uno 候选串口、拒绝蓝牙，并在多个有线端口时要求明确选择。",
+        "inputSchema": {
+            "type": "object",
+            "properties": {"port": {"type": "string", "pattern": "^COM[0-9]+$"}},
+            "additionalProperties": False,
+        },
+    },
+    {
+        "name": "uno_compile",
+        "description": "使用独立 Uno FQBN 真实编译 Arduino Uno Rev3 ATmega328P 程序。",
+        "inputSchema": {
+            "type": "object",
+            "required": ["code"],
+            "properties": {
+                "code": {"type": "string"},
+                "project_name": {"type": "string", "default": "uno-project"},
+                "timeout": {"type": "integer", "minimum": 30, "maximum": 900, "default": 600},
+            },
+            "additionalProperties": False,
+        },
+    },
+    {
+        "name": "uno_compile_upload",
+        "description": (
+            "使用独立 Uno FQBN 编译并在唯一明确有线端口时自动上传 Arduino Uno Rev3。"
+            "上传固定使用 Uno 的 115200，不继承 Nano 的 57600/115200 回退。"
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["code"],
+            "properties": {
+                "code": {"type": "string"},
+                "project_name": {"type": "string", "default": "uno-project"},
                 "port": {"type": "string", "pattern": "^COM[0-9]+$"},
                 "timeout": {"type": "integer", "minimum": 30, "maximum": 900, "default": 600},
                 "upload_timeout": {"type": "integer", "minimum": 30, "maximum": 300, "default": 180},
@@ -228,28 +289,33 @@ def _tool_result(name: str, arguments: dict[str, Any]) -> dict[str, Any]:
             "isError": not bool(result.get("success")) and not expected_empty,
         }
 
-    if name == "nano_prepare_environment":
+    adapter = bridge
+    if name.startswith("uno_"):
+        adapter = uno_bridge
+
+    if name in {"nano_prepare_environment", "uno_prepare_environment"}:
         request = {
             "action": "prepare-environment",
             "download": arguments.get("download", False),
             "launch_installer": arguments.get("launch_installer", False),
             "download_dir": arguments.get("download_dir"),
         }
-    elif name == "nano_doctor":
+    elif name in {"nano_doctor", "uno_doctor"}:
         request = {"action": "doctor"}
-    elif name == "nano_ports":
+    elif name in {"nano_ports", "uno_ports"}:
         request = {"action": "ports", "port": arguments.get("port")}
-    elif name == "nano_compile":
+    elif name in {"nano_compile", "uno_compile"}:
         request = {"action": "compile", **arguments}
-    elif name == "nano_compile_upload":
+    elif name in {"nano_compile_upload", "uno_compile_upload"}:
         request = {"action": "compile-upload", **arguments}
     else:
         raise ValueError(f"unknown_tool: {name}")
     suspended: list[dict[str, Any]] = []
-    if name == "nano_compile_upload":
+    upload_tools = {"nano_compile_upload", "uno_compile_upload"}
+    if name in upload_tools:
         suspended = serial_monitor.SERIAL_MANAGER.suspend_all()
-    result = bridge.execute_request(request)
-    if name == "nano_compile_upload":
+    result = adapter.execute_request(request)
+    if name in upload_tools:
         resumed = serial_monitor.SERIAL_MANAGER.resume_all(suspended)
         result["serial_sessions"] = {
             "closed_before_upload": suspended,
@@ -275,10 +341,9 @@ def handle(request: dict[str, Any]) -> dict[str, Any] | None:
             "capabilities": {"tools": {"listChanged": False}},
             "serverInfo": {"name": SERVER_NAME, "version": SERVER_VERSION},
             "instructions": (
-                "只处理经典 Arduino Nano ATmega328P 和杜邦线通用模块。先用 catalog_search/get "
-                "读取匹配资料，再调用 nano_doctor；没有 Mind+ 时调用 nano_prepare_environment。"
-                "编程前核对模块型号/丝印和引脚，"
-                "代码完成后默认调用 nano_compile_upload：有硬件就自动上传，没有硬件就提示接入。"
+                "处理 Arduino Uno Rev3、经典 Nano ATmega328P 和杜邦线通用模块。先用 catalog_search/get "
+                "读取匹配资料，再按板型调用 uno_doctor 或 nano_doctor；没有 Mind+ 时调用对应的 prepare 工具。"
+                "编程前核对板卡、模块型号/丝印和引脚，代码完成后调用对应 compile_upload 工具。"
                 "需要运行日志时使用 serial_open/read/expect/write/close；空输出不算实物证据。"
             ),
         }

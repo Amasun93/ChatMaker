@@ -8,7 +8,7 @@
 
 ChatMaker helps teachers, students, and hackathon participants move from a clear request or a rough idea to an implemented and verified project. The user chooses the direction and judges the visible result. ChatMaker handles concept development, professional implementation, tools, and evidence.
 
-> Early development status: the Nano/Mind+ runtime and ten compiled examples are on public `main`. The first structured pack contains twelve components and eleven recipes, exposed through catalog search/get tools with Chinese aliases. ChatWeb generates and previews self-contained classroom and simulated-hardware pages; physical upload and real hardware connectivity remain separate on-site gates.
+> Early development status: the Nano/Mind+ runtime, a separate Uno/Mind+ adapter, and eleven compiled AVR examples are on public `main`. The structured pack contains twelve components and twelve recipes, exposed through catalog search/get tools with Chinese aliases. ChatWeb generates and previews self-contained classroom and simulated-hardware pages; physical upload and real hardware connectivity remain separate on-site gates.
 
 ## Architecture
 
@@ -35,6 +35,8 @@ Compilation, firmware upload, browser interaction, serial evidence, and physical
 ## Development preview
 
 The current public candidate is [`v0.1.0-rc3`](https://github.com/Amasun93/ChatMaker/releases/tag/v0.1.0-rc3); it includes the twelve-component learning pack, Chinese catalog search/get, ten compiled Nano examples, and the persistent serial tools introduced in rc2. See the [installation guide](docs/installation.md). Physical upload and effects still require separate on-site evidence.
+
+Public `main` is ahead of rc3 with an independent Uno adapter using `arduino:avr:uno` for Mind+ 1.x, `mindplus:avr:uno` for Mind+ 2.x, and a fixed 115200 upload rule. It does not reuse the Nano bootloader fallback.
 
 ```powershell
 git clone https://github.com/Amasun93/ChatMaker.git
