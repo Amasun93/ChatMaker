@@ -12,7 +12,7 @@ import yaml
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "runtime"))
 
-from chatmaker.packs import validate_repository  # noqa: E402
+from chatmaker.packs import canonical_verification_snapshot, validate_repository  # noqa: E402
 
 
 GATES = {
@@ -383,6 +383,23 @@ class PackValidationTests(unittest.TestCase):
         }
         self.assertEqual(signal_pins, {"GPIO23"})
         self.assertTrue((ROOT / record["source_file"]).is_file())
+
+    def test_canonical_verification_snapshot_ignores_llmwiki_sidecars(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self.make_repository(root)
+            llmwiki = root / "llmwiki" / "boards" / "board-one.yaml"
+            llmwiki.parent.mkdir(parents=True, exist_ok=True)
+            llmwiki.write_text(
+                "schema_version: '1.0'\nkind: llmwiki-index\nboard_id: board-one\n",
+                encoding="utf-8",
+            )
+
+            snapshot, digest = canonical_verification_snapshot(root)
+
+        self.assertEqual(len(snapshot), 3)
+        self.assertEqual([item["kind"] for item in snapshot], ["board", "component", "recipe"])
+        self.assertEqual(len(digest), 64)
 
 
 if __name__ == "__main__":

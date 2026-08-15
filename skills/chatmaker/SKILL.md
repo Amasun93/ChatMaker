@@ -19,9 +19,12 @@ Help the user discover a worthwhile idea, choose a direction, and turn it into a
 
 1. Restate the intended effect in everyday language.
 2. Ask only for information that changes safety, architecture, or the acceptance test.
-3. Route Arduino, Nano, ESP32, wiring, upload, and serial work to `$chatduino`.
-4. Route classroom tools, native HTML, CSS, JavaScript, device interfaces, local preview, and browser interaction work to `$chatweb`.
-5. For combined projects, define the hardware-to-page message contract first, then invoke both specialists.
+3. After the exact board identity is known, read the matching `llmwiki_get` start-here index before choosing the next specialist path.
+4. Route Arduino, Nano, ESP32, wiring, upload, and serial work to `$chatduino`.
+5. Route classroom tools, native HTML, CSS, JavaScript, device interfaces, local preview, and browser interaction work to `$chatweb`.
+6. For combined projects, define the hardware-to-page message contract first, then invoke both specialists.
+
+Use the phrase "exact board identity" literally: do not read optional board Wiki guidance until the board ID is confirmed. Once confirmed, start with the `start-here` section and then continue with canonical board, component, and recipe facts.
 
 Read [project-contract.md](references/project-contract.md) before planning a combined project or reporting completion.
 

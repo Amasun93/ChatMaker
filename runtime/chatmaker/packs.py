@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from copy import deepcopy
 from dataclasses import dataclass
+import hashlib
+import json
 from pathlib import Path
 from typing import Any
 
@@ -81,6 +83,28 @@ def _record_paths(pack_root: Path) -> list[Path]:
     for folder in ("boards", "components", "recipes"):
         paths.extend(sorted((pack_root / folder).glob("*.yaml")))
     return paths
+
+
+def canonical_verification_snapshot(pack_root: Path) -> tuple[list[dict[str, Any]], str]:
+    snapshot: list[dict[str, Any]] = []
+    for path in _record_paths(pack_root):
+        record = load_record(path)
+        snapshot.append(
+            {
+                "kind": record.get("kind"),
+                "id": record.get("id"),
+                "verification": deepcopy(record.get("verification", {})),
+            }
+        )
+    digest = hashlib.sha256(
+        json.dumps(
+            snapshot,
+            sort_keys=True,
+            separators=(",", ":"),
+            ensure_ascii=False,
+        ).encode("utf-8")
+    ).hexdigest()
+    return snapshot, digest
 
 
 def validate_repository(pack_root: Path, schema_dir: Path) -> ValidationReport:

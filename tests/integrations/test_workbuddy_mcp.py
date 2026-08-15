@@ -61,8 +61,11 @@ class WorkBuddyBridgeTests(unittest.TestCase):
                 "serial_close",
                 "catalog_search",
                 "catalog_get",
+                "llmwiki_get",
             },
         )
+        self.assertEqual(self.server.SERVER_VERSION, "1.8.0")
+        self.assertEqual(len(names), 24)
         self.assertFalse(any("starcore" in name for name in names))
         upload_tool = next(
             tool for tool in self.server.TOOLS
@@ -85,6 +88,53 @@ class WorkBuddyBridgeTests(unittest.TestCase):
         self.assertIn("esp32_compile_upload", instructions)
         self.assertIn("唯一非蓝牙有线端口", instructions)
         self.assertIn("HTTP", instructions)
+        self.assertIn("llmwiki_get", instructions)
+
+    def test_llmwiki_get_routes_index_or_section_to_shared_reader(self):
+        original = self.server.llmwiki.execute_request
+        captured = []
+
+        def fake(request):
+            captured.append(request)
+            return {"success": True, "action": request["action"]}
+
+        self.server.llmwiki.execute_request = fake
+        try:
+            index = self.server._tool_result(
+                "llmwiki_get",
+                {"board_id": "arduino-nano-classic", "consumer": "chatmaker"},
+            )
+            section = self.server._tool_result(
+                "llmwiki_get",
+                {
+                    "board_id": "arduino-nano-classic",
+                    "consumer": "chatduino",
+                    "section_id": "identify-and-safety",
+                    "auto_install": False,
+                },
+            )
+        finally:
+            self.server.llmwiki.execute_request = original
+
+        self.assertFalse(index["isError"])
+        self.assertFalse(section["isError"])
+        self.assertEqual(
+            captured,
+            [
+                {
+                    "action": "index",
+                    "board_id": "arduino-nano-classic",
+                    "consumer": "chatmaker",
+                },
+                {
+                    "action": "section",
+                    "board_id": "arduino-nano-classic",
+                    "consumer": "chatduino",
+                    "section_id": "identify-and-safety",
+                    "auto_install": False,
+                },
+            ],
+        )
 
     def test_esp32_prepare_environment_routes_to_locked_auto_prepare(self):
         """Catches the MCP tool falling back to read-only doctor instead of preparation."""

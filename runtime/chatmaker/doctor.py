@@ -3,9 +3,15 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
+import sys
 
-from .packs import validate_repository
-from .skills import validate_skill_directory
+if __package__ in {None, ""}:  # Allow direct execution from a checked-out release folder.
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    from chatmaker.packs import canonical_verification_snapshot, validate_repository
+    from chatmaker.skills import validate_skill_directory
+else:
+    from .packs import canonical_verification_snapshot, validate_repository
+    from .skills import validate_skill_directory
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -25,7 +31,15 @@ def main(argv: list[str] | None = None) -> int:
 
     if run_packs:
         report = validate_repository(root / "packs", root / "packs" / "schemas")
-        payload["packs"] = {"ok": report.ok, "counts": report.counts, "errors": report.errors}
+        snapshot, digest = canonical_verification_snapshot(root / "packs")
+        payload["packs"] = {
+            "ok": report.ok,
+            "counts": report.counts,
+            "errors": report.errors,
+            "llmwiki_indexes": len(list((root / "packs" / "llmwiki" / "boards").glob("*.yaml"))),
+            "verification_snapshot_count": len(snapshot),
+            "verification_snapshot_sha256": digest,
+        }
         errors.extend(report.errors)
     if run_skills:
         skill_results: dict[str, list[str]] = {}
@@ -36,4 +50,8 @@ def main(argv: list[str] | None = None) -> int:
 
     print(json.dumps(payload, ensure_ascii=False, indent=2))
     return 0 if not errors else 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
 

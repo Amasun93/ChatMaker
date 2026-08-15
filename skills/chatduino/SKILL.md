@@ -19,12 +19,15 @@ Help the user turn an effect or rough idea into a safe physical project without 
 
 1. Identify the exact board variant, controller, USB interface, component labels, supply voltage, and desired effect.
 2. Read the matching records under `packs/boards`, `packs/components`, and `packs/recipes` through the shared runtime. In WorkBuddy, call `catalog_search` and then `catalog_get`; in Codex, use `chatmaker-catalog` with `search` and `get` requests. Treat unverified records as leads, not facts.
-3. Resolve pin, voltage, current, boot, serial, and shared-ground constraints before writing code.
-4. Present one visible disconnected-power `text` wiring block, then a complete `cpp` block. Do not generate SVG or another wiring graphic unless the user explicitly asks for an image.
-5. In the first release, discover and reuse an existing Mind+ 1.x or 2.x toolchain. Do not install or switch toolchains silently. Treat a managed standalone toolchain as a later development phase.
-6. Compile with the selected board identity and record the command, exit code, and artifact path.
-7. Upload only when one high-confidence wired port remains. Close serial handles before upload.
-8. Reopen serial after the board returns. Use `serial_read` or `serial_expect` to inspect expected markers, empty output, malformed text, and restart loops; use `serial_write` only when the project defines an input command. Ask for physical confirmation separately.
+3. After the exact board identity is confirmed, use `llmwiki_get` to read `identify-and-safety`, `pins-and-electrical`, and `toolchains-and-upload` for that board. Keep those pages paired with canonical facts rather than replacing them.
+4. Resolve pin, voltage, current, boot, serial, and shared-ground constraints before writing code.
+5. Present one visible disconnected-power `text` wiring block, then a complete `cpp` block. Do not generate SVG or another wiring graphic unless the user explicitly asks for an image.
+6. In the first release, discover and reuse an existing Mind+ 1.x or 2.x toolchain. Do not install or switch toolchains silently. Treat a managed standalone toolchain as a later development phase.
+7. Compile with the selected board identity and record the command, exit code, and artifact path.
+8. Upload only when one high-confidence wired port remains. Close serial handles before upload.
+9. Reopen serial after the board returns. Use `serial_read` or `serial_expect` to inspect expected markers, empty output, malformed text, and restart loops; use `serial_write` only when the project defines an input command. Ask for physical confirmation separately.
+
+LLMWiki is shared board guidance, not a second catalog. Use it to read safety, pin, toolchain, and troubleshooting context while preserving canonical facts, IDs, wiring, and verification objects from the checked-in packs.
 
 Read [beginner-hardware-contract.md](references/beginner-hardware-contract.md) whenever producing wiring or code. Read [verification-gates.md](references/verification-gates.md) before any success claim.
 

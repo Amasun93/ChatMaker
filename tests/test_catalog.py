@@ -232,6 +232,29 @@ class CatalogTests(unittest.TestCase):
         self.assertEqual(result["record"]["id"], "target-record")
         self.assertEqual(result["source_path"], "packs/components/target-record-v2.yaml")
 
+    def test_open_board_returns_reverse_indexes_and_wiki_summaries(self):
+        self.assertIsNotNone(self.catalog, "catalog runtime is missing")
+
+        result = self.catalog.open_board("arduino-nano-classic", project_root=ROOT)
+
+        self.assertTrue(result["success"], result)
+        self.assertEqual(result["action"], "open_board")
+        self.assertEqual(result["board"]["id"], "arduino-nano-classic")
+        self.assertEqual(result["source_path"], "packs/boards/arduino-nano-classic.yaml")
+        component_ids = [item["id"] for item in result["components"]]
+        recipe_ids = [item["id"] for item in result["recipes"]]
+        self.assertIn("basic-led", component_ids)
+        self.assertIn("analog-light-sensor-module", component_ids)
+        self.assertIn("nano-blink-built-in", recipe_ids)
+        self.assertIn("nano-light-led", recipe_ids)
+        self.assertNotIn("uno-blink-built-in", recipe_ids)
+        self.assertEqual(
+            set(result["components"][0]),
+            {"id", "kind", "name", "aliases", "category", "interface", "summary", "verification"},
+        )
+        self.assertEqual(len(result["llmwiki"]["sections"]), 8)
+        self.assertEqual(result["llmwiki"]["sections"][0]["section_id"], "start-here")
+
     def test_json_cli_searches_the_checked_in_catalog(self):
         self.assertIsNotNone(self.catalog, "catalog runtime is missing")
         environment = dict(os.environ)
