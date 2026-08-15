@@ -10,8 +10,14 @@ main
 D:\Projects\ChatMaker\examples\chatduino\nano
 
 源代码来源
-Amasun93/arduino-nano-mindplus@9ebc6bf
+Amasun93/arduino-nano-mindplus@9ebc6bff16529557aa2cebe661755cf6c51d79ed
 ```
+
+## 只读源检出证据
+
+- 审计时检出提交固定为 `9ebc6bff16529557aa2cebe661755cf6c51d79ed`。
+- 审计时在原仓库执行 `git status --short` 返回空结果，状态为 clean。
+- 本轮只读取原仓库文件与 Git 元数据，没有对该检出执行任何 source write。
 
 ## 环境发现
 
@@ -31,7 +37,7 @@ Amasun93/arduino-nano-mindplus@9ebc6bf
 
 ## 真实编译
 
-从 ChatMaker 包中的批量入口调用迁移后的 `compile_result`，所有代码均从 ChatMaker 示例路径读取。
+从 ChatMaker 包中的批量入口调用迁移后的 `compile_result`，所有代码均从 ChatMaker 示例路径读取。六个原始 v1.2 示例全部保留，同时 ChatMaker 当前路径已经扩展为十个 compile-verified 示例。
 
 | 示例 | 编译结果 | 生成 HEX |
 | --- | --- | --- |
@@ -47,6 +53,11 @@ Amasun93/arduino-nano-mindplus@9ebc6bf
 | WS2812B 单灯低亮度测试 | 通过 | `ws2812-one-pixel.ino.hex` |
 
 汇总结果为 10 个示例、10 个通过、0 个失败。编译后端与十个结果中的 FQBN 均一致。WS2812B 示例实际使用 Mind+ 2.x 中的 `DFRobot_Mindplus_NeoPixel 1.0.0`。
+
+其中：
+
+- 原始 v1.2 六个示例：`blink`、`dht11-serial`、`light-led`、`oled-light`、`servo-button`、`ultrasonic-buzzer`
+- 当前 ChatMaker 新增并已编译验证的四个示例：`potentiometer-led`、`relay-control-side`、`rgb-led-cycle`、`ws2812-one-pixel`
 
 ## 证据边界
 

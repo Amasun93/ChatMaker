@@ -16,7 +16,7 @@ verification:
   code_compiled:
     status: verified
     checked_at: "2026-08-14"
-    evidence: Six migrated examples compiled from the ChatMaker paths with Mind+ 2.x and FQBN mindplus:avr:nano:cpu=atmega328; see docs/verification/2026-08-14-nano-mindplus-compilation.md.
+    evidence: The six original v1.2 Nano examples and the current ten ChatMaker Nano examples compiled from the ChatMaker paths with Mind+ 2.x and FQBN mindplus:avr:nano:cpu=atmega328; see docs/verification/2026-08-14-nano-mindplus-compilation.md.
   firmware_uploaded: *unverified
   physical_effect_verified: *unverified
 pins:

@@ -276,6 +276,102 @@ class NanoBridgeContractTests(unittest.TestCase):
         self.assertEqual(result["baud"], 115200)
         self.assertEqual(result["bootloader_profile"], "new_bootloader_compatible")
 
+    def test_upload_result_does_not_invoke_avrdude_when_multiple_wired_ports_are_ambiguous(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            hex_file = Path(temporary) / "demo.hex"
+            hex_file.write_bytes(b"compiled")
+            calls = {"find": 0, "upload": 0}
+            original_scan_ports = self.bridge.scan_ports
+            original_find_avrdude = self.bridge._find_avrdude
+            original_run_upload_attempts = self.bridge.run_upload_attempts
+            self.bridge.scan_ports = lambda: [
+                {
+                    "address": "COM5",
+                    "is_bluetooth": False,
+                    "nano_likely": False,
+                    "eligible_for_upload": True,
+                },
+                {
+                    "address": "COM6",
+                    "is_bluetooth": False,
+                    "nano_likely": False,
+                    "eligible_for_upload": True,
+                },
+            ]
+            def unexpected_find_avrdude(context):
+                calls["find"] += 1
+                raise AssertionError("_find_avrdude should not run when port selection is ambiguous")
+
+            def unexpected_upload_attempts(**kwargs):
+                calls["upload"] += 1
+                raise AssertionError("run_upload_attempts should not run when port selection is ambiguous")
+
+            self.bridge._find_avrdude = unexpected_find_avrdude
+            self.bridge.run_upload_attempts = unexpected_upload_attempts
+            try:
+                result = self.bridge.upload_result(
+                    {"backend": "mindplus-2-cli"},
+                    {},
+                    {"application_hex": str(hex_file)},
+                )
+            finally:
+                self.bridge.scan_ports = original_scan_ports
+                self.bridge._find_avrdude = original_find_avrdude
+                self.bridge.run_upload_attempts = original_run_upload_attempts
+
+        self.assertFalse(result["success"])
+        self.assertEqual(result["error"], "multiple_wired_ports_require_selection")
+        self.assertFalse(result["upload_executed"])
+        self.assertEqual(calls, {"find": 0, "upload": 0})
+
+    def test_upload_result_does_not_invoke_avrdude_for_explicit_bluetooth_port(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            hex_file = Path(temporary) / "demo.hex"
+            hex_file.write_bytes(b"compiled")
+            calls = {"find": 0, "upload": 0}
+            original_scan_ports = self.bridge.scan_ports
+            original_find_avrdude = self.bridge._find_avrdude
+            original_run_upload_attempts = self.bridge.run_upload_attempts
+            self.bridge.scan_ports = lambda: [
+                {
+                    "address": "COM3",
+                    "is_bluetooth": True,
+                    "nano_likely": False,
+                    "eligible_for_upload": False,
+                },
+                {
+                    "address": "COM7",
+                    "is_bluetooth": False,
+                    "nano_likely": True,
+                    "eligible_for_upload": True,
+                },
+            ]
+            def unexpected_find_avrdude(context):
+                calls["find"] += 1
+                raise AssertionError("_find_avrdude should not run for an explicit Bluetooth port")
+
+            def unexpected_upload_attempts(**kwargs):
+                calls["upload"] += 1
+                raise AssertionError("run_upload_attempts should not run for an explicit Bluetooth port")
+
+            self.bridge._find_avrdude = unexpected_find_avrdude
+            self.bridge.run_upload_attempts = unexpected_upload_attempts
+            try:
+                result = self.bridge.upload_result(
+                    {"backend": "mindplus-2-cli"},
+                    {"port": "COM3"},
+                    {"application_hex": str(hex_file)},
+                )
+            finally:
+                self.bridge.scan_ports = original_scan_ports
+                self.bridge._find_avrdude = original_find_avrdude
+                self.bridge.run_upload_attempts = original_run_upload_attempts
+
+        self.assertFalse(result["success"])
+        self.assertEqual(result["error"], "bluetooth_port_rejected")
+        self.assertFalse(result["upload_executed"])
+        self.assertEqual(calls, {"find": 0, "upload": 0})
+
     def test_compile_upload_stops_before_upload_when_compile_fails(self):
         called = {"upload": False}
 
