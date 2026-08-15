@@ -435,7 +435,8 @@ def handle(request: dict[str, Any]) -> dict[str, Any] | None:
                 "先用 catalog_search/get 读取匹配资料，再按板型调用对应 doctor。ESP32 只接受官方 3.3.11 core "
                 "和精确 DOIT FQBN；ESP-WROOM-32 模块丝印本身不算载板确认，也不会静默安装或替换成 FireBeetle。"
                 "编程前核对板卡、模块型号/丝印和引脚；Nano/Uno 调用对应 compile_upload，"
-                "ESP32 当前先调用 esp32_compile 并保持烧录门未验证。"
+                "ESP32 调用 esp32_compile_upload；只有精确载板身份和唯一非蓝牙有线端口都明确时才上传，"
+                "上传成功仍不能代替启动、Wi-Fi、HTTP 或实体效果验证。"
                 "需要运行日志时使用 serial_open/read/expect/write/close；空输出不算实物证据。"
             ),
         }

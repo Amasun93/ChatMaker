@@ -71,6 +71,21 @@ class WorkBuddyBridgeTests(unittest.TestCase):
         self.assertIn("自动", upload_tool["description"])
         self.assertIn("接入", upload_tool["description"])
 
+    def test_initialize_routes_esp32_to_safe_compile_upload(self):
+        response = self.server.handle(
+            {
+                "jsonrpc": "2.0",
+                "id": 1,
+                "method": "initialize",
+                "params": {"protocolVersion": "2024-11-05"},
+            }
+        )
+
+        instructions = response["result"]["instructions"]
+        self.assertIn("esp32_compile_upload", instructions)
+        self.assertIn("唯一非蓝牙有线端口", instructions)
+        self.assertIn("HTTP", instructions)
+
     def test_esp32_toolchain_missing_is_a_prompt_not_an_mcp_error(self):
         original = self.server.esp32_bridge.execute_request
         self.server.esp32_bridge.execute_request = lambda request: {
