@@ -209,13 +209,22 @@ class ReleasePackageTests(unittest.TestCase):
         self.assertEqual(metadata["project"]["version"], "0.1.0rc5")
         self.assertEqual(first_hash, second_hash)
         self.assertEqual(first_hash, first["sha256"])
-        self.assertIn(prefix + "README.md", names)
-        self.assertIn(prefix + "CONTRIBUTING.md", names)
-        self.assertIn(prefix + "RELEASE_NOTES.md", names)
-        self.assertIn(prefix + "pyproject.toml", names)
-        self.assertIn(prefix + "docs/installation.md", names)
-        self.assertIn(prefix + "docs/demo/one-minute-demo.md", names)
-        self.assertIn(prefix + "docs/contributing/llmwiki-format.md", names)
+        root_files = {
+            name.removeprefix(prefix)
+            for name in names
+            if name.startswith(prefix)
+            and "/" not in name.removeprefix(prefix)
+        }
+        self.assertEqual(
+            root_files,
+            {"LICENSE", "README.md", "README_EN.md", "pyproject.toml"},
+        )
+        docs_files = {
+            name.removeprefix(prefix)
+            for name in names
+            if name.startswith(prefix + "docs/")
+        }
+        self.assertEqual(docs_files, {"docs/installation.md"})
         self.assertIn(prefix + "skills/chatmaker/SKILL.md", names)
         self.assertIn(prefix + "skills/chatduino/SKILL.md", names)
         self.assertIn(prefix + "skills/chatweb/SKILL.md", names)

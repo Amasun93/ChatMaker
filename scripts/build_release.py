@@ -8,19 +8,10 @@ import zipfile
 
 
 CORE_PATHS = (
-    "CONTRIBUTING.md",
     "LICENSE",
     "README.md",
     "README_EN.md",
-    "RELEASE_NOTES.md",
     "pyproject.toml",
-    "docs/architecture/evidence-status.md",
-    "docs/architecture/llmwiki-progressive-packs.md",
-    "docs/contracts/llmwiki-api-v1.md",
-    "docs/contributing/knowledge-source-pipeline.md",
-    "docs/contributing/pack-format.md",
-    "docs/contributing/llmwiki-format.md",
-    "docs/demo/one-minute-demo.md",
     "docs/installation.md",
     "examples",
     "packs/boards",
