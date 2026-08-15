@@ -307,6 +307,49 @@ class PackValidationTests(unittest.TestCase):
         )
         self.assertTrue((ROOT / matches[0]["source_file"]).is_file())
 
+    def test_esp32_board_record_keeps_module_and_carrier_identity_separate(self):
+        record = yaml.safe_load(
+            (ROOT / "packs" / "boards" / "esp32-devkit-v1.yaml").read_text(
+                encoding="utf-8"
+            )
+        )
+
+        self.assertEqual(record["name"], "DOIT ESP32 DEVKIT V1 (ESP-WROOM-32)")
+        self.assertEqual(
+            record["identity"]["profile_id"],
+            "doit-esp32-devkit-v1-wroom32",
+        )
+        self.assertEqual(record["identity"]["carrier_board"], "DOIT ESP32 DEVKIT V1")
+        self.assertEqual(record["identity"]["module"], "ESP-WROOM-32")
+        self.assertTrue(record["identity"]["physical_confirmation_required"])
+        self.assertEqual(
+            record["identity"]["allowed_fqbn"],
+            ["esp32:esp32:esp32doit-devkit-v1"],
+        )
+        self.assertIn("FireBeetle", record["identity"]["forbidden_aliases"])
+        self.assertIn("GPIO23", {pin["id"] for pin in record["pins"]})
+        self.assertIn("3V3", {pin["id"] for pin in record["pins"]})
+
+    def test_esp32_external_led_recipe_avoids_boot_strapping_pin(self):
+        record = yaml.safe_load(
+            (ROOT / "packs" / "recipes" / "esp32-external-led-blink.yaml").read_text(
+                encoding="utf-8"
+            )
+        )
+
+        self.assertEqual(record["boards"], ["esp32-devkit-v1"])
+        self.assertEqual(record["components"], ["basic-led"])
+        self.assertEqual(
+            record["source_file"],
+            "examples/chatduino/esp32/blink-external-led/blink-external-led.ino",
+        )
+        self.assertEqual(record["verification"]["code_compiled"]["status"], "unverified")
+        signal_pins = {
+            item["board_pin"] for item in record["wiring"] if item["component_pin"] == "anode"
+        }
+        self.assertEqual(signal_pins, {"GPIO23"})
+        self.assertTrue((ROOT / record["source_file"]).is_file())
+
 
 if __name__ == "__main__":
     unittest.main()

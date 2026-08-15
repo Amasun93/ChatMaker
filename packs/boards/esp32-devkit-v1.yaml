@@ -1,35 +1,61 @@
 schema_version: "1.0"
 kind: board
 id: esp32-devkit-v1
-name: ESP32 DevKit V1 / ESP-WROOM-32
+name: DOIT ESP32 DEVKIT V1 (ESP-WROOM-32)
 family: esp32
 mcu: ESP32
 logic_voltage: 3.3
+identity:
+  profile_id: doit-esp32-devkit-v1-wroom32
+  carrier_board: DOIT ESP32 DEVKIT V1
+  module: ESP-WROOM-32
+  physical_confirmation_required: true
+  allowed_fqbn: [esp32:esp32:esp32doit-devkit-v1]
+  forbidden_aliases: [ESP32 Dev Module, ESP32-DevKitC, FireBeetle, mPython, ESP32-C3, ESP32-S2, ESP32-S3]
 sources:
-  - title: Espressif ESP32-DevKitC user guide
-    url: https://docs.espressif.com/projects/esp-dev-kits/en/latest/esp32/esp32-devkitc/user_guide.html
+  - title: Arduino-ESP32 3.3.11 DOIT board definition
+    url: https://github.com/espressif/arduino-esp32/blob/3.3.11/boards.txt#L19873-L19901
+  - title: Arduino-ESP32 3.3.11 DOIT variant pins
+    url: https://github.com/espressif/arduino-esp32/blob/3.3.11/variants/doitESP32devkitV1/pins_arduino.h
+  - title: Espressif ESP32 GPIO restrictions
+    url: https://github.com/espressif/esp-idf/blob/v5.5.5/docs/en/api-reference/peripherals/gpio/esp32.inc
 verification:
-  source_reviewed: &unverified
+  source_reviewed:
+    status: verified
+    checked_at: "2026-08-15"
+    evidence: Reviewed the official Arduino-ESP32 3.3.11 DOIT board/variant definitions and Espressif GPIO restrictions; module-only labels remain insufficient for carrier-board identity.
+  code_compiled: &unverified
     status: unverified
     checked_at: null
     evidence: null
-  code_compiled: *unverified
   firmware_uploaded: *unverified
   physical_effect_verified: *unverified
 pins:
   - id: GPIO2
     capabilities: [digital, input, output, boot-sensitive]
+  - id: GPIO23
+    capabilities: [digital, input, output, spi-mosi]
   - id: GPIO34
-    capabilities: [digital, analog-input, input-only]
+    capabilities: [digital, analog-input, adc1, input-only, no-internal-pull]
+  - id: 3V3
+    capabilities: [power, 3.3v]
   - id: GND
     capabilities: [ground, shared]
 constraints:
-  - Treat GPIO logic as 3.3 V and verify every connected module.
-  - Confirm the exact board variant and header labels before wiring.
-  - Review strapping and input-only pins before assigning outputs.
+  - ESP-WROOM-32 is a module label, not carrier-board proof; confirm the DOIT PCB identity before compile or upload.
+  - GPIO logic is 3.3 V; never connect a 5 V signal directly to an input.
+  - GPIO34-39 are input-only and do not have software pull-up or pull-down resistors.
+  - GPIO0, GPIO2, GPIO5, GPIO12, and GPIO15 are sampled during boot; external pulls must preserve startup levels.
+  - GPIO6-11 are reserved for flash and unavailable to ordinary projects.
+  - Reserve GPIO1 and GPIO3 for download and serial logs by default.
+  - ADC2 cannot be used for analog reads while Wi-Fi is active.
 toolchains:
   - id: arduino-cli-esp32
-    status: planned
+    status: exact_core_required_not_installed
+    version: 3.3.11
+    fqbn: esp32:esp32:esp32doit-devkit-v1
   - id: mindplus-esp32
-    status: planned
-
+    status: incompatible_target_profile
+    evidence: Installed Mind+ exposes only FireBeetle, mPython, Tello, and FireBeetle Mesh variants.
+  - id: platformio-esp32
+    status: not_installed

@@ -8,13 +8,14 @@ import sys
 from typing import Any
 
 from chatmaker import catalog
+from chatmaker.hardware import esp32_devkit_v1 as esp32_bridge
 from chatmaker.hardware import nano_mindplus as bridge
 from chatmaker.hardware import serial_monitor
 from chatmaker.hardware import uno_mindplus as uno_bridge
 
 
 SERVER_NAME = "chatmaker-hardware"
-SERVER_VERSION = "1.4.0"
+SERVER_VERSION = "1.5.0"
 PROTOCOL_VERSION = "2024-11-05"
 
 TOOLS = [
@@ -168,6 +169,60 @@ TOOLS = [
         },
     },
     {
+        "name": "esp32_prepare_environment",
+        "description": (
+            "只检查 DOIT ESP32 DEVKIT V1 所需的官方 esp32:esp32 3.3.11；"
+            "不会下载、安装或用 FireBeetle/mPython 代替。"
+        ),
+        "inputSchema": {"type": "object", "properties": {}, "additionalProperties": False},
+    },
+    {
+        "name": "esp32_doctor",
+        "description": (
+            "核对 DOIT ESP32 DEVKIT V1 + ESP-WROOM-32 身份、官方 core 3.3.11、"
+            "精确 FQBN 和串口；模块丝印本身不算载板确认。"
+        ),
+        "inputSchema": {"type": "object", "properties": {}, "additionalProperties": False},
+    },
+    {
+        "name": "esp32_ports",
+        "description": (
+            "列出 ESP32 候选串口并拒绝蓝牙；只有明确确认 DOIT 载板后才选择唯一有线端口。"
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "board_profile": {
+                    "type": "string",
+                    "enum": ["doit-esp32-devkit-v1-wroom32"],
+                },
+                "port": {"type": "string", "pattern": "^COM[0-9]+$"},
+            },
+            "additionalProperties": False,
+        },
+    },
+    {
+        "name": "esp32_compile",
+        "description": (
+            "使用官方 esp32:esp32@3.3.11 和精确 DOIT FQBN 编译完整 ESP32 程序；"
+            "缺少工具链时只报告，不自动安装。"
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["code", "board_profile"],
+            "properties": {
+                "code": {"type": "string"},
+                "project_name": {"type": "string", "default": "esp32-project"},
+                "board_profile": {
+                    "type": "string",
+                    "enum": ["doit-esp32-devkit-v1-wroom32"],
+                },
+                "timeout": {"type": "integer", "minimum": 30, "maximum": 1200, "default": 900},
+            },
+            "additionalProperties": False,
+        },
+    },
+    {
         "name": "serial_list",
         "description": "列出串口和当前打开的会话；保留蓝牙标记，不能把蓝牙串口当作 Nano 证据。",
         "inputSchema": {"type": "object", "properties": {}, "additionalProperties": False},
@@ -292,6 +347,8 @@ def _tool_result(name: str, arguments: dict[str, Any]) -> dict[str, Any]:
     adapter = bridge
     if name.startswith("uno_"):
         adapter = uno_bridge
+    elif name.startswith("esp32_"):
+        adapter = esp32_bridge
 
     if name in {"nano_prepare_environment", "uno_prepare_environment"}:
         request = {
@@ -300,11 +357,17 @@ def _tool_result(name: str, arguments: dict[str, Any]) -> dict[str, Any]:
             "launch_installer": arguments.get("launch_installer", False),
             "download_dir": arguments.get("download_dir"),
         }
-    elif name in {"nano_doctor", "uno_doctor"}:
+    elif name == "esp32_prepare_environment":
         request = {"action": "doctor"}
-    elif name in {"nano_ports", "uno_ports"}:
-        request = {"action": "ports", "port": arguments.get("port")}
-    elif name in {"nano_compile", "uno_compile"}:
+    elif name in {"nano_doctor", "uno_doctor", "esp32_doctor"}:
+        request = {"action": "doctor"}
+    elif name in {"nano_ports", "uno_ports", "esp32_ports"}:
+        request = {
+            "action": "ports",
+            "port": arguments.get("port"),
+            "board_profile": arguments.get("board_profile"),
+        }
+    elif name in {"nano_compile", "uno_compile", "esp32_compile"}:
         request = {"action": "compile", **arguments}
     elif name in {"nano_compile_upload", "uno_compile_upload"}:
         request = {"action": "compile-upload", **arguments}
@@ -322,9 +385,13 @@ def _tool_result(name: str, arguments: dict[str, Any]) -> dict[str, Any]:
             "reopened_after_upload": resumed,
         }
     expected_pause = result.get("stage") == "awaiting-hardware"
+    expected_setup = result.get("error") in {
+        "exact_esp32_toolchain_missing",
+        "board_identity_confirmation_required",
+    }
     return {
         "content": [{"type": "text", "text": json.dumps(result, ensure_ascii=False)}],
-        "isError": not bool(result.get("success")) and not expected_pause,
+        "isError": not bool(result.get("success")) and not expected_pause and not expected_setup,
     }
 
 
@@ -341,9 +408,11 @@ def handle(request: dict[str, Any]) -> dict[str, Any] | None:
             "capabilities": {"tools": {"listChanged": False}},
             "serverInfo": {"name": SERVER_NAME, "version": SERVER_VERSION},
             "instructions": (
-                "处理 Arduino Uno Rev3、经典 Nano ATmega328P 和杜邦线通用模块。先用 catalog_search/get "
-                "读取匹配资料，再按板型调用 uno_doctor 或 nano_doctor；没有 Mind+ 时调用对应的 prepare 工具。"
-                "编程前核对板卡、模块型号/丝印和引脚，代码完成后调用对应 compile_upload 工具。"
+                "处理 Arduino Uno Rev3、经典 Nano ATmega328P、精确确认的 DOIT ESP32 DEVKIT V1 和杜邦线通用模块。"
+                "先用 catalog_search/get 读取匹配资料，再按板型调用对应 doctor。ESP32 只接受官方 3.3.11 core "
+                "和精确 DOIT FQBN；ESP-WROOM-32 模块丝印本身不算载板确认，也不会静默安装或替换成 FireBeetle。"
+                "编程前核对板卡、模块型号/丝印和引脚；Nano/Uno 调用对应 compile_upload，"
+                "ESP32 当前先调用 esp32_compile 并保持烧录门未验证。"
                 "需要运行日志时使用 serial_open/read/expect/write/close；空输出不算实物证据。"
             ),
         }

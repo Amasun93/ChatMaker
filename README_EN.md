@@ -8,7 +8,7 @@
 
 ChatMaker helps teachers, students, and hackathon participants move from a clear request or a rough idea to an implemented and verified project. The user chooses the direction and judges the visible result. ChatMaker handles concept development, professional implementation, tools, and evidence.
 
-> Early development status: the Nano/Mind+ runtime, a separate Uno/Mind+ adapter, and eleven compiled AVR examples are on public `main`. The structured pack contains twelve components and twelve recipes, exposed through catalog search/get tools with Chinese aliases. ChatWeb generates and previews self-contained classroom and simulated-hardware pages; physical upload and real hardware connectivity remain separate on-site gates.
+> Early development status: the Nano/Mind+ runtime, a separate Uno/Mind+ adapter, and eleven compiled AVR examples are on public `main`. The structured pack contains twelve components and thirteen recipes. A strict DOIT ESP32 DevKit V1 discovery/compile contract is available, but the exact official core is not installed and the ESP32 example remains uncompiled. ChatWeb generates and previews self-contained classroom and simulated-hardware pages; physical upload and real hardware connectivity remain separate on-site gates.
 
 ## Architecture
 

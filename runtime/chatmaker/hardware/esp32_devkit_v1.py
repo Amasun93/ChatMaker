@@ -1,0 +1,506 @@
+#!/usr/bin/env python3
+"""Strict DOIT ESP32 DEVKIT V1 / ESP-WROOM-32 toolchain contract."""
+
+from __future__ import annotations
+
+import argparse
+import hashlib
+import json
+import os
+from pathlib import Path
+import re
+import shutil
+import subprocess
+import sys
+import tempfile
+from typing import Any, Optional
+
+
+BOARD_ID = "esp32-devkit-v1"
+TARGET_PROFILE_ID = "doit-esp32-devkit-v1-wroom32"
+TARGET_FQBN = "esp32:esp32:esp32doit-devkit-v1"
+TARGET_CORE_ID = "esp32:esp32"
+REQUIRED_CORE_VERSION = "3.3.11"
+
+
+def _run(command: list[str], timeout: int = 30) -> dict[str, Any]:
+    try:
+        completed = subprocess.run(
+            command,
+            text=True,
+            capture_output=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=timeout,
+            check=False,
+        )
+        return {
+            "command": command,
+            "returncode": completed.returncode,
+            "stdout": completed.stdout,
+            "stderr": completed.stderr,
+        }
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        return {
+            "command": command,
+            "returncode": None,
+            "stdout": "",
+            "stderr": f"{type(exc).__name__}: {exc}",
+        }
+
+
+def discover_cli_candidates() -> list[dict[str, Any]]:
+    local_appdata = Path(os.environ.get("LOCALAPPDATA", Path.home() / "AppData" / "Local"))
+    locations: list[tuple[str, Path, Optional[Path]]] = []
+    path_cli = shutil.which("arduino-cli")
+    if path_cli:
+        locations.append(("path-arduino-cli", Path(path_cli), None))
+    locations.extend(
+        [
+            (
+                "arduino-ide-cli",
+                Path("E:/Arduino IDE/resources/app/node_modules/arduino-ide-extension/build/arduino-cli.exe"),
+                None,
+            ),
+            (
+                "mindplus-2-cli",
+                Path("E:/Mind+2/applications/deps/mind-link/tool/arduino-cli.exe"),
+                local_appdata / "mind+" / "Arduino" / "arduino-cli.yaml",
+            ),
+        ]
+    )
+    candidates: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for backend, cli, config in locations:
+        if not cli.is_file():
+            continue
+        resolved = str(cli.resolve())
+        if resolved.casefold() in seen:
+            continue
+        seen.add(resolved.casefold())
+        candidate: dict[str, Any] = {"backend": backend, "cli": resolved}
+        if config and config.is_file():
+            candidate["config"] = str(config.resolve())
+        candidates.append(candidate)
+    return candidates
+
+
+def scan_ports() -> list[dict[str, Any]]:
+    try:
+        from serial.tools import list_ports
+    except ImportError:
+        return []
+    ports: list[dict[str, Any]] = []
+    for port in list_ports.comports():
+        combined = " ".join(
+            str(value or "")
+            for value in (port.device, port.description, port.hwid, port.manufacturer)
+        ).casefold()
+        bluetooth = "bluetooth" in combined or "bth" in combined
+        usb_uart = any(
+            marker in combined
+            for marker in ("cp210", "ch340", "ch341", "ch910", "ftdi", "usb serial")
+        )
+        ports.append(
+            {
+                "address": str(port.device).upper(),
+                "label": str(port.description or port.device),
+                "pnp_device_id": str(port.hwid or ""),
+                "is_bluetooth": bluetooth,
+                "usb_uart_likely": usb_uart,
+                "eligible_for_upload": bool(port.device) and not bluetooth,
+            }
+        )
+    return sorted(ports, key=lambda item: item["address"])
+
+
+def select_exact_core(inventory: list[dict[str, Any]]) -> Optional[dict[str, Any]]:
+    for item in inventory:
+        if (
+            str(item.get("id", "")) == TARGET_CORE_ID
+            and str(item.get("installed", "")) == REQUIRED_CORE_VERSION
+        ):
+            return item
+    return None
+
+
+def _with_config(command: list[str], candidate: dict[str, Any]) -> list[str]:
+    if candidate.get("config"):
+        command.extend(["--config-file", str(candidate["config"])])
+    return command
+
+
+def _execution_summary(execution: dict[str, Any]) -> dict[str, Any]:
+    summary = {
+        "returncode": execution.get("returncode"),
+        "stderr": str(execution.get("stderr", ""))[-4000:],
+    }
+    if execution.get("command"):
+        summary["command"] = execution["command"]
+    return summary
+
+
+def _core_summary(item: dict[str, Any]) -> dict[str, Any]:
+    return {
+        key: item[key]
+        for key in ("id", "installed", "name")
+        if key in item
+    }
+
+
+def probe_candidate(
+    candidate: dict[str, Any],
+    *,
+    runner,
+    timeout: int = 30,
+) -> dict[str, Any]:
+    cli = str(candidate["cli"])
+    core_command = _with_config(
+        [cli, "core", "list", "--format", "jsonmini"], candidate
+    )
+    core_execution = runner(core_command, timeout=timeout)
+    try:
+        raw_inventory = json.loads(core_execution.get("stdout", ""))
+    except (json.JSONDecodeError, TypeError):
+        raw_inventory = []
+    if not isinstance(raw_inventory, list):
+        raw_inventory = []
+    exact_core = select_exact_core(raw_inventory)
+    inventory = [
+        _core_summary(item) for item in raw_inventory if isinstance(item, dict)
+    ]
+    result = {
+        **candidate,
+        "core_inventory": inventory,
+        "core_execution": _execution_summary(core_execution),
+        "required_core": f"{TARGET_CORE_ID}@{REQUIRED_CORE_VERSION}",
+        "required_fqbn": TARGET_FQBN,
+        "ready_for_compile": False,
+        "fqbn_details_verified": False,
+    }
+    if exact_core is None:
+        result["error"] = "exact_esp32_core_not_found"
+        return result
+    board_command = _with_config(
+        [
+            cli,
+            "board",
+            "details",
+            "-b",
+            TARGET_FQBN,
+            "--format",
+            "jsonmini",
+        ],
+        candidate,
+    )
+    board_execution = runner(board_command, timeout=timeout)
+    try:
+        details = json.loads(board_execution.get("stdout", ""))
+    except (json.JSONDecodeError, TypeError):
+        details = {}
+    verified = (
+        board_execution.get("returncode") == 0
+        and isinstance(details, dict)
+        and details.get("fqbn") == TARGET_FQBN
+        and details.get("name") == "DOIT ESP32 DEVKIT V1"
+    )
+    result.update(
+        {
+            "core": _core_summary(exact_core),
+            "core_version": str(exact_core.get("installed", "")),
+            "board_details": details,
+            "board_details_execution": _execution_summary(board_execution),
+            "fqbn_details_verified": verified,
+            "ready_for_compile": verified,
+        }
+    )
+    if not verified:
+        result["error"] = "exact_esp32_fqbn_details_not_verified"
+    return result
+
+
+def confirm_board_identity(value: Optional[str]) -> dict[str, Any]:
+    normalized = str(value or "").strip().casefold()
+    if normalized == TARGET_PROFILE_ID:
+        return {
+            "status": "confirmed",
+            "profile_id": TARGET_PROFILE_ID,
+            "board": BOARD_ID,
+            "module": "ESP-WROOM-32",
+        }
+    known_mismatches = {
+        "firebeetleesp32",
+        "firebeetleesp32e",
+        "mpython",
+        "esp32-devkitc",
+        "esp32 dev module",
+    }
+    if normalized in known_mismatches or any(
+        marker in normalized for marker in ("esp32-c3", "esp32-s2", "esp32-s3")
+    ):
+        return {"status": "mismatch", "profile_id": None, "observed": value}
+    return {
+        "status": "unresolved",
+        "profile_id": None,
+        "observed": value,
+        "reason": "carrier_board_identity_not_confirmed",
+    }
+
+
+def select_upload_port(
+    ports: list[dict[str, Any]],
+    *,
+    board_profile: Optional[str],
+    requested: Optional[str] = None,
+) -> tuple[Optional[str], Optional[str]]:
+    if confirm_board_identity(board_profile)["status"] != "confirmed":
+        return None, "board_identity_confirmation_required"
+    by_address = {str(item.get("address", "")).upper(): item for item in ports}
+    if requested:
+        normalized = requested.strip().upper()
+        item = by_address.get(normalized)
+        if not item:
+            return None, "upload_port_not_currently_enumerated"
+        if item.get("is_bluetooth"):
+            return None, "bluetooth_port_rejected"
+        if not item.get("eligible_for_upload"):
+            return None, "upload_port_not_eligible"
+        return normalized, None
+    eligible = [item for item in ports if item.get("eligible_for_upload")]
+    if len(eligible) == 1:
+        return str(eligible[0]["address"]).upper(), None
+    if not eligible:
+        return None, "no_wired_upload_port_found"
+    return None, "multiple_wired_ports_require_selection"
+
+
+def build_compile_command(
+    context: dict[str, Any], sketch_dir: Path, build_dir: Path
+) -> list[str]:
+    command = [str(context["cli"]), "compile"]
+    if context.get("config"):
+        command.extend(["--config-file", str(context["config"])])
+    command.extend(
+        [
+            "--no-color",
+            "--fqbn",
+            TARGET_FQBN,
+            "--build-path",
+            str(build_dir),
+            str(sketch_dir),
+        ]
+    )
+    return command
+
+
+def find_application_binary(build_dir: Path) -> Optional[Path]:
+    candidates = sorted(Path(build_dir).glob("*.ino.bin"))
+    return candidates[0] if candidates else None
+
+
+def _validate_sketch(path_value: str) -> tuple[Optional[Path], Optional[str]]:
+    path = Path(path_value).expanduser().resolve()
+    sketch_dir = path.parent if path.is_file() and path.suffix.casefold() == ".ino" else path
+    if not sketch_dir.is_dir():
+        return None, "sketch_path_not_found"
+    expected = sketch_dir / f"{sketch_dir.name}.ino"
+    if not expected.is_file():
+        return None, f"arduino_sketch_missing: expected {expected.name}"
+    return sketch_dir, None
+
+
+def prepare_code(code: str, project_name: str = "esp32-project") -> Path:
+    if not isinstance(code, str) or not code.strip():
+        raise ValueError("code_required")
+    cleaned = re.sub(r"[^A-Za-z0-9_-]+", "-", str(project_name).strip()).strip("-")
+    safe_name = (cleaned or "esp32-project")[:48]
+    digest = hashlib.sha256(code.encode("utf-8")).hexdigest()[:12]
+    sketch_dir = (
+        Path(tempfile.gettempdir())
+        / "chatmaker-esp32-sketches"
+        / f"{safe_name}-{digest}"
+    )
+    sketch_dir.mkdir(parents=True, exist_ok=True)
+    (sketch_dir / f"{sketch_dir.name}.ino").write_text(code, encoding="utf-8")
+    return sketch_dir
+
+
+def compile_result(
+    context: dict[str, Any],
+    request: dict[str, Any],
+    *,
+    runner=_run,
+) -> dict[str, Any]:
+    if confirm_board_identity(request.get("board_profile"))["status"] != "confirmed":
+        return {
+            "action": "compile",
+            "success": False,
+            "error": "board_identity_confirmation_required",
+            "board": BOARD_ID,
+            "required_profile": TARGET_PROFILE_ID,
+        }
+    if not context.get("ready_for_compile") or not context.get("fqbn_details_verified"):
+        return {
+            "action": "compile",
+            "success": False,
+            "error": "exact_esp32_toolchain_missing",
+            "board": BOARD_ID,
+            "required_core": f"{TARGET_CORE_ID}@{REQUIRED_CORE_VERSION}",
+            "required_fqbn": TARGET_FQBN,
+        }
+    try:
+        if request.get("code") is not None:
+            sketch_dir = prepare_code(
+                request["code"], request.get("project_name", "esp32-project")
+            )
+            error = None
+        else:
+            sketch_dir, error = _validate_sketch(str(request.get("sketch", "")))
+        if error or sketch_dir is None:
+            return {"action": "compile", "success": False, "error": error}
+    except (OSError, ValueError) as exc:
+        return {"action": "compile", "success": False, "error": str(exc)}
+    sketch_file = sketch_dir / f"{sketch_dir.name}.ino"
+    digest = hashlib.sha256(
+        b"\0".join(
+            [
+                sketch_file.read_bytes(),
+                TARGET_FQBN.encode("utf-8"),
+                str(context.get("core_version", "")).encode("utf-8"),
+            ]
+        )
+    ).hexdigest()[:12]
+    build_dir = Path(tempfile.gettempdir()) / "chatmaker-esp32-builds" / digest
+    build_dir.mkdir(parents=True, exist_ok=True)
+    for stale in build_dir.iterdir():
+        if stale.is_file():
+            stale.unlink()
+    command = build_compile_command(context, sketch_dir, build_dir)
+    execution = runner(command, timeout=int(request.get("timeout", 900)))
+    application_bin = find_application_binary(build_dir)
+    success = execution.get("returncode") == 0 and application_bin is not None
+    result = {
+        "action": "compile",
+        "success": success,
+        "board": BOARD_ID,
+        "profile_id": TARGET_PROFILE_ID,
+        "fqbn": TARGET_FQBN,
+        "core_version": str(context.get("core_version", "")),
+        "sketch": str(sketch_dir),
+        "build_dir": str(build_dir),
+        "application_bin": str(application_bin) if application_bin else None,
+        "execution": execution,
+    }
+    if not success:
+        result["error"] = "compile_failed"
+    return result
+
+
+def doctor_result(
+    *,
+    candidates: list[dict[str, Any]],
+    ports: list[dict[str, Any]],
+) -> dict[str, Any]:
+    selected = None
+    for candidate in candidates:
+        core = select_exact_core(list(candidate.get("core_inventory", [])))
+        fqbn_verified = candidate.get("fqbn_details_verified", True)
+        candidate_ready = candidate.get("ready_for_compile", True)
+        if core and fqbn_verified and candidate_ready:
+            selected = {**candidate, "core": core}
+            break
+    if selected is None:
+        return {
+            "action": "doctor",
+            "success": False,
+            "error": "exact_esp32_toolchain_missing",
+            "ready_for_compile": False,
+            "ready_for_upload": False,
+            "installation_performed": False,
+            "board": BOARD_ID,
+            "profile_id": TARGET_PROFILE_ID,
+            "required_core": f"{TARGET_CORE_ID}@{REQUIRED_CORE_VERSION}",
+            "required_fqbn": TARGET_FQBN,
+            "candidates": candidates,
+            "ports": ports,
+        }
+    return {
+        "action": "doctor",
+        "success": True,
+        "ready_for_compile": True,
+        "ready_for_upload": False,
+        "installation_performed": False,
+        "board": BOARD_ID,
+        "profile_id": TARGET_PROFILE_ID,
+        "required_core": f"{TARGET_CORE_ID}@{REQUIRED_CORE_VERSION}",
+        "required_fqbn": TARGET_FQBN,
+        "environment": selected,
+        "ports": ports,
+    }
+
+
+def execute_request(
+    request: dict[str, Any],
+    *,
+    candidates: Optional[list[dict[str, Any]]] = None,
+    ports: Optional[list[dict[str, Any]]] = None,
+    runner=_run,
+) -> dict[str, Any]:
+    action = request.get("action")
+    source_candidates = candidates if candidates is not None else discover_cli_candidates()
+    probed = [
+        probe_candidate(candidate, runner=runner)
+        for candidate in source_candidates
+    ]
+    current_ports = ports if ports is not None else scan_ports()
+    if action == "doctor":
+        return doctor_result(candidates=probed, ports=current_ports)
+    if action == "compile":
+        selected = next(
+            (candidate for candidate in probed if candidate.get("ready_for_compile")),
+            None,
+        )
+        if selected is None:
+            result = doctor_result(candidates=probed, ports=current_ports)
+            result.update({"action": "compile", "success": False})
+            return result
+        return compile_result(selected, request, runner=runner)
+    if action == "ports":
+        selected, error = select_upload_port(
+            current_ports,
+            board_profile=request.get("board_profile"),
+            requested=request.get("port"),
+        )
+        return {
+            "action": "ports",
+            "success": error is None,
+            "board": BOARD_ID,
+            "profile_id": TARGET_PROFILE_ID,
+            "ports": current_ports,
+            "recommended_port": selected,
+            "port_status": error,
+            "installation_performed": False,
+        }
+    raise ValueError("action_must_be_doctor_ports_or_compile")
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description="Strict DOIT ESP32 DevKit V1 bridge")
+    parser.add_argument("--request-json", required=True, help="JSON object or '-' for stdin")
+    args = parser.parse_args()
+    try:
+        raw = sys.stdin.read() if args.request_json == "-" else args.request_json
+        result = execute_request(json.loads(raw))
+    except Exception as exc:
+        result = {
+            "success": False,
+            "error": "unexpected_bridge_error",
+            "detail": f"{type(exc).__name__}: {exc}",
+            "board": BOARD_ID,
+        }
+    print(json.dumps(result, ensure_ascii=True))
+    return 0 if result.get("success") else 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

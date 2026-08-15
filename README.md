@@ -105,9 +105,10 @@ Skill 负责告诉 AI 应该怎样判断、哪些技术事实不能猜、什么�
 | 数据包和证据状态 | 已验证 | 自动测试与项目 doctor 通过 |
 | Nano Mind+ 编译和烧录迁移 | 部分验证 | 原 33 项行为测试已迁移；10 个示例从 ChatMaker 路径真实编译；烧录等待有线 Nano |
 | Uno Mind+ 独立适配器 | 部分验证 | 独立 1.x/2.x FQBN、固定 115200 上传规则、Codex/WorkBuddy 入口和 Blink 真实编译已验证；烧录等待有线 Uno |
-| 常用模块、库和示例 | 首批已验证 | 12 种元器件、12 个配方通过资料校验；支持中文搜索与完整资料读取；10 个 Nano 示例和 1 个 Uno 示例真实编译 |
+| DOIT ESP32 DevKit V1 | 工具链待准备 | 已锁定官方 core 3.3.11 与精确 FQBN，完成身份、环境和端口安全发现；本机尚未安装精确 core，未编译或烧录 |
+| 常用模块、库和示例 | 首批已验证 | 12 种元器件、13 个配方通过资料校验；10 个 Nano 和 1 个 Uno 示例真实编译；新增 ESP32 外接 LED 示例保持待编译 |
 | ChatWeb 生成和本地预览 | 部分验证 | 3 套方案推荐、单文件生成、课堂页、模拟硬件页和 localhost 预览已通过真实浏览器检查 |
-| Codex / WorkBuddy 安装 | 已验证 | 三个 Skill、配置备份、卸载恢复、18 个真实 stdio MCP 工具和 Nano/Uno Blink 编译烟测通过；宿主需重启后显示 |
+| Codex / WorkBuddy 安装 | 已验证 | 三个 Skill、配置备份、卸载恢复、22 个真实 stdio MCP 工具和 Nano/Uno Blink 编译烟测通过；ESP32 工具链检查正确停在缺少官方 core |
 | 串口运行诊断 | 已实现待硬件 | WorkBuddy 6 个串口工具与 Codex JSONL 会话通过自动测试；当前无有线 Nano/Uno，真实日志待现场读取 |
 | v0.1.0-rc2 发布候选 | 已发布 | [GitHub 预发布](https://github.com/Amasun93/ChatMaker/releases/tag/v0.1.0-rc2)；rc1 继续保留，rc2 新增串口运行层 |
 | v0.1.0-rc3 发布候选 | 已发布 | [GitHub 预发布](https://github.com/Amasun93/ChatMaker/releases/tag/v0.1.0-rc3)；包含 12 种模块、11 个配方、10 个编译示例和中文资料目录入口 |

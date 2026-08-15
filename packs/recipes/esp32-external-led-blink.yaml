@@ -1,0 +1,31 @@
+schema_version: "1.0"
+kind: recipe
+id: esp32-external-led-blink
+name: DOIT ESP32 DevKit V1 external LED Blink
+summary: Blink a current-limited external LED on GPIO23 without using a boot-strapping pin.
+sources:
+  - title: Arduino Blink example
+    url: https://docs.arduino.cc/built-in-examples/basics/Blink/
+  - title: Espressif ESP32 GPIO restrictions
+    url: https://github.com/espressif/esp-idf/blob/v5.5.5/docs/en/api-reference/peripherals/gpio/esp32.inc
+verification:
+  source_reviewed: &unverified
+    status: unverified
+    checked_at: null
+    evidence: null
+  code_compiled: *unverified
+  firmware_uploaded: *unverified
+  physical_effect_verified: *unverified
+boards:
+  - esp32-devkit-v1
+components:
+  - basic-led
+wiring:
+  - component: basic-led
+    component_pin: anode
+    board_pin: GPIO23
+  - component: basic-led
+    component_pin: cathode
+    board_pin: GND
+source_file: examples/chatduino/esp32/blink-external-led/blink-external-led.ino
+expected_effect: After verified upload, the external LED alternates on and off once per second and serial prints ESP32_LED_READY after reset.

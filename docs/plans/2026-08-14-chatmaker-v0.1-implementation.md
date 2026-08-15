@@ -109,7 +109,7 @@ def upload_nano(hex_file: Path, candidate: PortCandidate) -> UploadReport: ...
 
 **Output:** Separate board adapters and verified Blink matrices for Uno, Nano, and ESP32.
 
-**Status:** Uno now has a separate Mind+ adapter, dedicated Blink example, Codex/WorkBuddy interfaces, fixed 115200 upload strategy, and a Mind+ 2.x compile result. Uno upload and physical gates remain open without hardware. ESP32 DevKit V1 remains open because the installed Mind+ core exposes FireBeetle variants but no generic DevKit V1 FQBN; those variants are not treated as equivalent.
+**Status:** Uno now has a separate Mind+ adapter, dedicated Blink example, Codex/WorkBuddy interfaces, fixed 115200 upload strategy, and a Mind+ 2.x compile result. Uno upload and physical gates remain open without hardware. ESP32 now has a strict DOIT DevKit V1 / ESP-WROOM-32 discovery and compile contract locked to official `esp32:esp32@3.3.11` and `esp32:esp32:esp32doit-devkit-v1`; the local machine does not have that exact core, so compilation remains open and FireBeetle/mPython are rejected rather than treated as equivalents.
 
 **Acceptance:**
 

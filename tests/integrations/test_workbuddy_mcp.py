@@ -32,7 +32,7 @@ class WorkBuddyBridgeTests(unittest.TestCase):
             "runtime/chatmaker/installers/workbuddy.py",
         )
 
-    def test_server_exposes_catalog_uno_nano_and_serial_tools_only(self):
+    def test_server_exposes_catalog_esp32_uno_nano_and_serial_tools_only(self):
         names = {tool["name"] for tool in self.server.TOOLS}
 
         self.assertEqual(
@@ -48,6 +48,10 @@ class WorkBuddyBridgeTests(unittest.TestCase):
                 "uno_ports",
                 "uno_compile",
                 "uno_compile_upload",
+                "esp32_prepare_environment",
+                "esp32_doctor",
+                "esp32_ports",
+                "esp32_compile",
                 "serial_list",
                 "serial_open",
                 "serial_read",
@@ -65,6 +69,51 @@ class WorkBuddyBridgeTests(unittest.TestCase):
         )
         self.assertIn("自动", upload_tool["description"])
         self.assertIn("接入", upload_tool["description"])
+
+    def test_esp32_toolchain_missing_is_a_prompt_not_an_mcp_error(self):
+        original = self.server.esp32_bridge.execute_request
+        self.server.esp32_bridge.execute_request = lambda request: {
+            "success": False,
+            "error": "exact_esp32_toolchain_missing",
+            "ready_for_compile": False,
+            "installation_performed": False,
+            "required_fqbn": "esp32:esp32:esp32doit-devkit-v1",
+        }
+        try:
+            result = self.server._tool_result("esp32_doctor", {})
+        finally:
+            self.server.esp32_bridge.execute_request = original
+
+        self.assertFalse(result["isError"])
+        payload = json.loads(result["content"][0]["text"])
+        self.assertEqual(payload["error"], "exact_esp32_toolchain_missing")
+
+    def test_esp32_compile_routes_code_with_explicit_board_profile(self):
+        captured = None
+        original = self.server.esp32_bridge.execute_request
+
+        def fake(request):
+            nonlocal captured
+            captured = request
+            return {"success": True, "action": "compile"}
+
+        self.server.esp32_bridge.execute_request = fake
+        try:
+            result = self.server._tool_result(
+                "esp32_compile",
+                {
+                    "code": "void setup(){} void loop(){}",
+                    "board_profile": "doit-esp32-devkit-v1-wroom32",
+                },
+            )
+        finally:
+            self.server.esp32_bridge.execute_request = original
+
+        self.assertFalse(result["isError"])
+        self.assertEqual(captured["action"], "compile")
+        self.assertEqual(
+            captured["board_profile"], "doit-esp32-devkit-v1-wroom32"
+        )
 
     def test_catalog_tools_read_the_real_component_pack(self):
         self.assertIn("catalog_search", {tool["name"] for tool in self.server.TOOLS})

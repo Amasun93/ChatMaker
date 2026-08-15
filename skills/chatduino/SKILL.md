@@ -53,6 +53,17 @@ For a confirmed Arduino Uno Rev3 / Genuino Uno with ATmega328P, use the shared C
 - Reject Bluetooth ports. Auto-select only one confirmed Uno or one remaining wired candidate; require a choice when multiple wired ports remain.
 - Keep compile, upload, serial marker, reboot, and visible LED effect as separate evidence gates.
 
+## DOIT ESP32 DEVKIT V1 with ESP-WROOM-32
+
+Read [esp32-doit-devkit-v1.md](references/esp32-doit-devkit-v1.md) before accepting the board identity, assigning pins, or proposing a toolchain.
+
+- `ESP-WROOM-32` is the module label, not proof of the carrier board. Require the DOIT carrier identity before compile or upload.
+- The exact target is `esp32:esp32:esp32doit-devkit-v1` with official Arduino-ESP32 core `3.3.11`.
+- Use `chatmaker-esp32` in Codex and `esp32_prepare_environment`, `esp32_doctor`, `esp32_ports`, and `esp32_compile` in WorkBuddy.
+- Environment preparation is discovery-only in this phase. It must not download a core or substitute FireBeetle, mPython, DevKitC, S2, S3, or C3.
+- A CP210x, CH340, CH9102, or FTDI serial adapter is only a USB-UART clue; it cannot prove which ESP32 carrier board is attached.
+- Keep official-core discovery, FQBN details, compilation, upload, reboot, serial evidence, AP connectivity, HTTP exchange, and physical effects separate.
+
 ## Safety boundaries
 
 - Keep USB and external power disconnected while wiring.
