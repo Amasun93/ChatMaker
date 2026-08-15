@@ -788,10 +788,14 @@ class Esp32DevKitV1Tests(unittest.TestCase):
             )
 
             build_dir = Path(first["build_dir"])
-            self.assertEqual(build_dir, stale_build_dir)
-            self.assertEqual(Path(second["build_dir"]), build_dir)
-            self.assertEqual(Path(first["build_cache_dir"]), stable_cache_dir)
-            self.assertEqual(Path(second["build_cache_dir"]), stable_cache_dir)
+            self.assertTrue(os.path.samefile(build_dir, stale_build_dir))
+            self.assertTrue(os.path.samefile(Path(second["build_dir"]), build_dir))
+            self.assertTrue(
+                os.path.samefile(Path(first["build_cache_dir"]), stable_cache_dir)
+            )
+            self.assertTrue(
+                os.path.samefile(Path(second["build_cache_dir"]), stable_cache_dir)
+            )
             self.assertFalse((build_dir / "stale").exists())
             self.assertEqual((build_dir / "blink.ino.bin").read_bytes(), b"fresh-firmware")
             self.assertEqual(
