@@ -6,6 +6,8 @@ from pathlib import Path
 import sys
 from typing import Any
 
+import yaml
+
 try:
     from .packs import load_record
 except ImportError:  # Allow direct execution from a checked-out release folder.
@@ -18,6 +20,7 @@ CATALOG_FOLDERS = {
     "component": "components",
     "recipe": "recipes",
 }
+_ID_INDEX_CACHE: dict[Path, tuple[tuple[tuple[str, int, int], ...], dict[str, Path]]] = {}
 
 
 def _root(project_root: Path | None = None) -> Path:
@@ -35,13 +38,54 @@ def _records(project_root: Path | None = None) -> list[tuple[Path, dict[str, Any
     return records
 
 
-def _record_path(record_id: str, project_root: Path | None = None) -> Path | None:
+def _catalog_paths(project_root: Path | None = None) -> list[Path]:
     root = _root(project_root)
+    paths: list[Path] = []
     for folder in CATALOG_FOLDERS.values():
-        candidate = root / "packs" / folder / f"{record_id}.yaml"
-        if candidate.is_file():
-            return candidate
+        paths.extend(sorted((root / "packs" / folder).glob("*.yaml")))
+    return paths
+
+
+def _catalog_fingerprint(paths: list[Path], root: Path) -> tuple[tuple[str, int, int], ...]:
+    return tuple(
+        (
+            path.relative_to(root).as_posix(),
+            path.stat().st_mtime_ns,
+            path.stat().st_size,
+        )
+        for path in paths
+    )
+
+
+def _record_id_from_path(path: Path) -> str | None:
+    value = yaml.safe_load(path.read_text(encoding="utf-8"))
+    if not isinstance(value, dict):
+        return None
+    record_id = value.get("id")
+    if isinstance(record_id, str) and record_id:
+        return record_id
     return None
+
+
+def _id_index(project_root: Path | None = None) -> dict[str, Path]:
+    root = _root(project_root)
+    paths = _catalog_paths(project_root)
+    fingerprint = _catalog_fingerprint(paths, root)
+    cached = _ID_INDEX_CACHE.get(root)
+    if cached is not None and cached[0] == fingerprint:
+        return cached[1]
+
+    index: dict[str, Path] = {}
+    for path in paths:
+        record_id = _record_id_from_path(path)
+        if record_id is not None:
+            index.setdefault(record_id, path)
+    _ID_INDEX_CACHE[root] = (fingerprint, index)
+    return index
+
+
+def _record_path(record_id: str, project_root: Path | None = None) -> Path | None:
+    return _id_index(project_root).get(record_id)
 
 
 def _search_text(record: dict[str, Any]) -> list[str]:
