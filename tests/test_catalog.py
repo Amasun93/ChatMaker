@@ -191,6 +191,47 @@ class CatalogTests(unittest.TestCase):
         self.assertEqual(loaded_paths, ["target-record.yaml"])
         self.assertEqual(result["record"]["id"], "target-record")
 
+    def test_get_does_not_yaml_parse_unrelated_record_bodies(self):
+        self.assertIsNotNone(self.catalog, "catalog runtime is missing")
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            target = root / "packs" / "components" / "target-record-v2.yaml"
+            other = root / "packs" / "components" / "other-record.yaml"
+            root.joinpath("packs", "boards").mkdir(parents=True)
+            target.parent.mkdir(parents=True, exist_ok=True)
+            root.joinpath("packs", "recipes").mkdir(parents=True)
+            target.write_text(
+                yaml.safe_dump(
+                    {
+                        "schema_version": "1.0",
+                        "kind": "component",
+                        "id": "target-record",
+                        "name": "Target Record",
+                        "category": "output",
+                        "interface": "digital",
+                        "summary": "This target should still load normally.",
+                        "verification": {},
+                    },
+                    allow_unicode=True,
+                    sort_keys=False,
+                ),
+                encoding="utf-8",
+            )
+            other.write_text(
+                "id: other-record\n"
+                "name: Other Record\n"
+                "broken:\n"
+                "  [this is not valid yaml\n",
+                encoding="utf-8",
+            )
+
+            result = self.catalog.get_catalog_record("target-record", project_root=root)
+
+        self.assertTrue(result["success"], result)
+        self.assertEqual(result["record"]["id"], "target-record")
+        self.assertEqual(result["source_path"], "packs/components/target-record-v2.yaml")
+
     def test_json_cli_searches_the_checked_in_catalog(self):
         self.assertIsNotNone(self.catalog, "catalog runtime is missing")
         environment = dict(os.environ)

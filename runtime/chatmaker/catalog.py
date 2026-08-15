@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
+import re
 import sys
 from typing import Any
 
@@ -21,6 +22,7 @@ CATALOG_FOLDERS = {
     "recipe": "recipes",
 }
 _ID_INDEX_CACHE: dict[Path, tuple[tuple[tuple[str, int, int], ...], dict[str, Path]]] = {}
+_TOP_LEVEL_ID_PATTERN = re.compile(r"^id\s*:\s*(?P<value>.*)$")
 
 
 def _root(project_root: Path | None = None) -> Path:
@@ -58,12 +60,25 @@ def _catalog_fingerprint(paths: list[Path], root: Path) -> tuple[tuple[str, int,
 
 
 def _record_id_from_path(path: Path) -> str | None:
-    value = yaml.safe_load(path.read_text(encoding="utf-8"))
-    if not isinstance(value, dict):
-        return None
-    record_id = value.get("id")
-    if isinstance(record_id, str) and record_id:
-        return record_id
+    with path.open("r", encoding="utf-8") as handle:
+        for raw_line in handle:
+            line = raw_line.rstrip("\r\n")
+            if not line or line in {"---", "..."}:
+                continue
+            if line[0] in {" ", "\t", "-"}:
+                continue
+            match = _TOP_LEVEL_ID_PATTERN.match(line)
+            if match is None:
+                continue
+            raw_value = match.group("value").strip()
+            if raw_value in {"", "|", ">"}:
+                return None
+            try:
+                record_id = yaml.safe_load(raw_value)
+            except yaml.YAMLError:
+                return None
+            if isinstance(record_id, str) and record_id:
+                return record_id
     return None
 
 
