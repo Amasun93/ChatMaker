@@ -34,7 +34,7 @@ Compilation, firmware upload, browser interaction, serial evidence, and physical
 
 ## Development preview
 
-The current public candidate is [`v0.1.0-rc2`](https://github.com/Amasun93/ChatMaker/releases/tag/v0.1.0-rc2); it adds persistent serial list/open/read/expect/write/close tools to the published rc1 foundation. See the [installation guide](docs/installation.md). Physical upload and effects still require separate on-site evidence.
+The current public candidate is [`v0.1.0-rc3`](https://github.com/Amasun93/ChatMaker/releases/tag/v0.1.0-rc3); it includes the twelve-component learning pack, Chinese catalog search/get, ten compiled Nano examples, and the persistent serial tools introduced in rc2. See the [installation guide](docs/installation.md). Physical upload and effects still require separate on-site evidence.
 
 ```powershell
 git clone https://github.com/Amasun93/ChatMaker.git
