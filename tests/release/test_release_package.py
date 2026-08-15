@@ -26,6 +26,25 @@ def load_builder():
 
 
 class ReleasePackageTests(unittest.TestCase):
+    def test_rc5_verification_records_timeout_before_corrected_final_success(self):
+        verification = (
+            ROOT / "docs" / "verification" / "2026-08-15-rc5-release-candidate.md"
+        ).read_text(encoding="utf-8")
+
+        timeout_position = verification.find("900 秒默认预算下超时")
+        correction_position = verification.find("编译默认预算修正为 1200 秒")
+        success_position = verification.find("1056.41 秒")
+
+        self.assertGreaterEqual(timeout_position, 0)
+        self.assertGreaterEqual(correction_position, 0)
+        self.assertGreaterEqual(success_position, 0)
+        self.assertLess(timeout_position, correction_position)
+        self.assertLess(correction_position, success_position)
+        self.assertIn("946528 B", verification)
+        self.assertIn("47168 B", verification)
+        self.assertNotIn("Fix round 1 修正文档后重新生成最终归档", verification)
+        self.assertNotIn("chatmaker-rc5-fix1-final-", verification)
+
     def test_installation_verifies_archive_before_entering_extracted_directory(self):
         installation = (ROOT / "docs" / "installation.md").read_text(encoding="utf-8")
         checksum_position = installation.find("Get-FileHash .\\ChatMaker-0.1.0-rc5.zip")
