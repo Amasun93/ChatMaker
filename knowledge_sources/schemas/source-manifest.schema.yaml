@@ -1,0 +1,81 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: https://chatmaker.dev/schemas/knowledge-source-manifest.schema.yaml
+title: ChatMaker governed LLMWiki source manifest
+type: object
+additionalProperties: false
+required:
+  - schema_version
+  - id
+  - title
+  - board_id
+  - source_type
+  - license_use_boundary
+  - cleaning_version
+  - review_date
+  - cleaning_verified
+  - source_reviewed
+  - publication_approved
+  - page_declarations
+properties:
+  schema_version: {const: "1.0"}
+  id:
+    type: string
+    pattern: "^source-[a-z0-9][a-z0-9-]*$"
+  title:
+    type: string
+    minLength: 1
+  board_id:
+    enum: [arduino-nano-classic, arduino-uno-r3, esp32-devkit-v1]
+  source_type:
+    enum: [canonical-board-documentation, checked-in-project-documentation, owned-local-source]
+  canonical_url:
+    type: string
+    format: uri
+  owned_local_source:
+    type: object
+    additionalProperties: false
+    required: [description, sha256]
+    properties:
+      description: {type: string, minLength: 1}
+      sha256: {type: string, pattern: "^[0-9a-f]{64}$"}
+  license_use_boundary:
+    type: string
+    minLength: 1
+  cleaning_version:
+    type: string
+    minLength: 1
+  review_date:
+    type: [string, "null"]
+    format: date
+  cleaning_verified: {$ref: "#/$defs/gate"}
+  source_reviewed: {$ref: "#/$defs/gate"}
+  publication_approved: {$ref: "#/$defs/gate"}
+  page_declarations:
+    type: array
+    uniqueItems: true
+    items:
+      type: object
+      additionalProperties: false
+      required: [stable_id, path]
+      properties:
+        stable_id:
+          type: string
+          pattern: "^[a-z0-9][a-z0-9-]*$"
+        path: {type: string, minLength: 1}
+oneOf:
+  - required: [canonical_url]
+    not: {required: [owned_local_source]}
+  - required: [owned_local_source]
+    not: {required: [canonical_url]}
+$defs:
+  gate:
+    type: object
+    additionalProperties: false
+    required: [status, date, evidence]
+    properties:
+      status: {enum: [unverified, verified, failed, not_applicable]}
+      date:
+        type: [string, "null"]
+        format: date
+      evidence:
+        type: [string, "null"]

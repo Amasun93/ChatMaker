@@ -34,6 +34,9 @@ EXCLUDED_PARTS = {
     ".chatmaker-esp32-builds",
     ".chatmaker-esp32-cache",
 }
+EXCLUDED_PATH_PREFIXES = {
+    ("knowledge_sources",),
+}
 
 
 def _release_files(root: Path) -> list[Path]:
@@ -48,6 +51,10 @@ def _release_files(root: Path) -> list[Path]:
         path
         for path in files
         if not EXCLUDED_PARTS.intersection(path.relative_to(root).parts)
+        and not any(
+            path.relative_to(root).parts[: len(prefix)] == prefix
+            for prefix in EXCLUDED_PATH_PREFIXES
+        )
         and not any(part.endswith(".egg-info") for part in path.relative_to(root).parts)
         and path.suffix.casefold() not in {".pyc", ".pyo"}
     )

@@ -1,0 +1,25 @@
+schema_version: "1.0"
+id: source-arduino-nano-classic-documentation
+title: Arduino Nano documentation
+board_id: arduino-nano-classic
+source_type: canonical-board-documentation
+canonical_url: https://docs.arduino.cc/hardware/nano/
+license_use_boundary: >-
+  This repository has not independently verified the source license. Use it only
+  for attributed source review and governed derivative-page preparation; do not
+  copy or redistribute the source body through ChatMaker packs.
+cleaning_version: unprocessed-v1
+review_date: null
+cleaning_verified:
+  status: unverified
+  date: null
+  evidence: null
+source_reviewed:
+  status: unverified
+  date: null
+  evidence: null
+publication_approved:
+  status: unverified
+  date: null
+  evidence: null
+page_declarations: []

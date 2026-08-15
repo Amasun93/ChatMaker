@@ -26,6 +26,33 @@ def load_builder():
 
 
 class ReleasePackageTests(unittest.TestCase):
+    def test_release_excludes_knowledge_source_workspace_even_if_recursively_included(self):
+        builder = load_builder()
+        original_paths = builder.RELEASE_PATHS
+        try:
+            builder.RELEASE_PATHS = original_paths + ("knowledge_sources",)
+            with tempfile.TemporaryDirectory() as directory:
+                fixture_root = Path(directory) / "source"
+                included = fixture_root / "README.md"
+                included.parent.mkdir(parents=True, exist_ok=True)
+                included.write_text("ChatMaker", encoding="utf-8")
+                for name in ("raw", "cleaned", "published"):
+                    sentinel = fixture_root / "knowledge_sources" / name / "must-not-ship.md"
+                    sentinel.parent.mkdir(parents=True, exist_ok=True)
+                    sentinel.write_text(name, encoding="utf-8")
+
+                result = builder.build_release(
+                    fixture_root, Path(directory) / "output", RELEASE_VERSION
+                )
+                with zipfile.ZipFile(result["archive"]) as archive:
+                    names = set(archive.namelist())
+        finally:
+            builder.RELEASE_PATHS = original_paths
+
+        prefix = f"ChatMaker-{RELEASE_VERSION}/"
+        self.assertIn(prefix + "README.md", names)
+        self.assertFalse(any("knowledge_sources/" in name for name in names), names)
+
     def test_release_zip_excludes_esp32_runtime_cache_directories(self):
         builder = load_builder()
         with tempfile.TemporaryDirectory() as directory:

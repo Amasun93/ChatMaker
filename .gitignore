@@ -15,3 +15,5 @@ Thumbs.db
 node_modules/
 playwright-report/
 test-results/
+knowledge_sources/raw/
+knowledge_sources/cleaned/
