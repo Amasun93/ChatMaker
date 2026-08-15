@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path, PurePosixPath
+import stat
 from typing import Any
 
 import yaml
@@ -25,6 +26,37 @@ def _safe_published_path(path: Any, board_id: str) -> bool:
         return False
     expected_prefix = ("published", "boards", board_id)
     return candidate.parts[:3] == expected_prefix and candidate.suffix == ".md" and len(candidate.parts) >= 4
+
+
+def _is_link_or_reparse(path: Path) -> bool:
+    try:
+        if path.is_symlink():
+            return True
+        attributes = getattr(path.lstat(), "st_file_attributes", 0)
+    except OSError:
+        return True
+    return bool(attributes & getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x0400))
+
+
+def _safe_filesystem_path(path: Path, allowed_root: Path) -> bool:
+    try:
+        relative = path.relative_to(allowed_root)
+    except ValueError:
+        return False
+    if _is_link_or_reparse(allowed_root):
+        return False
+    current = allowed_root
+    for part in relative.parts:
+        current /= part
+        if _is_link_or_reparse(current):
+            return False
+    try:
+        resolved_path = path.resolve(strict=True)
+        resolved_root = allowed_root.resolve(strict=True)
+        resolved_path.relative_to(resolved_root)
+    except (OSError, RuntimeError, ValueError):
+        return False
+    return True
 
 
 def _load_yaml(path: Path) -> tuple[dict[str, Any] | None, str | None]:
@@ -91,11 +123,17 @@ def validate_knowledge_publication(root: Path) -> dict[str, Any]:
 
     if manifest_dir.is_dir():
         for path in sorted(manifest_dir.glob("*.yaml")):
+            if not _safe_filesystem_path(path, workspace):
+                errors.append(f"{path}: unsafe manifest filesystem path")
+                continue
             manifest, manifest_error = _load_yaml(path)
             if manifest_error is not None or manifest is None:
                 errors.append(f"{path}: cannot load manifest: {manifest_error}")
                 continue
             manifests.append((path, manifest))
+            board_id = manifest.get("board_id")
+            if not isinstance(board_id, str) or path.name != f"{board_id}.yaml":
+                errors.append(f"{path}: board_id {board_id!r} does not match filename")
             if manifest.get("schema_version") != "1.0":
                 errors.append(f"{path}: unsupported schema_version {manifest.get('schema_version')!r}")
             for error in sorted(validator.iter_errors(manifest), key=lambda item: list(item.path)):
@@ -103,15 +141,15 @@ def validate_knowledge_publication(root: Path) -> dict[str, Any]:
             for gate_name in ("cleaning_verified", "source_reviewed", "publication_approved"):
                 _validate_gate(path, gate_name, manifest.get(gate_name), errors)
 
-    source_ids: set[str] = set()
+    source_manifests: dict[str, tuple[Path, dict[str, Any]]] = {}
     declarations: dict[str, tuple[Path, dict[str, Any], dict[str, Any]]] = {}
     stable_ids: dict[str, Path] = {}
     for manifest_path, manifest in manifests:
         source_id = manifest.get("id")
         if isinstance(source_id, str):
-            if source_id in source_ids:
+            if source_id in source_manifests:
                 errors.append(f"duplicate stable_id '{source_id}' in source manifests")
-            source_ids.add(source_id)
+            source_manifests[source_id] = (manifest_path, manifest)
         board_id = manifest.get("board_id")
         page_declarations = manifest.get("page_declarations")
         if not isinstance(page_declarations, list):
@@ -139,6 +177,9 @@ def validate_knowledge_publication(root: Path) -> dict[str, Any]:
     pages = sorted((workspace / "published").rglob("*.md")) if (workspace / "published").is_dir() else []
     page_ids: dict[str, Path] = {}
     for page_path in pages:
+        if not _safe_filesystem_path(page_path, workspace):
+            errors.append(f"{page_path}: unsafe page filesystem path")
+            continue
         relative = page_path.relative_to(workspace).as_posix()
         frontmatter, body, page_error = _parse_page(page_path)
         if page_error is not None:
@@ -150,7 +191,11 @@ def validate_knowledge_publication(root: Path) -> dict[str, Any]:
             errors.append(f"{page_path}: unsupported schema_version {frontmatter.get('schema_version')!r}")
         required = {"kind", "stable_id", "board_id", "section_id", "source_refs"}
         missing = sorted(name for name in required if name not in frontmatter)
-        if frontmatter.get("kind") != "llmwiki-page" or missing:
+        text_fields = ("stable_id", "board_id", "section_id")
+        invalid_types = sorted(
+            name for name in text_fields if name in frontmatter and not isinstance(frontmatter[name], str)
+        )
+        if frontmatter.get("kind") != "llmwiki-page" or missing or invalid_types:
             errors.append(f"{page_path}: malformed frontmatter: invalid page identity or missing {missing}")
         declared = declarations.get(relative)
         if declared is not None:
@@ -172,13 +217,31 @@ def validate_knowledge_publication(root: Path) -> dict[str, Any]:
             errors.append(f"{page_path}: malformed frontmatter: source_refs must be a non-empty list")
         else:
             for source_ref in references:
-                if source_ref not in source_ids:
+                if not isinstance(source_ref, str) or not source_ref:
+                    errors.append(f"{page_path}: malformed frontmatter: source_refs must contain source IDs")
+                    continue
+                source_owner = source_manifests.get(source_ref)
+                if source_owner is None:
                     errors.append(f"{page_path}: missing source reference '{source_ref}'")
+                    continue
+                if declared is not None:
+                    _, declaring_manifest, _ = declared
+                    if source_ref != declaring_manifest.get("id"):
+                        errors.append(
+                            f"{page_path}: source reference '{source_ref}' does not belong to its declaring approved manifest"
+                        )
+                    elif source_owner[1].get("board_id") != declaring_manifest.get("board_id"):
+                        errors.append(
+                            f"{page_path}: source reference '{source_ref}' does not match the declaring board scope"
+                        )
         if body is not None and len(body) > MAX_SECTION_BYTES:
             errors.append(f"{page_path}: UTF-8 page body exceeds frozen 65,536-byte limit")
 
     for declared_path in sorted(declarations):
-        if not (workspace / declared_path).is_file():
+        page_path = workspace / declared_path
+        if page_path.is_file() and not _safe_filesystem_path(page_path, workspace):
+            errors.append(f"{page_path}: unsafe page filesystem path")
+        elif not page_path.is_file():
             errors.append(f"declared page is missing: {declared_path}")
 
     return {
@@ -192,7 +255,14 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Check governed ChatMaker LLMWiki source publication files.")
     parser.add_argument("--root", type=Path, default=Path(__file__).resolve().parents[1])
     args = parser.parse_args(argv)
-    result = validate_knowledge_publication(args.root)
+    try:
+        result = validate_knowledge_publication(args.root)
+    except Exception as exc:  # Preserve the check-only JSON contract for malformed inputs.
+        result = {
+            "success": False,
+            "errors": [f"validation_failed: {type(exc).__name__}: {exc}"],
+            "counts": {"manifests": 0, "pages": 0},
+        }
     print(json.dumps(result, ensure_ascii=False, sort_keys=True))
     return 0 if result["success"] else 1
 

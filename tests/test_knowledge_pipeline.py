@@ -6,8 +6,9 @@ import subprocess
 import sys
 import tempfile
 import unittest
-from copy import deepcopy
 from pathlib import Path
+from typing import Any
+from unittest.mock import patch
 
 import yaml
 
@@ -61,16 +62,19 @@ class KnowledgePublicationPipelineTests(unittest.TestCase):
         path: Path,
         *,
         stable_id: str = "arduino-nano-classic-start-here",
-        source_refs: list[str] | None = None,
+        source_refs: Any = None,
+        board_id: Any = "arduino-nano-classic",
+        section_id: Any = "start-here",
         body: str = "Use the canonical board record before following this guide.\n",
     ) -> None:
-        source_refs = source_refs or ["source-arduino-nano-classic-documentation"]
+        if source_refs is None:
+            source_refs = ["source-arduino-nano-classic-documentation"]
         frontmatter = {
             "schema_version": "1.0",
             "kind": "llmwiki-page",
             "stable_id": stable_id,
-            "board_id": "arduino-nano-classic",
-            "section_id": "start-here",
+            "board_id": board_id,
+            "section_id": section_id,
             "source_refs": source_refs,
         }
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -84,6 +88,20 @@ class KnowledgePublicationPipelineTests(unittest.TestCase):
 
     def validate(self, root: Path) -> dict:
         return load_validator().validate_knowledge_publication(root)
+
+    def run_cli(self, root: Path) -> subprocess.CompletedProcess[str]:
+        return subprocess.run(
+            [
+                sys.executable,
+                str(ROOT / "scripts" / "validate_knowledge_publication.py"),
+                "--root",
+                str(root),
+            ],
+            cwd=ROOT,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
 
     def test_checked_in_manifests_cover_exact_boards_without_promoting_unverified_gates(self):
         result = self.validate(ROOT)
@@ -190,22 +208,79 @@ class KnowledgePublicationPipelineTests(unittest.TestCase):
         self.assertFalse(result["success"])
         self.assertTrue(any("cleaning_verified" in error for error in result["errors"]), result)
 
+    def test_malformed_frontmatter_types_return_structured_cli_errors(self):
+        for field, value in (
+            ("source_refs", {"not": "a list of strings"}),
+            ("source_refs", [{"not": "a scalar source ID"}]),
+            ("section_id", {"not": "a section ID"}),
+        ):
+            with self.subTest(field=field, value=value), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                workspace = self.make_workspace(root)
+                page_path = self.declare_page(workspace)
+                arguments: dict[str, Any] = {field: value}
+                self.write_page(page_path, **arguments)
+
+                completed = self.run_cli(root)
+
+            self.assertNotEqual(completed.returncode, 0, completed.stdout)
+            result = json.loads(completed.stdout)
+            self.assertFalse(result["success"])
+            self.assertTrue(
+                any("malformed frontmatter" in error for error in result["errors"]),
+                result,
+            )
+
+    def test_manifest_board_scope_must_match_its_filename(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            workspace = self.make_workspace(root)
+            manifest_path, manifest = self.manifest(workspace)
+            manifest["board_id"] = "arduino-uno-r3"
+            write_yaml(manifest_path, manifest)
+
+            result = self.validate(root)
+
+        self.assertFalse(result["success"])
+        self.assertTrue(any("does not match filename" in error for error in result["errors"]), result)
+
+    def test_page_sources_must_belong_to_its_declaring_approved_manifest(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            workspace = self.make_workspace(root)
+            page_path = self.declare_page(workspace)
+            self.write_page(page_path, source_refs=["source-arduino-uno-r3-documentation"])
+
+            result = self.validate(root)
+
+        self.assertFalse(result["success"])
+        self.assertTrue(any("declaring approved manifest" in error for error in result["errors"]), result)
+
+    def test_rejects_manifest_and_page_reparse_traversal(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            workspace = self.make_workspace(root)
+            manifest_path, _ = self.manifest(workspace)
+            page_path = self.declare_page(workspace)
+            self.write_page(page_path)
+            validator = load_validator()
+            reparse_paths = {manifest_path, page_path}
+            with patch.object(
+                validator,
+                "_is_link_or_reparse",
+                side_effect=lambda candidate: Path(candidate) in reparse_paths,
+            ):
+                result = validator.validate_knowledge_publication(root)
+
+        self.assertFalse(result["success"])
+        self.assertTrue(any("unsafe manifest filesystem path" in error for error in result["errors"]), result)
+        self.assertTrue(any("unsafe page filesystem path" in error for error in result["errors"]), result)
+
     def test_check_only_cli_emits_structured_json_and_nonzero_on_failure(self):
         with tempfile.TemporaryDirectory() as directory:
             workspace = self.make_workspace(Path(directory))
             (workspace / "manifests" / "arduino-uno-r3.yaml").unlink()
-            completed = subprocess.run(
-                [
-                    sys.executable,
-                    str(ROOT / "scripts" / "validate_knowledge_publication.py"),
-                    "--root",
-                    directory,
-                ],
-                cwd=ROOT,
-                text=True,
-                capture_output=True,
-                check=False,
-            )
+            completed = self.run_cli(Path(directory))
 
         self.assertNotEqual(completed.returncode, 0)
         result = json.loads(completed.stdout)
