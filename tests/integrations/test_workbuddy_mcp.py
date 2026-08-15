@@ -156,6 +156,17 @@ class WorkBuddyBridgeTests(unittest.TestCase):
             captured["board_profile"], "doit-esp32-devkit-v1-wroom32"
         )
 
+    def test_esp32_tool_schemas_publish_the_runtime_compile_timeout_policy(self):
+        """Catches AI hosts reintroducing the old compile budget via schema defaults."""
+        tools = {tool["name"]: tool for tool in self.server.TOOLS}
+
+        compile_properties = tools["esp32_compile"]["inputSchema"]["properties"]
+        upload_properties = tools["esp32_compile_upload"]["inputSchema"]["properties"]
+
+        self.assertEqual(compile_properties["timeout"]["default"], 1200)
+        self.assertEqual(upload_properties["timeout"]["default"], 1200)
+        self.assertEqual(upload_properties["upload_timeout"]["default"], 300)
+
     def test_esp32_waiting_for_hardware_is_not_an_mcp_tool_error(self):
         original = self.server.esp32_bridge.execute_request
         self.server.esp32_bridge.execute_request = lambda request: {

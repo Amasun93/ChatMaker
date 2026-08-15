@@ -671,7 +671,7 @@ def compile_result(
         build_dir,
         build_cache_dir,
     )
-    execution = runner(command, timeout=int(request.get("timeout", 900)))
+    execution = runner(command, timeout=int(request.get("timeout", 1200)))
     application_bin = find_application_binary(build_dir)
     success = execution.get("returncode") == 0 and application_bin is not None
     result = {

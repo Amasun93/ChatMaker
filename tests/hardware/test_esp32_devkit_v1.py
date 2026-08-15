@@ -730,6 +730,48 @@ class Esp32DevKitV1Tests(unittest.TestCase):
         self.assertIn("build_cache_dir", compiled)
         self.assertEqual(len(calls), 1)
 
+    def test_compile_defaults_to_1200_seconds_and_preserves_explicit_override(self):
+        """Catches the AP compile regressing to the brittle 900-second default."""
+        observed_timeouts: list[int] = []
+
+        def runner(command, timeout):
+            observed_timeouts.append(timeout)
+            build_dir = Path(command[command.index("--build-path") + 1])
+            build_dir.mkdir(parents=True, exist_ok=True)
+            (build_dir / "blink.ino.bin").write_bytes(b"firmware")
+            return {"returncode": 0, "stdout": "compiled", "stderr": ""}
+
+        with tempfile.TemporaryDirectory() as directory:
+            sketch_dir = Path(directory) / "blink"
+            sketch_dir.mkdir()
+            sketch = sketch_dir / "blink.ino"
+            sketch.write_text("void setup(){}\nvoid loop(){}\n", encoding="utf-8")
+            context = {
+                "cli": "arduino-cli",
+                "core_version": "3.3.11",
+                "ready_for_compile": True,
+                "fqbn_details_verified": True,
+            }
+            base_request = {
+                "sketch": str(sketch),
+                "board_profile": "doit-esp32-devkit-v1-wroom32",
+            }
+
+            defaulted = self.adapter.compile_result(
+                context,
+                base_request,
+                runner=runner,
+            )
+            overridden = self.adapter.compile_result(
+                context,
+                {**base_request, "timeout": 321},
+                runner=runner,
+            )
+
+        self.assertTrue(defaulted["success"])
+        self.assertTrue(overridden["success"])
+        self.assertEqual(observed_timeouts, [1200, 321])
+
     def test_compile_build_dir_tracks_sketch_location_and_cleans_nested_stale_state(self):
         self.assertIsNotNone(self.adapter, "ESP32 DevKit V1 adapter is missing")
         calls: list[list[str]] = []
