@@ -52,6 +52,7 @@ class WorkBuddyBridgeTests(unittest.TestCase):
                 "esp32_doctor",
                 "esp32_ports",
                 "esp32_compile",
+                "esp32_compile_upload",
                 "serial_list",
                 "serial_open",
                 "serial_read",
@@ -114,6 +115,29 @@ class WorkBuddyBridgeTests(unittest.TestCase):
         self.assertEqual(
             captured["board_profile"], "doit-esp32-devkit-v1-wroom32"
         )
+
+    def test_esp32_waiting_for_hardware_is_not_an_mcp_tool_error(self):
+        original = self.server.esp32_bridge.execute_request
+        self.server.esp32_bridge.execute_request = lambda request: {
+            "success": False,
+            "stage": "awaiting-hardware",
+            "hardware_connection_required": True,
+            "teacher_message": "请接入已确认的 DOIT ESP32 DevKit V1。",
+        }
+        try:
+            result = self.server._tool_result(
+                "esp32_compile_upload",
+                {
+                    "code": "void setup(){} void loop(){}",
+                    "board_profile": "doit-esp32-devkit-v1-wroom32",
+                },
+            )
+        finally:
+            self.server.esp32_bridge.execute_request = original
+
+        self.assertFalse(result["isError"])
+        payload = json.loads(result["content"][0]["text"])
+        self.assertEqual(payload["stage"], "awaiting-hardware")
 
     def test_catalog_tools_read_the_real_component_pack(self):
         self.assertIn("catalog_search", {tool["name"] for tool in self.server.TOOLS})

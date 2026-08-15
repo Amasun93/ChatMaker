@@ -41,7 +41,7 @@ chatmaker-install-workbuddy install
 chatmaker-install-workbuddy doctor
 ```
 
-安装器会备份 `~/.workbuddy/mcp.json`，保留其他 MCP，只更新 ChatMaker 使用的兼容入口，并复制三个 Skill。这个入口同时提供 Nano、Uno、资料目录和串口工具。安装后重启 WorkBuddy。
+安装器会备份 `~/.workbuddy/mcp.json`，保留其他 MCP，只更新 ChatMaker 使用的兼容入口，并复制三个 Skill。这个入口同时提供 Nano、Uno、ESP32、资料目录和串口工具。安装后重启 WorkBuddy。
 
 需要恢复原配置和原 Skill 时：
 
@@ -54,13 +54,14 @@ chatmaker-install-workbuddy uninstall
 ```powershell
 chatmaker-nano --request-json '{"action":"doctor"}'
 chatmaker-uno --request-json '{"action":"doctor"}'
+chatmaker-esp32 --request-json '{"action":"doctor"}'
 chatmaker-nano-examples --root examples/chatduino/nano
 chatmaker-catalog --request-json '{"action":"search","query":"继电器","kind":"component"}'
 chatmaker-serial --request-json '{"action":"list"}'
 chatmaker-web-preview examples/chatweb/classroom-pulse.html
 ```
 
-看到 Nano 或 Uno 程序编译通过，只表示程序和编译环境通过。没有真实开发板时，烧录、串口、断电重启和灯是否闪烁仍然是未验证状态。
+看到 Nano、Uno 或 ESP32 程序编译通过，只表示程序和编译环境通过。没有真实开发板时，烧录、串口、Wi-Fi、HTTP、断电重启和实体效果仍然是未验证状态。
 
 ## 校验下载包
 

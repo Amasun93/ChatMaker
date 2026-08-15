@@ -34,9 +34,11 @@ pins:
     role: wiper-output
 supported_boards:
   - arduino-nano-classic
+  - esp32-devkit-v1
 constraints:
   - Confirm which terminal is the wiper; a bare potentiometer may not use VCC, GND, and OUT labels.
   - Keep the analog input between GND and the Nano 5 V rail.
+  - On the ESP32 DevKit V1, power the potentiometer from 3V3 rather than 5V so its wiper cannot exceed the GPIO input voltage.
 identification:
   - Confirm a three-terminal linear potentiometer near 10 kOhm or a three-pin module labelled VCC, GND, and AO or OUT; measure the wiper if the labels are absent.
 libraries:
@@ -46,9 +48,12 @@ libraries:
     notes: The example uses analogRead, map, and analogWrite; no external library is required.
 example_files:
   - examples/chatduino/nano/potentiometer-led/potentiometer-led.ino
+  - examples/chatduino/esp32/ap-led-sensor/ap-led-sensor.ino
 common_failures:
   - Connecting the wiper to 5 V instead of A0 makes the reading stay near maximum.
   - Leaving one outer terminal disconnected makes the value unstable over part of the rotation.
   - A logarithmic audio potentiometer does not change linearly with rotation.
+  - Powering the potentiometer from 5V can feed an unsafe voltage into an ESP32 GPIO.
 board_notes:
   arduino-nano-classic: Connect the wiper to A0 and the two outer terminals to 5V and GND; the example drives an external LED from PWM pin D6 through a resistor.
+  esp32-devkit-v1: Connect the wiper to GPIO34 and the two outer terminals to 3V3 and GND; share GND with the GPIO23 current-limited LED and never use 5V for this input divider.

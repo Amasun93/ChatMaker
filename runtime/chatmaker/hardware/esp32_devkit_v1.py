@@ -396,6 +396,125 @@ def compile_result(
     return result
 
 
+def build_upload_command(
+    context: dict[str, Any], build_dir: Path, port: str
+) -> list[str]:
+    command = [
+        str(context["cli"]),
+        "upload",
+        "-p",
+        str(port).upper(),
+        "-b",
+        TARGET_FQBN,
+        "--input-dir",
+        str(build_dir),
+    ]
+    if context.get("config"):
+        command.extend(["--config-file", str(context["config"])])
+    return command
+
+
+def upload_result(
+    context: dict[str, Any],
+    request: dict[str, Any],
+    compiled: dict[str, Any],
+    *,
+    ports: list[dict[str, Any]],
+    runner=_run,
+) -> dict[str, Any]:
+    selected, error = select_upload_port(
+        ports,
+        board_profile=request.get("board_profile"),
+        requested=request.get("port"),
+    )
+    if error or not selected:
+        return {
+            "action": "upload",
+            "success": False,
+            "error": error,
+            "upload_executed": False,
+            "ports": ports,
+        }
+    application_bin = Path(str(compiled.get("application_bin", "")))
+    build_dir = Path(str(compiled.get("build_dir", "")))
+    if not application_bin.is_file() or not build_dir.is_dir():
+        return {
+            "action": "upload",
+            "success": False,
+            "error": "compiled_esp32_binary_not_found",
+            "upload_executed": False,
+        }
+    command = build_upload_command(context, build_dir, selected)
+    execution = runner(command, timeout=int(request.get("upload_timeout", 300)))
+    success = execution.get("returncode") == 0
+    return {
+        "action": "upload",
+        "success": success,
+        "upload_executed": True,
+        "firmware_uploaded": success,
+        "hardware_runtime_verified": False,
+        "reboot_verified": False,
+        "board": BOARD_ID,
+        "profile_id": TARGET_PROFILE_ID,
+        "fqbn": TARGET_FQBN,
+        "port": selected,
+        "application_bin": str(application_bin),
+        "execution": execution,
+        **({} if success else {"error": "upload_failed"}),
+    }
+
+
+def compile_upload_result(
+    context: dict[str, Any],
+    request: dict[str, Any],
+    *,
+    ports: list[dict[str, Any]],
+    compile_fn=None,
+    upload_fn=None,
+    runner=_run,
+) -> dict[str, Any]:
+    compiled = (
+        compile_fn(context, request)
+        if compile_fn is not None
+        else compile_result(context, request, runner=runner)
+    )
+    if not compiled.get("success"):
+        return {
+            "action": "compile-upload",
+            "success": False,
+            "stage": "compile",
+            "compile": compiled,
+            "upload": None,
+            "automatic_upload": True,
+            "hardware_connection_required": False,
+        }
+    uploaded = (
+        upload_fn(context, request, compiled, ports)
+        if upload_fn is not None
+        else upload_result(context, request, compiled, ports=ports, runner=runner)
+    )
+    hardware_missing = uploaded.get("error") == "no_wired_upload_port_found"
+    if uploaded.get("success"):
+        stage = "uploaded"
+        message = "固件已写入并由上传工具返回成功；启动、串口、Wi-Fi 和实体效果仍需继续验证。"
+    elif hardware_missing:
+        stage = "awaiting-hardware"
+        message = "未检测到有线且已确认身份的 DOIT ESP32 DevKit V1；接入后再次运行即可继续。"
+    else:
+        stage = "upload"
+        message = "ESP32 编译通过，但上传端口或开发板身份仍需处理。"
+    return {
+        "action": "compile-upload",
+        "success": bool(uploaded.get("success")),
+        "stage": stage,
+        "automatic_upload": True,
+        "hardware_connection_required": hardware_missing,
+        "teacher_message": message,
+        "compile": compiled,
+        "upload": uploaded,
+    }
+
+
 def doctor_result(
     *,
     candidates: list[dict[str, Any]],
@@ -455,16 +574,23 @@ def execute_request(
     current_ports = ports if ports is not None else scan_ports()
     if action == "doctor":
         return doctor_result(candidates=probed, ports=current_ports)
-    if action == "compile":
+    if action in {"compile", "compile-upload"}:
         selected = next(
             (candidate for candidate in probed if candidate.get("ready_for_compile")),
             None,
         )
         if selected is None:
             result = doctor_result(candidates=probed, ports=current_ports)
-            result.update({"action": "compile", "success": False})
+            result.update({"action": action, "success": False})
             return result
-        return compile_result(selected, request, runner=runner)
+        if action == "compile":
+            return compile_result(selected, request, runner=runner)
+        return compile_upload_result(
+            selected,
+            request,
+            ports=current_ports,
+            runner=runner,
+        )
     if action == "ports":
         selected, error = select_upload_port(
             current_ports,
@@ -481,7 +607,7 @@ def execute_request(
             "port_status": error,
             "installation_performed": False,
         }
-    raise ValueError("action_must_be_doctor_ports_or_compile")
+    raise ValueError("action_must_be_doctor_ports_compile_or_compile-upload")
 
 
 def main() -> int:

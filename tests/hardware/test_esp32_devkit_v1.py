@@ -364,6 +364,74 @@ class Esp32DevKitV1Tests(unittest.TestCase):
         self.assertTrue(result["success"])
         self.assertIn("esp32-host-smoke", result["sketch"])
 
+    def test_upload_uses_exact_fqbn_without_board_fallback(self):
+        self.assertIsNotNone(self.adapter, "ESP32 DevKit V1 adapter is missing")
+        with tempfile.TemporaryDirectory() as directory:
+            build_dir = Path(directory)
+            application_bin = build_dir / "blink.ino.bin"
+            application_bin.write_bytes(b"firmware")
+            calls: list[list[str]] = []
+
+            def runner(command, timeout):
+                calls.append(command)
+                return {"returncode": 0, "stdout": "Upload complete", "stderr": ""}
+
+            result = self.adapter.upload_result(
+                {"cli": "arduino-cli", "config": "arduino-cli.yaml"},
+                {
+                    "board_profile": "doit-esp32-devkit-v1-wroom32",
+                    "port": "COM8",
+                },
+                {
+                    "success": True,
+                    "build_dir": str(build_dir),
+                    "application_bin": str(application_bin),
+                },
+                ports=[
+                    {
+                        "address": "COM8",
+                        "is_bluetooth": False,
+                        "eligible_for_upload": True,
+                    }
+                ],
+                runner=runner,
+            )
+
+        self.assertTrue(result["success"])
+        self.assertTrue(result["firmware_uploaded"])
+        self.assertFalse(result["hardware_runtime_verified"])
+        self.assertEqual(len(calls), 1)
+        command_text = " ".join(calls[0])
+        self.assertIn("esp32:esp32:esp32doit-devkit-v1", command_text)
+        self.assertNotIn("fireBeetle", command_text)
+        self.assertNotIn("mindplus:esp32", command_text)
+
+    def test_compile_upload_waits_for_hardware_after_compile(self):
+        self.assertIsNotNone(self.adapter, "ESP32 DevKit V1 adapter is missing")
+        result = self.adapter.compile_upload_result(
+            {"ready_for_compile": True},
+            {
+                "code": "void setup(){} void loop(){}",
+                "board_profile": "doit-esp32-devkit-v1-wroom32",
+            },
+            ports=[],
+            compile_fn=lambda context, request: {
+                "success": True,
+                "application_bin": "blink.ino.bin",
+                "build_dir": "build",
+            },
+            upload_fn=lambda context, request, compiled, ports: {
+                "success": False,
+                "error": "no_wired_upload_port_found",
+                "upload_executed": False,
+            },
+        )
+
+        self.assertFalse(result["success"])
+        self.assertEqual(result["stage"], "awaiting-hardware")
+        self.assertTrue(result["hardware_connection_required"])
+        self.assertIsNotNone(result["compile"])
+
 
 if __name__ == "__main__":
     unittest.main()

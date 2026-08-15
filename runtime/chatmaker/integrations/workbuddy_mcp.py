@@ -15,7 +15,7 @@ from chatmaker.hardware import uno_mindplus as uno_bridge
 
 
 SERVER_NAME = "chatmaker-hardware"
-SERVER_VERSION = "1.5.0"
+SERVER_VERSION = "1.6.0"
 PROTOCOL_VERSION = "2024-11-05"
 
 TOOLS = [
@@ -223,6 +223,29 @@ TOOLS = [
         },
     },
     {
+        "name": "esp32_compile_upload",
+        "description": (
+            "使用精确 DOIT FQBN 编译，并且只有载板身份明确且只剩一个有线端口时才上传。"
+            "不会回退到 FireBeetle/mPython；上传成功也不代表启动、Wi-Fi 或实体效果成功。"
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["code", "board_profile"],
+            "properties": {
+                "code": {"type": "string"},
+                "project_name": {"type": "string", "default": "esp32-project"},
+                "board_profile": {
+                    "type": "string",
+                    "enum": ["doit-esp32-devkit-v1-wroom32"],
+                },
+                "port": {"type": "string", "pattern": "^COM[0-9]+$"},
+                "timeout": {"type": "integer", "minimum": 30, "maximum": 1200, "default": 900},
+                "upload_timeout": {"type": "integer", "minimum": 30, "maximum": 600, "default": 300},
+            },
+            "additionalProperties": False,
+        },
+    },
+    {
         "name": "serial_list",
         "description": "列出串口和当前打开的会话；保留蓝牙标记，不能把蓝牙串口当作 Nano 证据。",
         "inputSchema": {"type": "object", "properties": {}, "additionalProperties": False},
@@ -369,12 +392,12 @@ def _tool_result(name: str, arguments: dict[str, Any]) -> dict[str, Any]:
         }
     elif name in {"nano_compile", "uno_compile", "esp32_compile"}:
         request = {"action": "compile", **arguments}
-    elif name in {"nano_compile_upload", "uno_compile_upload"}:
+    elif name in {"nano_compile_upload", "uno_compile_upload", "esp32_compile_upload"}:
         request = {"action": "compile-upload", **arguments}
     else:
         raise ValueError(f"unknown_tool: {name}")
     suspended: list[dict[str, Any]] = []
-    upload_tools = {"nano_compile_upload", "uno_compile_upload"}
+    upload_tools = {"nano_compile_upload", "uno_compile_upload", "esp32_compile_upload"}
     if name in upload_tools:
         suspended = serial_monitor.SERIAL_MANAGER.suspend_all()
     result = adapter.execute_request(request)

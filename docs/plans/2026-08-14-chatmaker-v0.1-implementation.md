@@ -16,6 +16,7 @@
 - Use an existing Mind+ 1.x or 2.x environment in the first release. Build a managed standalone toolchain in the next development phase.
 - Keep environment discovery, compilation, upload, serial evidence, and physical-effect confirmation as separate truth gates.
 - Never auto-upload when the connected board or port is ambiguous.
+- Keep beginner wiring instructions in fenced plain-text blocks by default. SVG or other wiring graphics are optional extras, never a required first step.
 - Start web work with native HTML, CSS, and JavaScript; no React, Vue, authentication, database, or cloud deployment in v0.1.
 - Do not claim physical success from compilation, upload output, serial text, or a generated page alone.
 - Keep the existing `arduino-nano-mindplus` repository unchanged until its behavior has been migrated and regression-tested here.
@@ -109,7 +110,7 @@ def upload_nano(hex_file: Path, candidate: PortCandidate) -> UploadReport: ...
 
 **Output:** Separate board adapters and verified Blink matrices for Uno, Nano, and ESP32.
 
-**Status:** Uno now has a separate Mind+ adapter, dedicated Blink example, Codex/WorkBuddy interfaces, fixed 115200 upload strategy, and a Mind+ 2.x compile result. Uno upload and physical gates remain open without hardware. ESP32 now has a strict DOIT DevKit V1 / ESP-WROOM-32 discovery and compile contract locked to official `esp32:esp32@3.3.11` and `esp32:esp32:esp32doit-devkit-v1`; the local machine does not have that exact core, so compilation remains open and FireBeetle/mPython are rejected rather than treated as equivalents.
+**Status:** Uno now has a separate Mind+ adapter, dedicated Blink example, Codex/WorkBuddy interfaces, fixed 115200 upload strategy, and a Mind+ 2.x compile result. Uno upload and physical gates remain open without hardware. ESP32 now has a strict DOIT DevKit V1 / ESP-WROOM-32 discovery, compile, and compile-upload contract locked to official `esp32:esp32@3.3.11` and `esp32:esp32:esp32doit-devkit-v1`. Upload is allowed only after the carrier board is explicitly confirmed and one wired, non-Bluetooth port remains. The local machine does not have the exact core, so no ESP32 example has been compiled or uploaded; FireBeetle and mPython remain rejected rather than treated as equivalents.
 
 **Acceptance:**
 
@@ -160,6 +161,8 @@ serial_close
 
 **Output:** A mobile-first classroom and hardware-interface generator, local preview server, optional advanced playground, and browser verification workflow.
 
+**Status:** The existing classroom and simulated-hardware pages have passed browser checks. The development branch also contains a self-contained mobile ESP32 AP control page with explicit real-device and simulation modes. Static contract tests cover touch sizing, connection states, same-origin API calls, and the rule that simulation never counts as hardware evidence. A real phone-to-device session is still unverified.
+
 **Acceptance:**
 
 - Generate a complete self-contained HTML/CSS/JavaScript project from a beginner request.
@@ -171,6 +174,8 @@ serial_close
 
 **Output:** An ESP32 access-point project served at `192.168.4.1` with LED control and sensor display.
 
+**Status:** Firmware and page source now exist for a fixed beginner setup: external LED on GPIO23, 10 kOhm potentiometer on input-only GPIO34, SSID `ChatMaker-ESP32`, and same-origin `GET /`, `GET /api/state`, and `POST /api/led` routes. Automated source-contract tests pass. The required official ESP32 Core 3.3.11 is not installed, so compilation is unverified. No physical board is available, so upload, boot, SoftAP, HTTP round trips, LED control, potentiometer readings, serial logs, and power-cycle recovery all remain unverified.
+
 **Acceptance:**
 
 - A phone connects without school Wi-Fi, opens the page, controls the LED, and receives sensor data.
@@ -181,6 +186,8 @@ serial_close
 ## Phase 9: Codex and WorkBuddy Installation
 
 **Output:** Reversible installers plus a shared MCP/runtime configuration.
+
+**Status:** The current development server exposes 23 WorkBuddy tools: 2 catalog tools, 5 Nano tools, 5 Uno tools, 5 ESP32 tools, and 6 serial tools. The fifth ESP32 tool is `esp32_compile_upload`; it preserves the board-identity, single-wired-port, Bluetooth-rejection, and separate-evidence gates. This development count does not change the fixed rc4 release contents.
 
 **Interfaces:**
 
@@ -226,3 +233,12 @@ discovery still requires restarting Codex and WorkBuddy; physical Nano gates
 remain open until a wired board is available. The complete twelve-component
 pack, ten compiled Nano examples, and catalog search/get interfaces are now
 published in the rc3 tag and its two prerelease assets.
+
+After the fixed rc4 release, the current development branch adds the strict
+ESP32 compile-upload path and the flagship AP firmware/page pair. The
+development WorkBuddy server definition now contains 23 tools (2 catalog, 5
+Nano, 5 Uno, 5 ESP32, and 6 serial). That server definition still needs a fresh
+host-installation check. The local machine still lacks the official ESP32 Core
+3.3.11 and no physical DOIT board is connected, so ESP32 compilation, upload,
+boot, SoftAP, HTTP, LED, potentiometer, serial, and power-cycle gates remain
+unverified.

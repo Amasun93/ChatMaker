@@ -8,7 +8,7 @@
 
 ChatMaker helps teachers, students, and hackathon participants move from a clear request or a rough idea to an implemented and verified project. The user chooses the direction and judges the visible result. ChatMaker handles concept development, professional implementation, tools, and evidence.
 
-> Early development status: the Nano/Mind+ runtime, a separate Uno/Mind+ adapter, and eleven compiled AVR examples are on public `main`. The structured pack contains twelve components and thirteen recipes. A strict DOIT ESP32 DevKit V1 discovery/compile contract is available, but the exact official core is not installed and the ESP32 example remains uncompiled. ChatWeb generates and previews self-contained classroom and simulated-hardware pages; physical upload and real hardware connectivity remain separate on-site gates.
+> Early development status: the Nano/Mind+ runtime, a separate Uno/Mind+ adapter, and eleven compiled AVR examples are on public `main`. The development branch adds a strict DOIT ESP32 DevKit V1 compile-upload path plus an AP phone-control example. The exact official ESP32 core is not installed and no physical board is connected, so ESP32 compilation, upload, Wi-Fi, HTTP, and physical effects remain unverified.
 
 ## Architecture
 
@@ -35,6 +35,8 @@ Compilation, firmware upload, browser interaction, serial evidence, and physical
 ## Development preview
 
 The current public candidate is [`v0.1.0-rc4`](https://github.com/Amasun93/ChatMaker/releases/tag/v0.1.0-rc4). It includes the twelve-component learning pack, Chinese catalog search/get, ten compiled Nano examples, and an independent Uno adapter using `arduino:avr:uno` for Mind+ 1.x, `mindplus:avr:uno` for Mind+ 2.x, and a fixed 115200 upload rule. See the [installation guide](docs/installation.md). Physical upload and effects still require separate on-site evidence.
+
+After rc4, the development branch contains fourteen recipes and a 23-tool WorkBuddy server: 2 catalog tools, 5 Nano tools, 5 Uno tools, 5 ESP32 tools, and 6 serial tools. The new `esp32_compile_upload` route requires the exact DOIT carrier profile and one non-Bluetooth wired port. The ESP32 AP example uses GPIO23 for a current-limited LED and GPIO34 for a 3.3 V 10 kOhm potentiometer, with a self-contained mobile control page. Its source contracts and simulated browser interaction are verified; exact-core compilation and every real-device gate are still open.
 
 ```powershell
 git clone https://github.com/Amasun93/ChatMaker.git

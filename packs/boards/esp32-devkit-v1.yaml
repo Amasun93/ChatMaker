@@ -44,11 +44,13 @@ pins:
 constraints:
   - ESP-WROOM-32 is a module label, not carrier-board proof; confirm the DOIT PCB identity before compile or upload.
   - GPIO logic is 3.3 V; never connect a 5 V signal directly to an input.
+  - For the beginner AP demo, drive the external LED from GPIO23 through a current-limiting resistor and return it to shared GND.
+  - Power the 10 kOhm potentiometer from 3V3 and GND, then connect only its wiper output to GPIO34.
   - GPIO34-39 are input-only and do not have software pull-up or pull-down resistors.
   - GPIO0, GPIO2, GPIO5, GPIO12, and GPIO15 are sampled during boot; external pulls must preserve startup levels.
   - GPIO6-11 are reserved for flash and unavailable to ordinary projects.
   - Reserve GPIO1 and GPIO3 for download and serial logs by default.
-  - ADC2 cannot be used for analog reads while Wi-Fi is active.
+  - Use GPIO34 on ADC1 for the AP demo because ADC2 cannot be used for analog reads while Wi-Fi is active.
 toolchains:
   - id: arduino-cli-esp32
     status: exact_core_required_not_installed

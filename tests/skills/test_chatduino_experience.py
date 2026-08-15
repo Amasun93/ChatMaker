@@ -58,6 +58,16 @@ class TeacherExperienceContractTests(unittest.TestCase):
         self.assertIn("未检测到硬件", contract)
         self.assertIn("接入 Nano 后自动上传", contract)
 
+    def test_esp32_compile_upload_keeps_runtime_gates_separate(self):
+        skill = (SKILL / "SKILL.md").read_text(encoding="utf-8")
+
+        self.assertIn("`esp32_compile_upload`", skill)
+        self.assertIn("`awaiting-hardware`", skill)
+        self.assertIn("one non-Bluetooth wired port", skill)
+        for gate in ("Wi-Fi AP", "HTTP exchange", "LED behavior", "sensor readings"):
+            with self.subTest(gate=gate):
+                self.assertIn(gate, skill)
+
 
 if __name__ == "__main__":
     unittest.main()

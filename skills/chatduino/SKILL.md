@@ -59,9 +59,11 @@ Read [esp32-doit-devkit-v1.md](references/esp32-doit-devkit-v1.md) before accept
 
 - `ESP-WROOM-32` is the module label, not proof of the carrier board. Require the DOIT carrier identity before compile or upload.
 - The exact target is `esp32:esp32:esp32doit-devkit-v1` with official Arduino-ESP32 core `3.3.11`.
-- Use `chatmaker-esp32` in Codex and `esp32_prepare_environment`, `esp32_doctor`, `esp32_ports`, and `esp32_compile` in WorkBuddy.
+- Use `chatmaker-esp32` in Codex and `esp32_prepare_environment`, `esp32_doctor`, `esp32_ports`, `esp32_compile`, and `esp32_compile_upload` in WorkBuddy.
 - Environment preparation is discovery-only in this phase. It must not download a core or substitute FireBeetle, mPython, DevKitC, S2, S3, or C3.
 - A CP210x, CH340, CH9102, or FTDI serial adapter is only a USB-UART clue; it cannot prove which ESP32 carrier board is attached.
+- After generating a complete program, use `esp32_compile_upload` by default. It may upload only after the exact carrier profile is confirmed and one non-Bluetooth wired port remains. If compilation succeeds without hardware, report `awaiting-hardware`; do not claim upload success.
+- Upload success proves only that the upload command completed. Keep reboot, serial output, Wi-Fi AP, HTTP exchange, LED behavior, sensor readings, and power-cycle recovery unverified until each is observed.
 - Keep official-core discovery, FQBN details, compilation, upload, reboot, serial evidence, AP connectivity, HTTP exchange, and physical effects separate.
 
 ## Safety boundaries
