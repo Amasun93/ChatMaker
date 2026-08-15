@@ -8,6 +8,9 @@ from typing import Any
 
 if __package__ in {None, ""}:  # Allow direct execution from a checked-out release folder.
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    from chatmaker.catalog import get_catalog_record
+else:
+    from .catalog import get_catalog_record
 
 
 def _has_hardware_intent(request: dict[str, Any]) -> bool:
@@ -61,6 +64,37 @@ def chatweb_llmwiki_requests_for_intent(
             "section_id": "web-and-protocol",
         }
     ]
+
+
+def _exact_board_id(request: dict[str, Any]) -> str | None:
+    hardware = request.get("hardware")
+    if not isinstance(hardware, dict):
+        return None
+    board_id = hardware.get("board")
+    if not _is_nonempty_string(board_id):
+        return None
+    normalized = board_id.strip()
+    record = get_catalog_record(normalized)
+    if not record.get("success"):
+        return None
+    if record.get("record", {}).get("kind") != "board":
+        return None
+    return normalized
+
+
+def _planned_llmwiki_requests(
+    request: dict[str, Any],
+    *,
+    route_result: dict[str, Any],
+) -> list[dict[str, str]]:
+    if not route_result.get("success"):
+        return []
+    if route_result.get("route") != "combined":
+        return []
+    board_id = _exact_board_id(request)
+    if board_id is None:
+        return []
+    return chatweb_llmwiki_requests_for_intent(request, board_id=board_id)
 
 
 def route_project_intent(request: dict[str, Any]) -> dict[str, Any]:
@@ -123,7 +157,12 @@ def route_project_intent(request: dict[str, Any]) -> dict[str, Any]:
 
 
 def execute_request(request: dict[str, Any]) -> dict[str, Any]:
-    return route_project_intent(request)
+    result = route_project_intent(request)
+    result["llmwiki_requests"] = _planned_llmwiki_requests(
+        request,
+        route_result=result,
+    )
+    return result
 
 
 def main(argv: list[str] | None = None) -> int:

@@ -6,7 +6,7 @@ import sys
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "runtime"))
 
-from chatmaker.route import chatweb_llmwiki_requests_for_intent  # noqa: E402
+from chatmaker.route import execute_request  # noqa: E402
 
 
 class SharedLlmWikiExperienceTests(unittest.TestCase):
@@ -35,20 +35,21 @@ class SharedLlmWikiExperienceTests(unittest.TestCase):
         self.assertNotIn("ChatCAD Skill", skill)
 
     def test_independent_web_work_does_not_plan_any_llmwiki_board_request(self):
-        requests = chatweb_llmwiki_requests_for_intent(
+        result = execute_request(
             {
                 "web": {
                     "outcome": "classroom pulse board",
                     "audience": "students",
                 }
             },
-            board_id="arduino-nano-classic",
         )
 
-        self.assertEqual(requests, [])
+        self.assertTrue(result["success"], result)
+        self.assertEqual(result["route"], "web")
+        self.assertEqual(result["llmwiki_requests"], [])
 
     def test_hardware_interface_web_work_plans_only_web_and_protocol_section(self):
-        requests = chatweb_llmwiki_requests_for_intent(
+        result = execute_request(
             {
                 "hardware": {"board": "arduino-nano-classic", "outcome": "sensor console"},
                 "web": {"outcome": "phone control panel"},
@@ -58,12 +59,11 @@ class SharedLlmWikiExperienceTests(unittest.TestCase):
                         {"request": "GET /api/state", "response": "JSON state"}
                     ],
                 },
-            },
-            board_id="arduino-nano-classic",
+            }
         )
 
         self.assertEqual(
-            requests,
+            result["llmwiki_requests"],
             [
                 {
                     "action": "section",
@@ -73,6 +73,24 @@ class SharedLlmWikiExperienceTests(unittest.TestCase):
                 }
             ],
         )
+
+    def test_malformed_board_identity_does_not_trigger_a_board_request(self):
+        result = execute_request(
+            {
+                "hardware": {"board": "arduino-nano-classic-typo", "outcome": "sensor console"},
+                "web": {"outcome": "phone control panel"},
+                "communication_contract": {
+                    "transport": "HTTP",
+                    "interactions": [
+                        {"request": "GET /api/state", "response": "JSON state"}
+                    ],
+                },
+            }
+        )
+
+        self.assertTrue(result["success"], result)
+        self.assertEqual(result["route"], "combined")
+        self.assertEqual(result["llmwiki_requests"], [])
 
 
 if __name__ == "__main__":
