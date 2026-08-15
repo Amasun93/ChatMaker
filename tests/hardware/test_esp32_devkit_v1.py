@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import os
 import tempfile
 import unittest
 from pathlib import Path
@@ -738,9 +739,9 @@ class Esp32DevKitV1Tests(unittest.TestCase):
             build_dir = Path(command[command.index("--build-path") + 1])
             cache_dir = Path(command[command.index("--build-cache-path") + 1])
             self.assertEqual(build_dir.parent.name, ".chatmaker-esp32-builds")
-            self.assertEqual(build_dir.parent.parent, sketch_dir.parent)
+            self.assertTrue(os.path.samefile(build_dir.parent.parent, sketch_dir.parent))
             self.assertEqual(cache_dir.parent.name, ".chatmaker-esp32-cache")
-            self.assertEqual(cache_dir.parent.parent, sketch_dir.parent)
+            self.assertTrue(os.path.samefile(cache_dir.parent.parent, sketch_dir.parent))
             self.assertEqual(cache_dir.drive, build_dir.drive)
             build_dir.mkdir(parents=True, exist_ok=True)
             (build_dir / "blink.ino.bin").write_bytes(b"fresh-firmware")
