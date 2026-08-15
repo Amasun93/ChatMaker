@@ -17,6 +17,10 @@ DEFAULT_BUILTIN_ROOT = (
 
 
 class ActiveResourceProvider(Protocol):
+    def resource_snapshot(
+        self, pack_id: str
+    ) -> tuple[tuple[Path, str] | None, str]: ...
+
     def active_resource_root(self, pack_id: str) -> tuple[Path, str] | None: ...
 
     def generation_token(self) -> str: ...
@@ -168,8 +172,9 @@ class ResourceResolver:
         if override is not None:
             return override
 
+        snapshot_generation: str | None = None
         if pack_id is not None and self.manager is not None:
-            active = self.manager.active_resource_root(pack_id)
+            active, snapshot_generation = self.manager.resource_snapshot(pack_id)
             if active is not None:
                 active_root, version = active
                 candidate = _safe_file(active_root, *relative.parts)
@@ -181,7 +186,7 @@ class ResourceResolver:
                             "pack_id": pack_id,
                             "version": version,
                         },
-                        generation=self.generation_token(),
+                        generation=snapshot_generation,
                     )
 
         builtin_layouts: list[tuple[str, ...]] = []
@@ -197,7 +202,7 @@ class ResourceResolver:
                         "kind": "builtin_core",
                         "core_version": self.core_version,
                     },
-                    generation=self.generation_token(),
+                    generation=snapshot_generation or self.generation_token(),
                 )
         raise FileNotFoundError(relative.as_posix())
 

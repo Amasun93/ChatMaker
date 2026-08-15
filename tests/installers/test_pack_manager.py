@@ -14,6 +14,7 @@ import unittest
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 from pathlib import Path
+from unittest import mock
 
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
@@ -23,6 +24,7 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "runtime"))
 
 from chatmaker.installers.pack_artifact import build_pack
+from chatmaker.installers import pack_manager as pack_manager_module
 
 try:
     from chatmaker.installers.pack_manager import (
@@ -726,6 +728,201 @@ class PackManagerTests(unittest.TestCase):
 
         self.assertEqual(error.reason, "manager_lock_unsafe")
         self.assertEqual(outside.read_bytes(), b"")
+
+    def test_sequence_accepted_before_receipt_failure_recovers_same_registry(self):
+        self.fx.publish("1.0.0", sequence=1)
+
+        def fail_after_sequence(name: str) -> None:
+            if name == "registry.after_sequence_replace":
+                raise RuntimeError(name)
+
+        interrupted = self.fx.manager(failure_injector=fail_after_sequence)
+        error = self.assert_manager_error(
+            "registry_fetch_failed", interrupted.ensure, PACK_ID
+        )
+        self.assertEqual(error.reason, "failure_injected")
+        state_before = interrupted.paths.registry_state.read_bytes()
+
+        recovered = self.fx.manager().ensure(PACK_ID)
+
+        self.assertEqual(recovered["version"], "1.0.0")
+        self.assertEqual(interrupted.paths.registry_state.read_bytes(), state_before)
+        self.assertTrue(interrupted.paths.verified_registry.is_file())
+
+    def test_repeated_replay_cannot_create_its_own_recovery_receipt(self):
+        self.fx.publish("1.0.0", sequence=1)
+        manager = self.fx.manager()
+        manager.ensure(PACK_ID)
+        manager.paths.verified_registry.unlink()
+        active_before = manager.paths.active.read_bytes()
+
+        for _ in range(2):
+            self.assert_manager_error(
+                "registry_replay_detected", manager.update, PACK_ID
+            )
+
+        self.assertEqual(manager.paths.active.read_bytes(), active_before)
+        self.assertFalse(manager.paths.pending_registry.exists())
+
+    def test_drifted_active_version_remains_a_floor_for_update_and_ensure(self):
+        for operation, expected_reason in (
+            ("update", "update_would_downgrade"),
+            ("ensure", "ensure_would_downgrade"),
+        ):
+            with self.subTest(operation=operation):
+                fx = PackFixture()
+                try:
+                    fx.publish("1.1.0", sequence=1)
+                    manager = fx.manager()
+                    manager.ensure(PACK_ID)
+                    active_before = manager.paths.active.read_bytes()
+                    official = (
+                        manager.paths.store
+                        / PACK_ID
+                        / "1.1.0"
+                        / "llmwiki"
+                        / "sections"
+                        / "start-here.md"
+                    )
+                    official.write_text("drift", encoding="utf-8")
+                    manager.paths.verified_registry.unlink()
+                    fx.publish("1.0.0", sequence=2)
+
+                    if operation == "update":
+                        error = self.assert_manager_error(
+                            "pack_activation_failed", manager.update, PACK_ID
+                        )
+                    else:
+                        error = self.assert_manager_error(
+                            "pack_activation_failed", manager.ensure, PACK_ID
+                        )
+
+                    self.assertEqual(error.reason, expected_reason)
+                    self.assertEqual(manager.paths.active.read_bytes(), active_before)
+                    self.assertFalse(
+                        (manager.paths.store / PACK_ID / "1.0.0").exists()
+                    )
+                finally:
+                    fx.cleanup()
+
+    def test_fsynced_part_is_reread_before_cache_promotion(self):
+        self.fx.publish("1.0.0", sequence=1)
+
+        def corrupt_actual_part(name: str) -> None:
+            if name != "pack.after_part_write":
+                return
+            part = next(self.fx.manager().paths.cache.glob("*.part"))
+            data = part.read_bytes()
+            part.write_bytes(data[:-1] + bytes([data[-1] ^ 1]))
+
+        manager = self.fx.manager(phase_callback=corrupt_actual_part)
+        self.assert_manager_error("pack_hash_mismatch", manager.ensure, PACK_ID)
+        self.assertFalse(manager.paths.active.exists())
+        self.assertFalse(list(manager.paths.cache.glob("*.cmpack")))
+
+    def test_newer_registry_refreshes_receipt_for_same_cached_archive(self):
+        entry = self.fx.publish("1.0.0", sequence=1)
+        manager = self.fx.manager()
+        manager.ensure(PACK_ID)
+        self.fx.publish("1.0.0", sequence=2, archive_bytes=self.fx.archive("1.0.0"))
+
+        unchanged = manager.update(PACK_ID)
+
+        self.assertFalse(unchanged["changed"])
+        receipt_path = manager.paths.cache / f"{entry['sha256']}.receipt.json"
+        self.assertEqual(json.loads(receipt_path.read_text(encoding="utf-8"))["sequence"], 2)
+        shutil.rmtree(manager.paths.store / PACK_ID)
+        manager.paths.active.unlink()
+        offline = self.fx.manager(transport=NoNetworkTransport())
+        self.assertEqual(
+            offline.ensure(PACK_ID, version="1.0.0", offline=True)["source"],
+            "cache",
+        )
+
+    def test_status_rejects_metadata_only_archive_identity_tampering(self):
+        self.fx.publish("1.0.0", sequence=1)
+        manager = self.fx.manager()
+        manager.ensure(PACK_ID)
+        metadata = json.loads(manager.paths.installed_metadata.read_text(encoding="utf-8"))
+        metadata["packs"][PACK_ID]["1.0.0"]["archive_sha256"] = "f" * 64
+        manager.paths.installed_metadata.write_text(
+            json.dumps(metadata), encoding="utf-8"
+        )
+
+        status = manager.status(PACK_ID)["packs"][0]
+
+        self.assertFalse(status["verified"])
+        self.assertEqual(status["error"]["code"], "pack_drift_detected")
+
+    def test_rollback_rejects_metadata_only_archive_identity_tampering(self):
+        self.fx.publish("1.0.0", sequence=1)
+        manager = self.fx.manager()
+        manager.ensure(PACK_ID)
+        self.fx.publish("1.1.0", sequence=2)
+        manager.update(PACK_ID)
+        active_before = manager.paths.active.read_bytes()
+        metadata = json.loads(manager.paths.installed_metadata.read_text(encoding="utf-8"))
+        metadata["packs"][PACK_ID]["1.0.0"]["archive_sha256"] = "f" * 64
+        manager.paths.installed_metadata.write_text(
+            json.dumps(metadata), encoding="utf-8"
+        )
+
+        self.assert_manager_error(
+            "pack_drift_detected", manager.rollback, PACK_ID, version="1.0.0"
+        )
+        self.assertEqual(manager.paths.active.read_bytes(), active_before)
+
+    def test_every_store_file_is_fsynced_before_activation(self):
+        self.fx.publish("1.0.0", sequence=1)
+        manager = self.fx.manager()
+        real_fsync = os.fsync
+        seen: set[str] = set()
+
+        def track_store_fsync(descriptor: int) -> None:
+            descriptor_stat = os.fstat(descriptor)
+            store = manager.paths.store
+            if store.is_dir():
+                for path in store.rglob("*"):
+                    if not path.is_file():
+                        continue
+                    path_stat = path.stat()
+                    if (path_stat.st_dev, path_stat.st_ino) == (
+                        descriptor_stat.st_dev,
+                        descriptor_stat.st_ino,
+                    ):
+                        seen.add(path.relative_to(store / PACK_ID / "1.0.0").as_posix())
+            real_fsync(descriptor)
+
+        with mock.patch.object(pack_manager_module.os, "fsync", track_store_fsync):
+            manager.ensure(PACK_ID)
+
+        self.assertEqual(
+            seen,
+            {
+                "pack-manifest.json",
+                "llmwiki/index.yaml",
+                "llmwiki/sections/start-here.md",
+            },
+        )
+
+    def test_unrelated_corrupt_cache_is_quarantined_before_offline_missing(self):
+        manager = self.fx.manager(transport=NoNetworkTransport())
+        manager.paths.cache.mkdir(parents=True)
+        corrupt = manager.paths.cache / f"{'0' * 64}.cmpack"
+        corrupt.write_bytes(b"not a zip")
+
+        error = self.assert_manager_error(
+            "offline_pack_unavailable",
+            manager.ensure,
+            PACK_ID,
+            version="9.9.9",
+            offline=True,
+        )
+
+        self.assertEqual(error.details["cached_versions"], [])
+        self.assertEqual(error.details["installed_versions"], [])
+        self.assertFalse(corrupt.exists())
+        self.assertTrue(list((manager.paths.quarantine / "cache").iterdir()))
 
 
 if __name__ == "__main__":

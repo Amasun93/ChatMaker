@@ -120,6 +120,7 @@ class PackPaths:
     active: Path
     registry_state: Path
     verified_registry: Path
+    pending_registry: Path
     installed_metadata: Path
     manager_lock: Path
 
@@ -140,6 +141,7 @@ class PackPaths:
             active=state / "active.json",
             registry_state=state / "registry-sequences.json",
             verified_registry=state / "verified-registry.json",
+            pending_registry=state / "pending-registry.json",
             installed_metadata=state / "installed-packs.json",
             manager_lock=locks / "pack-manager.lock",
         )
@@ -225,12 +227,56 @@ def _canonical_json(value: Mapping[str, Any]) -> bytes:
 
 def _fsync_directory(path: Path) -> None:
     if os.name == "nt":
+        import ctypes
+        from ctypes import wintypes
+
+        kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+        kernel32.CreateFileW.argtypes = [
+            wintypes.LPCWSTR,
+            wintypes.DWORD,
+            wintypes.DWORD,
+            wintypes.LPVOID,
+            wintypes.DWORD,
+            wintypes.DWORD,
+            wintypes.HANDLE,
+        ]
+        kernel32.CreateFileW.restype = wintypes.HANDLE
+        handle = kernel32.CreateFileW(
+            str(path),
+            0x40000000,  # GENERIC_WRITE
+            0x00000001 | 0x00000002 | 0x00000004,
+            None,
+            3,  # OPEN_EXISTING
+            0x02000000,  # FILE_FLAG_BACKUP_SEMANTICS
+            None,
+        )
+        if handle == wintypes.HANDLE(-1).value:
+            raise ctypes.WinError(ctypes.get_last_error())
+        try:
+            if not kernel32.FlushFileBuffers(handle):
+                raise ctypes.WinError(ctypes.get_last_error())
+        finally:
+            kernel32.CloseHandle(handle)
         return
     descriptor = os.open(path, os.O_RDONLY)
     try:
         os.fsync(descriptor)
     finally:
         os.close(descriptor)
+
+
+def _fsync_tree(root: Path) -> None:
+    files = sorted(path for path in root.rglob("*") if path.is_file())
+    directories = sorted(
+        (path for path in root.rglob("*") if path.is_dir()),
+        key=lambda path: len(path.parts),
+        reverse=True,
+    )
+    for path in files:
+        with path.open("r+b") as handle:
+            os.fsync(handle.fileno())
+    for path in (*directories, root, root.parent):
+        _fsync_directory(path)
 
 
 def _atomic_write(path: Path, data: bytes) -> None:
@@ -358,6 +404,7 @@ class PackManager:
             self.paths.active,
             self.paths.registry_state,
             self.paths.verified_registry,
+            self.paths.pending_registry,
             self.paths.installed_metadata,
         ):
             if self._unsafe_existing_path(path, directory=False):
@@ -484,11 +531,13 @@ class PackManager:
                 if (
                     _VERSION_PATTERN.fullmatch(version) is None
                     or not isinstance(item, dict)
-                    or set(item) != {"archive_sha256", "manifest_sha256"}
+                    or set(item)
+                    != {"archive_sha256", "manifest_sha256", "registry_receipt"}
                     or not isinstance(item["archive_sha256"], str)
                     or _SHA_PATTERN.fullmatch(item["archive_sha256"]) is None
                     or not isinstance(item["manifest_sha256"], str)
                     or _SHA_PATTERN.fullmatch(item["manifest_sha256"]) is None
+                    or not isinstance(item["registry_receipt"], dict)
                 ):
                     raise PackManagerError(
                         "pack_activation_failed", reason="installed_metadata_invalid"
@@ -501,6 +550,7 @@ class PackManager:
         version: str,
         archive_sha256: str,
         manifest: Mapping[str, Any],
+        receipt: Mapping[str, Any],
     ) -> None:
         metadata = self._load_installed_metadata()
         packs = {identity: dict(versions) for identity, versions in metadata["packs"].items()}
@@ -510,8 +560,12 @@ class PackManager:
         expected = {
             "archive_sha256": archive_sha256,
             "manifest_sha256": manifest_sha256,
+            "registry_receipt": dict(receipt),
         }
-        if existing is not None and existing != expected:
+        if existing is not None and (
+            existing.get("archive_sha256") != archive_sha256
+            or existing.get("manifest_sha256") != manifest_sha256
+        ):
             raise PackManagerError(
                 "pack_drift_detected", reason="installed_archive_identity_changed"
             )
@@ -567,6 +621,7 @@ class PackManager:
                         "pack_drift_detected",
                         reason="immutable_store_manifest_identity_changed",
                     )
+                self._durable_installed_entry(pack_id, version, installed=installed)
             return target, manifest
         except PackManagerError:
             raise
@@ -576,15 +631,31 @@ class PackManager:
             ) from exc
 
     def active_resource_root(self, pack_id: str) -> tuple[Path, str] | None:
+        return self.resource_snapshot(pack_id)[0]
+
+    def resource_snapshot(
+        self, pack_id: str
+    ) -> tuple[tuple[Path, str] | None, str]:
         try:
             self._assert_managed_layout()
             self._validate_pack_id(pack_id)
-            state, _ = self._load_active()
-            item = state["packs"].get(pack_id)
-            if item is None:
-                return None
-            root, _ = self._verify_store(pack_id, item["version"])
-            return root, item["version"]
+            with _interprocess_lock(self.paths.manager_lock):
+                state, raw = self._load_active()
+                token = (
+                    f"{state['generation']}:"
+                    f"{hashlib.sha256(raw or b'').hexdigest()}"
+                )
+                item = state["packs"].get(pack_id)
+                if item is None:
+                    return None, token
+                root, _ = self._verify_store(pack_id, item["version"])
+                evidence = self._durable_installed_entry(pack_id, item["version"])
+                if item["archive_sha256"] != evidence["sha256"]:
+                    raise PackManagerError(
+                        "pack_drift_detected",
+                        reason="active_archive_identity_changed",
+                    )
+                return (root, item["version"]), token
         except Exception as exc:
             raise self._translate(exc) from exc
 
@@ -613,6 +684,7 @@ class PackManager:
             try:
                 manifest = self._cached_manifest(path)
             except PackArtifactError:
+                self._quarantine_cache(path)
                 continue
             if manifest.get("pack_id") == pack_id:
                 versions.add(manifest["pack_version"])
@@ -639,6 +711,12 @@ class PackManager:
                 }
                 try:
                     self._verify_store(identity, item["version"])
+                    evidence = self._durable_installed_entry(identity, item["version"])
+                    if item["archive_sha256"] != evidence["sha256"]:
+                        raise PackManagerError(
+                            "pack_drift_detected",
+                            reason="active_archive_identity_changed",
+                        )
                     record["verified"] = True
                 except PackManagerError as exc:
                     record["error"] = exc.to_dict()
@@ -749,21 +827,93 @@ class PackManager:
             "sequence": verified["sequence"],
         }
 
+    def _candidate_receipt(
+        self,
+        *,
+        registry_bytes: bytes,
+        signature_bytes: bytes,
+        final_registry_url: str,
+        final_signature_url: str,
+    ) -> dict[str, Any] | None:
+        try:
+            registry_value = json.loads(registry_bytes.decode("utf-8"))
+            signature_value = json.loads(signature_bytes.decode("utf-8"))
+            sequence = registry_value["sequence"]
+            key_id = signature_value["key_id"]
+        except (KeyError, TypeError, UnicodeDecodeError, json.JSONDecodeError):
+            return None
+        if not isinstance(sequence, int) or not isinstance(key_id, str):
+            return None
+        return {
+            "schema_version": "1.0",
+            "registry_url": self.registry_url,
+            "signature_url": self.signature_url,
+            "final_registry_url": final_registry_url,
+            "final_signature_url": final_signature_url,
+            "registry_bytes_base64": base64.b64encode(registry_bytes).decode("ascii"),
+            "signature_bytes_base64": base64.b64encode(signature_bytes).decode("ascii"),
+            "key_id": key_id,
+            "sequence": sequence,
+        }
+
+    def _promote_registry_receipt(self, receipt: Mapping[str, Any]) -> None:
+        _atomic_write(self.paths.verified_registry, _canonical_json(receipt))
+        self.paths.pending_registry.unlink(missing_ok=True)
+        _fsync_directory(self.paths.state)
+
     def _fetch_registry(self) -> tuple[dict[str, Any], dict[str, Any]]:
         registry_response = self._fetch(self.registry_url, code="registry_fetch_failed")
         signature_response = self._fetch(self.signature_url, code="registry_fetch_failed")
-        verified = verify_registry(
-            registry_response.data,
-            signature_response.data,
-            registry_url=self.registry_url,
+        candidate = self._candidate_receipt(
+            registry_bytes=registry_response.data,
+            signature_bytes=signature_response.data,
             final_registry_url=registry_response.final_url,
-            signature_url=self.signature_url,
             final_signature_url=signature_response.final_url,
-            trust_store=self.trust_store,
-            state_path=self.paths.registry_state,
-            now=self._current_time(),
-            failure_injector=self.failure_injector,
         )
+        candidate_raw = _canonical_json(candidate) if candidate is not None else None
+        pending_before = (
+            self.paths.pending_registry.read_bytes()
+            if self.paths.pending_registry.is_file()
+            else None
+        )
+        verified_before = (
+            self.paths.verified_registry.read_bytes()
+            if self.paths.verified_registry.is_file()
+            else None
+        )
+        recoverable = (
+            candidate_raw is not None
+            and pending_before == candidate_raw
+            and verified_before != candidate_raw
+        )
+        if candidate_raw is not None:
+            _atomic_write(self.paths.pending_registry, candidate_raw)
+        try:
+            verified = verify_registry(
+                registry_response.data,
+                signature_response.data,
+                registry_url=self.registry_url,
+                final_registry_url=registry_response.final_url,
+                signature_url=self.signature_url,
+                final_signature_url=signature_response.final_url,
+                trust_store=self.trust_store,
+                state_path=self.paths.registry_state,
+                now=self._current_time(),
+                failure_injector=self.failure_injector,
+            )
+        except RegistryError as exc:
+            if exc.code == "registry_replay_detected" and recoverable:
+                registry, receipt = self._verify_receipt(self.paths.pending_registry)
+                self._promote_registry_receipt(receipt)
+                return registry, receipt
+            if exc.code == "registry_replay_detected" and candidate_raw is not None:
+                try:
+                    if self.paths.pending_registry.read_bytes() == candidate_raw:
+                        self.paths.pending_registry.unlink(missing_ok=True)
+                        _fsync_directory(self.paths.state)
+                except OSError:
+                    pass
+            raise
         receipt = self._receipt(
             registry_bytes=registry_response.data,
             signature_bytes=signature_response.data,
@@ -771,17 +921,11 @@ class PackManager:
             final_signature_url=signature_response.final_url,
             verified=verified,
         )
-        _atomic_write(self.paths.verified_registry, _canonical_json(receipt))
+        self._promote_registry_receipt(receipt)
         return verified["registry"], receipt
 
     @staticmethod
-    def _read_receipt(path: Path) -> dict[str, Any]:
-        try:
-            value = json.loads(path.read_text(encoding="utf-8"))
-        except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
-            raise PackManagerError(
-                "registry_fetch_failed", reason="verified_registry_state_invalid"
-            ) from exc
+    def _validate_receipt_value(value: Any) -> dict[str, Any]:
         required = {
             "schema_version",
             "registry_url",
@@ -797,7 +941,17 @@ class PackManager:
             raise PackManagerError(
                 "registry_fetch_failed", reason="verified_registry_state_invalid"
             )
-        return value
+        return dict(value)
+
+    @classmethod
+    def _read_receipt(cls, path: Path) -> dict[str, Any]:
+        try:
+            value = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
+            raise PackManagerError(
+                "registry_fetch_failed", reason="verified_registry_state_invalid"
+            ) from exc
+        return cls._validate_receipt_value(value)
 
     def _highest_sequence(self, registry_url: str, key_id: str) -> int:
         try:
@@ -823,8 +977,14 @@ class PackManager:
             raise PackManagerError("registry_fetch_failed", reason="sequence_state_invalid")
         return matches[0]
 
-    def _verify_receipt(self, path: Path) -> tuple[dict[str, Any], dict[str, Any]]:
-        receipt = self._read_receipt(path)
+    def _verify_receipt_value(
+        self,
+        receipt_value: Mapping[str, Any],
+        *,
+        verification_time: datetime,
+        require_highest: bool,
+    ) -> tuple[dict[str, Any], dict[str, Any]]:
+        receipt = self._validate_receipt_value(dict(receipt_value))
         try:
             registry_bytes = base64.b64decode(
                 receipt["registry_bytes_base64"], validate=True
@@ -846,7 +1006,7 @@ class PackManager:
                 final_signature_url=receipt["final_signature_url"],
                 trust_store=self.trust_store,
                 state_path=Path(temp) / "sequence.json",
-                now=self._current_time(),
+                now=verification_time,
             )
         if (
             verified["key_id"] != receipt["key_id"]
@@ -855,12 +1015,20 @@ class PackManager:
             raise PackManagerError(
                 "registry_fetch_failed", reason="verified_registry_state_invalid"
             )
-        highest = self._highest_sequence(receipt["registry_url"], receipt["key_id"])
-        if highest != receipt["sequence"]:
-            raise PackManagerError(
-                "registry_replay_detected", reason="verified_metadata_stale"
-            )
+        if require_highest:
+            highest = self._highest_sequence(receipt["registry_url"], receipt["key_id"])
+            if highest != receipt["sequence"]:
+                raise PackManagerError(
+                    "registry_replay_detected", reason="verified_metadata_stale"
+                )
         return verified["registry"], receipt
+
+    def _verify_receipt(self, path: Path) -> tuple[dict[str, Any], dict[str, Any]]:
+        return self._verify_receipt_value(
+            self._read_receipt(path),
+            verification_time=self._current_time(),
+            require_highest=True,
+        )
 
     @staticmethod
     def _select_entry(
@@ -877,6 +1045,57 @@ class PackManager:
                 "pack_not_allowlisted", reason="pack_version_not_in_registry"
             )
         return dict(matches[0])
+
+    def _durable_installed_entry(
+        self,
+        pack_id: str,
+        version: str,
+        *,
+        installed: Mapping[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        try:
+            if installed is None:
+                metadata = self._load_installed_metadata()
+                installed = metadata["packs"].get(pack_id, {}).get(version)
+            if not isinstance(installed, Mapping):
+                raise PackManagerError(
+                    "pack_drift_detected", reason="installed_receipt_missing"
+                )
+            receipt = self._validate_receipt_value(installed.get("registry_receipt"))
+            registry_bytes = base64.b64decode(
+                receipt["registry_bytes_base64"], validate=True
+            )
+            registry_value = json.loads(registry_bytes.decode("utf-8"))
+            generated_at = registry_value.get("generated_at")
+            if not isinstance(generated_at, str):
+                raise ValueError("generated_at missing")
+            verification_time = datetime.fromisoformat(
+                generated_at.replace("Z", "+00:00")
+            )
+            if verification_time.tzinfo is None:
+                raise ValueError("generated_at must be timezone aware")
+            registry, _ = self._verify_receipt_value(
+                receipt,
+                verification_time=verification_time.astimezone(timezone.utc),
+                require_highest=False,
+            )
+            entry = self._select_entry(registry, pack_id, version)
+            if entry["sha256"] != installed.get("archive_sha256"):
+                raise PackManagerError(
+                    "pack_drift_detected",
+                    reason="installed_archive_identity_changed",
+                )
+            return entry
+        except PackManagerError as exc:
+            if exc.code == "pack_drift_detected":
+                raise
+            raise PackManagerError(
+                "pack_drift_detected", reason="installed_receipt_invalid"
+            ) from exc
+        except (RegistryError, ValueError, TypeError, UnicodeDecodeError, json.JSONDecodeError) as exc:
+            raise PackManagerError(
+                "pack_drift_detected", reason="installed_receipt_invalid"
+            ) from exc
 
     def _resume_entry(
         self, pack_id: str, version: str | None
@@ -920,6 +1139,21 @@ class PackManager:
     def _cache_receipt_path(self, sha256: str) -> Path:
         return self.paths.cache / f"{sha256}.receipt.json"
 
+    def _refresh_cache_receipt(
+        self, entry: Mapping[str, Any], receipt: Mapping[str, Any]
+    ) -> None:
+        cache_path = self.paths.cache / f"{entry['sha256']}.cmpack"
+        if not cache_path.is_file():
+            return
+        data = cache_path.read_bytes()
+        verify_pack_download(entry, data)
+        manifest = validate_pack_archive(data, core_version=self.core_version)
+        self._match_manifest(entry, manifest)
+        _atomic_write(
+            self._cache_receipt_path(entry["sha256"]),
+            _canonical_json(receipt),
+        )
+
     def _archive_for_entry(
         self,
         entry: Mapping[str, Any],
@@ -935,8 +1169,7 @@ class PackManager:
             verify_pack_download(entry, data)
             manifest = validate_pack_archive(data, core_version=self.core_version)
             self._match_manifest(entry, manifest)
-            if not receipt_path.is_file():
-                _atomic_write(receipt_path, _canonical_json(receipt))
+            _atomic_write(receipt_path, _canonical_json(receipt))
             return data, "cache"
         if offline:
             raise PackManagerError(
@@ -962,7 +1195,13 @@ class PackManager:
                 "pack_download_failed", reason="part_write_failed", retryable=True
             ) from exc
         self._inject("pack.after_part_write")
-        data = verify_pack_download(entry, response.data, final_url=response.final_url)
+        try:
+            part_bytes = part_path.read_bytes()
+        except OSError as exc:
+            raise PackManagerError(
+                "pack_download_failed", reason="part_read_failed", retryable=True
+            ) from exc
+        data = verify_pack_download(entry, part_bytes, final_url=response.final_url)
         manifest = validate_pack_archive(data, core_version=self.core_version)
         self._match_manifest(entry, manifest)
         self._inject("pack.after_archive_verify")
@@ -986,6 +1225,27 @@ class PackManager:
                 "pack_drift_detected", reason="quarantine_failed"
             ) from exc
 
+    def _quarantine_cache(self, archive: Path) -> None:
+        if not _lexists(archive):
+            return
+        destination_root = self.paths.quarantine / "cache"
+        destination_root.mkdir(parents=True, exist_ok=True)
+        suffix = uuid.uuid4().hex
+        destination = destination_root / f"{archive.name}-{suffix}"
+        receipt = archive.with_suffix(".receipt.json")
+        try:
+            os.replace(archive, destination)
+            if _lexists(receipt):
+                os.replace(
+                    receipt,
+                    destination_root / f"{receipt.name}-{suffix}",
+                )
+            _fsync_directory(destination_root)
+        except OSError as exc:
+            raise PackManagerError(
+                "pack_activation_failed", reason="cache_quarantine_failed"
+            ) from exc
+
     def _restore_active(self, old_raw: bytes | None) -> None:
         if old_raw is None:
             try:
@@ -1005,6 +1265,7 @@ class PackManager:
             ) from exc
 
     def _activate(self, pack_id: str, version: str, archive_sha256: str) -> None:
+        _fsync_tree(self.paths.store / pack_id / version)
         state, old_raw = self._load_active()
         new_state = {
             "schema_version": "1.0",
@@ -1044,7 +1305,11 @@ class PackManager:
             try:
                 _, installed_manifest = self._verify_store(pack_id, version)
                 self._record_installed(
-                    pack_id, version, entry["sha256"], installed_manifest
+                    pack_id,
+                    version,
+                    entry["sha256"],
+                    installed_manifest,
+                    receipt,
                 )
                 self._activate(pack_id, version, entry["sha256"])
                 return {
@@ -1091,7 +1356,11 @@ class PackManager:
         )
         self._match_manifest(entry, installed_manifest)
         self._record_installed(
-            pack_id, version, entry["sha256"], installed_manifest
+            pack_id,
+            version,
+            entry["sha256"],
+            installed_manifest,
+            receipt,
         )
         self._verify_store(pack_id, version)
         self._activate(pack_id, version, entry["sha256"])
@@ -1146,6 +1415,10 @@ class PackManager:
         for archive in self.paths.cache.glob("*.cmpack"):
             try:
                 manifest = self._cached_manifest(archive)
+            except PackArtifactError:
+                self._quarantine_cache(archive)
+                continue
+            try:
                 if (
                     manifest.get("pack_id") != pack_id
                     or manifest.get("pack_version") != version
@@ -1161,7 +1434,7 @@ class PackManager:
                 verify_pack_download(entry, archive.read_bytes())
                 self._match_manifest(entry, manifest)
                 return entry, receipt
-            except (PackManagerError, RegistryError, PackArtifactError) as exc:
+            except (PackManagerError, RegistryError) as exc:
                 if first_error is None:
                     first_error = exc
         if first_error is not None:
@@ -1184,6 +1457,7 @@ class PackManager:
     ) -> dict[str, Any]:
         state, _ = self._load_active()
         active = state["packs"].get(pack_id)
+        floor_version = active["version"] if active is not None else None
         if (
             active is not None
             and version is not None
@@ -1232,6 +1506,13 @@ class PackManager:
                     target_version = cached[-1] if cached else None
             if target_version is None:
                 raise self._offline_missing(pack_id)
+            if (
+                floor_version is not None
+                and _version_key(target_version) < _version_key(floor_version)
+            ):
+                raise PackManagerError(
+                    "pack_activation_failed", reason="ensure_would_downgrade"
+                )
             cached_entry = self._cache_entry(pack_id, target_version)
             if cached_entry is None:
                 raise self._offline_missing(pack_id)
@@ -1244,6 +1525,13 @@ class PackManager:
             entry = self._select_entry(registry, pack_id, version)
         else:
             entry, receipt = resumed
+        if (
+            floor_version is not None
+            and _version_key(entry["version"]) < _version_key(floor_version)
+        ):
+            raise PackManagerError(
+                "pack_activation_failed", reason="ensure_would_downgrade"
+            )
         return self._install_entry(entry, receipt, offline=False)
 
     def ensure(
@@ -1260,29 +1548,7 @@ class PackManager:
             raise self._translate(exc) from exc
 
     def _archive_sha_for_version(self, pack_id: str, version: str) -> str:
-        metadata = self._load_installed_metadata()
-        installed = metadata["packs"].get(pack_id, {}).get(version)
-        if installed is not None:
-            return installed["archive_sha256"]
-        state, _ = self._load_active()
-        active = state["packs"].get(pack_id)
-        if active is not None and active["version"] == version:
-            return active["archive_sha256"]
-        if self.paths.cache.is_dir():
-            for archive in self.paths.cache.glob("*.cmpack"):
-                try:
-                    manifest = self._cached_manifest(archive)
-                except PackArtifactError:
-                    continue
-                if (
-                    manifest.get("pack_id") == pack_id
-                    and manifest.get("pack_version") == version
-                    and _SHA_PATTERN.fullmatch(archive.stem)
-                ):
-                    return archive.stem
-        raise PackManagerError(
-            "pack_activation_failed", reason="installed_archive_identity_missing"
-        )
+        return self._durable_installed_entry(pack_id, version)["sha256"]
 
     def update(self, pack_id: str) -> dict[str, Any]:
         try:
@@ -1292,9 +1558,13 @@ class PackManager:
                 self._recover()
                 state, _ = self._load_active()
                 active = state["packs"].get(pack_id)
+                floor_version = active["version"] if active is not None else None
+                active_manifest: dict[str, Any] | None = None
                 if active is not None:
                     try:
-                        self._verify_store(pack_id, active["version"])
+                        _, active_manifest = self._verify_store(
+                            pack_id, active["version"]
+                        )
                     except PackManagerError as exc:
                         if exc.code != "pack_drift_detected":
                             raise
@@ -1303,6 +1573,14 @@ class PackManager:
                 resumed = self._resume_entry(pack_id, None)
                 if resumed is not None:
                     resumed_entry, resumed_receipt = resumed
+                    if (
+                        floor_version is not None
+                        and _version_key(resumed_entry["version"])
+                        < _version_key(floor_version)
+                    ):
+                        raise PackManagerError(
+                            "pack_activation_failed", reason="update_would_downgrade"
+                        )
                     if active is None or _version_key(resumed_entry["version"]) > _version_key(
                         active["version"]
                     ):
@@ -1313,6 +1591,13 @@ class PackManager:
                         return result
                 registry, receipt = self._fetch_registry()
                 entry = self._select_entry(registry, pack_id, None)
+                if (
+                    floor_version is not None
+                    and _version_key(entry["version"]) < _version_key(floor_version)
+                ):
+                    raise PackManagerError(
+                        "pack_activation_failed", reason="update_would_downgrade"
+                    )
                 if active is not None:
                     current_key = _version_key(active["version"])
                     target_key = _version_key(entry["version"])
@@ -1321,6 +1606,19 @@ class PackManager:
                             "pack_activation_failed", reason="update_would_downgrade"
                         )
                     if target_key == current_key:
+                        if active_manifest is None:
+                            raise PackManagerError(
+                                "pack_drift_detected",
+                                reason="active_manifest_missing",
+                            )
+                        self._refresh_cache_receipt(entry, receipt)
+                        self._record_installed(
+                            pack_id,
+                            active["version"],
+                            entry["sha256"],
+                            active_manifest,
+                            receipt,
+                        )
                         return {
                             "success": True,
                             "action": "update",
@@ -1360,11 +1658,11 @@ class PackManager:
                 if (
                     target_version is None
                     or target_version not in older
-                    or not self._installed_exact(pack_id, target_version)
                 ):
                     raise PackManagerError(
                         "pack_activation_failed", reason="rollback_target_unavailable"
                     )
+                self._verify_store(pack_id, target_version)
                 digest = self._archive_sha_for_version(pack_id, target_version)
                 self._activate(pack_id, target_version, digest)
                 return {

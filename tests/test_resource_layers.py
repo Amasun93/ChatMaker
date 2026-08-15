@@ -36,6 +36,29 @@ class _VerifiedManager:
     def generation_token(self) -> str:
         return "7:verified-active-state"
 
+    def resource_snapshot(
+        self, pack_id: str
+    ) -> tuple[tuple[Path, str] | None, str]:
+        return self.active_resource_root(pack_id), self.generation_token()
+
+
+class _RacingManager:
+    def __init__(self, old_root: Path) -> None:
+        self.old_root = old_root
+
+    def resource_snapshot(
+        self, pack_id: str
+    ) -> tuple[tuple[Path, str] | None, str]:
+        if pack_id != PACK_ID:
+            return None, "1:old-state"
+        return (self.old_root, "1.0.0"), "1:old-state"
+
+    def active_resource_root(self, pack_id: str):
+        raise AssertionError("resolver sampled active root outside the snapshot")
+
+    def generation_token(self) -> str:
+        return "2:new-state"
+
 
 class ResourceLayerTests(unittest.TestCase):
     def setUp(self) -> None:
@@ -161,6 +184,21 @@ class ResourceLayerTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             resolver.resolve("../secret.md", pack_id=PACK_ID)
         self.assertEqual(outside.read_text(encoding="utf-8"), "secret")
+
+    def test_official_path_and_generation_come_from_one_consistent_snapshot(self):
+        self._write(self.official_root, RESOURCE, "old official")
+        resolver = ResourceResolver(
+            user_root=self.user_root,
+            builtin_root=self.builtin_root,
+            manager=_RacingManager(self.official_root),
+            environ={},
+        )
+
+        resolved = resolver.resolve(RESOURCE, pack_id=PACK_ID)
+
+        self.assertEqual(resolved.read_text(), "old official")
+        self.assertEqual(resolved.generation, "1:old-state")
+        self.assertEqual(resolved.provenance["version"], "1.0.0")
 
 
 if __name__ == "__main__":
