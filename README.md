@@ -125,11 +125,15 @@ Skill 负责告诉 AI 应该怎样判断、哪些技术事实不能猜、什么�
 
 当前公开版本仍为 [`v0.1.0-rc4`](https://github.com/Amasun93/ChatMaker/releases/tag/v0.1.0-rc4)。rc5 只是在本地构建和验证的候选；它还不是 GitHub 发布。
 
+因此，从公开 `main` 执行 `git clone` 得到的不是这份尚未推送的 rc5 候选。只有已经从维护者处取得本地 rc5 ZIP 和 `.sha256` 的审阅者，才应按下面步骤安装；其他用户继续使用公开 rc4。
+
 rc5 新增受控 ESP32 环境准备（只安装官方 `esp32:esp32@3.3.11`）、可执行项目路由、创意简报规划、显式高级游乐场和四页 Chromium 自动化。Nano/Uno 继续使用 Mind+；ESP32 只使用官方 Arduino CLI 和精确 DOIT FQBN。完整安装、命令、前置条件和卸载恢复说明见 [安装说明](docs/installation.md)。
 
 ```powershell
-git clone https://github.com/Amasun93/ChatMaker.git
-cd ChatMaker
+Get-FileHash .\ChatMaker-0.1.0-rc5.zip -Algorithm SHA256
+Get-Content .\ChatMaker-0.1.0-rc5.zip.sha256
+Expand-Archive .\ChatMaker-0.1.0-rc5.zip -DestinationPath .
+Set-Location .\ChatMaker-0.1.0-rc5
 python -m pip install -e .
 python -m unittest discover -s tests -v
 python runtime/doctor.py

@@ -26,6 +26,26 @@ def load_builder():
 
 
 class ReleasePackageTests(unittest.TestCase):
+    def test_installation_verifies_archive_before_entering_extracted_directory(self):
+        installation = (ROOT / "docs" / "installation.md").read_text(encoding="utf-8")
+        checksum_position = installation.find("Get-FileHash .\\ChatMaker-0.1.0-rc5.zip")
+        extract_position = installation.find("Expand-Archive")
+        enter_position = installation.find("Set-Location .\\ChatMaker-0.1.0-rc5")
+
+        self.assertGreaterEqual(checksum_position, 0)
+        self.assertGreaterEqual(extract_position, 0)
+        self.assertGreaterEqual(enter_position, 0)
+        self.assertLess(checksum_position, extract_position)
+        self.assertLess(extract_position, enter_position)
+
+    def test_workbuddy_stdio_is_excluded_from_help_claim(self):
+        installation = (ROOT / "docs" / "installation.md").read_text(encoding="utf-8")
+
+        self.assertNotIn("所有已安装命令均支持 `--help`", installation)
+        self.assertNotIn("All installed commands support `--help`", installation)
+        self.assertNotRegex(installation, r"chatmaker-workbuddy-mcp\s+--help")
+        self.assertIn('"method":"tools/list"', installation)
+
     def test_release_cli_defaults_to_rc5(self):
         with tempfile.TemporaryDirectory() as directory:
             completed = subprocess.run(

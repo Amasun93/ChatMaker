@@ -24,10 +24,10 @@ git diff --check
 
 结果：
 
-- 单元/集成/发布合同测试：`Ran 174 tests ... OK`。
+- 单元/集成/发布合同测试：`Ran 176 tests ... OK`。
 - doctor：3 块板卡、12 个元器件、14 个配方，三套 Skill 均 `ok: true`。
 - 独立 Skill 校验：`chatmaker`、`chatduino`、`chatweb` 均 `[OK]`。
-- 发布合同聚焦运行：`Ran 2 tests ... OK`；覆盖 rc5 默认版本、确定性构建和 ESP32/路由/网页/浏览器/安装资产清单。
+- 发布合同聚焦运行：`Ran 4 tests ... OK`；覆盖 rc5 默认版本、确定性构建、ESP32/路由/网页/浏览器/安装资产清单、先校验后解压顺序和 WorkBuddy stdio 帮助边界。
 - Playwright Chromium：`4 passed`；覆盖课堂页、模拟硬件页、ESP32 AP 模拟页和高级游乐场。
 - `git diff --check`：退出码 0；只显示 Windows LF/CRLF 工作区转换提醒，无空白错误。
 
@@ -63,7 +63,27 @@ C:\Users\asus\AppData\Local\Temp\chatmaker-rc5-candidate-202ccc211c984465aa12c2b
 - 解压目录 `npm ci`：安装 3 个包，0 个漏洞；Chromium：`4 passed`。
 - 四块板卡命令均为 `action: compile`，没有调用 `compile-upload` 或 `upload`。
 
-确切的最终 ZIP 路径和 SHA-256 写入本次 Task 4 报告；最终归档后必须再次从最终 ZIP 重跑上述隔离检查。
+## 修订后最终归档的全新解压复验
+
+Fix round 1 修正文档后重新生成最终归档，并从下列第二个全新目录和独立 venv 复验：
+
+```text
+C:\Users\asus\AppData\Local\Temp\chatmaker-rc5-fix1-final-c82e81b123f247ab9fbdfa2039032003\ChatMaker-0.1.0-rc5
+```
+
+最终归档结果：
+
+- `importlib.metadata.version("chatmaker")` 为 `0.1.0rc5`；`chatmaker.__file__` 位于上述解压目录，不是工作树路径。
+- doctor 为 3 块板卡 / 12 个元器件 / 14 个配方，三套 Skill 均通过；独立 Skill 校验全部 `[OK]`。
+- WorkBuddy stdio `initialize` 返回 `serverInfo.version = 1.7.0`，`tools/list` 返回 23 个工具。
+- Nano Blink：`mindplus:avr:nano:cpu=atmega328`，程序 2002 B、RAM 204 B，编译成功。
+- Uno Blink：`mindplus:avr:uno`，程序 2008 B、RAM 204 B，编译成功。
+- ESP32 Blink：官方 `esp32:esp32@3.3.11` 与精确 DOIT FQBN，程序 271664 B、RAM 22116 B，编译成功。
+- ESP32 AP：同一官方 Core/FQBN，程序 946528 B、RAM 47168 B；WiFi、Network、WebServer、FS、Hash 均为 3.3.11，编译成功。
+- `npm ci` 成功，Chromium 自动化 `4 passed`。
+- 所有硬件命令都只使用 `action: compile`；没有上传、串口、网络或物理效果操作。
+
+修订后两份最终 ZIP 的确切路径和 SHA-256 写入 Task 4 报告和同目录 `.sha256`。sidecar 是最终哈希权威；本文件不嵌入 ZIP 自身哈希，避免自引用改变归档字节。
 
 ## 证据门
 

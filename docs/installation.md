@@ -7,14 +7,16 @@
 ## 1. 共同前置条件 / Common prerequisites
 
 1. Windows 64 位；Python 3.11 或更高版本，并可使用 `python -m pip`。
-2. 下载 `ChatMaker-0.1.0-rc5.zip` 与同名 `.sha256`，校验后解压到长期保留的位置。
-3. 在解压后的 `ChatMaker-0.1.0-rc5` 目录打开 PowerShell。安装器和 editable install 会引用该目录，不要在使用期间移动或删除它。
+2. 下载 `ChatMaker-0.1.0-rc5.zip` 与同名 `.sha256` 到同一个下载目录。
+3. 先在下载目录校验 ZIP，再解压并进入长期保留的源码目录。安装器和 editable install 会引用该目录，不要在使用期间移动或删除它。
 
-Windows 64-bit, Python 3.11+, and a persistent extracted directory are required. Run every command below from the extracted `ChatMaker-0.1.0-rc5` directory.
+Windows 64-bit and Python 3.11+ are required. Start in the download directory that contains both the ZIP and sidecar. Verify first; only then extract and enter the persistent source directory.
 
 ```powershell
 Get-FileHash .\ChatMaker-0.1.0-rc5.zip -Algorithm SHA256
 Get-Content .\ChatMaker-0.1.0-rc5.zip.sha256
+Expand-Archive .\ChatMaker-0.1.0-rc5.zip -DestinationPath .
+Set-Location .\ChatMaker-0.1.0-rc5
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install --upgrade pip
@@ -115,7 +117,9 @@ npx playwright install chromium
 npm run test:browser
 ```
 
-所有已安装命令均支持 `--help`：`chatmaker-doctor`、`chatmaker-catalog`、`chatmaker-route`、`chatmaker-nano`、`chatmaker-uno`、`chatmaker-esp32`、`chatmaker-nano-examples`、`chatmaker-serial`、`chatmaker-workbuddy-mcp`、`chatmaker-install-workbuddy`、`chatmaker-install-codex`、`chatmaker-web`、`chatmaker-web-plan`、`chatmaker-web-playground`、`chatmaker-web-preview`、`chatmaker-web-embed`。
+需要查看普通 CLI 参数时，可对这些命令分别传入 `--help`：`chatmaker-doctor`、`chatmaker-catalog`、`chatmaker-route`、`chatmaker-nano`、`chatmaker-uno`、`chatmaker-esp32`、`chatmaker-nano-examples`、`chatmaker-serial`、`chatmaker-install-workbuddy`、`chatmaker-install-codex`、`chatmaker-web`、`chatmaker-web-plan`、`chatmaker-web-playground`、`chatmaker-web-preview`、`chatmaker-web-embed`。
+
+For ordinary CLI usage, pass `--help` to the commands listed above. `chatmaker-workbuddy-mcp` is different: it is a JSON-RPC stdio service that waits for input and must not be invoked with `--help`. Use the `initialize` / `tools/list` pipe shown in section 5 for a direct smoke test, or run `chatmaker-install-workbuddy doctor` to inspect the installed WorkBuddy integration safely.
 
 ## 7. 证据边界 / Evidence boundary
 

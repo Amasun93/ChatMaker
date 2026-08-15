@@ -36,13 +36,17 @@ Compilation, firmware upload, browser interaction, serial evidence, and physical
 
 The public release remains [`v0.1.0-rc4`](https://github.com/Amasun93/ChatMaker/releases/tag/v0.1.0-rc4). rc1, rc2, rc3, and rc4 remain historical releases with their original artifacts and verification records. rc5 is only a locally built candidate until commit, push, CI, tag, GitHub prerelease, and asset visibility have each been confirmed.
 
+Therefore, cloning public `main` does not obtain this unpushed rc5 candidate. Only reviewers who have received the local rc5 ZIP and `.sha256` from the maintainer should install it with the sequence below; everyone else should continue using public rc4.
+
 rc5 contains fourteen recipes and a WorkBuddy stdio server `1.7.0` with 23 tools: 2 catalog tools, 5 Nano tools, 5 Uno tools, 5 ESP32 tools, and 6 serial tools. `chatmaker-route` performs executable hardware/web/combined routing. `chatmaker-web-plan` asks at most two load-bearing questions or returns two or three curated directions; expanded directions and `chatmaker-web-playground` require explicit `--advanced`. Real Chromium automation covers the classroom, simulated-hardware, ESP32 AP, and advanced-playground pages.
 
 Nano and Uno continue to use Mind+ 1.x/2.x. ESP32 uses only an official Arduino CLI, the locked official core `esp32:esp32@3.3.11`, and exact FQBN `esp32:esp32:esp32doit-devkit-v1`. The AP page keeps `examples/chatweb/esp32-ap-control.html` as its only editable source and generates the embedded firmware header with `chatmaker-web-embed`. Compilation, upload, browser/serial/network operation, power-cycle, and physical effects remain separate gates. See the bilingual [installation guide](docs/installation.md) and [rc5 release notes](RELEASE_NOTES.md).
 
 ```powershell
-git clone https://github.com/Amasun93/ChatMaker.git
-cd ChatMaker
+Get-FileHash .\ChatMaker-0.1.0-rc5.zip -Algorithm SHA256
+Get-Content .\ChatMaker-0.1.0-rc5.zip.sha256
+Expand-Archive .\ChatMaker-0.1.0-rc5.zip -DestinationPath .
+Set-Location .\ChatMaker-0.1.0-rc5
 python -m pip install -e .
 python -m unittest discover -s tests -v
 python runtime/doctor.py
