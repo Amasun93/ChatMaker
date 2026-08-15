@@ -52,7 +52,7 @@ git diff --check
 
 随后将 ESP32 编译默认预算修正为 1200 秒；显式请求 `timeout` 仍可覆盖默认值。上传预算没有改变，`upload_timeout` 仍为 300 秒。Nano、Uno 和所有上传路径均未改动。
 
-## 修正后候选的全新解压复验
+## 修正后候选的首次成功全新解压复验
 
 修正后的候选从新归档解压到新的临时目录，venv 位于解压源码外；`PYTHONPATH` 已清除。本文不保存临时 GUID 路径，最终 ZIP 路径和 SHA-256 只写入同目录 sidecar 与忽略的 Task 4 报告，避免自引用改变归档字节。
 
@@ -68,6 +68,14 @@ git diff --check
 - ESP32 AP compile-only：省略请求 `timeout`，使用修正后的 1200 秒默认预算；1056.41 秒成功，程序 946528 B、RAM 47168 B。官方 Core 为 3.3.11，FQBN 为 `esp32:esp32:esp32doit-devkit-v1`；WiFi、Networking、WebServer、FS、Hash 均为 3.3.11。
 - 解压源码 `npm ci` 成功，安装 3 个包、0 个漏洞；Chromium 自动化 4/4 通过。
 - 所有硬件命令都只使用 `action: compile`；没有调用 `compile-upload` 或 `upload`，也没有串口、网络连接、断电重启或物理效果操作。
+
+## 最新最终归档的全新解压复验
+
+修订验证时间线并重新构建归档后，又从新的临时目录和新的外部 venv 完成了一次全套复验。安装、doctor、Skill、发布合同、WorkBuddy、Nano/Uno 编译和 Chromium 结果与上节一致；ESP32 的本次精确结果为：
+
+- ESP32 Blink compile-only：省略请求 `timeout`，220.876 秒成功，程序 271664 B、RAM 22116 B。
+- ESP32 AP compile-only：省略请求 `timeout`，使用 1200 秒默认预算；904.292 秒成功，程序 946528 B、RAM 47168 B。官方 Core 为 3.3.11，FQBN 为 `esp32:esp32:esp32doit-devkit-v1`；WiFi、Networking、WebServer、FS、Hash 均为 3.3.11。
+- Chromium 自动化 4/4 通过；整个复验仍然没有调用 `compile-upload`、`upload`、串口、网络连接、断电重启或物理效果操作。
 
 ## 证据门
 

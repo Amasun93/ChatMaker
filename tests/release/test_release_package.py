@@ -45,6 +45,20 @@ class ReleasePackageTests(unittest.TestCase):
         self.assertNotIn("Fix round 1 修正文档后重新生成最终归档", verification)
         self.assertNotIn("chatmaker-rc5-fix1-final-", verification)
 
+    def test_rc5_verification_records_latest_final_extraction_metrics(self):
+        verification = (
+            ROOT / "docs" / "verification" / "2026-08-15-rc5-release-candidate.md"
+        ).read_text(encoding="utf-8")
+
+        final_position = verification.find("最新最终归档的全新解压复验")
+
+        self.assertGreaterEqual(final_position, 0)
+        final_evidence = verification[final_position:]
+        self.assertIn("220.876 秒", final_evidence)
+        self.assertIn("904.292 秒", final_evidence)
+        self.assertIn("946528 B", final_evidence)
+        self.assertIn("47168 B", final_evidence)
+
     def test_installation_verifies_archive_before_entering_extracted_directory(self):
         installation = (ROOT / "docs" / "installation.md").read_text(encoding="utf-8")
         checksum_position = installation.find("Get-FileHash .\\ChatMaker-0.1.0-rc5.zip")
