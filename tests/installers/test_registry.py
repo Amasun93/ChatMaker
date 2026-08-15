@@ -1,8 +1,12 @@
 from __future__ import annotations
 
 import base64
+import contextlib
 import hashlib
+import io
 import json
+import multiprocessing
+import os
 import subprocess
 import sys
 import tempfile
@@ -22,6 +26,9 @@ try:
 except (ImportError, ModuleNotFoundError):
     registry = None
 
+sys.path.insert(0, str(ROOT))
+from scripts import sign_registry as signer  # noqa: E402
+
 
 REGISTRY_URL = (
     "https://raw.githubusercontent.com/Amasun93/ChatMaker/main/"
@@ -34,6 +41,36 @@ PACK_URL = (
     "chatmaker-board-arduino-nano-classic-wiki-1.0.0.cmpack"
 )
 NOW = datetime(2026, 8, 18, 12, 0, tzinfo=timezone.utc)
+
+
+def _verify_registry_process(
+    registry_bytes: bytes,
+    signature_bytes: bytes,
+    trust_store: dict,
+    state_path: str,
+    ready,
+    release,
+    results,
+) -> None:
+    def pause_before_replace(name: str) -> None:
+        if name == "registry.before_sequence_replace" and ready is not None:
+            ready.set()
+            if not release.wait(10):
+                raise RuntimeError("test release timed out")
+
+    try:
+        value = registry.verify_registry(
+            registry_bytes,
+            signature_bytes,
+            registry_url=REGISTRY_URL,
+            trust_store=trust_store,
+            state_path=Path(state_path),
+            now=NOW,
+            failure_injector=pause_before_replace if ready is not None else None,
+        )
+        results.put(("ok", value["sequence"]))
+    except Exception as exc:  # pragma: no cover - reported to parent assertion
+        results.put(("error", type(exc).__name__, str(exc)))
 
 
 class RegistryVerificationTests(unittest.TestCase):
@@ -160,6 +197,57 @@ class RegistryVerificationTests(unittest.TestCase):
                     self.verify,
                     *self.signed(self.registry_value(sequence=sequence)),
                 )
+
+    def test_concurrent_stale_seven_cannot_overwrite_accepted_eight(self):
+        context = multiprocessing.get_context("spawn")
+        low_ready = context.Event()
+        low_release = context.Event()
+        high_ready = context.Event()
+        high_release = context.Event()
+        results = context.Queue()
+        low = context.Process(
+            target=_verify_registry_process,
+            args=(
+                *self.signed(self.registry_value(sequence=7)),
+                self.trust_store,
+                str(self.state_path),
+                low_ready,
+                low_release,
+                results,
+            ),
+        )
+        high = context.Process(
+            target=_verify_registry_process,
+            args=(
+                *self.signed(self.registry_value(sequence=8)),
+                self.trust_store,
+                str(self.state_path),
+                high_ready,
+                high_release,
+                results,
+            ),
+        )
+        low.start()
+        self.assertTrue(low_ready.wait(10), "low sequence never reached stale write point")
+        high.start()
+        if high_ready.wait(3):
+            # Unlocked implementation: force 8 to land before stale 7.
+            high_release.set()
+            high.join(10)
+            low_release.set()
+        else:
+            # Locked implementation: 8 cannot read until 7 leaves the transaction.
+            low_release.set()
+            self.assertTrue(high_ready.wait(10), "high sequence never acquired state lock")
+            high_release.set()
+        low.join(10)
+        high.join(10)
+        self.assertEqual(low.exitcode, 0)
+        self.assertEqual(high.exitcode, 0)
+        outcomes = [results.get(timeout=2), results.get(timeout=2)]
+        self.assertEqual(sorted(outcomes), [("ok", 7), ("ok", 8)])
+        state = json.loads(self.state_path.read_text(encoding="utf-8"))
+        self.assertEqual(state["sequences"][0]["highest_sequence"], 8)
 
     def test_rejects_unknown_retired_and_out_of_window_keys(self):
         registry_bytes, signature_bytes = self.signed(self.registry_value())
@@ -384,7 +472,21 @@ class RegistrySigningScriptTests(unittest.TestCase):
         self.registry_path.write_bytes(b'{"schema_version":"1.0"}\n')
         self.output_path = self.root / "registry.sig.json"
 
-    def run_script(self, private_path: Path, *, output_path: Path | None = None):
+    def sign_direct(self, private_path: Path, *, output_path: Path | None = None):
+        stdout = io.StringIO()
+        stderr = io.StringIO()
+        with contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stderr):
+            signer.sign_registry(
+                self.registry_path,
+                private_path,
+                self.trust_path,
+                "test-key",
+                output_path or self.output_path,
+            )
+        self.assertEqual(stdout.getvalue(), "")
+        self.assertEqual(stderr.getvalue(), "")
+
+    def run_cli(self, *extra: str):
         return subprocess.run(
             [
                 sys.executable,
@@ -392,13 +494,12 @@ class RegistrySigningScriptTests(unittest.TestCase):
                 "--registry",
                 str(self.registry_path),
                 "--private-key",
-                str(private_path),
-                "--trust-store",
-                str(self.trust_path),
+                str(self.private_path),
                 "--key-id",
-                "test-key",
+                "chatmaker-official-2026-01",
                 "--output",
-                str(output_path or self.output_path),
+                str(self.output_path),
+                *extra,
             ],
             cwd=ROOT,
             text=True,
@@ -406,22 +507,17 @@ class RegistrySigningScriptTests(unittest.TestCase):
         )
 
     def test_signing_writes_only_detached_signature_and_no_private_output(self):
-        result = self.run_script(self.private_path)
-        self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertEqual(result.stdout, "")
+        self.sign_direct(self.private_path)
         detached = json.loads(self.output_path.read_text(encoding="utf-8"))
         self.assertEqual(set(detached), {"key_id", "algorithm", "signature"})
         self.assertEqual(detached["key_id"], "test-key")
         self.assertEqual(detached["algorithm"], "ed25519")
         signature = base64.b64decode(detached["signature"], validate=True)
         self.private_key.public_key().verify(signature, self.registry_path.read_bytes())
-        private_bytes = self.private_path.read_text(encoding="ascii").strip()
-        self.assertNotIn(private_bytes, result.stderr)
-        self.assertNotIn(private_bytes, result.stdout)
 
     def test_signing_fails_closed_on_missing_or_mismatched_private_key(self):
-        missing = self.run_script(self.root / "missing.pem")
-        self.assertNotEqual(missing.returncode, 0)
+        with self.assertRaises(signer.SigningError):
+            self.sign_direct(self.root / "missing.pem")
         self.assertFalse(self.output_path.exists())
 
         other = Ed25519PrivateKey.generate()
@@ -433,8 +529,8 @@ class RegistrySigningScriptTests(unittest.TestCase):
                 serialization.NoEncryption(),
             )
         )
-        mismatch = self.run_script(mismatch_path)
-        self.assertNotEqual(mismatch.returncode, 0)
+        with self.assertRaises(signer.SigningError):
+            self.sign_direct(mismatch_path)
         self.assertFalse(self.output_path.exists())
 
     def test_signing_never_overwrites_private_key_or_other_inputs(self):
@@ -442,9 +538,32 @@ class RegistrySigningScriptTests(unittest.TestCase):
         originals = {path: path.read_bytes() for path in cases}
         for output_path in cases:
             with self.subTest(output_path=output_path.name):
-                result = self.run_script(self.private_path, output_path=output_path)
-                self.assertNotEqual(result.returncode, 0)
+                with self.assertRaises(signer.SigningError):
+                    self.sign_direct(self.private_path, output_path=output_path)
                 self.assertEqual(output_path.read_bytes(), originals[output_path])
+
+    def test_signing_rejects_hard_link_alias_of_private_key(self):
+        alias = self.root / "private-alias.pem"
+        original = self.private_path.read_bytes()
+        try:
+            os.link(self.private_path, alias)
+        except OSError as exc:
+            self.skipTest(f"hard links unavailable: {exc}")
+        with self.assertRaises(signer.SigningError):
+            self.sign_direct(self.private_path, output_path=alias)
+        self.assertEqual(self.private_path.read_bytes(), original)
+        self.assertEqual(alias.read_bytes(), original)
+
+    def test_production_cli_rejects_caller_supplied_trust_store(self):
+        result = self.run_cli("--trust-store", str(self.trust_path))
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("unrecognized arguments: --trust-store", result.stderr)
+        self.assertFalse(self.output_path.exists())
+
+        official_only = self.run_cli()
+        self.assertNotEqual(official_only.returncode, 0)
+        self.assertIn("does not match the checked-in anchor", official_only.stderr)
+        self.assertFalse(self.output_path.exists())
 
 
 if __name__ == "__main__":

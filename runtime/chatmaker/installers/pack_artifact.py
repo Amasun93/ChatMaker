@@ -488,11 +488,21 @@ def extract_validated_pack(
         max_total_bytes=max_total_bytes,
     )
     destination = Path(staging_dir)
-    _assert_safe_staging_root(destination)
-    if destination.exists() and any(destination.iterdir()):
-        raise PackArtifactError("pack_content_invalid", reason="staging_not_empty")
-    destination.mkdir(parents=True, exist_ok=True)
-    _assert_safe_staging_root(destination)
+    try:
+        _assert_safe_staging_root(destination)
+        if destination.exists():
+            if not destination.is_dir():
+                raise PackArtifactError(
+                    "pack_content_invalid", reason="staging_not_directory"
+                )
+            if any(destination.iterdir()):
+                raise PackArtifactError("pack_content_invalid", reason="staging_not_empty")
+        destination.mkdir(parents=True, exist_ok=True)
+        _assert_safe_staging_root(destination)
+    except PackArtifactError:
+        raise
+    except OSError as exc:
+        raise PackArtifactError("pack_content_invalid", reason="staging_preflight_failed") from exc
     archive: zipfile.ZipFile | None = None
     buffer: BinaryIO | None = None
     try:

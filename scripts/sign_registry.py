@@ -6,6 +6,7 @@ import hashlib
 import json
 import os
 import sys
+import tempfile
 from pathlib import Path
 
 from cryptography.hazmat.primitives import serialization
@@ -13,10 +14,64 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
 
 ROOT = Path(__file__).resolve().parents[1]
+OFFICIAL_TRUST_STORE_PATH = (
+    ROOT / "runtime" / "chatmaker" / "trust" / "official_registry_keys.json"
+)
 
 
 class SigningError(Exception):
     pass
+
+
+def _same_file(first: Path, second: Path) -> bool:
+    try:
+        return os.path.samefile(first, second)
+    except FileNotFoundError:
+        return False
+    except OSError as exc:
+        raise SigningError("file identity could not be verified") from exc
+
+
+def _reject_output_input_collision(output_path: Path, inputs: tuple[Path, ...]) -> None:
+    try:
+        resolved_output = os.path.normcase(str(output_path.resolve()))
+        resolved_inputs = {os.path.normcase(str(path.resolve())) for path in inputs}
+    except OSError as exc:
+        raise SigningError("input or output path could not be resolved") from exc
+    if resolved_output in resolved_inputs:
+        raise SigningError("output path must differ from every input path")
+    if output_path.exists() and any(_same_file(output_path, path) for path in inputs):
+        raise SigningError("output file aliases an input file")
+
+
+def _atomic_write_output(output_path: Path, encoded: bytes, inputs: tuple[Path, ...]) -> None:
+    temp_name: str | None = None
+    try:
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        with tempfile.NamedTemporaryFile(
+            mode="wb",
+            prefix=f".{output_path.name}.",
+            suffix=".tmp",
+            dir=output_path.parent,
+            delete=False,
+        ) as handle:
+            temp_name = handle.name
+            handle.write(encoded)
+            handle.flush()
+            os.fsync(handle.fileno())
+        _reject_output_input_collision(output_path, inputs)
+        os.replace(temp_name, output_path)
+        temp_name = None
+    except SigningError:
+        raise
+    except OSError as exc:
+        raise SigningError("detached signature could not be written") from exc
+    finally:
+        if temp_name is not None:
+            try:
+                Path(temp_name).unlink(missing_ok=True)
+            except OSError:
+                pass
 
 
 def _load_trust_store(path: Path) -> dict:
@@ -36,16 +91,8 @@ def sign_registry(
     key_id: str,
     output_path: Path,
 ) -> None:
-    try:
-        resolved_output = os.path.normcase(str(output_path.resolve()))
-        resolved_inputs = {
-            os.path.normcase(str(path.resolve()))
-            for path in (registry_path, private_key_path, trust_store_path)
-        }
-    except OSError as exc:
-        raise SigningError("input or output path could not be resolved") from exc
-    if resolved_output in resolved_inputs:
-        raise SigningError("output path must differ from every input path")
+    inputs = (registry_path, private_key_path, trust_store_path)
+    _reject_output_input_collision(output_path, inputs)
     if not private_key_path.is_file():
         raise SigningError("private key path does not exist")
     if ROOT == private_key_path.resolve() or ROOT in private_key_path.resolve().parents:
@@ -90,18 +137,13 @@ def sign_registry(
         json.dumps(detached, ensure_ascii=True, sort_keys=True, separators=(",", ":"))
         + "\n"
     ).encode("utf-8")
-    try:
-        output_path.parent.mkdir(parents=True, exist_ok=True)
-        output_path.write_bytes(encoded)
-    except OSError as exc:
-        raise SigningError("detached signature could not be written") from exc
+    _atomic_write_output(output_path, encoded, inputs)
 
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Sign exact registry bytes with a pinned key.")
     parser.add_argument("--registry", type=Path, required=True)
     parser.add_argument("--private-key", type=Path, required=True)
-    parser.add_argument("--trust-store", type=Path, required=True)
     parser.add_argument("--key-id", required=True)
     parser.add_argument("--output", type=Path, required=True)
     return parser
@@ -113,7 +155,7 @@ def main(argv: list[str] | None = None) -> int:
         sign_registry(
             args.registry,
             args.private_key,
-            args.trust_store,
+            OFFICIAL_TRUST_STORE_PATH,
             args.key_id,
             args.output,
         )

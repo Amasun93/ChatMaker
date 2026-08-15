@@ -436,6 +436,20 @@ class PackArtifactTests(unittest.TestCase):
             )
         self.assertFalse(staging.exists())
 
+    def test_regular_file_staging_returns_a_stable_error(self):
+        archive = self.build()
+        staging = self.root / "staging-is-a-file"
+        staging.write_bytes(b"occupied")
+        error = self.assert_code(
+            "pack_content_invalid",
+            pack_artifact.extract_validated_pack,
+            archive,
+            staging,
+            core_version="0.1.0",
+        )
+        self.assertEqual(error.reason, "staging_not_directory")
+        self.assertEqual(staging.read_bytes(), b"occupied")
+
 
 class BuildPackScriptTests(unittest.TestCase):
     def test_cli_builds_a_valid_pack(self):

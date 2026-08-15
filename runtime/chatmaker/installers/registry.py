@@ -9,6 +9,7 @@ import json
 import os
 import re
 import tempfile
+from contextlib import contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable, Mapping
@@ -297,6 +298,52 @@ def _atomic_write_state(path: Path, state: Mapping[str, Any]) -> None:
                 pass
 
 
+@contextmanager
+def _sequence_state_lock(state_path: Path):
+    lock_path = state_path.with_name(f".{state_path.name}.lock")
+    handle = None
+    locked = False
+    try:
+        lock_path.parent.mkdir(parents=True, exist_ok=True)
+        handle = lock_path.open("a+b")
+        handle.seek(0, os.SEEK_END)
+        if handle.tell() == 0:
+            handle.write(b"\0")
+            handle.flush()
+            os.fsync(handle.fileno())
+        handle.seek(0)
+        if os.name == "nt":
+            import msvcrt
+
+            msvcrt.locking(handle.fileno(), msvcrt.LK_LOCK, 1)
+        else:
+            import fcntl
+
+            fcntl.flock(handle.fileno(), fcntl.LOCK_EX)
+        locked = True
+        yield
+    except RegistryError:
+        raise
+    except OSError as exc:
+        raise RegistryError("registry_fetch_failed", reason="sequence_state_lock_failed") from exc
+    finally:
+        if handle is not None:
+            if locked:
+                try:
+                    handle.seek(0)
+                    if os.name == "nt":
+                        import msvcrt
+
+                        msvcrt.locking(handle.fileno(), msvcrt.LK_UNLCK, 1)
+                    else:
+                        import fcntl
+
+                        fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
+                except OSError:
+                    pass
+            handle.close()
+
+
 def _replace_sequence(
     state: dict[str, Any], registry_url: str, key_id: str, sequence: int
 ) -> dict[str, Any]:
@@ -433,22 +480,23 @@ def verify_registry(
             validate_pack_url(pack["url"])
 
         state_file = Path(state_path)
-        state = _load_sequence_state(state_file)
         sequence = value["sequence"]
-        if sequence <= _highest_sequence(state, registry_url, detached["key_id"]):
-            raise RegistryError("registry_replay_detected", reason="sequence_not_increasing")
-        new_state = _replace_sequence(state, registry_url, detached["key_id"], sequence)
-        _inject(
-            failure_injector,
-            "registry.before_sequence_replace",
-            code="registry_fetch_failed",
-        )
-        _atomic_write_state(state_file, new_state)
-        _inject(
-            failure_injector,
-            "registry.after_sequence_replace",
-            code="registry_fetch_failed",
-        )
+        with _sequence_state_lock(state_file):
+            state = _load_sequence_state(state_file)
+            if sequence <= _highest_sequence(state, registry_url, detached["key_id"]):
+                raise RegistryError("registry_replay_detected", reason="sequence_not_increasing")
+            new_state = _replace_sequence(state, registry_url, detached["key_id"], sequence)
+            _inject(
+                failure_injector,
+                "registry.before_sequence_replace",
+                code="registry_fetch_failed",
+            )
+            _atomic_write_state(state_file, new_state)
+            _inject(
+                failure_injector,
+                "registry.after_sequence_replace",
+                code="registry_fetch_failed",
+            )
         return {
             "registry": value,
             "registry_url": registry_url,
