@@ -7,6 +7,7 @@ import sys
 import tempfile
 import threading
 import unittest
+from unittest import mock
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -18,6 +19,16 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "runtime"))
 PACK_ID = "chatmaker-board-arduino-nano-classic-wiki"
 BOARD_ID = "arduino-nano-classic"
+SECTION_IDS = (
+    "start-here",
+    "identify-and-safety",
+    "pins-and-electrical",
+    "toolchains-and-upload",
+    "components-and-wiring",
+    "libraries-and-examples",
+    "web-and-protocol",
+    "troubleshooting",
+)
 REGISTRY_URL = (
     "https://raw.githubusercontent.com/Amasun93/ChatMaker/main/"
     "distribution/registry/registry.json"
@@ -160,9 +171,23 @@ class SignedRegistryFixture:
         (source / "llmwiki" / "index.yaml").write_bytes(
             (ROOT / "packs" / "llmwiki" / "boards" / f"{BOARD_ID}.yaml").read_bytes()
         )
-        (source / "llmwiki" / "sections" / "start-here.md").write_text(
-            page(BOARD_ID, "start-here", body), encoding="utf-8", newline="\n"
-        )
+        for section_id in SECTION_IDS:
+            target = source / "llmwiki" / "sections" / f"{section_id}.md"
+            if section_id == "start-here":
+                target.write_text(
+                    page(BOARD_ID, section_id, body), encoding="utf-8", newline="\n"
+                )
+            else:
+                target.write_bytes(
+                    (
+                        ROOT
+                        / "knowledge_sources"
+                        / "published"
+                        / "boards"
+                        / BOARD_ID
+                        / f"{section_id}.md"
+                    ).read_bytes()
+                )
         output = self.root / "build" / f"{version}.cmpack"
         build_pack(
             source,
@@ -375,6 +400,47 @@ class LLMWikiReaderTests(unittest.TestCase):
         self.assertFalse(result["success"])
         self.assertEqual(result["error"]["code"], "pack_content_invalid")
 
+    def test_body_limit_applies_to_body_bytes_after_frontmatter(self):
+        body = "a" * 65_536
+        raw = page(BOARD_ID, "start-here", body).encode("utf-8")
+        self.assertGreater(len(raw), 65_536)
+        resolver = RecordingResolver()
+        resolver.put(PACK_ID, "llmwiki/sections/start-here.md", raw.decode("utf-8"))
+
+        result = self.request(
+            {
+                "action": "section",
+                "board_id": BOARD_ID,
+                "consumer": "chatduino",
+                "section_id": "start-here",
+            },
+            resolver=resolver,
+        )
+
+        self.assertTrue(result["success"], result)
+        self.assertEqual(result["body_bytes"], 65_536)
+        self.assertEqual(result["max_body_bytes"], 65_536)
+        self.assertEqual(result["body"], body)
+
+    def test_oversized_body_is_rejected_after_frontmatter_is_parsed(self):
+        body = "a" * 65_537
+        resolver = RecordingResolver()
+        resolver.put(PACK_ID, "llmwiki/sections/start-here.md", page(BOARD_ID, "start-here", body))
+
+        result = self.request(
+            {
+                "action": "section",
+                "board_id": BOARD_ID,
+                "consumer": "chatduino",
+                "section_id": "start-here",
+            },
+            resolver=resolver,
+        )
+
+        self.assertFalse(result["success"])
+        self.assertEqual(result["error"]["code"], "pack_content_invalid")
+        self.assertIn("section body size is invalid", result["error"]["message"])
+
     def test_signed_registry_downloads_once_then_cached_offline_read_survives_bad_updates(self):
         with tempfile.TemporaryDirectory() as directory:
             fixture = SignedRegistryFixture(Path(directory))
@@ -425,6 +491,74 @@ class LLMWikiReaderTests(unittest.TestCase):
             expected = "Load canonical board `arduino-nano-classic`.\n"
             self.assertEqual(after_bad_signature["body"], expected)
             self.assertEqual(after_replay["body"], expected)
+
+    def test_production_index_does_not_read_any_section_body(self):
+        with tempfile.TemporaryDirectory() as directory:
+            fixture = SignedRegistryFixture(Path(directory))
+            fixture.publish("1.0.0", 1, "Load canonical board `arduino-nano-classic`.\n")
+            manager = fixture.manager()
+            manager.ensure(PACK_ID)
+            resolver = ResourceResolver(
+                user_root=fixture.user_root,
+                builtin_root=Path(directory) / "builtin",
+                manager=manager,
+                environ={},
+            )
+            sections_root = manager.paths.store / PACK_ID / "1.0.0" / "llmwiki" / "sections"
+            reads: list[Path] = []
+            real_read_bytes = Path.read_bytes
+
+            def tracking_read_bytes(path_self: Path):
+                if sections_root in path_self.parents:
+                    reads.append(path_self.resolve())
+                return real_read_bytes(path_self)
+
+            with mock.patch.object(Path, "read_bytes", tracking_read_bytes):
+                result = self.request(
+                    {"action": "index", "board_id": BOARD_ID, "consumer": "chatduino"},
+                    manager=manager,
+                    resolver=resolver,
+                )
+
+            self.assertTrue(result["success"], result)
+            self.assertEqual(reads, [])
+
+    def test_production_section_reads_only_the_selected_body_once(self):
+        with tempfile.TemporaryDirectory() as directory:
+            fixture = SignedRegistryFixture(Path(directory))
+            fixture.publish("1.0.0", 1, "Load canonical board `arduino-nano-classic`.\n")
+            manager = fixture.manager()
+            manager.ensure(PACK_ID)
+            resolver = ResourceResolver(
+                user_root=fixture.user_root,
+                builtin_root=Path(directory) / "builtin",
+                manager=manager,
+                environ={},
+            )
+            sections_root = manager.paths.store / PACK_ID / "1.0.0" / "llmwiki" / "sections"
+            selected = (sections_root / "start-here.md").resolve()
+            reads: list[Path] = []
+            real_read_bytes = Path.read_bytes
+
+            def tracking_read_bytes(path_self: Path):
+                if sections_root in path_self.parents:
+                    reads.append(path_self.resolve())
+                return real_read_bytes(path_self)
+
+            with mock.patch.object(Path, "read_bytes", tracking_read_bytes):
+                result = self.request(
+                    {
+                        "action": "section",
+                        "board_id": BOARD_ID,
+                        "consumer": "chatduino",
+                        "section_id": "start-here",
+                    },
+                    manager=manager,
+                    resolver=resolver,
+                )
+
+            self.assertTrue(result["success"], result)
+            self.assertEqual(reads, [selected])
 
 
 if __name__ == "__main__":

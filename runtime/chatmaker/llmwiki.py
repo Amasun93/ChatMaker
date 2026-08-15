@@ -138,8 +138,6 @@ def _section_resource(section_id: str) -> str:
 
 
 def _parse_page(raw: bytes, *, board_id: str, section_id: str) -> tuple[str, int]:
-    if len(raw) > MAX_BODY_BYTES:
-        raise LLMWikiContentError("section file exceeds the frozen byte limit")
     try:
         raw.decode("utf-8")
     except UnicodeDecodeError as exc:

@@ -15,7 +15,7 @@ import uuid
 from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import datetime, timezone
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Any, Callable, Mapping, Protocol
 from urllib.error import URLError
 from urllib.request import Request, urlopen
@@ -23,6 +23,8 @@ from urllib.request import Request, urlopen
 from .pack_artifact import (
     PackArtifactError,
     extract_validated_pack,
+    validate_archive_path,
+    validate_pack_manifest,
     validate_pack_archive,
     validate_staging,
 )
@@ -591,6 +593,26 @@ class PackManager:
         *,
         require_metadata: bool = True,
     ) -> tuple[Path, dict[str, Any]]:
+        root, manifest, _ = self._load_store_manifest(
+            pack_id, version, require_metadata=require_metadata
+        )
+        try:
+            validate_staging(root, manifest)
+            return root, manifest
+        except PackManagerError:
+            raise
+        except (PackArtifactError, OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
+            raise PackManagerError(
+                "pack_drift_detected", reason="immutable_store_drift"
+            ) from exc
+
+    def _load_store_manifest(
+        self,
+        pack_id: str,
+        version: str,
+        *,
+        require_metadata: bool = True,
+    ) -> tuple[Path, dict[str, Any], dict[str, Any] | None]:
         target = self.paths.store / pack_id / version
         try:
             if target.is_symlink() or _is_reparse(target):
@@ -598,8 +620,13 @@ class PackManager:
                     "pack_drift_detected", reason="immutable_store_link_or_reparse"
                 )
             raw = (target / "pack-manifest.json").read_bytes()
+            manifest_sha256 = hashlib.sha256(raw).hexdigest()
             manifest = json.loads(raw.decode("utf-8"))
-            validate_staging(target, manifest)
+            validate_pack_manifest(manifest)
+            if _canonical_json(manifest) != raw:
+                raise PackManagerError(
+                    "pack_drift_detected", reason="immutable_store_manifest_identity_changed"
+                )
             if (
                 manifest.get("pack_id") != pack_id
                 or manifest.get("pack_version") != version
@@ -609,10 +636,10 @@ class PackManager:
                 raise PackManagerError(
                     "pack_drift_detected", reason="immutable_store_identity_mismatch"
                 )
+            evidence = None
             if require_metadata:
                 metadata = self._load_installed_metadata()
                 installed = metadata["packs"].get(pack_id, {}).get(version)
-                manifest_sha256 = hashlib.sha256(raw).hexdigest()
                 if (
                     installed is None
                     or installed.get("manifest_sha256") != manifest_sha256
@@ -621,14 +648,41 @@ class PackManager:
                         "pack_drift_detected",
                         reason="immutable_store_manifest_identity_changed",
                     )
-                self._durable_installed_entry(pack_id, version, installed=installed)
-            return target, manifest
+                evidence = self._durable_installed_entry(
+                    pack_id, version, installed=installed
+                )
+            return target, manifest, evidence
         except PackManagerError:
             raise
         except (PackArtifactError, OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
             raise PackManagerError(
                 "pack_drift_detected", reason="immutable_store_drift"
             ) from exc
+
+    def _resolve_store_file(self, root: Path, relative_path: str) -> Path | None:
+        validate_archive_path(relative_path)
+        resolved_root = root.resolve(strict=True)
+        current = resolved_root
+        parts = PurePosixPath(relative_path).parts
+        for index, part in enumerate(parts):
+            candidate = current / part
+            if candidate.is_symlink() or _is_reparse(candidate):
+                raise PackManagerError(
+                    "pack_drift_detected", reason="immutable_store_link_or_reparse"
+                )
+            try:
+                candidate.resolve(strict=True).relative_to(resolved_root)
+            except ValueError as exc:
+                raise PackManagerError(
+                    "pack_drift_detected", reason="immutable_store_drift"
+                ) from exc
+            if index + 1 == len(parts):
+                if not candidate.is_file():
+                    return None
+            elif not candidate.is_dir():
+                return None
+            current = candidate
+        return current
 
     def active_resource_root(self, pack_id: str) -> tuple[Path, str] | None:
         return self.resource_snapshot(pack_id)[0]
@@ -656,6 +710,55 @@ class PackManager:
                         reason="active_archive_identity_changed",
                     )
                 return (root, item["version"]), token
+        except Exception as exc:
+            raise self._translate(exc) from exc
+
+    def resource_record(
+        self, pack_id: str, relative_path: str
+    ) -> tuple[dict[str, Any] | None, str]:
+        try:
+            self._assert_managed_layout()
+            self._validate_pack_id(pack_id)
+            validate_archive_path(relative_path)
+            with _interprocess_lock(self.paths.manager_lock):
+                state, raw = self._load_active()
+                token = (
+                    f"{state['generation']}:"
+                    f"{hashlib.sha256(raw or b'').hexdigest()}"
+                )
+                item = state["packs"].get(pack_id)
+                if item is None:
+                    return None, token
+                root, manifest, evidence = self._load_store_manifest(
+                    pack_id, item["version"]
+                )
+                if evidence is None or item["archive_sha256"] != evidence["sha256"]:
+                    raise PackManagerError(
+                        "pack_drift_detected",
+                        reason="active_archive_identity_changed",
+                    )
+                manifest_item = next(
+                    (
+                        value
+                        for value in manifest["files"]
+                        if value["path"] == relative_path
+                    ),
+                    None,
+                )
+                if manifest_item is None:
+                    return None, token
+                path = self._resolve_store_file(root, relative_path)
+                if path is None:
+                    return None, token
+                return (
+                    {
+                        "path": path,
+                        "version": item["version"],
+                        "length": manifest_item["length"],
+                        "sha256": manifest_item["sha256"],
+                    },
+                    token,
+                )
         except Exception as exc:
             raise self._translate(exc) from exc
 

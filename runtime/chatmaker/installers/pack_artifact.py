@@ -463,6 +463,12 @@ def validate_staging(staging_dir: Path | str, manifest: Mapping[str, Any]) -> Ma
     return manifest
 
 
+def validate_pack_manifest(manifest: Mapping[str, Any]) -> Mapping[str, Any]:
+    """Validate canonical manifest structure without reading payload bytes."""
+
+    return _validate_manifest(dict(manifest))
+
+
 def extract_validated_pack(
     source: Path | str | bytes,
     staging_dir: Path | str,
@@ -530,6 +536,7 @@ __all__ = [
     "build_pack",
     "extract_validated_pack",
     "validate_archive_path",
+    "validate_pack_manifest",
     "validate_pack_archive",
     "validate_staging",
 ]

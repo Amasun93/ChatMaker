@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-import hashlib
 import json
 import os
 from dataclasses import dataclass
+import hashlib
 from pathlib import Path, PurePosixPath
 from typing import Any, Mapping, Protocol, Sequence
 
@@ -33,9 +33,18 @@ class ResolvedResource:
     path: Path
     provenance: dict[str, Any]
     generation: str
+    expected_length: int | None = None
+    expected_sha256: str | None = None
 
     def read_bytes(self) -> bytes:
-        return self.path.read_bytes()
+        data = self.path.read_bytes()
+        if self.expected_length is not None and len(data) != self.expected_length:
+            raise RuntimeError("resource length does not match verified manifest")
+        if self.expected_sha256 is not None:
+            digest = hashlib.sha256(data).hexdigest()
+            if digest != self.expected_sha256:
+                raise RuntimeError("resource digest does not match verified manifest")
+        return data
 
     def read_text(self, encoding: str = "utf-8") -> str:
         return self.path.read_text(encoding=encoding)
@@ -174,6 +183,21 @@ class ResourceResolver:
 
         snapshot_generation: str | None = None
         if pack_id is not None and self.manager is not None:
+            resource_record = getattr(self.manager, "resource_record", None)
+            if callable(resource_record):
+                record, snapshot_generation = resource_record(pack_id, relative.as_posix())
+                if record is not None:
+                    return ResolvedResource(
+                        path=Path(record["path"]),
+                        provenance={
+                            "kind": "official_pack",
+                            "pack_id": pack_id,
+                            "version": record["version"],
+                        },
+                        generation=snapshot_generation,
+                        expected_length=record["length"],
+                        expected_sha256=record["sha256"],
+                    )
             active, snapshot_generation = self.manager.resource_snapshot(pack_id)
             if active is not None:
                 active_root, version = active
