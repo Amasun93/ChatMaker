@@ -886,8 +886,15 @@ class PackManager:
             and pending_before == candidate_raw
             and verified_before != candidate_raw
         )
-        if candidate_raw is not None and pending_before is None:
-            _atomic_write(self.paths.pending_registry, candidate_raw)
+        verification_time = self._current_time()
+        if candidate is not None and candidate_raw is not None:
+            self._verify_receipt_value(
+                candidate,
+                verification_time=verification_time,
+                require_highest=False,
+            )
+            if pending_before != candidate_raw:
+                _atomic_write(self.paths.pending_registry, candidate_raw)
         try:
             verified = verify_registry(
                 registry_response.data,
@@ -898,7 +905,7 @@ class PackManager:
                 final_signature_url=signature_response.final_url,
                 trust_store=self.trust_store,
                 state_path=self.paths.registry_state,
-                now=self._current_time(),
+                now=verification_time,
                 failure_injector=self.failure_injector,
             )
         except RegistryError as exc:
@@ -909,8 +916,11 @@ class PackManager:
             if exc.code == "registry_replay_detected" and candidate_raw is not None:
                 try:
                     if self.paths.pending_registry.read_bytes() == candidate_raw:
-                        self.paths.pending_registry.unlink(missing_ok=True)
-                        _fsync_directory(self.paths.state)
+                        if pending_before is not None and pending_before != candidate_raw:
+                            _atomic_write(self.paths.pending_registry, pending_before)
+                        else:
+                            self.paths.pending_registry.unlink(missing_ok=True)
+                            _fsync_directory(self.paths.state)
                 except OSError:
                     pass
             raise
@@ -1276,6 +1286,7 @@ class PackManager:
     def _activate(self, pack_id: str, version: str, archive_sha256: str) -> None:
         _fsync_tree(self.paths.store / pack_id / version)
         _fsync_directory(self.paths.store)
+        _fsync_directory(self.paths.root)
         state, old_raw = self._load_active()
         new_state = {
             "schema_version": "1.0",

@@ -820,6 +820,32 @@ class PackManagerTests(unittest.TestCase):
         self.assertTrue(interrupted.paths.verified_registry.is_file())
         self.assertFalse(interrupted.paths.pending_registry.exists())
 
+    def test_bad_candidate_cannot_poison_later_crash_recovery(self):
+        self.fx.publish("1.0.0", sequence=1, corrupt_signature=True)
+        self.assert_manager_error(
+            "registry_signature_invalid", self.fx.manager().ensure, PACK_ID
+        )
+
+        self.fx.publish("1.0.0", sequence=1)
+
+        def fail_after_sequence(name: str) -> None:
+            if name == "registry.after_sequence_replace":
+                raise RuntimeError(name)
+
+        interrupted = self.fx.manager(failure_injector=fail_after_sequence)
+        error = self.assert_manager_error(
+            "registry_fetch_failed", interrupted.ensure, PACK_ID
+        )
+        self.assertEqual(error.reason, "failure_injected")
+        sequence_before = interrupted.paths.registry_state.read_bytes()
+
+        recovered = self.fx.manager().ensure(PACK_ID)
+
+        self.assertEqual(recovered["version"], "1.0.0")
+        self.assertEqual(interrupted.paths.registry_state.read_bytes(), sequence_before)
+        self.assertTrue(interrupted.paths.verified_registry.is_file())
+        self.assertFalse(interrupted.paths.pending_registry.exists())
+
     def test_repeated_replay_cannot_create_its_own_recovery_receipt(self):
         self.fx.publish("1.0.0", sequence=1)
         manager = self.fx.manager()
@@ -1001,6 +1027,7 @@ class PackManagerTests(unittest.TestCase):
 
         self.assertIsNotNone(synced_before_active)
         required = {
+            manager.paths.root.resolve(),
             manager.paths.store.resolve(),
             (manager.paths.store / PACK_ID).resolve(),
             (manager.paths.store / PACK_ID / "1.0.0").resolve(),
