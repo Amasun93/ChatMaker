@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import io
 import json
+import re
 import stat
 import subprocess
 import sys
@@ -452,6 +453,18 @@ class PackArtifactTests(unittest.TestCase):
 
 
 class BuildPackScriptTests(unittest.TestCase):
+    def prepare_documented_source(self, root: Path, board_id: str = "arduino-nano-classic") -> Path:
+        source = root / "prepared-source-root" / "llmwiki"
+        (source / "sections").mkdir(parents=True)
+        (source / "index.yaml").write_bytes(
+            (ROOT / "packs" / "llmwiki" / "boards" / f"{board_id}.yaml").read_bytes()
+        )
+        for page in sorted(
+            (ROOT / "knowledge_sources" / "published" / "boards" / board_id).glob("*.md")
+        ):
+            (source / "sections" / page.name).write_bytes(page.read_bytes())
+        return source.parent
+
     def test_cli_builds_a_valid_pack(self):
         if pack_artifact is None:
             self.fail("Task 3 pack_artifact module is missing")
@@ -488,6 +501,57 @@ class BuildPackScriptTests(unittest.TestCase):
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertTrue(output.is_file())
             pack_artifact.validate_pack_archive(output, core_version="0.1.0")
+
+    def test_pack_format_docs_build_example_matches_cli_and_source_contract(self):
+        if pack_artifact is None:
+            self.fail("Task 3 pack_artifact module is missing")
+        document = (ROOT / "docs" / "contributing" / "pack-format.md").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("pack-manifest.json", document)
+        self.assertIn("llmwiki/index.yaml", document)
+        self.assertIn("llmwiki/sections/<section-id>.md", document)
+        self.assertIn(
+            "Do not pass `knowledge_sources/published/boards/<board-id>` directly to `--source`",
+            document,
+        )
+        match = re.search(
+            r"python scripts/build_pack\.py --source <prepared-source-root> --output <output-pack-path> --pack-id (?P<pack_id>\S+) --pack-version (?P<pack_version>\S+) --board-id (?P<board_id>\S+) --core-minimum (?P<core_minimum>\S+) --core-maximum-exclusive (?P<core_maximum_exclusive>\S+)",
+            document,
+        )
+        self.assertIsNotNone(match)
+        with tempfile.TemporaryDirectory() as tempdir:
+            root = Path(tempdir)
+            source = self.prepare_documented_source(root, board_id=match["board_id"])
+            output = root / "documented-example.cmpack"
+            command = [
+                sys.executable,
+                str(ROOT / "scripts" / "build_pack.py"),
+                "--source",
+                str(source),
+                "--output",
+                str(output),
+                "--pack-id",
+                match["pack_id"],
+                "--pack-version",
+                match["pack_version"],
+                "--board-id",
+                match["board_id"],
+                "--core-minimum",
+                match["core_minimum"],
+                "--core-maximum-exclusive",
+                match["core_maximum_exclusive"],
+            ]
+            result = subprocess.run(
+                command,
+                cwd=ROOT,
+                text=True,
+                capture_output=True,
+            )
+            self.assertEqual(result.returncode, 0, result.stderr)
+            manifest = pack_artifact.validate_pack_archive(output, core_version="0.1.0")
+            self.assertEqual(manifest["pack_id"], match["pack_id"])
+            self.assertEqual(manifest["board_id"], match["board_id"])
 
 
 if __name__ == "__main__":
