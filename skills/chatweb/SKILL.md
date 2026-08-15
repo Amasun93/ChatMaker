@@ -10,20 +10,21 @@ Help the user discover the intended feeling and interaction, choose from a small
 ## Guide the creative choice
 
 - If the request is clear, confirm the desired effect and build without a long interview.
-- If the idea is vague, ask one or two questions about the audience, scene, feeling, or main action.
-- Recommend two or three curated directions. For each, describe the visual feeling, primary interaction, suitable scene, and one meaningful tradeoff.
-- If the user wants more, offer additional styles or the advanced playground. Do not make the playground part of the beginner default.
+- Start with `chatmaker-web-plan --brief-json '<json>'`. If it returns `clarify`, ask only its one or two plain-language questions and do not recommend styles yet.
+- When the planner returns `directions`, recommend its two or three curated beginner directions. For each, describe the visual feeling, primary interaction, suitable scene, and one meaningful tradeoff.
+- Only after the user explicitly asks for more, rerun the planner with `--advanced`. Offer `chatmaker-web-playground --advanced ...` only at that point; never create or show the playground as part of the beginner default.
 
 ## Workflow
 
-1. Define the primary user action and the visible success, loading, disconnected, and failure states.
-2. Use `suggest_directions` from the shared ChatWeb runtime to offer up to three curated directions when the user has not already chosen one. Record the selected direction or the assumptions used for a direct build.
-3. Generate one self-contained HTML file with `chatmaker-web`, with CSS and JavaScript embedded. Split into multiple files only when reuse or project size makes that simpler for the user.
-4. Design for phone and classroom use: at least 44 px touch targets, strong contrast, concise labels, visible focus, reduced-motion support, and visible feedback.
-5. Start the selected file with `chatmaker-web-preview`. Keep the default `127.0.0.1` binding; use network access only after an explicit request.
-6. Verify file loading, browser console errors, the primary interaction, state transitions, and phone-size layout in a real browser.
-7. For hardware pages, label simulation visibly. Define the HTTP, serial, Bluetooth, or message contract with `$chatduino` before implementing a real connection.
-8. If the page must ship inside firmware, keep one editable HTML source and generate the embedded artifact from it. In this repository, `examples/chatweb/esp32-ap-control.html` is the only editable ESP32 AP page source; regenerate `examples/chatduino/esp32/ap-led-sensor/page_html.h` with `chatmaker-web-embed ... --symbol CHATMAKER_AP_PAGE`.
+1. Turn the idea, audience/scene, desired feeling or core message, and primary action into the planner brief. Do not move to style selection while the planner still returns `clarify`.
+2. Define the primary user action and the visible success, loading, disconnected, and failure states.
+3. Present only the planner's two or three beginner directions unless the user explicitly requests the expanded catalog. Record the selected direction or the assumptions used for a direct build.
+4. Generate one self-contained HTML file with `chatmaker-web`, with CSS and JavaScript embedded. Split into multiple files only when reuse or project size makes that simpler for the user.
+5. Design for phone and classroom use: at least 44 px touch targets, strong contrast, concise labels, visible focus, reduced-motion support, and visible feedback.
+6. Start the selected file with `chatmaker-web-preview`. Keep the default `127.0.0.1` binding; use network access only after an explicit request.
+7. Verify file loading, browser console errors, the primary interaction, state transitions, and phone-size layout in a real browser.
+8. For hardware pages, label simulation visibly. Define the HTTP, serial, Bluetooth, or message contract with `$chatduino` before implementing a real connection.
+9. If the page must ship inside firmware, keep one editable HTML source and generate the embedded artifact from it. In this repository, `examples/chatweb/esp32-ap-control.html` is the only editable ESP32 AP page source; regenerate `examples/chatduino/esp32/ap-led-sensor/page_html.h` with `chatmaker-web-embed ... --symbol CHATMAKER_AP_PAGE`.
 
 Read [web-verification-contract.md](references/web-verification-contract.md) before testing or reporting completion.
 

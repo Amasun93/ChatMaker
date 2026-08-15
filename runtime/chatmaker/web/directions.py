@@ -14,6 +14,8 @@ class DesignDirection:
     palette: tuple[str, ...]
     typography: str
     motion: str
+    aesthetic: str
+    advanced: bool = False
 
 
 _DIRECTIONS: dict[str, tuple[DesignDirection, ...]] = {
@@ -28,6 +30,7 @@ _DIRECTIONS: dict[str, tuple[DesignDirection, ...]] = {
             palette=("#f3ead8", "#18201c", "#e5482e", "#f5b942"),
             typography="serif-display",
             motion="staggered-reveal",
+            aesthetic="editorial-signal",
         ),
         DesignDirection(
             id="tactile-spark",
@@ -39,6 +42,7 @@ _DIRECTIONS: dict[str, tuple[DesignDirection, ...]] = {
             palette=("#fff7d6", "#24213a", "#ff6b5d", "#54c6a9"),
             typography="rounded-display",
             motion="spring-press",
+            aesthetic="tactile-spark",
         ),
         DesignDirection(
             id="quiet-focus",
@@ -50,6 +54,33 @@ _DIRECTIONS: dict[str, tuple[DesignDirection, ...]] = {
             palette=("#e8eee9", "#17221d", "#547567", "#d2a85a"),
             typography="humanist-display",
             motion="slow-fade",
+            aesthetic="quiet-focus",
+        ),
+        DesignDirection(
+            id="field-notebook",
+            name="野外观察册",
+            feeling="好奇、自然，像一本被全班共同写满的科学观察册",
+            primary_interaction="学生把观察贴到不同线索区，页面保留纸张叠放的反馈",
+            best_for="探究记录、校园观察和项目式学习线索墙",
+            tradeoff="手作层次很有记忆点，但不适合同时展示密集精确数据",
+            palette=("#e8dfc4", "#253126", "#b4492f", "#79915a"),
+            typography="field-notes",
+            motion="paper-settle",
+            aesthetic="field-notebook",
+            advanced=True,
+        ),
+        DesignDirection(
+            id="stage-cue",
+            name="舞台提示器",
+            feeling="聚光、果断，像活动现场等待全班一起触发的舞台机关",
+            primary_interaction="主操作像打下一个舞台 cue，灯带与文字按节拍切换",
+            best_for="开场倒数、集体挑战和成果发布现场",
+            tradeoff="戏剧张力很强，安静阅读或长时间填写时会显得过重",
+            palette=("#15130f", "#f5ead0", "#d34832", "#d6a94f"),
+            typography="theatre-poster",
+            motion="cue-sweep",
+            aesthetic="stage-cue",
+            advanced=True,
         ),
     ),
     "hardware-interface": (
@@ -63,6 +94,7 @@ _DIRECTIONS: dict[str, tuple[DesignDirection, ...]] = {
             palette=("#e7ece8", "#101714", "#2e7d62", "#f0a43c"),
             typography="technical-editorial",
             motion="state-transition",
+            aesthetic="device-console",
         ),
         DesignDirection(
             id="tactile-control",
@@ -74,6 +106,7 @@ _DIRECTIONS: dict[str, tuple[DesignDirection, ...]] = {
             palette=("#f4efe5", "#1f2430", "#d84b36", "#69a88d"),
             typography="condensed-display",
             motion="physical-press",
+            aesthetic="tactile-control",
         ),
         DesignDirection(
             id="field-monitor",
@@ -85,6 +118,33 @@ _DIRECTIONS: dict[str, tuple[DesignDirection, ...]] = {
             palette=("#e9e7df", "#182126", "#4d7483", "#c96947"),
             typography="monospace-accent",
             motion="data-pulse",
+            aesthetic="field-monitor",
+        ),
+        DesignDirection(
+            id="flight-deck",
+            name="任务飞行甲板",
+            feeling="紧张、精确，像只保留关键仪表的任务控制席",
+            primary_interaction="先解锁主控，再用醒目的状态轨道确认每一道命令",
+            best_for="机器人任务、竞赛装置和需要明确安全顺序的控制页",
+            tradeoff="操作秩序非常清楚，但对只看一个温度的简单项目会显得隆重",
+            palette=("#111817", "#e9f0dc", "#f08b32", "#6f9186"),
+            typography="mission-condensed",
+            motion="scan-lock",
+            aesthetic="flight-deck",
+            advanced=True,
+        ),
+        DesignDirection(
+            id="botanical-lab",
+            name="植物实验站",
+            feeling="温和、有生命感，让传感器读数像正在生长的样本",
+            primary_interaction="触摸样本环切换观察维度，控制结果以生长纹理回应",
+            best_for="植物监测、生态装置和低压持续观察",
+            tradeoff="自然隐喻很亲近，但快速告警仍需额外使用硬边界和高对比色",
+            palette=("#eef0d8", "#243229", "#5f7f50", "#d5864c"),
+            typography="botanical-serif",
+            motion="growth-ring",
+            aesthetic="botanical-lab",
+            advanced=True,
         ),
     ),
 }
@@ -93,12 +153,17 @@ _DIRECTIONS: dict[str, tuple[DesignDirection, ...]] = {
 def suggest_directions(
     kind: str,
     desired_feeling: str | None = None,
-    limit: int = 3,
+    limit: int | None = None,
+    *,
+    advanced: bool = False,
 ) -> list[DesignDirection]:
     try:
         directions = list(_DIRECTIONS[kind])
     except KeyError as exc:
         raise ValueError(f"unsupported ChatWeb project kind: {kind}") from exc
+
+    if not advanced:
+        directions = [direction for direction in directions if not direction.advanced]
 
     if desired_feeling:
         needle = desired_feeling.casefold()
@@ -106,4 +171,6 @@ def suggest_directions(
             key=lambda item: needle not in f"{item.name} {item.feeling} {item.best_for}".casefold()
         )
 
-    return directions[: max(1, min(3, limit))]
+    if limit is None:
+        limit = len(directions) if advanced else 3
+    return directions[: max(1, min(len(directions), limit))]

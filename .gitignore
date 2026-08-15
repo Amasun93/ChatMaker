@@ -12,3 +12,6 @@ build/
 .DS_Store
 Thumbs.db
 .playwright-cli/
+node_modules/
+playwright-report/
+test-results/
