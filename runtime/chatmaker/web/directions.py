@@ -150,6 +150,12 @@ _DIRECTIONS: dict[str, tuple[DesignDirection, ...]] = {
 }
 
 
+def validate_advanced_flag(advanced: object) -> bool:
+    if type(advanced) is not bool:
+        raise TypeError("advanced must be a boolean")
+    return advanced
+
+
 def suggest_directions(
     kind: str,
     desired_feeling: str | None = None,
@@ -157,6 +163,7 @@ def suggest_directions(
     *,
     advanced: bool = False,
 ) -> list[DesignDirection]:
+    advanced = validate_advanced_flag(advanced)
     try:
         directions = list(_DIRECTIONS[kind])
     except KeyError as exc:

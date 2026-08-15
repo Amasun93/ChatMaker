@@ -65,6 +65,14 @@ class CreativeBriefPlannerTests(unittest.TestCase):
         self.assertFalse(beginner.advanced)
         self.assertTrue(advanced.advanced)
 
+    def test_non_boolean_advanced_values_are_rejected_before_planning(self):
+        brief = CreativeBrief(kind="classroom-tool", idea="课堂反馈")
+
+        for value in ("false", 1, None):
+            with self.subTest(value=value):
+                with self.assertRaisesRegex(TypeError, "advanced must be a boolean"):
+                    plan_creative_brief(brief, advanced=value)  # type: ignore[arg-type]
+
 
 if __name__ == "__main__":
     unittest.main()

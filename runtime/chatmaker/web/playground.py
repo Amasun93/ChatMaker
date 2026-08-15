@@ -6,7 +6,7 @@ import json
 from dataclasses import asdict, dataclass
 from pathlib import Path
 
-from .directions import DesignDirection, suggest_directions
+from .directions import DesignDirection, suggest_directions, validate_advanced_flag
 
 
 @dataclass(frozen=True)
@@ -183,7 +183,8 @@ def _render(request: PlaygroundRequest, directions: list[DesignDirection]) -> st
 
 
 def generate_playground(request: PlaygroundRequest, output: Path) -> GeneratedPlayground:
-    if request.advanced is not True:
+    advanced = validate_advanced_flag(request.advanced)
+    if not advanced:
         raise ValueError("playground requires explicit advanced opt-in")
     directions = suggest_directions(request.kind, advanced=True)
     output = Path(output)

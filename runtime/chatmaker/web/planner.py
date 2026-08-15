@@ -5,7 +5,7 @@ import json
 from dataclasses import asdict, dataclass
 from typing import Any
 
-from .directions import DesignDirection, suggest_directions
+from .directions import DesignDirection, suggest_directions, validate_advanced_flag
 
 
 @dataclass(frozen=True)
@@ -48,6 +48,7 @@ def plan_creative_brief(
     *,
     advanced: bool = False,
 ) -> CreativeBriefPlan:
+    advanced = validate_advanced_flag(advanced)
     questions = _missing_questions(brief)
     if questions:
         return CreativeBriefPlan(

@@ -23,6 +23,18 @@ class AdvancedPlaygroundTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "explicit advanced opt-in"):
                 generate_playground(request, Path(directory) / "playground.html")
 
+    def test_playground_rejects_non_boolean_advanced_values(self):
+        for value in ("false", 1, None):
+            request = PlaygroundRequest(
+                kind="classroom-tool",
+                title="课堂方向游乐场",
+                brief="比较同一个课堂反馈想法的不同体验",
+                advanced=value,  # type: ignore[arg-type]
+            )
+            with self.subTest(value=value), tempfile.TemporaryDirectory() as directory:
+                with self.assertRaisesRegex(TypeError, "advanced must be a boolean"):
+                    generate_playground(request, Path(directory) / "playground.html")
+
     def test_advanced_playground_writes_one_accessible_dependency_free_html_file(self):
         request = PlaygroundRequest(
             kind="classroom-tool",

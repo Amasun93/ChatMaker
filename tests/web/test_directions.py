@@ -51,6 +51,12 @@ class DirectionCatalogTests(unittest.TestCase):
                     )
                 )
 
+    def test_non_boolean_advanced_values_are_rejected(self):
+        for value in ("false", 1, None):
+            with self.subTest(value=value):
+                with self.assertRaisesRegex(TypeError, "advanced must be a boolean"):
+                    suggest_directions("classroom-tool", advanced=value)  # type: ignore[arg-type]
+
 
 if __name__ == "__main__":
     unittest.main()
