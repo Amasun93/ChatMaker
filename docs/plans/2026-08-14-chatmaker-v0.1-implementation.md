@@ -187,7 +187,7 @@ serial_close
 
 **Output:** Reversible installers plus a shared MCP/runtime configuration.
 
-**Status:** The current development server exposes 23 WorkBuddy tools: 2 catalog tools, 5 Nano tools, 5 Uno tools, 5 ESP32 tools, and 6 serial tools. The fifth ESP32 tool is `esp32_compile_upload`; it preserves the board-identity, single-wired-port, Bluetooth-rejection, and separate-evidence gates. This development count does not change the fixed rc4 release contents.
+**Status:** The current development server exposes 23 WorkBuddy tools: 2 catalog tools, 5 Nano tools, 5 Uno tools, 5 ESP32 tools, and 6 serial tools. The fifth ESP32 tool is `esp32_compile_upload`; it preserves the board-identity, single-wired-port, Bluetooth-rejection, and separate-evidence gates. Codex and WorkBuddy were refreshed from the current repository, all three installed Skill hashes match, a real stdio smoke test lists all 23 tools, and five unrelated WorkBuddy MCP entries remain preserved. Host UI discovery still requires restarting the applications. This development count does not change the fixed rc4 release contents.
 
 **Interfaces:**
 
@@ -237,8 +237,9 @@ published in the rc3 tag and its two prerelease assets.
 After the fixed rc4 release, the current development branch adds the strict
 ESP32 compile-upload path and the flagship AP firmware/page pair. The
 development WorkBuddy server definition now contains 23 tools (2 catalog, 5
-Nano, 5 Uno, 5 ESP32, and 6 serial). That server definition still needs a fresh
-host-installation check. The local machine still lacks the official ESP32 Core
+Nano, 5 Uno, 5 ESP32, and 6 serial). A fresh Codex/WorkBuddy installation and
+real stdio tool-list smoke check passed while preserving five unrelated MCP
+entries; application restart and UI discovery remain open. The local machine still lacks the official ESP32 Core
 3.3.11 and no physical DOIT board is connected, so ESP32 compilation, upload,
 boot, SoftAP, HTTP, LED, potentiometer, serial, and power-cycle gates remain
 unverified.

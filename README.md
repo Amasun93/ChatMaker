@@ -109,7 +109,7 @@ Skill 负责告诉 AI 应该怎样判断、哪些技术事实不能猜、什么�
 | 常用模块、库和示例 | 首批已验证 | 12 种元器件、14 个配方通过资料校验；10 个 Nano 和 1 个 Uno 示例真实编译；2 个 ESP32 示例保持待编译 |
 | ESP32 AP 手机控制案例 | 代码与合同已验证 | 已有 ESP32 固件和手机单页：设备计划创建 `ChatMaker-ESP32` Wi-Fi，在 `192.168.4.1` 提供 LED 控制和电位器数据；由于缺少官方 Core 与实物，编译、烧录、启动、Wi-Fi、HTTP 和实体效果均未验证 |
 | ChatWeb 生成和本地预览 | 部分验证 | 3 套方案推荐、单文件生成、课堂页、模拟硬件页和 localhost 预览已通过真实浏览器检查；新增 ESP32 AP 手机页及其接口合同测试，模拟预览不代表硬件已连接 |
-| Codex / WorkBuddy 安装 | 安装流程已验证，开发版待刷新 | 三个 Skill、配置备份、卸载恢复和 Nano/Uno Blink 编译烟测通过；当前开发版 WorkBuddy 服务器定义 23 个工具：2 个资料、5 个 Nano、5 个 Uno、5 个 ESP32、6 个串口工具；刷新到宿主后的工具数量还需单独验收 |
+| Codex / WorkBuddy 安装 | 开发版已刷新 | 三个 Skill 在 Codex/WorkBuddy 中与仓库哈希一致；WorkBuddy 1.6.0 真实 stdio 服务列出 23 个工具，并保留原有 5 个非 ChatMaker MCP；应用重启后的界面发现仍需单独确认 |
 | 串口运行诊断 | 已实现待硬件 | WorkBuddy 6 个串口工具与 Codex JSONL 会话通过自动测试；当前无有线 Nano/Uno，真实日志待现场读取 |
 | v0.1.0-rc2 发布候选 | 已发布 | [GitHub 预发布](https://github.com/Amasun93/ChatMaker/releases/tag/v0.1.0-rc2)；rc1 继续保留，rc2 新增串口运行层 |
 | v0.1.0-rc3 发布候选 | 已发布 | [GitHub 预发布](https://github.com/Amasun93/ChatMaker/releases/tag/v0.1.0-rc3)；包含 12 种模块、11 个配方、10 个编译示例和中文资料目录入口 |

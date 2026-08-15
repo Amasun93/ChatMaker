@@ -80,6 +80,17 @@ POST /api/led
 - WorkBuddy 开发版已经有 `esp32_compile_upload`，只有明确确认载板、排除蓝牙并只剩一个有线端口时才允许继续烧录。
 - WorkBuddy 开发版共 23 个工具：2 个资料工具、5 个 Nano 工具、5 个 Uno 工具、5 个 ESP32 工具和 6 个串口工具。
 
+## Codex / WorkBuddy 真实刷新
+
+提交进入公开 `main` 并且 GitHub CI 通过后，已执行一次真实的卸载恢复和重新安装：
+
+- Codex 与 WorkBuddy 的 `chatmaker`、`chatduino`、`chatweb` 三个 Skill 文件哈希都与仓库一致。
+- WorkBuddy stdio 服务真实启动，版本为 `1.6.0`，`tools/list` 返回 23 个工具。
+- `esp32_compile_upload` 确实存在，初始化说明也会把 ESP32 项目路由到这条安全入口，并保留 HTTP 和实体效果的独立证据门。
+- WorkBuddy 配置中原有 5 个非 ChatMaker MCP 全部保留；连同 ChatMaker 入口共 6 个。
+
+安装和进程烟测已经验证，但 Codex 与 WorkBuddy 应用尚未在本轮重启，因此界面是否重新发现新能力仍是 `unverified`。
+
 固件的 `GET /` 已内置一份轻量离线控制页，确保不需要联网也能操作。`examples/chatweb/esp32-ap-control.html` 是同一接口合同下的精美手机设计版和本地预览版；目前两者不是同一份页面源码。要把精美版正式烧进开发板，还需要在官方 ESP32 Core 可用后合并并完成真实编译，不能只靠静态复制就算集成成功。
 
 ## 手机页面浏览器验收
@@ -101,6 +112,7 @@ POST /api/led
 | 固件与页面源文件 | verified | 文件存在，固定引脚、Wi-Fi、页面和接口合同已经写入 |
 | 自动合同测试 | verified | 程序结构和页面交互满足当前约定 |
 | 手机浏览器模拟交互 | verified | 390 × 844 视口、触控尺寸、断开/错误/模拟状态和 LED 预览已经真实操作；不代表硬件连接 |
+| Codex / WorkBuddy 刷新 | verified | 三个 Skill 哈希一致，WorkBuddy 1.6.0 真实列出 23 个工具并保留 5 个无关 MCP；应用重启后的界面发现除外 |
 | ESP32 官方 Core 3.3.11 | unverified | 本机尚未安装，不能进行真实 ESP32 编译 |
 | 固件编译 | unverified | 没有编译成功日志或产物 |
 | 固件烧录 | unverified | 没有实物开发板，也没有上传成功记录 |
