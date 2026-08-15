@@ -1,32 +1,32 @@
-# ChatMaker v0.1.0-rc3
+# ChatMaker v0.1.0-rc4
 
-这是面向教师培训和入门黑客松试运行的第三个发布候选。它在 rc2 的 Nano 编译、串口诊断、ChatWeb 和可逆安装基础上，补齐首批常用模块资料和实际查询入口。
+这是面向教师培训和入门黑客松试运行的第四个发布候选。它在 rc3 的 Nano、常用模块资料、串口诊断、ChatWeb 和可逆安装基础上，新增了独立的 Arduino Uno Rev3 工作流。
 
-## 相对 rc2 的新增内容
+## 相对 rc3 的新增内容
 
-- 首批资料库达到 3 块板卡、12 种元器件和 11 个项目配方。
-- 新增共阴 RGB LED、电位器、5 V 单路继电器低压控制端和 WS2812B 四类常用模块。
-- Nano 示例由 6 个增加到 10 个；10 个程序全部通过 Mind+ 2.x 真实编译。
-- WS2812B 示例实际使用 `DFRobot_Mindplus_NeoPixel 1.0.0` 编译通过。
-- 所有 12 种模块增加常用中文别名，老师可以用“继电器”“电位器”“光敏模块”等日常名称搜索。
-- WorkBuddy 新增 `catalog_search` 和 `catalog_get`，工具总数达到 13 个。
-- Codex 新增 `chatmaker-catalog` 命令，可搜索并读取板卡、模块和配方的完整资料。
-- 自动测试增加到 77 项，资料目录、中文搜索、完整记录读取和 WorkBuddy 真实调用均有回归检查。
+- 新增 Arduino Uno Rev3 独立适配器，不复用 Nano 的板卡参数。
+- Mind+ 1.x 使用 `arduino:avr:uno`，Mind+ 2.x 使用 `mindplus:avr:uno`。
+- Uno 上传固定使用 115200；不会继承 Nano 的 57600 后回退 115200 策略。
+- Codex 新增 `chatmaker-uno`，支持环境检查、端口判断、编译和安全自动上传。
+- WorkBuddy 新增 5 个 Uno 工具，MCP 工具总数由 13 个增加到 18 个。
+- 新增 Uno 板载灯 Blink 示例和专属配方，资料库达到 3 块板卡、12 种元器件和 12 个配方。
+- 自动测试由 77 项增加到 84 项，覆盖 Uno 的独立 FQBN、固定上传速度、蓝牙端口拒绝、多端口停止和无硬件等待。
 
 ## 已验证
 
-- ChatMaker、ChatDuino、ChatWeb 三个 Skill 通过格式校验。
-- 10 个 Nano 示例使用 `mindplus:avr:nano:cpu=atmega328` 真实编译，10 个通过、0 个失败。
-- 资料库通过结构、引用、接线冲突、示例文件和证据状态校验。
-- 当前电脑的 Codex 与 WorkBuddy 已刷新安装；WorkBuddy 实际加载 13 个工具。
-- WorkBuddy 能搜索“继电器”、读取完整继电器资料，并真实编译对应 Nano 示例。
-- ChatWeb 的单文件课堂页、模拟硬件页、localhost 预览和浏览器交互证据继续保留。
+- 84 项自动测试、本地 doctor 和三套 Skill 校验通过。
+- GitHub Actions 在 Uno 功能进入公开 `main` 后通过。
+- Uno Blink 使用 Mind+ 2.x 和 `mindplus:avr:uno` 真实编译成功，生成独立 HEX。
+- 编译占用 2008 / 32256 字节程序空间、204 / 2048 字节动态内存。
+- Codex 的 `chatmaker-uno doctor/compile` 路径通过真实调用。
+- WorkBuddy MCP 实际加载 18 个工具，`uno_doctor` 和 `uno_compile` 通过真实调用。
+- 当前只检测到 6 个蓝牙串口；它们均被排除，没有被误当成 Uno。
 
 ## 仍需现场验证
 
-- 当前没有连接有线 Nano，因此没有本次发布候选的烧录、真实串口运行、断电重启或实物灯光证据。
-- 继电器示例只覆盖确认型号后的低压控制端，明确不提供市电接法。
-- Uno、ESP32 和真实网页硬件通信尚未达到发布验证状态。
-- 完全不依赖 Mind+ 的工具链属于下一阶段。
+- 当前没有连接有线 Uno，因此没有执行 Uno 固件烧录。
+- Uno 的 `UNO_BLINK_READY` 串口标记、断电重启和板载 LED 闪烁仍未验证。
+- Nano 的实机烧录、真实串口、断电重启和物理效果仍未验证。
+- ESP32 DevKit V1、真实网页硬件通信和完全不依赖 Mind+ 的工具链仍属于后续工作。
 
-这些限制是明确的证据边界，不会由编译成功、目录记录或模拟页面替代。
+这些限制是明确的证据边界，不会由编译成功、自动测试、目录记录或模拟页面替代。

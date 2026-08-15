@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "chatmaker"
-version = "0.1.0rc3"
+version = "0.1.0rc4"
 description = "AI-native beginner maker workflows for hardware and native web projects"
 readme = "README.md"
 requires-python = ">=3.11"
