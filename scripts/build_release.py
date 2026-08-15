@@ -27,7 +27,13 @@ RELEASE_PATHS = (
     "skills",
     "tests",
 )
-EXCLUDED_PARTS = {"__pycache__", ".pytest_cache", ".playwright-cli"}
+EXCLUDED_PARTS = {
+    "__pycache__",
+    ".pytest_cache",
+    ".playwright-cli",
+    ".chatmaker-esp32-builds",
+    ".chatmaker-esp32-cache",
+}
 
 
 def _release_files(root: Path) -> list[Path]:

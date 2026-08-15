@@ -6,6 +6,7 @@ import os
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -22,10 +23,141 @@ def load_adapter():
     return module
 
 
+class FakePopen:
+    def __init__(self, *, stdout="", stderr="", returncode=0, timeout_once=False):
+        self.args = ["arduino-cli"]
+        self.pid = 4242
+        self.returncode = returncode
+        self.stdout = stdout
+        self.stderr = stderr
+        self.timeout_once = timeout_once
+        self.communicate_calls = 0
+        self.kill_calls = 0
+        self.wait_calls: list[float] = []
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc, traceback):
+        return False
+
+    def communicate(self, input=None, timeout=None):
+        self.communicate_calls += 1
+        if self.timeout_once and self.communicate_calls == 1:
+            raise subprocess_timeout(self.args, timeout)
+        return self.stdout, self.stderr
+
+    def poll(self):
+        return self.returncode
+
+    def kill(self):
+        self.kill_calls += 1
+
+    def wait(self, timeout=None):
+        self.wait_calls.append(timeout)
+        return self.returncode
+
+
+def subprocess_timeout(command, timeout):
+    import subprocess
+
+    return subprocess.TimeoutExpired(command, timeout, output="partial", stderr="late")
+
+
 class Esp32DevKitV1Tests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.adapter = load_adapter()
+
+    def test_run_timeout_is_explicit(self):
+        process = FakePopen(timeout_once=True)
+        with mock.patch.object(self.adapter.subprocess, "Popen", return_value=process):
+            result = self.adapter._run(["arduino-cli", "compile"], timeout=1)
+
+        self.assertIs(result.get("timed_out"), True)
+
+    def test_run_timeout_invokes_process_tree_cleanup(self):
+        process = FakePopen(timeout_once=True)
+        with (
+            mock.patch.object(self.adapter.subprocess, "Popen", return_value=process),
+            mock.patch.object(self.adapter, "_terminate_process_tree", create=True) as cleanup,
+        ):
+            self.adapter._run(["arduino-cli", "compile"], timeout=1)
+
+        cleanup.assert_called_once_with(process)
+
+    def test_windows_process_tree_cleanup_uses_taskkill_and_waits(self):
+        cleanup = getattr(self.adapter, "_terminate_process_tree", None)
+        self.assertIsNotNone(cleanup, "process-tree cleanup helper is missing")
+        process = FakePopen()
+        taskkill_calls: list[tuple[list[str], dict[str, object]]] = []
+
+        def taskkill_runner(command, **kwargs):
+            taskkill_calls.append((command, kwargs))
+            return self.adapter.subprocess.CompletedProcess(command, 0, "", "")
+
+        cleanup(
+            process,
+            platform="nt",
+            taskkill_runner=taskkill_runner,
+            wait_timeout=2.0,
+        )
+
+        self.assertEqual(
+            taskkill_calls,
+            [
+                (
+                    ["taskkill", "/PID", "4242", "/T", "/F"],
+                    {
+                        "text": True,
+                        "capture_output": True,
+                        "timeout": 2.0,
+                        "check": False,
+                    },
+                )
+            ],
+        )
+        self.assertEqual(process.wait_calls, [2.0])
+
+    def test_run_oserror_is_not_labeled_as_timeout(self):
+        with mock.patch.object(
+            self.adapter.subprocess,
+            "Popen",
+            side_effect=OSError("cannot start Arduino CLI"),
+        ):
+            result = self.adapter._run(["arduino-cli", "compile"], timeout=1)
+
+        self.assertIs(result.get("timed_out"), False)
+        self.assertIn("OSError", result["stderr"])
+
+    def test_run_success_is_not_labeled_as_timeout(self):
+        process = FakePopen(stdout="compiled", returncode=0)
+        with mock.patch.object(self.adapter.subprocess, "Popen", return_value=process):
+            result = self.adapter._run(["arduino-cli", "compile"], timeout=1)
+
+        self.assertIs(result.get("timed_out"), False)
+        self.assertEqual(result["returncode"], 0)
+        self.assertEqual(result["stdout"], "compiled")
+
+    def test_run_starts_an_independent_process_group_on_each_platform(self):
+        for platform, expected in (
+            ("nt", {"creationflags": 0x00000200}),
+            ("posix", {"start_new_session": True}),
+        ):
+            with self.subTest(platform=platform):
+                process = FakePopen()
+                with (
+                    mock.patch.object(self.adapter.os, "name", platform),
+                    mock.patch.object(
+                        self.adapter.subprocess,
+                        "Popen",
+                        return_value=process,
+                    ) as popen,
+                ):
+                    self.adapter._run(["arduino-cli", "compile"], timeout=1)
+
+                for key, value in expected.items():
+                    self.assertEqual(popen.call_args.kwargs.get(key), value)
 
     def test_adapter_uses_exact_official_doit_profile(self):
         self.assertIsNotNone(self.adapter, "ESP32 DevKit V1 adapter is missing")

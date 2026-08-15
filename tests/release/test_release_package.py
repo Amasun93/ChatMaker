@@ -26,6 +26,61 @@ def load_builder():
 
 
 class ReleasePackageTests(unittest.TestCase):
+    def test_release_zip_excludes_esp32_runtime_cache_directories(self):
+        builder = load_builder()
+        build_sentinel = (
+            ROOT
+            / "examples"
+            / "chatduino"
+            / "esp32"
+            / ".chatmaker-esp32-builds"
+            / "release-test-sentinel"
+            / "should-not-ship.txt"
+        )
+        cache_sentinel = (
+            ROOT
+            / "examples"
+            / "chatduino"
+            / "esp32"
+            / ".chatmaker-esp32-cache"
+            / "release-test-sentinel"
+            / "should-not-ship.txt"
+        )
+
+        try:
+            build_sentinel.parent.mkdir(parents=True, exist_ok=True)
+            cache_sentinel.parent.mkdir(parents=True, exist_ok=True)
+            build_sentinel.write_text("build sentinel", encoding="utf-8")
+            cache_sentinel.write_text("cache sentinel", encoding="utf-8")
+
+            with tempfile.TemporaryDirectory() as directory:
+                result = builder.build_release(ROOT, Path(directory), RELEASE_VERSION)
+                with zipfile.ZipFile(result["archive"]) as archive:
+                    names = set(archive.namelist())
+        finally:
+            if build_sentinel.exists():
+                build_sentinel.unlink()
+            if cache_sentinel.exists():
+                cache_sentinel.unlink()
+            for directory in (
+                build_sentinel.parent,
+                build_sentinel.parent.parent,
+                cache_sentinel.parent,
+                cache_sentinel.parent.parent,
+            ):
+                if directory.exists():
+                    directory.rmdir()
+
+        prefix = f"ChatMaker-{RELEASE_VERSION}/examples/chatduino/esp32/"
+        self.assertNotIn(
+            prefix + ".chatmaker-esp32-builds/release-test-sentinel/should-not-ship.txt",
+            names,
+        )
+        self.assertNotIn(
+            prefix + ".chatmaker-esp32-cache/release-test-sentinel/should-not-ship.txt",
+            names,
+        )
+
     def test_rc5_verification_records_timeout_before_corrected_final_success(self):
         verification = (
             ROOT / "docs" / "verification" / "2026-08-15-rc5-release-candidate.md"

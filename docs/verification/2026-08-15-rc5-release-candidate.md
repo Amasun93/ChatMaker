@@ -24,10 +24,10 @@ git diff --check
 
 结果：
 
-- 单元/集成/发布合同测试：`Ran 179 tests ... OK`。
+- 单元/集成/发布合同测试：`Ran 189 tests ... OK`。
 - doctor：3 块板卡、12 个元器件、14 个配方，三套 Skill 均 `ok: true`。
 - 独立 Skill 校验：`chatmaker`、`chatduino`、`chatweb` 均 `[OK]`。
-- 发布合同聚焦运行：`Ran 5 tests ... OK`；覆盖 rc5 默认版本、确定性构建、ESP32/路由/网页/浏览器/安装资产清单、先校验后解压顺序、WorkBuddy stdio 帮助边界，以及 AP 超时修正的先后顺序。
+- 发布合同聚焦运行：`Ran 7 tests ... OK`；覆盖 rc5 默认版本、确定性构建、ESP32/路由/网页/浏览器/安装资产清单、ESP32 运行期缓存排除、先校验后解压顺序、WorkBuddy stdio 帮助边界，以及 AP 超时修正的先后顺序。
 - Playwright Chromium：`4 passed`；覆盖课堂页、模拟硬件页、ESP32 AP 模拟页和高级游乐场。
 - `git diff --check`：退出码 0；只显示 Windows LF/CRLF 工作区转换提醒，无空白错误。
 

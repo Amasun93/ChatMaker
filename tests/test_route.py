@@ -141,6 +141,84 @@ class RouteTests(unittest.TestCase):
             result["evidence_boundaries"]["hardware_effect_requires_separate_verification"]
         )
 
+    def test_combined_contract_rejects_non_string_or_blank_communication_fields(self):
+        self.assertIsNotNone(self.route, "chatmaker.route is missing")
+        invalid_values = [True, 7, {"value": "http"}, " \t\n"]
+        base_request = {
+            "hardware": {"board": "esp32-devkit-v1"},
+            "web": {"surface": "phone-web-page"},
+        }
+
+        for invalid in invalid_values:
+            with self.subTest(field="transport", value=invalid):
+                result = self.route.execute_request(
+                    {
+                        **base_request,
+                        "communication_contract": {
+                            "transport": invalid,
+                            "interactions": [
+                                {"request": "GET /api/state", "response": "200 OK"}
+                            ],
+                        },
+                    }
+                )
+                self.assertFalse(result["success"], result)
+                self.assertIn("transport", result["contract_requirements"])
+
+        interaction_cases = {
+            "request": lambda invalid: {
+                "request": invalid,
+                "response": "200 OK",
+            },
+            "response": lambda invalid: {
+                "request": "GET /api/state",
+                "response": invalid,
+            },
+            "message": lambda invalid: {"message": invalid},
+        }
+        for field, build_interaction in interaction_cases.items():
+            for invalid in invalid_values:
+                with self.subTest(field=field, value=invalid):
+                    result = self.route.execute_request(
+                        {
+                            **base_request,
+                            "communication_contract": {
+                                "transport": "http",
+                                "interactions": [build_interaction(invalid)],
+                            },
+                        }
+                    )
+                    self.assertFalse(result["success"], result)
+                    self.assertIn(
+                        "request_response_or_message_interaction",
+                        result["contract_requirements"],
+                    )
+
+    def test_combined_contract_accepts_stripped_nonempty_communication_strings(self):
+        self.assertIsNotNone(self.route, "chatmaker.route is missing")
+        base_request = {
+            "hardware": {"board": "esp32-devkit-v1"},
+            "web": {"surface": "phone-web-page"},
+        }
+        interactions = [
+            {"request": "  GET /api/state  ", "response": "  200 OK  "},
+            {"message": "  led_state_changed  "},
+        ]
+
+        for interaction in interactions:
+            with self.subTest(interaction=interaction):
+                result = self.route.execute_request(
+                    {
+                        **base_request,
+                        "communication_contract": {
+                            "transport": "  http  ",
+                            "interactions": [interaction],
+                        },
+                    }
+                )
+                self.assertTrue(result["success"], result)
+                self.assertEqual(result["status"], "ready")
+
     def test_json_cli_routes_structured_intent(self):
         self.assertIsNotNone(self.route, "chatmaker.route is missing")
         environment = dict(os.environ)

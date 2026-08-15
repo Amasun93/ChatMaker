@@ -9,6 +9,7 @@ import json
 import os
 from pathlib import Path
 import re
+import signal
 import shutil
 import subprocess
 import sys
@@ -22,31 +23,101 @@ TARGET_FQBN = "esp32:esp32:esp32doit-devkit-v1"
 TARGET_CORE_ID = "esp32:esp32"
 REQUIRED_CORE_VERSION = "3.3.11"
 ESP32_PACKAGE_INDEX_URL = "https://espressif.github.io/arduino-esp32/package_esp32_index.json"
+PROCESS_TREE_CLEANUP_TIMEOUT = 5.0
+
+
+def _wait_for_process_exit(process, wait_timeout: float) -> None:
+    try:
+        process.wait(timeout=wait_timeout)
+    except subprocess.TimeoutExpired:
+        try:
+            process.kill()
+        except OSError:
+            pass
+        try:
+            process.wait(timeout=wait_timeout)
+        except (OSError, subprocess.TimeoutExpired):
+            pass
+
+
+def _terminate_process_tree(
+    process,
+    *,
+    platform: str = os.name,
+    taskkill_runner=None,
+    wait_timeout: float = PROCESS_TREE_CLEANUP_TIMEOUT,
+) -> None:
+    if platform == "nt":
+        runner = taskkill_runner or subprocess.run
+        try:
+            completed = runner(
+                ["taskkill", "/PID", str(process.pid), "/T", "/F"],
+                text=True,
+                capture_output=True,
+                timeout=wait_timeout,
+                check=False,
+            )
+            if completed.returncode != 0:
+                process.kill()
+        except (OSError, subprocess.TimeoutExpired):
+            try:
+                process.kill()
+            except OSError:
+                pass
+    else:
+        try:
+            os.killpg(os.getpgid(process.pid), signal.SIGKILL)
+        except OSError:
+            try:
+                process.kill()
+            except OSError:
+                pass
+    _wait_for_process_exit(process, wait_timeout)
 
 
 def _run(command: list[str], timeout: int = 30) -> dict[str, Any]:
+    popen_options: dict[str, Any] = {}
+    if os.name == "nt":
+        popen_options["creationflags"] = getattr(
+            subprocess, "CREATE_NEW_PROCESS_GROUP", 0x00000200
+        )
+    else:
+        popen_options["start_new_session"] = True
     try:
-        completed = subprocess.run(
+        process = subprocess.Popen(
             command,
             text=True,
-            capture_output=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
             encoding="utf-8",
             errors="replace",
-            timeout=timeout,
-            check=False,
+            **popen_options,
         )
+        try:
+            stdout, stderr = process.communicate(timeout=timeout)
+        except subprocess.TimeoutExpired as exc:
+            _terminate_process_tree(process)
+            return {
+                "command": command,
+                "returncode": None,
+                "stdout": "",
+                "stderr": f"{type(exc).__name__}: {exc}",
+                "timed_out": True,
+            }
         return {
             "command": command,
-            "returncode": completed.returncode,
-            "stdout": completed.stdout,
-            "stderr": completed.stderr,
+            "returncode": process.returncode,
+            "stdout": stdout,
+            "stderr": stderr,
+            "timed_out": False,
         }
-    except (OSError, subprocess.TimeoutExpired) as exc:
+    except OSError as exc:
         return {
             "command": command,
             "returncode": None,
             "stdout": "",
             "stderr": f"{type(exc).__name__}: {exc}",
+            "timed_out": False,
         }
 
 

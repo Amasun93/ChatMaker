@@ -20,10 +20,12 @@ def _has_web_intent(request: dict[str, Any]) -> bool:
     return isinstance(web, dict) and any(web.values())
 
 
+def _is_nonempty_string(value: Any) -> bool:
+    return isinstance(value, str) and bool(value.strip())
+
+
 def _has_contract_transport(contract: Any) -> bool:
-    return isinstance(contract, dict) and isinstance(contract.get("transport"), str) and bool(
-        contract["transport"].strip()
-    )
+    return isinstance(contract, dict) and _is_nonempty_string(contract.get("transport"))
 
 
 def _has_contract_interaction(contract: Any) -> bool:
@@ -35,8 +37,10 @@ def _has_contract_interaction(contract: Any) -> bool:
     for interaction in interactions:
         if not isinstance(interaction, dict):
             continue
-        has_request_response = bool(interaction.get("request")) and bool(interaction.get("response"))
-        has_message = bool(interaction.get("message"))
+        has_request_response = _is_nonempty_string(
+            interaction.get("request")
+        ) and _is_nonempty_string(interaction.get("response"))
+        has_message = _is_nonempty_string(interaction.get("message"))
         if has_request_response or has_message:
             return True
     return False
