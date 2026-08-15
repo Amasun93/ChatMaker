@@ -47,6 +47,28 @@ itself is core metadata, so `available=false` is still a successful response.
 }
 ```
 
+## Index error
+
+An index failure echoes only the index request identity fields and the common
+error object. It never includes `section_id`, `sections`, a guessed board, or a
+cursor.
+
+<!-- contract:index.error -->
+```json
+{
+  "success": false,
+  "api_version": "1",
+  "action": "index",
+  "board_id": "arduino-nano-clasic",
+  "consumer": "chatduino",
+  "error": {
+    "code": "llmwiki_board_not_found",
+    "message": "Unknown board_id: arduino-nano-clasic",
+    "retryable": false
+  }
+}
+```
+
 ## Section request
 
 `auto_install` is optional and defaults to `true`. If false and no installed or

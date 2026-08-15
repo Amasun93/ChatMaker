@@ -53,13 +53,17 @@ def read_yaml(path: str) -> dict[str, Any]:
     return yaml.safe_load((ROOT / path).read_text(encoding="utf-8"))
 
 
-def contract_example(name: str) -> Any:
-    text = (ROOT / "docs/contracts/llmwiki-api-v1.md").read_text(encoding="utf-8")
+def document_contract(path: str, name: str) -> Any:
+    text = (ROOT / path).read_text(encoding="utf-8")
     pattern = rf"<!-- contract:{re.escape(name)} -->\s*```json\s*(.*?)\s*```"
     match = re.search(pattern, text, flags=re.DOTALL)
     if match is None:
-        raise AssertionError(f"missing JSON contract example: {name}")
+        raise AssertionError(f"missing JSON contract example in {path}: {name}")
     return json.loads(match.group(1))
+
+
+def contract_example(name: str) -> Any:
+    return document_contract("docs/contracts/llmwiki-api-v1.md", name)
 
 
 def contains_key(value: Any, key: str) -> bool:
@@ -68,6 +72,19 @@ def contains_key(value: Any, key: str) -> bool:
     if isinstance(value, list):
         return any(contains_key(item, key) for item in value)
     return False
+
+
+def validate_manifest_contract(schema: dict[str, Any], manifest: dict[str, Any]) -> None:
+    jsonschema.Draft202012Validator(schema).validate(manifest)
+    rule = schema["x-chatmaker-semantic-constraints"]["unique_file_paths"]
+    seen: set[str] = set()
+    for item in manifest["files"]:
+        path = item["path"]
+        if path in seen:
+            raise jsonschema.ValidationError(
+                f"{rule['error_code']}:{rule['reason']}:{path}"
+            )
+        seen.add(path)
 
 
 class LlmWikiApiContractTests(unittest.TestCase):
@@ -96,6 +113,25 @@ class LlmWikiApiContractTests(unittest.TestCase):
                 item["pack_id"] == PACK_BY_BOARD["arduino-nano-classic"]
                 for item in response["sections"]
             )
+        )
+        self.assertFalse(contains_key(response, "cursor"))
+
+    def test_index_error_payload_has_exact_cursorless_envelope(self):
+        response = contract_example("index.error")
+        self.assertEqual(
+            response,
+            {
+                "success": False,
+                "api_version": "1",
+                "action": "index",
+                "board_id": "arduino-nano-clasic",
+                "consumer": "chatduino",
+                "error": {
+                    "code": "llmwiki_board_not_found",
+                    "message": "Unknown board_id: arduino-nano-clasic",
+                    "retryable": False,
+                },
+            },
         )
         self.assertFalse(contains_key(response, "cursor"))
 
@@ -312,6 +348,48 @@ class LlmWikiSchemaContractTests(unittest.TestCase):
         with self.assertRaises(jsonschema.ValidationError):
             jsonschema.Draft202012Validator(self.manifest_schema).validate(invalid)
 
+    def test_manifest_semantically_rejects_duplicate_paths_even_when_metadata_differs(self):
+        manifest = self.valid_manifest()
+        manifest["files"].append(
+            {
+                "path": "llmwiki/sections/identify-and-safety.md",
+                "length": 999,
+                "sha256": "d" * 64,
+            }
+        )
+        # Different metadata means JSON Schema's uniqueItems cannot reject this pair.
+        jsonschema.Draft202012Validator(self.manifest_schema).validate(manifest)
+        self.assertEqual(
+            self.manifest_schema["x-chatmaker-semantic-constraints"],
+            {
+                "unique_file_paths": {
+                    "comparison": "unicode_codepoint_exact",
+                    "error_code": "pack_manifest_invalid",
+                    "reason": "duplicate_path",
+                }
+            },
+        )
+        paths = [item["path"] for item in manifest["files"]]
+        duplicate_path = next(path for path in paths if paths.count(path) > 1)
+        with self.assertRaisesRegex(
+            jsonschema.ValidationError,
+            rf"^pack_manifest_invalid:duplicate_path:{re.escape(duplicate_path)}$",
+        ):
+            validate_manifest_contract(self.manifest_schema, manifest)
+        self.assertEqual(
+            document_contract(
+                "docs/architecture/llmwiki-progressive-packs.md",
+                "manifest.duplicate-path.error",
+            ),
+            {
+                "error": {
+                    "code": "pack_manifest_invalid",
+                    "reason": "duplicate_path",
+                    "path": duplicate_path,
+                }
+            },
+        )
+
     def test_registry_requires_immutable_commit_pinned_pack_urls(self):
         registry = self.valid_registry()
         jsonschema.Draft202012Validator(self.registry_schema).validate(registry)
@@ -333,6 +411,9 @@ class LlmWikiSchemaContractTests(unittest.TestCase):
         invalid = dict(valid, algorithm="rsa-pss")
         with self.assertRaises(jsonschema.ValidationError):
             jsonschema.Draft202012Validator(signature_schema).validate(invalid)
+        noncanonical_alias = dict(valid, signature="A" * 85 + "B==")
+        with self.assertRaises(jsonschema.ValidationError):
+            jsonschema.Draft202012Validator(signature_schema).validate(noncanonical_alias)
 
     def test_all_new_schemas_are_valid_draft_2020_12_schemas(self):
         for schema in (self.index_schema, self.manifest_schema, self.registry_schema):
@@ -340,6 +421,63 @@ class LlmWikiSchemaContractTests(unittest.TestCase):
 
 
 class DistributionAndCompatibilityContractTests(unittest.TestCase):
+    def test_deterministic_archive_rules_are_exact(self):
+        self.assertEqual(
+            document_contract(
+                "docs/architecture/llmwiki-progressive-packs.md",
+                "archive.determinism",
+            ),
+            {
+                "format": "zip",
+                "compression": "stored",
+                "entry_order": "pack-manifest.json then payload paths by UTF-8 byte order",
+                "timestamp": "1980-01-01T00:00:00",
+                "create_system": 3,
+                "unix_mode": "0100644",
+                "extra": "",
+                "comment": "",
+                "directory_entries": False,
+                "manifest_json": "UTF-8; sorted keys; separators comma/colon; one trailing LF",
+                "manifest_files_order": "payload paths by UTF-8 byte order",
+                "payload_bytes": "exact validated source bytes",
+                "repeat_build_invariant": "byte-identical archive and SHA-256",
+            },
+        )
+
+    def test_failure_injection_points_and_rollback_invariants_are_exact(self):
+        self.assertEqual(
+            document_contract(
+                "docs/architecture/llmwiki-progressive-packs.md",
+                "transaction.failure-injection",
+            ),
+            {
+                "points": [
+                    "registry.before_sequence_replace",
+                    "registry.after_sequence_replace",
+                    "pack.after_part_write",
+                    "pack.after_archive_verify",
+                    "pack.after_staging_extract",
+                    "pack.after_staging_validate",
+                    "pack.after_store_move",
+                    "pack.before_active_replace",
+                    "pack.after_active_replace",
+                ],
+                "injected_error": "failure_injected",
+                "invariants": [
+                    "no unverified version becomes active",
+                    "failure through pack.before_active_replace leaves active.json byte-identical",
+                    "failure at pack.after_active_replace atomically restores prior active.json",
+                    "rollback targets only a rehashed previously verified immutable version",
+                    "registry sequence never decreases during install or rollback",
+                    "registry.before_sequence_replace preserves the old sequence",
+                    "registry.after_sequence_replace preserves the new higher sequence",
+                    "verified cache/store data may remain inactive and must be reverified before reuse",
+                    "partial/staging data is never active and is ignored or cleaned on retry",
+                    "explicit local overrides are unchanged",
+                ],
+            },
+        )
+
     def test_checked_in_anchor_matches_the_preflight_public_identity_and_urls(self):
         anchors = read_json("runtime/chatmaker/trust/official_registry_keys.json")
         self.assertEqual(anchors["registry_url"], REGISTRY_URL)

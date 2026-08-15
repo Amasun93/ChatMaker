@@ -82,7 +82,7 @@
       "properties": {
         "key_id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$"},
         "algorithm": {"const": "ed25519"},
-        "signature": {"type": "string", "pattern": "^[A-Za-z0-9+/]{86}==$"}
+        "signature": {"type": "string", "pattern": "^[A-Za-z0-9+/]{85}[AQgw]==$"}
       }
     }
   }

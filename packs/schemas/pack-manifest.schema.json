@@ -2,6 +2,13 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://chatmaker.dev/schemas/pack-manifest.schema.json",
   "title": "ChatMaker passive knowledge-pack manifest",
+  "x-chatmaker-semantic-constraints": {
+    "unique_file_paths": {
+      "comparison": "unicode_codepoint_exact",
+      "error_code": "pack_manifest_invalid",
+      "reason": "duplicate_path"
+    }
+  },
   "type": "object",
   "additionalProperties": false,
   "required": ["schema_version", "format_version", "pack_id", "pack_version", "pack_type", "board_id", "compatibility", "files"],
@@ -23,6 +30,7 @@
       "type": "array",
       "minItems": 2,
       "maxItems": 65,
+      "uniqueItems": true,
       "contains": {
         "type": "object",
         "properties": {"path": {"const": "llmwiki/index.yaml"}},
