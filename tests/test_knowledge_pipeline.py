@@ -276,6 +276,23 @@ class KnowledgePublicationPipelineTests(unittest.TestCase):
         self.assertTrue(any("unsafe manifest filesystem path" in error for error in result["errors"]), result)
         self.assertTrue(any("unsafe page filesystem path" in error for error in result["errors"]), result)
 
+    def test_rejects_schema_reparse_traversal_before_loading_external_schema(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            workspace = self.make_workspace(root)
+            schema_path = workspace / "schemas" / "source-manifest.schema.yaml"
+            validator = load_validator()
+            with patch.object(
+                validator,
+                "_is_link_or_reparse",
+                side_effect=lambda candidate: Path(candidate) == schema_path,
+            ):
+                result = validator.validate_knowledge_publication(root)
+
+        self.assertFalse(result["success"])
+        self.assertEqual(result["counts"], {"manifests": 0, "pages": 0})
+        self.assertTrue(any("unsafe schema filesystem path" in error for error in result["errors"]), result)
+
     def test_check_only_cli_emits_structured_json_and_nonzero_on_failure(self):
         with tempfile.TemporaryDirectory() as directory:
             workspace = self.make_workspace(Path(directory))

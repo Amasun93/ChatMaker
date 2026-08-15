@@ -110,6 +110,9 @@ def validate_knowledge_publication(root: Path) -> dict[str, Any]:
     errors: list[str] = []
     manifests: list[tuple[Path, dict[str, Any]]] = []
 
+    if not _safe_filesystem_path(schema_path, workspace):
+        errors.append(f"{schema_path}: unsafe schema filesystem path")
+        return {"success": False, "errors": errors, "counts": {"manifests": 0, "pages": 0}}
     schema, schema_error = _load_yaml(schema_path)
     if schema_error is not None or schema is None:
         errors.append(f"{schema_path}: cannot load source-manifest schema: {schema_error}")
