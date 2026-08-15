@@ -4,6 +4,80 @@
 >
 > rc5 is available as a [public GitHub prerelease](https://github.com/Amasun93/ChatMaker/releases/tag/v0.1.0-rc5). Public rc1–rc4 artifacts remain separate historical releases.
 
+## 0. 当前源码：最小 Core 与渐进知识 / Current source: minimal Core and progressive knowledge
+
+rc5 仍是当前公开下载。本节说明 rc5 之后的源码能力；Task 7 只在本地构建和验证 `ChatMaker-Core-0.1.0-rc5.zip`，没有创建新的 GitHub Release。源码维护者可以运行：
+
+rc5 remains the current public download. This section documents post-rc5 source behavior. Task 7 builds and verifies `ChatMaker-Core-0.1.0-rc5.zip` locally and does not create a new GitHub Release. A source maintainer may run:
+
+```powershell
+python scripts/build_release.py --output dist --version 0.1.0-rc5
+Get-FileHash .\dist\ChatMaker-Core-0.1.0-rc5.zip -Algorithm SHA256
+Get-Content .\dist\ChatMaker-Core-0.1.0-rc5.zip.sha256
+```
+
+两处 SHA-256 一致后，把 Core 解压到长期保留的目录，再创建独立虚拟环境：
+
+After the two SHA-256 values match, extract the Core into a persistent directory and create a dedicated virtual environment:
+
+```powershell
+Expand-Archive .\dist\ChatMaker-Core-0.1.0-rc5.zip -DestinationPath .\core-check
+Set-Location .\core-check\ChatMaker-Core-0.1.0-rc5
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install -e .
+chatmaker-doctor
+chatmaker-install-codex install
+# 或 / or: chatmaker-install-workbuddy install
+```
+
+Core 内有运行层、三个 Skill、schema、3/12/14 条规范记录、三个紧凑索引和当前案例。它没有详细 Wiki 正文、`knowledge_sources/`、`tests/`、开发缓存或已构建的可选 `.cmpack`。`chatmaker-doctor` 通过只证明这些内置内容可读，不证明任何硬件效果。
+
+The Core contains runtime code, three Skills, schemas, the canonical 3/12/14 records, three compact indexes, and current examples. It excludes detailed Wiki bodies, `knowledge_sources/`, `tests/`, development caches, and built optional `.cmpack` artifacts. A successful doctor proves only that built-in software content is readable.
+
+### 第一次自动读取 / First automatic read
+
+下面的章节不在 Core 中。第一次执行时，reader 默认 `auto_install=true`，并调用幂等的 `ensure(pack_id)`：
+
+The detailed section below is absent from Core. On first use, the reader defaults to `auto_install=true` and calls idempotent `ensure(pack_id)`:
+
+```powershell
+chatmaker-llmwiki --request-json '{"action":"section","board_id":"arduino-nano-classic","consumer":"chatduino","section_id":"identify-and-safety"}'
+chatmaker-pack status chatmaker-board-arduino-nano-classic-wiki
+```
+
+只有官方签名注册表允许的只读 `knowledge` 包可以自动安装。ChatMaker 会先验证 Ed25519 签名、单调 sequence、有效期、不可变 commit URL、长度、SHA-256、manifest 和每个文件，再原子激活。第二次读取直接复用，不重复下载。
+
+Only allowlisted, read-only `knowledge` packs may install automatically. ChatMaker checks the Ed25519 signature, monotonic sequence, validity window, immutable commit URL, length, SHA-256, manifest, and every file before atomic activation. A second read reuses the installed version without another download.
+
+### 自动动作不会做什么 / What automatic installation never does
+
+它不会安装或修改驱动、Mind+、Arduino Core、Node、Chromium、系统 PATH、安装钩子、管理员软件或 WorkBuddy MCP 配置。需要这些外部环境时，ChatMaker 会停下来说明；用户仍需显式安装或批准。Codex / WorkBuddy 安装器只处理三个 Skill（以及 WorkBuddy 自己的 MCP 条目），不会顺便安装或更新知识包。
+
+It never installs or changes drivers, Mind+, Arduino cores, Node, Chromium, PATH, hooks, administrator-level software, or WorkBuddy MCP configuration. External prerequisites remain explicit. Codex and WorkBuddy installers manage only the three Skills (plus WorkBuddy's own MCP entry), never knowledge content.
+
+### 离线、本地覆盖、更新与回滚 / Offline, overrides, update, and rollback
+
+```powershell
+chatmaker-pack list
+chatmaker-pack cache
+chatmaker-pack ensure chatmaker-board-arduino-nano-classic-wiki --offline
+chatmaker-pack update chatmaker-board-arduino-nano-classic-wiki
+chatmaker-pack rollback chatmaker-board-arduino-nano-classic-wiki --version 1.0.0
+```
+
+- 离线时只能使用已验证的精确缓存或已安装版本；从未下载过的章节会明确返回缺包错误，不会猜内容。
+- `update` 只接受注册表中的更高版本；失败时旧版本继续工作。`rollback` 只切换到本机已经完整验证的旧版本。
+- 默认用户数据在 `~/.chatmaker/` 的 cache、store、state 等分区。不要手动修改官方 store；漂移内容会被隔离。
+- 实验知识放在 `~/.chatmaker/overrides/`，或用 `CHATMAKER_PACKS_PATH` 指向独立目录。返回值会显示 `provenance=local_override`，避免把个人内容当成官方事实。
+- 运行这些内容命令不会写 Codex 或 WorkBuddy 配置。主机配置只有显式 host install/uninstall 才会改动，并继续使用备份恢复。
+
+- Offline mode can use only an exact verified cache or installed version; a never-downloaded section fails clearly instead of guessing.
+- `update` accepts only a newer registry version and preserves the old active version on failure. `rollback` selects only a previously verified local version.
+- User content lives under separated cache/store/state folders in `~/.chatmaker/`. Do not edit the official store by hand; drift is quarantined.
+- Put experiments under `~/.chatmaker/overrides/`, or point `CHATMAKER_PACKS_PATH` at a separate directory. Results remain labelled `provenance=local_override`.
+- Content commands never write Codex or WorkBuddy configuration. Only explicit host install/uninstall changes host configuration, with the existing backup and restore behavior.
+
 ## 1. 共同前置条件 / Common prerequisites
 
 1. Windows 64 位；Python 3.11 或更高版本，并可使用 `python -m pip`。
@@ -94,9 +168,9 @@ chatmaker-install-workbuddy install
 chatmaker-install-workbuddy doctor
 ```
 
-WorkBuddy stdio 应报告服务版本 `1.7.0` 和 23 个工具。安装器会备份同名 Skill 或 WorkBuddy 配置，并保留无关 MCP。安装后重启对应应用。恢复原状：
+当前源码的 WorkBuddy stdio 应报告服务版本 `1.8.0` 和 24 个工具，包括 `llmwiki_get`。安装器会备份同名 Skill 或 WorkBuddy 配置，并保留无关 MCP。知识包更新不会触碰该配置。安装后重启对应应用。恢复原状：
 
-WorkBuddy stdio should report server version `1.7.0` and 23 tools. The installers back up replaced Skills/configuration and preserve unrelated MCP entries. Restart the host application after installation. To restore:
+Current source should report WorkBuddy stdio server `1.8.0` with 24 tools, including `llmwiki_get`. The installers back up replaced Skills/configuration and preserve unrelated MCP entries. Knowledge updates do not touch that configuration. Restart the host application after installation. To restore:
 
 ```powershell
 chatmaker-install-codex uninstall
@@ -105,9 +179,9 @@ chatmaker-install-workbuddy uninstall
 
 ## 6. 开发与浏览器验证 / Development and browser verification
 
-发布包包含 Playwright 清单和浏览器测试，但不会预装 Node.js 或 Chromium。运行浏览器验证需要 Node.js 22（或兼容版本）和网络可用的首次浏览器安装：
+历史 rc5 发布包包含 Playwright 清单和浏览器测试；新的最小 Core 不包含开发测试。源码贡献者运行浏览器验证仍需要完整仓库、Node.js 22（或兼容版本）和网络可用的首次浏览器安装：
 
-The archive includes Playwright manifests and tests, but not Node.js or Chromium. For browser verification, install Node.js 22 (or a compatible version), then run:
+The historical rc5 archive includes Playwright manifests and tests; the new minimal Core excludes development tests. Source contributors need the full repository and Node.js 22 (or compatible) for browser verification:
 
 ```powershell
 python scripts/validate_skills.py

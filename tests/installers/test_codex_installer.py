@@ -27,7 +27,11 @@ class CodexInstallerTests(unittest.TestCase):
 
             self.assertTrue(installed["success"])
             self.assertEqual(installed["installed_skills"], ["chatmaker", "chatduino", "chatweb"])
+            self.assertEqual(installed["content_manager"], "chatmaker-pack")
+            self.assertEqual(installed["knowledge_packs_installed"], [])
             self.assertTrue(health["success"], health)
+            self.assertEqual(health["content_manager"], "chatmaker-pack")
+            self.assertEqual(health["knowledge_packs_installed"], [])
             self.assertFalse((old_chatduino / "old-marker.txt").exists())
             self.assertTrue((codex_home / "skills" / "chatmaker" / "SKILL.md").is_file())
             self.assertTrue(Path(installed["manifest"]).is_file())
