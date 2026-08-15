@@ -14,6 +14,18 @@ SKETCH_PATH = (
     / "ap-led-sensor"
     / "ap-led-sensor.ino"
 )
+PAGE_HEADER_PATH = SKETCH_PATH.with_name("page_html.h")
+CHATWEB_PAGE_PATH = ROOT / "examples" / "chatweb" / "esp32-ap-control.html"
+
+
+def embedded_page_from_header() -> str:
+    header = PAGE_HEADER_PATH.read_text(encoding="utf-8") if PAGE_HEADER_PATH.is_file() else ""
+    match = re.search(
+        r'R"(?P<delimiter>[A-Z0-9_]+)\((?P<body>.*)\)(?P=delimiter)";',
+        header,
+        re.DOTALL,
+    )
+    return match.group("body") if match else ""
 
 
 class Esp32ApExampleContractTests(unittest.TestCase):
@@ -74,10 +86,19 @@ class Esp32ApExampleContractTests(unittest.TestCase):
             r'server\.on\s*\(\s*"/api/led"\s*,\s*HTTP_POST\s*,',
             "POST /api/led route is missing",
         )
+        self.assertIn('#include "page_html.h"', self.source)
         self.assert_source_matches(
-            r'sendLogged\s*\(\s*"GET"\s*,\s*"/"\s*,\s*200\s*,\s*"text/html"',
-            "GET / must return same-origin HTML",
+            r'sendPageLogged\s*\(\s*\)',
+            "GET / must serve the generated ChatWeb page",
         )
+
+    def test_large_page_is_sent_from_progmem_without_a_temporary_string_copy(self):
+        self.assert_source_matches(
+            r"void\s+sendPageLogged\s*\(\s*\).*?server\.send_P\s*\(\s*200\s*,\s*PSTR\s*\(\s*\"text/html; charset=utf-8\"\s*\)\s*,\s*CHATMAKER_AP_PAGE\s*,\s*CHATMAKER_AP_PAGE_LENGTH\s*\)",
+            "the generated phone page must stream from PROGMEM through send_P",
+        )
+        self.assertNotRegex(self.source, r"sendLogged\s*\([^;]*CHATMAKER_AP_PAGE")
+        self.assertNotRegex(self.source, r"String\s*\(\s*CHATMAKER_AP_PAGE\s*\)")
 
     def test_state_json_has_the_stable_schema_and_live_values(self):
         for field in ("schema_version", "led_on", "sensor_raw", "uptime_ms"):
@@ -122,9 +143,10 @@ class Esp32ApExampleContractTests(unittest.TestCase):
         )
 
     def test_html_is_self_contained_and_calls_same_origin_apis(self):
-        html_match = re.search(r'R"HTML\((.*?)\)HTML"', self.source, re.DOTALL)
-        self.assertIsNotNone(html_match, "an embedded HTML page is required")
-        html = html_match.group(1) if html_match else ""
+        self.assertTrue(PAGE_HEADER_PATH.is_file(), "generated page_html.h is required")
+        html = embedded_page_from_header()
+        expected = CHATWEB_PAGE_PATH.read_text(encoding="utf-8")
+        self.assertEqual(html, expected, "firmware page must exactly match the ChatWeb source")
         self.assertNotRegex(html, r"https?://|//cdn\.", "page must not use an external CDN")
         self.assertRegex(html, r"fetch\s*\(\s*['\"]\/api\/state['\"]")
         self.assertRegex(html, r"fetch\s*\(\s*['\"]\/api\/led['\"]")

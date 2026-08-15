@@ -86,6 +86,31 @@ class WorkBuddyBridgeTests(unittest.TestCase):
         self.assertIn("唯一非蓝牙有线端口", instructions)
         self.assertIn("HTTP", instructions)
 
+    def test_esp32_prepare_environment_routes_to_locked_auto_prepare(self):
+        """Catches the MCP tool falling back to read-only doctor instead of preparation."""
+        tool = next(
+            tool for tool in self.server.TOOLS
+            if tool["name"] == "esp32_prepare_environment"
+        )
+        self.assertIn("自动检查", tool["description"])
+        self.assertIn("ChatMaker 验证", tool["description"])
+        captured = None
+        original = self.server.esp32_bridge.execute_request
+
+        def fake(request):
+            nonlocal captured
+            captured = request
+            return {"success": True, "action": "prepare-environment"}
+
+        self.server.esp32_bridge.execute_request = fake
+        try:
+            result = self.server._tool_result("esp32_prepare_environment", {})
+        finally:
+            self.server.esp32_bridge.execute_request = original
+
+        self.assertFalse(result["isError"])
+        self.assertEqual(captured, {"action": "prepare-environment"})
+
     def test_esp32_toolchain_missing_is_a_prompt_not_an_mcp_error(self):
         original = self.server.esp32_bridge.execute_request
         self.server.esp32_bridge.execute_request = lambda request: {

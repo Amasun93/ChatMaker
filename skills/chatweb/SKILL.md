@@ -23,6 +23,7 @@ Help the user discover the intended feeling and interaction, choose from a small
 5. Start the selected file with `chatmaker-web-preview`. Keep the default `127.0.0.1` binding; use network access only after an explicit request.
 6. Verify file loading, browser console errors, the primary interaction, state transitions, and phone-size layout in a real browser.
 7. For hardware pages, label simulation visibly. Define the HTTP, serial, Bluetooth, or message contract with `$chatduino` before implementing a real connection.
+8. If the page must ship inside firmware, keep one editable HTML source and generate the embedded artifact from it. In this repository, `examples/chatweb/esp32-ap-control.html` is the only editable ESP32 AP page source; regenerate `examples/chatduino/esp32/ap-led-sensor/page_html.h` with `chatmaker-web-embed ... --symbol CHATMAKER_AP_PAGE`.
 
 Read [web-verification-contract.md](references/web-verification-contract.md) before testing or reporting completion.
 

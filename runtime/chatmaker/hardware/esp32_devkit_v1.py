@@ -21,6 +21,7 @@ TARGET_PROFILE_ID = "doit-esp32-devkit-v1-wroom32"
 TARGET_FQBN = "esp32:esp32:esp32doit-devkit-v1"
 TARGET_CORE_ID = "esp32:esp32"
 REQUIRED_CORE_VERSION = "3.3.11"
+ESP32_PACKAGE_INDEX_URL = "https://espressif.github.io/arduino-esp32/package_esp32_index.json"
 
 
 def _run(command: list[str], timeout: int = 30) -> dict[str, Any]:
@@ -117,6 +118,8 @@ def scan_ports() -> list[dict[str, Any]]:
 def select_exact_core(inventory: list[dict[str, Any]]) -> Optional[dict[str, Any]]:
     for item in inventory:
         if (
+            isinstance(item, dict)
+            and
             str(item.get("id", "")) == TARGET_CORE_ID
             and str(item.get("installed", "")) == REQUIRED_CORE_VERSION
         ):
@@ -162,22 +165,28 @@ def probe_candidate(
     try:
         raw_inventory = json.loads(core_execution.get("stdout", ""))
     except (json.JSONDecodeError, TypeError):
-        raw_inventory = []
-    if not isinstance(raw_inventory, list):
-        raw_inventory = []
-    exact_core = select_exact_core(raw_inventory)
+        raw_inventory = None
+    inventory_valid = (
+        core_execution.get("returncode") == 0 and isinstance(raw_inventory, list)
+    )
+    inventory_items = raw_inventory if inventory_valid else []
+    exact_core = select_exact_core(inventory_items)
     inventory = [
-        _core_summary(item) for item in raw_inventory if isinstance(item, dict)
+        _core_summary(item) for item in inventory_items if isinstance(item, dict)
     ]
     result = {
         **candidate,
         "core_inventory": inventory,
+        "core_inventory_valid": inventory_valid,
         "core_execution": _execution_summary(core_execution),
         "required_core": f"{TARGET_CORE_ID}@{REQUIRED_CORE_VERSION}",
         "required_fqbn": TARGET_FQBN,
         "ready_for_compile": False,
         "fqbn_details_verified": False,
     }
+    if not inventory_valid:
+        result["error"] = "esp32_core_inventory_unavailable"
+        return result
     if exact_core is None:
         result["error"] = "exact_esp32_core_not_found"
         return result
@@ -216,6 +225,248 @@ def probe_candidate(
     )
     if not verified:
         result["error"] = "exact_esp32_fqbn_details_not_verified"
+    return result
+
+
+def _probe_summary(result: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "backend": result.get("backend"),
+        "cli": result.get("cli"),
+        "config": result.get("config"),
+        "core_inventory": result.get("core_inventory", []),
+        "core_inventory_valid": bool(result.get("core_inventory_valid")),
+        "core_version": result.get("core_version"),
+        "ready_for_compile": bool(result.get("ready_for_compile")),
+        "fqbn_details_verified": bool(result.get("fqbn_details_verified")),
+        "error": result.get("error"),
+        "core_execution": result.get("core_execution"),
+        "board_details_execution": result.get("board_details_execution"),
+    }
+
+
+def _is_mindplus_candidate(candidate: dict[str, Any]) -> bool:
+    combined = " ".join(
+        str(candidate.get(key, ""))
+        for key in ("backend", "cli", "config")
+    ).casefold()
+    return (
+        "mindplus" in combined
+        or "mind+" in combined
+        or "mind plus" in combined
+    )
+
+
+def _parse_numeric_version(value: Any) -> Optional[tuple[int, ...]]:
+    normalized = str(value or "").strip()
+    if not re.fullmatch(r"\d+(?:\.\d+)*", normalized):
+        return None
+    return tuple(int(part) for part in normalized.split("."))
+
+
+def _compare_core_versions(installed: Any, required: str) -> Optional[int]:
+    installed_parts = _parse_numeric_version(installed)
+    required_parts = _parse_numeric_version(required)
+    if installed_parts is None or required_parts is None:
+        return None
+    length = max(len(installed_parts), len(required_parts))
+    left = installed_parts + (0,) * (length - len(installed_parts))
+    right = required_parts + (0,) * (length - len(required_parts))
+    if left < right:
+        return -1
+    if left > right:
+        return 1
+    return 0
+
+
+def _select_install_candidate(
+    candidates: list[dict[str, Any]],
+    probed: list[dict[str, Any]],
+) -> Optional[dict[str, Any]]:
+    by_cli = {str(item.get("cli")): item for item in probed}
+    older_cli = None
+    for candidate in candidates:
+        summary = by_cli.get(str(candidate.get("cli")))
+        if not summary:
+            continue
+        for core in summary.get("core_inventory", []):
+            if str(core.get("id")) != TARGET_CORE_ID:
+                continue
+            if _compare_core_versions(core.get("installed"), REQUIRED_CORE_VERSION) == -1:
+                older_cli = str(candidate.get("cli"))
+                break
+        if older_cli:
+            break
+    if older_cli:
+        return next(
+            (candidate for candidate in candidates if str(candidate.get("cli")) == older_cli),
+            None,
+        )
+    return candidates[0] if candidates else None
+
+
+def _check_auto_install_blockers(probed: list[dict[str, Any]]) -> Optional[dict[str, Any]]:
+    for candidate in probed:
+        for core in candidate.get("core_inventory", []):
+            if str(core.get("id")) != TARGET_CORE_ID:
+                continue
+            installed = str(core.get("installed", ""))
+            comparison = _compare_core_versions(installed, REQUIRED_CORE_VERSION)
+            evidence = {
+                "backend": candidate.get("backend"),
+                "cli": candidate.get("cli"),
+                "installed_core": _core_summary(core),
+            }
+            if comparison is None or (
+                comparison == 0 and installed != REQUIRED_CORE_VERSION
+            ):
+                return {
+                    "error": "installed_core_version_not_auto_replaceable",
+                    "environment": evidence,
+                }
+            if comparison == 1:
+                return {
+                    "error": "installed_core_newer_than_verified_target",
+                    "environment": evidence,
+                }
+    return None
+
+
+def _prepare_command(
+    candidate: dict[str, Any],
+    *parts: str,
+) -> list[str]:
+    command = [str(candidate["cli"]), *parts]
+    if candidate.get("config"):
+        command.extend(["--config-file", str(candidate["config"])])
+    command.extend(["--additional-urls", ESP32_PACKAGE_INDEX_URL])
+    return command
+
+
+def prepare_environment_result(
+    source_candidates: list[dict[str, Any]],
+    *,
+    runner,
+) -> dict[str, Any]:
+    official_candidates = [
+        candidate for candidate in source_candidates if not _is_mindplus_candidate(candidate)
+    ]
+    probed = [probe_candidate(candidate, runner=runner) for candidate in official_candidates]
+    official_probed = probed
+    base = {
+        "action": "prepare-environment",
+        "board": BOARD_ID,
+        "profile_id": TARGET_PROFILE_ID,
+        "required_core": f"{TARGET_CORE_ID}@{REQUIRED_CORE_VERSION}",
+        "required_fqbn": TARGET_FQBN,
+        "update_checked": False,
+        "update_performed": False,
+        "installation_performed": False,
+        "ready_for_compile": False,
+        "probe_before": [_probe_summary(candidate) for candidate in probed],
+        "probe_after": [],
+    }
+    ready = next(
+        (candidate for candidate in official_probed if candidate.get("ready_for_compile")),
+        None,
+    )
+    if ready is not None:
+        return {
+            **base,
+            "success": True,
+            "ready_for_compile": True,
+            "fqbn_details_verified": bool(ready.get("fqbn_details_verified")),
+            "environment": _probe_summary(ready),
+        }
+    if any(not candidate.get("core_inventory_valid") for candidate in official_probed):
+        return {
+            **base,
+            "success": False,
+            "error": "esp32_core_inventory_unavailable",
+        }
+
+    if not official_candidates:
+        return {
+            **base,
+            "success": False,
+            "error": "official_arduino_cli_not_found",
+        }
+
+    valid_probed = [
+        candidate for candidate in official_probed if candidate.get("core_inventory_valid")
+    ]
+
+    blocker = _check_auto_install_blockers(valid_probed)
+    if blocker is not None:
+        return {
+            **base,
+            "success": False,
+            "error": blocker["error"],
+            "blocked_environment": blocker["environment"],
+        }
+
+    valid_cli = {str(candidate.get("cli")) for candidate in valid_probed}
+    install_candidates = [
+        candidate for candidate in official_candidates
+        if str(candidate.get("cli")) in valid_cli
+    ]
+    install_candidate = _select_install_candidate(install_candidates, valid_probed)
+    if install_candidate is None:
+        return {
+            **base,
+            "success": False,
+            "error": "official_arduino_cli_not_found",
+        }
+
+    update_execution = runner(
+        _prepare_command(install_candidate, "core", "update-index"),
+        timeout=120,
+    )
+    result = {
+        **base,
+        "success": False,
+        "update_checked": True,
+        "update_performed": update_execution.get("returncode") == 0,
+        "update_execution": _execution_summary(update_execution),
+        "selected_cli": {
+            "backend": install_candidate.get("backend"),
+            "cli": install_candidate.get("cli"),
+            "config": install_candidate.get("config"),
+        },
+    }
+    if update_execution.get("returncode") != 0:
+        result["error"] = "esp32_core_index_update_failed"
+        return result
+
+    install_execution = runner(
+        _prepare_command(
+            install_candidate,
+            "core",
+            "install",
+            f"{TARGET_CORE_ID}@{REQUIRED_CORE_VERSION}",
+        ),
+        timeout=900,
+    )
+    result["install_execution"] = _execution_summary(install_execution)
+    result["installation_performed"] = install_execution.get("returncode") == 0
+    reprobe = probe_candidate(install_candidate, runner=runner)
+    result["probe_after"] = [_probe_summary(reprobe)]
+    if install_execution.get("returncode") != 0:
+        result["ready_for_compile"] = False
+        result["fqbn_details_verified"] = False
+        result["error"] = "esp32_core_install_failed"
+        return result
+    result["ready_for_compile"] = bool(reprobe.get("ready_for_compile"))
+    result["fqbn_details_verified"] = bool(reprobe.get("fqbn_details_verified"))
+    if not reprobe.get("ready_for_compile"):
+        result["error"] = str(reprobe.get("error") or "exact_esp32_toolchain_not_ready_after_install")
+        result["environment"] = _probe_summary(reprobe)
+        return result
+    result.update(
+        {
+            "success": True,
+            "environment": _probe_summary(reprobe),
+        }
+    )
     return result
 
 
@@ -274,22 +525,40 @@ def select_upload_port(
     return None, "multiple_wired_ports_require_selection"
 
 
+def _build_cache_key(core_version: str) -> str:
+    return hashlib.sha256(
+        b"\0".join(
+            [
+                TARGET_FQBN.encode("utf-8"),
+                core_version.encode("utf-8"),
+            ]
+        )
+    ).hexdigest()[:12]
+
+
+def build_cache_dir_for_sketch(sketch_dir: Path, core_version: str) -> Path:
+    return sketch_dir.parent / ".chatmaker-esp32-cache" / _build_cache_key(core_version)
+
+
+def prepare_build_cache_dir(sketch_dir: Path, core_version: str) -> Path:
+    cache_dir = build_cache_dir_for_sketch(sketch_dir, core_version)
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    return cache_dir
+
+
 def build_compile_command(
-    context: dict[str, Any], sketch_dir: Path, build_dir: Path
+    context: dict[str, Any],
+    sketch_dir: Path,
+    build_dir: Path,
+    build_cache_dir: Optional[Path] = None,
 ) -> list[str]:
     command = [str(context["cli"]), "compile"]
     if context.get("config"):
         command.extend(["--config-file", str(context["config"])])
-    command.extend(
-        [
-            "--no-color",
-            "--fqbn",
-            TARGET_FQBN,
-            "--build-path",
-            str(build_dir),
-            str(sketch_dir),
-        ]
-    )
+    command.extend(["--no-color", "--fqbn", TARGET_FQBN])
+    if build_cache_dir is not None:
+        command.extend(["--build-cache-path", str(build_cache_dir)])
+    command.extend(["--build-path", str(build_dir), str(sketch_dir)])
     return command
 
 
@@ -325,12 +594,43 @@ def prepare_code(code: str, project_name: str = "esp32-project") -> Path:
     return sketch_dir
 
 
+def _build_digest(sketch_file: Path, core_version: str) -> str:
+    return hashlib.sha256(
+        b"\0".join(
+            [
+                sketch_file.read_bytes(),
+                TARGET_FQBN.encode("utf-8"),
+                core_version.encode("utf-8"),
+            ]
+        )
+    ).hexdigest()[:12]
+
+
+def build_dir_for_sketch(sketch_dir: Path, digest: str) -> Path:
+    return sketch_dir.parent / ".chatmaker-esp32-builds" / digest
+
+
+def prepare_build_dir(sketch_dir: Path, digest: str) -> Path:
+    build_dir = build_dir_for_sketch(sketch_dir, digest)
+    if build_dir.exists():
+        shutil.rmtree(build_dir)
+    build_dir.mkdir(parents=True, exist_ok=True)
+    return build_dir
+
+
 def compile_result(
     context: dict[str, Any],
     request: dict[str, Any],
     *,
     runner=_run,
 ) -> dict[str, Any]:
+    if _is_mindplus_candidate(context):
+        return {
+            "action": "compile",
+            "success": False,
+            "error": "official_arduino_cli_required",
+            "board": BOARD_ID,
+        }
     if confirm_board_identity(request.get("board_profile"))["status"] != "confirmed":
         return {
             "action": "compile",
@@ -361,21 +661,16 @@ def compile_result(
     except (OSError, ValueError) as exc:
         return {"action": "compile", "success": False, "error": str(exc)}
     sketch_file = sketch_dir / f"{sketch_dir.name}.ino"
-    digest = hashlib.sha256(
-        b"\0".join(
-            [
-                sketch_file.read_bytes(),
-                TARGET_FQBN.encode("utf-8"),
-                str(context.get("core_version", "")).encode("utf-8"),
-            ]
-        )
-    ).hexdigest()[:12]
-    build_dir = Path(tempfile.gettempdir()) / "chatmaker-esp32-builds" / digest
-    build_dir.mkdir(parents=True, exist_ok=True)
-    for stale in build_dir.iterdir():
-        if stale.is_file():
-            stale.unlink()
-    command = build_compile_command(context, sketch_dir, build_dir)
+    digest = _build_digest(sketch_file, str(context.get("core_version", "")))
+    core_version = str(context.get("core_version", ""))
+    build_dir = prepare_build_dir(sketch_dir, digest)
+    build_cache_dir = prepare_build_cache_dir(sketch_dir, core_version)
+    command = build_compile_command(
+        context,
+        sketch_dir,
+        build_dir,
+        build_cache_dir,
+    )
     execution = runner(command, timeout=int(request.get("timeout", 900)))
     application_bin = find_application_binary(build_dir)
     success = execution.get("returncode") == 0 and application_bin is not None
@@ -388,6 +683,7 @@ def compile_result(
         "core_version": str(context.get("core_version", "")),
         "sketch": str(sketch_dir),
         "build_dir": str(build_dir),
+        "build_cache_dir": str(build_cache_dir),
         "application_bin": str(application_bin) if application_bin else None,
         "execution": execution,
     }
@@ -422,6 +718,13 @@ def upload_result(
     ports: list[dict[str, Any]],
     runner=_run,
 ) -> dict[str, Any]:
+    if _is_mindplus_candidate(context):
+        return {
+            "action": "upload",
+            "success": False,
+            "error": "official_arduino_cli_required",
+            "upload_executed": False,
+        }
     selected, error = select_upload_port(
         ports,
         board_profile=request.get("board_profile"),
@@ -473,6 +776,20 @@ def compile_upload_result(
     upload_fn=None,
     runner=_run,
 ) -> dict[str, Any]:
+    if _is_mindplus_candidate(context):
+        return {
+            "action": "compile-upload",
+            "success": False,
+            "stage": "compile",
+            "compile": {
+                "action": "compile",
+                "success": False,
+                "error": "official_arduino_cli_required",
+            },
+            "upload": None,
+            "automatic_upload": True,
+            "hardware_connection_required": False,
+        }
     compiled = (
         compile_fn(context, request)
         if compile_fn is not None
@@ -520,12 +837,16 @@ def doctor_result(
     candidates: list[dict[str, Any]],
     ports: list[dict[str, Any]],
 ) -> dict[str, Any]:
+    official_candidates = [
+        candidate for candidate in candidates if not _is_mindplus_candidate(candidate)
+    ]
     selected = None
-    for candidate in candidates:
+    for candidate in official_candidates:
         core = select_exact_core(list(candidate.get("core_inventory", [])))
         fqbn_verified = candidate.get("fqbn_details_verified", True)
         candidate_ready = candidate.get("ready_for_compile", True)
-        if core and fqbn_verified and candidate_ready:
+        inventory_valid = candidate.get("core_inventory_valid", True)
+        if core and fqbn_verified and candidate_ready and inventory_valid:
             selected = {**candidate, "core": core}
             break
     if selected is None:
@@ -540,7 +861,7 @@ def doctor_result(
             "profile_id": TARGET_PROFILE_ID,
             "required_core": f"{TARGET_CORE_ID}@{REQUIRED_CORE_VERSION}",
             "required_fqbn": TARGET_FQBN,
-            "candidates": candidates,
+            "candidates": official_candidates,
             "ports": ports,
         }
     return {
@@ -567,10 +888,12 @@ def execute_request(
 ) -> dict[str, Any]:
     action = request.get("action")
     source_candidates = candidates if candidates is not None else discover_cli_candidates()
-    probed = [
-        probe_candidate(candidate, runner=runner)
-        for candidate in source_candidates
+    official_candidates = [
+        candidate for candidate in source_candidates if not _is_mindplus_candidate(candidate)
     ]
+    if action == "prepare-environment":
+        return prepare_environment_result(official_candidates, runner=runner)
+    probed = [probe_candidate(candidate, runner=runner) for candidate in official_candidates]
     current_ports = ports if ports is not None else scan_ports()
     if action == "doctor":
         return doctor_result(candidates=probed, ports=current_ports)
@@ -607,7 +930,7 @@ def execute_request(
             "port_status": error,
             "installation_performed": False,
         }
-    raise ValueError("action_must_be_doctor_ports_compile_or_compile-upload")
+    raise ValueError("action_must_be_prepare-environment_doctor_ports_compile_or_compile-upload")
 
 
 def main() -> int:

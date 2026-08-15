@@ -12,7 +12,7 @@ ChatMaker 是面向老师、学生和黑客松参与者的 AI 创作伙伴。用
 
 对话窗口就是创作环境。Mind+、编译器、串口和浏览器在后台完成专业工作，用户不需要先学习一套 IDE。
 
-> 当前处于早期开发阶段。Nano/Uno 的编译能力已经进入公开 `main`；开发版正在增加 ESP32 安全烧录入口和手机控制案例。ESP32 官方 Core 尚未安装，也没有连接实物，所以目前不能写成“已经跑通”。
+> 当前处于早期开发阶段。Nano/Uno 的编译能力已经进入公开 `main`；开发版已经补上 ESP32 官方 Core 安装、受控环境准备、精确 FQBN 编译和手机控制案例页面嵌入。现在只能诚实地写成“已完成工具链安装和真实编译，仍未完成实物闭环”，因为还没有连接 DOIT 实板。
 
 ## 它补上的能力
 
@@ -105,11 +105,11 @@ Skill 负责告诉 AI 应该怎样判断、哪些技术事实不能猜、什么�
 | 数据包和证据状态 | 已验证 | 自动测试与项目 doctor 通过 |
 | Nano Mind+ 编译和烧录迁移 | 部分验证 | 原 33 项行为测试已迁移；10 个示例从 ChatMaker 路径真实编译；烧录等待有线 Nano |
 | Uno Mind+ 独立适配器 | 部分验证 | 独立 1.x/2.x FQBN、固定 115200 上传规则、Codex/WorkBuddy 入口和 Blink 真实编译已验证；烧录等待有线 Uno |
-| DOIT ESP32 DevKit V1 | 工具链待准备 | 已锁定官方 Core 3.3.11 与精确 FQBN，并增加“编译后只向已确认载板和唯一有线端口烧录”的入口；本机尚未安装精确 Core，未真实编译或烧录 |
-| 常用模块、库和示例 | 首批已验证 | 12 种元器件、14 个配方通过资料校验；10 个 Nano 和 1 个 Uno 示例真实编译；2 个 ESP32 示例保持待编译 |
-| ESP32 AP 手机控制案例 | 代码与合同已验证 | 已有 ESP32 固件和手机单页：设备计划创建 `ChatMaker-ESP32` Wi-Fi，在 `192.168.4.1` 提供 LED 控制和电位器数据；由于缺少官方 Core 与实物，编译、烧录、启动、Wi-Fi、HTTP 和实体效果均未验证 |
+| DOIT ESP32 DevKit V1 | 部分验证 | 官方 `esp32:esp32@3.3.11` 已安装；`prepare-environment` 真实 no-op 成功；`esp32:esp32:esp32doit-devkit-v1` 已通过 Blink 和 AP 案例真实编译；烧录、启动、串口、SoftAP、HTTP 和实体效果仍待实板 |
+| 常用模块、库和示例 | 首批已验证 | 12 种元器件、14 个配方通过资料校验；10 个 Nano、1 个 Uno 和 2 个 ESP32 示例真实编译 |
+| ESP32 AP 手机控制案例 | 部分验证 | `examples/chatweb/esp32-ap-control.html` 是唯一页面源，`chatmaker-web-embed` 生成 `examples/chatduino/esp32/ap-led-sensor/page_html.h`，固件用 `send_P` 和显式长度嵌入页面；浏览器模拟和固件真实编译已通过，硬件仍未验证 |
 | ChatWeb 生成和本地预览 | 部分验证 | 3 套方案推荐、单文件生成、课堂页、模拟硬件页和 localhost 预览已通过真实浏览器检查；新增 ESP32 AP 手机页及其接口合同测试，模拟预览不代表硬件已连接 |
-| Codex / WorkBuddy 安装 | 开发版已刷新 | 三个 Skill 在 Codex/WorkBuddy 中与仓库哈希一致；WorkBuddy 1.6.0 真实 stdio 服务列出 23 个工具，并保留原有 5 个非 ChatMaker MCP；应用重启后的界面发现仍需单独确认 |
+| Codex / WorkBuddy 安装 | 开发版已刷新 | 三个 Skill 在 Codex/WorkBuddy 中与仓库哈希一致；WorkBuddy 1.7.0 真实 stdio 服务列出 23 个工具，并保留原有 5 个非 ChatMaker MCP；应用重启后的界面发现仍需单独确认 |
 | 串口运行诊断 | 已实现待硬件 | WorkBuddy 6 个串口工具与 Codex JSONL 会话通过自动测试；当前无有线 Nano/Uno，真实日志待现场读取 |
 | v0.1.0-rc2 发布候选 | 已发布 | [GitHub 预发布](https://github.com/Amasun93/ChatMaker/releases/tag/v0.1.0-rc2)；rc1 继续保留，rc2 新增串口运行层 |
 | v0.1.0-rc3 发布候选 | 已发布 | [GitHub 预发布](https://github.com/Amasun93/ChatMaker/releases/tag/v0.1.0-rc3)；包含 12 种模块、11 个配方、10 个编译示例和中文资料目录入口 |
@@ -119,6 +119,8 @@ Skill 负责告诉 AI 应该怎样判断、哪些技术事实不能猜、什么�
 ## 开发预览
 
 当前公开版本为 [`v0.1.0-rc4`](https://github.com/Amasun93/ChatMaker/releases/tag/v0.1.0-rc4) 发布候选。它已经包含独立的 Uno 适配器、Nano/Uno 编译、中文模块资料查询、串口诊断与网页创作能力，可用于有人带领的培训试运行；真实开发板烧录和实物效果仍需在现场单独验收。
+
+当前开发分支额外补上了受控 ESP32 环境准备：只会安装 ChatMaker 已验证的官方 `esp32:esp32@3.3.11`，不会自动追最新版，也不会因为发现更高或未知官方版本就静默降级。
 
 完整安装、卸载和恢复说明见 [安装说明](docs/installation.md)。
 
@@ -131,7 +133,9 @@ python runtime/doctor.py
 chatmaker-catalog --request-json '{"action":"search","query":"继电器","kind":"component"}'
 chatmaker-nano --request-json '{"action":"doctor"}'
 chatmaker-uno --request-json '{"action":"doctor"}'
+chatmaker-esp32 --request-json '{"action":"prepare-environment"}'
 chatmaker-nano-examples --root examples/chatduino/nano
+chatmaker-web-embed examples/chatweb/esp32-ap-control.html examples/chatduino/esp32/ap-led-sensor/page_html.h --symbol CHATMAKER_AP_PAGE
 chatmaker-web --request-json '{"kind":"classroom-tool","title":"课堂脉冲","prompt":"今天哪一步最需要再讲一次？","primary_label":"我需要再讲一次","direction_id":"editorial-signal"}' --output examples/chatweb/classroom-pulse.html
 chatmaker-web-preview examples/chatweb/classroom-pulse.html
 ```

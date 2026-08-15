@@ -6,6 +6,8 @@ htmlcov/
 .venv/
 dist/
 build/
+.chatmaker-esp32-builds/
+.chatmaker-esp32-cache/
 *.egg-info/
 .DS_Store
 Thumbs.db

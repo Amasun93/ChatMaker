@@ -28,6 +28,7 @@ chatmaker-install-workbuddy = "chatmaker.installers.workbuddy:main"
 chatmaker-install-codex = "chatmaker.installers.codex:main"
 chatmaker-web = "chatmaker.web.generator:main"
 chatmaker-web-preview = "chatmaker.web.preview:main"
+chatmaker-web-embed = "chatmaker.web.embed:main"
 
 [tool.setuptools]
 package-dir = {"" = "runtime"}

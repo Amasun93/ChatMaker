@@ -1,5 +1,6 @@
 #include <WiFi.h>
 #include <WebServer.h>
+#include "page_html.h"
 
 constexpr uint8_t LED_PIN = 23;
 constexpr uint8_t SENSOR_PIN = 34;
@@ -10,59 +11,6 @@ IPAddress AP_SUBNET(255, 255, 255, 0);
 
 WebServer server(80);
 bool ledOn = false;
-
-const char INDEX_HTML[] PROGMEM = R"HTML(
-<!doctype html>
-<html lang="zh-CN">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>ChatMaker ESP32</title>
-  <style>
-    body { font-family: system-ui, sans-serif; max-width: 34rem; margin: 3rem auto; padding: 0 1rem; }
-    button { font-size: 1rem; margin-right: .5rem; padding: .7rem 1rem; }
-    dl { display: grid; grid-template-columns: 8rem 1fr; gap: .5rem; }
-    dt { font-weight: 700; }
-  </style>
-</head>
-<body>
-  <h1>ESP32 LED 与传感器</h1>
-  <p>
-    <button type="button" onclick="setLed(true)">打开 LED</button>
-    <button type="button" onclick="setLed(false)">关闭 LED</button>
-  </p>
-  <dl>
-    <dt>LED</dt><dd id="led">--</dd>
-    <dt>电位器原始值</dt><dd id="sensor">--</dd>
-    <dt>运行时间</dt><dd id="uptime">--</dd>
-  </dl>
-  <script>
-    function render(state) {
-      document.getElementById('led').textContent = state.led_on ? '已打开' : '已关闭';
-      document.getElementById('sensor').textContent = state.sensor_raw;
-      document.getElementById('uptime').textContent = state.uptime_ms + ' ms';
-    }
-
-    async function refreshState() {
-      const response = await fetch('/api/state');
-      render(await response.json());
-    }
-
-    async function setLed(on) {
-      const response = await fetch('/api/led', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ on: on })
-      });
-      render(await response.json());
-    }
-
-    refreshState();
-    setInterval(refreshState, 1000);
-  </script>
-</body>
-</html>
-)HTML";
 
 String buildStateJson() {
   const int sensorRaw = analogRead(SENSOR_PIN);
@@ -86,6 +34,16 @@ void sendLogged(const String &method, const String &path, int statusCode,
   Serial.print(' ');
   Serial.println(statusCode);
   server.send(statusCode, contentType, body);
+}
+
+void sendPageLogged() {
+  Serial.print("GET");
+  Serial.print(' ');
+  Serial.print("/");
+  Serial.print(' ');
+  Serial.println(200);
+  server.send_P(200, PSTR("text/html; charset=utf-8"), CHATMAKER_AP_PAGE,
+                CHATMAKER_AP_PAGE_LENGTH);
 }
 
 bool parseLedState(const String &body, bool &requestedOn) {
@@ -145,7 +103,7 @@ void setup() {
   WiFi.softAP(AP_SSID);
 
   server.on("/", HTTP_GET, []() {
-    sendLogged("GET", "/", 200, "text/html", INDEX_HTML);
+    sendPageLogged();
   });
   server.on("/api/state", HTTP_GET, []() {
     sendLogged("GET", "/api/state", 200, "application/json", buildStateJson());

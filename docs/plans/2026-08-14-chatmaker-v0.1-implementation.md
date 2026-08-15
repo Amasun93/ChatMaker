@@ -110,7 +110,7 @@ def upload_nano(hex_file: Path, candidate: PortCandidate) -> UploadReport: ...
 
 **Output:** Separate board adapters and verified Blink matrices for Uno, Nano, and ESP32.
 
-**Status:** Uno now has a separate Mind+ adapter, dedicated Blink example, Codex/WorkBuddy interfaces, fixed 115200 upload strategy, and a Mind+ 2.x compile result. Uno upload and physical gates remain open without hardware. ESP32 now has a strict DOIT DevKit V1 / ESP-WROOM-32 discovery, compile, and compile-upload contract locked to official `esp32:esp32@3.3.11` and `esp32:esp32:esp32doit-devkit-v1`. Upload is allowed only after the carrier board is explicitly confirmed and one wired, non-Bluetooth port remains. The local machine does not have the exact core, so no ESP32 example has been compiled or uploaded; FireBeetle and mPython remain rejected rather than treated as equivalents.
+**Status:** Uno now has a separate Mind+ adapter, dedicated Blink example, Codex/WorkBuddy interfaces, fixed 115200 upload strategy, and a Mind+ 2.x compile result. Uno upload and physical gates remain open without hardware. ESP32 now has a strict DOIT DevKit V1 / ESP-WROOM-32 discovery, compile, and compile-upload contract locked to official `esp32:esp32@3.3.11` and `esp32:esp32:esp32doit-devkit-v1`. `esp32_prepare_environment` now performs controlled preparation: it installs only the ChatMaker-verified official core when needed, returns a real no-op when the machine is already ready, never jumps to latest, and never silently downgrades a newer official core. The local machine has the exact core installed and has already compiled both the Blink and AP examples with the exact FQBN. Upload, reboot, serial, Wi-Fi, HTTP, and physical gates remain open because no physical DOIT board is connected. FireBeetle and mPython remain rejected rather than treated as equivalents.
 
 **Acceptance:**
 
@@ -161,7 +161,7 @@ serial_close
 
 **Output:** A mobile-first classroom and hardware-interface generator, local preview server, optional advanced playground, and browser verification workflow.
 
-**Status:** The existing classroom and simulated-hardware pages have passed browser checks. The development branch also contains a self-contained mobile ESP32 AP control page with explicit real-device and simulation modes. Static contract tests cover touch sizing, connection states, same-origin API calls, and the rule that simulation never counts as hardware evidence. A real phone-to-device session is still unverified.
+**Status:** The existing classroom and simulated-hardware pages have passed browser checks. The development branch also contains a self-contained mobile ESP32 AP control page with explicit real-device and simulation modes. `examples/chatweb/esp32-ap-control.html` is now the only editable source for that page; `chatmaker-web-embed` deterministically regenerates the firmware header used by the ESP32 sketch. Static contract tests cover touch sizing, connection states, same-origin API calls, and the rule that simulation never counts as hardware evidence. A real phone-to-device session is still unverified.
 
 **Acceptance:**
 
@@ -174,7 +174,7 @@ serial_close
 
 **Output:** An ESP32 access-point project served at `192.168.4.1` with LED control and sensor display.
 
-**Status:** Firmware and page source now exist for a fixed beginner setup: external LED on GPIO23, 10 kOhm potentiometer on input-only GPIO34, SSID `ChatMaker-ESP32`, and same-origin `GET /`, `GET /api/state`, and `POST /api/led` routes. Automated source-contract tests pass. The required official ESP32 Core 3.3.11 is not installed, so compilation is unverified. No physical board is available, so upload, boot, SoftAP, HTTP round trips, LED control, potentiometer readings, serial logs, and power-cycle recovery all remain unverified.
+**Status:** Firmware and page source now exist for a fixed beginner setup: external LED on GPIO23, 10 kOhm potentiometer on input-only GPIO34, SSID `ChatMaker-ESP32`, and same-origin `GET /`, `GET /api/state`, and `POST /api/led` routes. `examples/chatweb/esp32-ap-control.html` is the single editable page source, and `chatmaker-web-embed` regenerates `examples/chatduino/esp32/ap-led-sensor/page_html.h` for the sketch. Automated source-contract tests and browser checks pass. The required official ESP32 Core 3.3.11 is installed, and the exact DOIT FQBN has already compiled both the Blink and AP examples. No physical board is available, so upload, boot, SoftAP, HTTP round trips, LED control, potentiometer readings, serial logs, and power-cycle recovery all remain unverified.
 
 **Acceptance:**
 
@@ -187,7 +187,7 @@ serial_close
 
 **Output:** Reversible installers plus a shared MCP/runtime configuration.
 
-**Status:** The current development server exposes 23 WorkBuddy tools: 2 catalog tools, 5 Nano tools, 5 Uno tools, 5 ESP32 tools, and 6 serial tools. The fifth ESP32 tool is `esp32_compile_upload`; it preserves the board-identity, single-wired-port, Bluetooth-rejection, and separate-evidence gates. Codex and WorkBuddy were refreshed from the current repository, all three installed Skill hashes match, a real stdio smoke test lists all 23 tools, and five unrelated WorkBuddy MCP entries remain preserved. Host UI discovery still requires restarting the applications. This development count does not change the fixed rc4 release contents.
+**Status:** The current development server exposes 23 WorkBuddy tools: 2 catalog tools, 5 Nano tools, 5 Uno tools, 5 ESP32 tools, and 6 serial tools. The fifth ESP32 tool is `esp32_compile_upload`; it preserves the board-identity, single-wired-port, Bluetooth-rejection, and separate-evidence gates. Codex and WorkBuddy were refreshed from the current repository, all three installed Skill hashes match, a real `1.7.0` stdio smoke test lists all 23 tools, and five unrelated WorkBuddy MCP entries remain preserved. Host UI discovery still requires restarting the applications. This development count does not change the fixed rc4 release contents.
 
 **Interfaces:**
 
@@ -237,9 +237,10 @@ published in the rc3 tag and its two prerelease assets.
 After the fixed rc4 release, the current development branch adds the strict
 ESP32 compile-upload path and the flagship AP firmware/page pair. The
 development WorkBuddy server definition now contains 23 tools (2 catalog, 5
-Nano, 5 Uno, 5 ESP32, and 6 serial). A fresh Codex/WorkBuddy installation and
-real stdio tool-list smoke check passed while preserving five unrelated MCP
-entries; application restart and UI discovery remain open. The local machine still lacks the official ESP32 Core
-3.3.11 and no physical DOIT board is connected, so ESP32 compilation, upload,
-boot, SoftAP, HTTP, LED, potentiometer, serial, and power-cycle gates remain
-unverified.
+Nano, 5 Uno, 5 ESP32, and 6 serial) and reports version `1.7.0`. A fresh
+Codex/WorkBuddy installation and real stdio tool-list smoke check passed while
+preserving five unrelated MCP entries; application restart and UI discovery
+remain open. The local machine now has the official ESP32 Core 3.3.11, and the
+exact DOIT FQBN has already compiled the Blink and AP examples. No physical
+DOIT board is connected, so ESP32 upload, boot, SoftAP, HTTP, LED,
+potentiometer, serial, and power-cycle gates remain unverified.

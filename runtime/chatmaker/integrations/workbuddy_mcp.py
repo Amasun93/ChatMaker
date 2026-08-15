@@ -15,7 +15,7 @@ from chatmaker.hardware import uno_mindplus as uno_bridge
 
 
 SERVER_NAME = "chatmaker-hardware"
-SERVER_VERSION = "1.6.0"
+SERVER_VERSION = "1.7.0"
 PROTOCOL_VERSION = "2024-11-05"
 
 TOOLS = [
@@ -171,8 +171,8 @@ TOOLS = [
     {
         "name": "esp32_prepare_environment",
         "description": (
-            "只检查 DOIT ESP32 DEVKIT V1 所需的官方 esp32:esp32 3.3.11；"
-            "不会下载、安装或用 FireBeetle/mPython 代替。"
+            "自动检查 DOIT ESP32 DEVKIT V1 的官方编译环境，并且只安装 ChatMaker 验证过的 "
+            "esp32:esp32@3.3.11；不会跳到最新版、降级较新的官方 core，或用 FireBeetle/mPython 代替。"
         ),
         "inputSchema": {"type": "object", "properties": {}, "additionalProperties": False},
     },
@@ -381,7 +381,7 @@ def _tool_result(name: str, arguments: dict[str, Any]) -> dict[str, Any]:
             "download_dir": arguments.get("download_dir"),
         }
     elif name == "esp32_prepare_environment":
-        request = {"action": "doctor"}
+        request = {"action": "prepare-environment"}
     elif name in {"nano_doctor", "uno_doctor", "esp32_doctor"}:
         request = {"action": "doctor"}
     elif name in {"nano_ports", "uno_ports", "esp32_ports"}:
@@ -433,7 +433,8 @@ def handle(request: dict[str, Any]) -> dict[str, Any] | None:
             "instructions": (
                 "处理 Arduino Uno Rev3、经典 Nano ATmega328P、精确确认的 DOIT ESP32 DEVKIT V1 和杜邦线通用模块。"
                 "先用 catalog_search/get 读取匹配资料，再按板型调用对应 doctor。ESP32 只接受官方 3.3.11 core "
-                "和精确 DOIT FQBN；ESP-WROOM-32 模块丝印本身不算载板确认，也不会静默安装或替换成 FireBeetle。"
+                "和精确 DOIT FQBN；先调用 esp32_prepare_environment 自动检查，并且只安装 ChatMaker 验证的锁定版本。"
+                "ESP-WROOM-32 模块丝印本身不算载板确认，也不会替换成 FireBeetle。"
                 "编程前核对板卡、模块型号/丝印和引脚；Nano/Uno 调用对应 compile_upload，"
                 "ESP32 调用 esp32_compile_upload；只有精确载板身份和唯一非蓝牙有线端口都明确时才上传，"
                 "上传成功仍不能代替启动、Wi-Fi、HTTP 或实体效果验证。"

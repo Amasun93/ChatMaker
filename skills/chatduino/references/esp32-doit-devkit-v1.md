@@ -14,7 +14,9 @@ Board ID: esp32doit-devkit-v1
 FQBN: esp32:esp32:esp32doit-devkit-v1
 ```
 
-The installed Mind+ `mindplus:esp32 0.0.1` package exposes only board-specific DFRobot and teaching variants. It is not a compatible fallback. Do not install or switch cores without explicit user authorization.
+The installed Mind+ `mindplus:esp32 0.0.1` package exposes only board-specific DFRobot and teaching variants. It is not a compatible fallback.
+
+`esp32_prepare_environment` may install only the ChatMaker-verified official `esp32:esp32@3.3.11`. It must not chase latest releases, silently downgrade a newer official core, or treat Mind+, FireBeetle, DevKitC, mPython, S2, S3, or C3 as substitutes.
 
 ## Pin and voltage boundaries
 
@@ -27,6 +29,8 @@ The installed Mind+ `mindplus:esp32 0.0.1` package exposes only board-specific D
 - GPIO16/17 are allowed only after confirming the module is WROOM or SOLO rather than WROVER.
 
 For a beginner AP demonstration, prefer a current-limited external LED on GPIO23 and a 10 kOhm potentiometer powered from 3V3 with its wiper on GPIO34. Keep power disconnected while wiring and share GND.
+
+For the repository AP example, the editable phone page source is `examples/chatweb/esp32-ap-control.html`. Regenerate `examples/chatduino/esp32/ap-led-sensor/page_html.h` instead of editing the header by hand.
 
 ## Evidence boundaries
 

@@ -95,10 +95,12 @@ class Esp32DevKitV1Tests(unittest.TestCase):
                 encoding="utf-8",
             )
             build_dir = root / "build"
+            cache_dir = root / "cache"
             command = self.adapter.build_compile_command(
                 {"cli": "arduino-cli", "config": "arduino-cli.yaml"},
                 sketch_dir,
                 build_dir,
+                cache_dir,
             )
             build_dir.mkdir()
             (build_dir / "blink.ino.bin").write_bytes(b"firmware")
@@ -106,6 +108,8 @@ class Esp32DevKitV1Tests(unittest.TestCase):
             artifact = self.adapter.find_application_binary(build_dir)
 
         self.assertIn("esp32:esp32:esp32doit-devkit-v1", command)
+        self.assertIn("--build-cache-path", command)
+        self.assertIn(str(cache_dir), command)
         self.assertNotIn("fireBeetleEsp32", " ".join(command))
         self.assertNotIn("mindplus:esp32", " ".join(command))
         self.assertEqual(artifact.name, "blink.ino.bin")
@@ -229,6 +233,456 @@ class Esp32DevKitV1Tests(unittest.TestCase):
         self.assertNotIn("download", result)
         self.assertNotIn("installer", result)
 
+    def test_prepare_environment_exact_ready_is_a_single_noop_probe(self):
+        """Catches a ready environment unnecessarily checking the index or probing twice."""
+        self.assertIsNotNone(self.adapter, "ESP32 DevKit V1 adapter is missing")
+        calls: list[list[str]] = []
+
+        def runner(command, timeout):
+            calls.append(command)
+            if command[1:3] == ["core", "list"]:
+                return {
+                    "returncode": 0,
+                    "stdout": json.dumps(
+                        [{"id": "esp32:esp32", "installed": "3.3.11"}]
+                    ),
+                    "stderr": "",
+                }
+            if command[1:3] == ["board", "details"]:
+                return {
+                    "returncode": 0,
+                    "stdout": json.dumps(
+                        {
+                            "fqbn": "esp32:esp32:esp32doit-devkit-v1",
+                            "name": "DOIT ESP32 DEVKIT V1",
+                        }
+                    ),
+                    "stderr": "",
+                }
+            self.fail(f"a ready environment must not execute: {command}")
+
+        result = self.adapter.execute_request(
+            {"action": "prepare-environment"},
+            candidates=[{"backend": "arduino-ide-cli", "cli": "arduino-cli"}],
+            ports=[],
+            runner=runner,
+        )
+
+        self.assertTrue(result["success"])
+        self.assertTrue(result["ready_for_compile"])
+        self.assertFalse(result["update_checked"])
+        self.assertFalse(result["update_performed"])
+        self.assertFalse(result["installation_performed"])
+        self.assertEqual(result["required_core"], "esp32:esp32@3.3.11")
+        self.assertEqual(result["required_fqbn"], self.adapter.TARGET_FQBN)
+        self.assertEqual(len(calls), 2)
+
+    def test_prepare_environment_exact_ready_wins_over_another_unreadable_candidate(self):
+        """An already verified official environment needs no mutation despite another broken CLI."""
+        self.assertIsNotNone(self.adapter, "ESP32 DevKit V1 adapter is missing")
+        calls: list[list[str]] = []
+
+        def runner(command, timeout):
+            calls.append(command)
+            cli = command[0]
+            if cli == "arduino-cli-ready" and command[1:3] == ["core", "list"]:
+                return {
+                    "returncode": 0,
+                    "stdout": json.dumps(
+                        [{"id": "esp32:esp32", "installed": "3.3.11"}]
+                    ),
+                    "stderr": "",
+                }
+            if cli == "arduino-cli-ready" and command[1:3] == ["board", "details"]:
+                return {
+                    "returncode": 0,
+                    "stdout": json.dumps(
+                        {
+                            "fqbn": self.adapter.TARGET_FQBN,
+                            "name": "DOIT ESP32 DEVKIT V1",
+                        }
+                    ),
+                    "stderr": "",
+                }
+            if cli == "arduino-cli-bad" and command[1:3] == ["core", "list"]:
+                return {"returncode": 1, "stdout": "[]", "stderr": "broken"}
+            self.fail(f"a ready environment must not execute: {command}")
+
+        result = self.adapter.execute_request(
+            {"action": "prepare-environment"},
+            candidates=[
+                {"backend": "arduino-ide-cli", "cli": "arduino-cli-ready"},
+                {"backend": "path-arduino-cli", "cli": "arduino-cli-bad"},
+            ],
+            ports=[],
+            runner=runner,
+        )
+
+        self.assertTrue(result["success"])
+        self.assertTrue(result["ready_for_compile"])
+        self.assertFalse(result["update_checked"])
+        self.assertFalse(result["update_performed"])
+        self.assertFalse(result["installation_performed"])
+        self.assertEqual(len(calls), 3)
+
+    def test_prepare_environment_installs_only_the_locked_target_when_missing(self):
+        """Catches an install that uses latest, a substitute core, or skips final FQBN verification."""
+        self.assertIsNotNone(self.adapter, "ESP32 DevKit V1 adapter is missing")
+        installed = False
+        calls: list[list[str]] = []
+
+        def runner(command, timeout):
+            nonlocal installed
+            calls.append(command)
+            if command[1:3] == ["core", "list"]:
+                inventory = [{"id": "esp32:esp32", "installed": "3.3.11"}] if installed else []
+                return {"returncode": 0, "stdout": json.dumps(inventory), "stderr": ""}
+            if command[1:3] == ["core", "update-index"]:
+                return {"returncode": 0, "stdout": "index updated", "stderr": ""}
+            if command[1:3] == ["core", "install"]:
+                self.assertIn("esp32:esp32@3.3.11", command)
+                installed = True
+                return {"returncode": 0, "stdout": "installed", "stderr": ""}
+            if command[1:3] == ["board", "details"]:
+                return {
+                    "returncode": 0,
+                    "stdout": json.dumps(
+                        {
+                            "fqbn": "esp32:esp32:esp32doit-devkit-v1",
+                            "name": "DOIT ESP32 DEVKIT V1",
+                        }
+                    ),
+                    "stderr": "",
+                }
+            self.fail(f"unexpected Arduino CLI command: {command}")
+
+        result = self.adapter.execute_request(
+            {"action": "prepare-environment"},
+            candidates=[{"backend": "arduino-ide-cli", "cli": "arduino-cli"}],
+            ports=[],
+            runner=runner,
+        )
+
+        command_text = "\n".join(" ".join(command) for command in calls)
+        self.assertTrue(result["success"])
+        self.assertTrue(result["update_checked"])
+        self.assertTrue(result["update_performed"])
+        self.assertTrue(result["installation_performed"])
+        self.assertTrue(result["ready_for_compile"])
+        self.assertTrue(result["fqbn_details_verified"])
+        self.assertIn(self.adapter.ESP32_PACKAGE_INDEX_URL, command_text)
+        self.assertNotIn("latest", command_text)
+        self.assertNotIn("mindplus:esp32", command_text)
+        self.assertNotIn("firebeetle", command_text.casefold())
+
+    def test_prepare_environment_refuses_to_downgrade_a_newer_official_core(self):
+        """Catches a future toolchain replacing a newer official core with the verified lock."""
+        self.assertIsNotNone(self.adapter, "ESP32 DevKit V1 adapter is missing")
+        calls: list[list[str]] = []
+
+        def runner(command, timeout):
+            calls.append(command)
+            self.assertEqual(command[1:3], ["core", "list"])
+            return {
+                "returncode": 0,
+                "stdout": json.dumps([{"id": "esp32:esp32", "installed": "3.4.0"}]),
+                "stderr": "",
+            }
+
+        result = self.adapter.execute_request(
+            {"action": "prepare-environment"},
+            candidates=[{"backend": "arduino-ide-cli", "cli": "arduino-cli"}],
+            ports=[],
+            runner=runner,
+        )
+
+        self.assertFalse(result["success"])
+        self.assertFalse(result["ready_for_compile"])
+        self.assertEqual(result["error"], "installed_core_newer_than_verified_target")
+        self.assertFalse(result["update_checked"])
+        self.assertFalse(result["installation_performed"])
+        self.assertEqual(len(calls), 1)
+
+    def test_prepare_environment_does_not_treat_a_mindplus_cli_as_the_official_target(self):
+        """Catches preparation declaring a Mind+ ESP32 environment ready for the standalone target."""
+        self.assertIsNotNone(self.adapter, "ESP32 DevKit V1 adapter is missing")
+
+        def runner(command, timeout):
+            if command[1:3] == ["core", "list"]:
+                return {
+                    "returncode": 0,
+                    "stdout": json.dumps(
+                        [{"id": "esp32:esp32", "installed": "3.3.11"}]
+                    ),
+                    "stderr": "",
+                }
+            if command[1:3] == ["board", "details"]:
+                return {
+                    "returncode": 0,
+                    "stdout": json.dumps(
+                        {
+                            "fqbn": "esp32:esp32:esp32doit-devkit-v1",
+                            "name": "DOIT ESP32 DEVKIT V1",
+                        }
+                    ),
+                    "stderr": "",
+                }
+            self.fail(f"a Mind+ candidate must not update or install: {command}")
+
+        result = self.adapter.execute_request(
+            {"action": "prepare-environment"},
+            candidates=[{"backend": "mindplus-2-cli", "cli": "mindplus-arduino-cli"}],
+            ports=[],
+            runner=runner,
+        )
+
+        self.assertFalse(result["success"])
+        self.assertFalse(result["ready_for_compile"])
+        self.assertEqual(result["error"], "official_arduino_cli_not_found")
+        self.assertFalse(result["installation_performed"])
+
+    def test_prepare_environment_does_not_replace_an_unknown_official_version(self):
+        """Catches an unrecognised installed official version being replaced automatically."""
+        self.assertIsNotNone(self.adapter, "ESP32 DevKit V1 adapter is missing")
+        calls: list[list[str]] = []
+
+        def runner(command, timeout):
+            calls.append(command)
+            return {
+                "returncode": 0,
+                "stdout": json.dumps(
+                    [{"id": "esp32:esp32", "installed": "3.3.11-rc1"}]
+                ),
+                "stderr": "",
+            }
+
+        result = self.adapter.execute_request(
+            {"action": "prepare-environment"},
+            candidates=[{"backend": "arduino-ide-cli", "cli": "arduino-cli"}],
+            ports=[],
+            runner=runner,
+        )
+
+        self.assertFalse(result["success"])
+        self.assertFalse(result["ready_for_compile"])
+        self.assertEqual(result["error"], "installed_core_version_not_auto_replaceable")
+        self.assertFalse(result["update_checked"])
+        self.assertFalse(result["installation_performed"])
+        self.assertEqual(len(calls), 1)
+
+    def test_prepare_environment_reports_failed_install_without_claiming_ready(self):
+        """Catches a failed install being reported as a compile-ready environment."""
+        self.assertIsNotNone(self.adapter, "ESP32 DevKit V1 adapter is missing")
+
+        def runner(command, timeout):
+            if command[1:3] == ["core", "list"]:
+                return {"returncode": 0, "stdout": "[]", "stderr": ""}
+            if command[1:3] == ["core", "update-index"]:
+                return {"returncode": 0, "stdout": "index updated", "stderr": ""}
+            if command[1:3] == ["core", "install"]:
+                return {"returncode": 1, "stdout": "", "stderr": "download failed"}
+            self.fail(f"unexpected Arduino CLI command: {command}")
+
+        result = self.adapter.execute_request(
+            {"action": "prepare-environment"},
+            candidates=[{"backend": "arduino-ide-cli", "cli": "arduino-cli"}],
+            ports=[],
+            runner=runner,
+        )
+
+        self.assertFalse(result["success"])
+        self.assertFalse(result["ready_for_compile"])
+        self.assertEqual(result["error"], "esp32_core_install_failed")
+        self.assertTrue(result["update_checked"])
+        self.assertTrue(result["update_performed"])
+        self.assertFalse(result["installation_performed"])
+        self.assertIn("install_execution", result)
+
+    def test_prepare_environment_fails_closed_when_core_inventory_cannot_be_read(self):
+        """A broken inventory is not evidence that the locked core is absent."""
+        self.assertIsNotNone(self.adapter, "ESP32 DevKit V1 adapter is missing")
+        for label, execution in (
+            ("nonzero", {"returncode": 1, "stdout": "[]", "stderr": "broken"}),
+            ("nonjson", {"returncode": 0, "stdout": "not json", "stderr": ""}),
+            ("nonlist", {"returncode": 0, "stdout": "{}", "stderr": ""}),
+            ("timeout", {"returncode": None, "stdout": "", "stderr": "TimeoutExpired"}),
+        ):
+            with self.subTest(label=label):
+                calls: list[list[str]] = []
+
+                def runner(command, timeout):
+                    calls.append(command)
+                    return execution
+
+                result = self.adapter.execute_request(
+                    {"action": "prepare-environment"},
+                    candidates=[{"backend": "arduino-ide-cli", "cli": "arduino-cli"}],
+                    ports=[],
+                    runner=runner,
+                )
+
+                self.assertFalse(result["success"])
+                self.assertFalse(result["update_checked"])
+                self.assertFalse(result["installation_performed"])
+                self.assertEqual(result["error"], "esp32_core_inventory_unavailable")
+                self.assertEqual(len(calls), 1)
+
+    def test_prepare_environment_mixed_candidates_fail_closed_before_install(self):
+        """A broken official candidate blocks install, even if another official CLI reports an empty list."""
+        self.assertIsNotNone(self.adapter, "ESP32 DevKit V1 adapter is missing")
+        calls: list[list[str]] = []
+
+        def runner(command, timeout):
+            calls.append(command)
+            cli = command[0]
+            if cli == "arduino-cli-bad":
+                return {"returncode": 1, "stdout": "[]", "stderr": "broken"}
+            if cli == "arduino-cli-good":
+                return {"returncode": 0, "stdout": "[]", "stderr": ""}
+            self.fail(f"unexpected Arduino CLI command: {command}")
+
+        result = self.adapter.execute_request(
+            {"action": "prepare-environment"},
+            candidates=[
+                {"backend": "arduino-ide-cli", "cli": "arduino-cli-bad"},
+                {"backend": "arduino-ide-cli", "cli": "arduino-cli-good"},
+            ],
+            ports=[],
+            runner=runner,
+        )
+
+        self.assertFalse(result["success"])
+        self.assertFalse(result["update_checked"])
+        self.assertFalse(result["update_performed"])
+        self.assertFalse(result["installation_performed"])
+        self.assertEqual(result["error"], "esp32_core_inventory_unavailable")
+        self.assertEqual(
+            calls,
+            [
+                ["arduino-cli-bad", "core", "list", "--format", "jsonmini"],
+                ["arduino-cli-good", "core", "list", "--format", "jsonmini"],
+            ],
+        )
+
+    def test_prepare_environment_does_not_treat_equivalent_numeric_version_as_exact(self):
+        """3.3.11.0 must never silently turn into the separately verified 3.3.11."""
+        self.assertIsNotNone(self.adapter, "ESP32 DevKit V1 adapter is missing")
+        calls: list[list[str]] = []
+
+        def runner(command, timeout):
+            calls.append(command)
+            return {
+                "returncode": 0,
+                "stdout": json.dumps([{"id": "esp32:esp32", "installed": "3.3.11.0"}]),
+                "stderr": "",
+            }
+
+        result = self.adapter.execute_request(
+            {"action": "prepare-environment"},
+            candidates=[{"backend": "arduino-ide-cli", "cli": "arduino-cli"}],
+            ports=[],
+            runner=runner,
+        )
+
+        self.assertFalse(result["success"])
+        self.assertFalse(result["update_checked"])
+        self.assertFalse(result["installation_performed"])
+        self.assertEqual(result["error"], "installed_core_version_not_auto_replaceable")
+        self.assertEqual(len(calls), 1)
+
+    def test_prepare_environment_failed_install_stays_not_ready_even_if_reprobe_looks_ready(self):
+        """A nonzero installer result remains a failed preparation, even after a partial install."""
+        self.assertIsNotNone(self.adapter, "ESP32 DevKit V1 adapter is missing")
+        installed = False
+
+        def runner(command, timeout):
+            nonlocal installed
+            if command[1:3] == ["core", "list"]:
+                inventory = [{"id": "esp32:esp32", "installed": "3.3.11"}] if installed else []
+                return {"returncode": 0, "stdout": json.dumps(inventory), "stderr": ""}
+            if command[1:3] == ["core", "update-index"]:
+                return {"returncode": 0, "stdout": "index updated", "stderr": ""}
+            if command[1:3] == ["core", "install"]:
+                installed = True
+                return {"returncode": 1, "stdout": "partial", "stderr": "interrupted"}
+            if command[1:3] == ["board", "details"]:
+                return {
+                    "returncode": 0,
+                    "stdout": json.dumps(
+                        {"fqbn": self.adapter.TARGET_FQBN, "name": "DOIT ESP32 DEVKIT V1"}
+                    ),
+                    "stderr": "",
+                }
+            self.fail(f"unexpected Arduino CLI command: {command}")
+
+        result = self.adapter.execute_request(
+            {"action": "prepare-environment"},
+            candidates=[{"backend": "arduino-ide-cli", "cli": "arduino-cli"}],
+            ports=[],
+            runner=runner,
+        )
+
+        self.assertFalse(result["success"])
+        self.assertFalse(result["ready_for_compile"])
+        self.assertFalse(result["fqbn_details_verified"])
+        self.assertEqual(result["error"], "esp32_core_install_failed")
+        self.assertTrue(result["probe_after"][0]["ready_for_compile"])
+
+    def test_mindplus_candidate_with_exact_strings_is_rejected_for_doctor_and_compile(self):
+        """ESP32 may not borrow a Mind+ CLI, even when its output claims the official target."""
+        self.assertIsNotNone(self.adapter, "ESP32 DevKit V1 adapter is missing")
+        calls: list[list[str]] = []
+
+        def runner(command, timeout):
+            calls.append(command)
+            return {"returncode": 0, "stdout": "[]", "stderr": ""}
+
+        candidate = {"backend": "mindplus-2-cli", "cli": "mindplus-arduino-cli"}
+        doctor = self.adapter.execute_request(
+            {"action": "doctor"}, candidates=[candidate], ports=[], runner=runner
+        )
+        compile_result = self.adapter.execute_request(
+            {
+                "action": "compile",
+                "code": "void setup(){} void loop(){}",
+                "board_profile": "doit-esp32-devkit-v1-wroom32",
+            },
+            candidates=[candidate],
+            ports=[],
+            runner=runner,
+        )
+
+        self.assertFalse(doctor["success"])
+        self.assertFalse(compile_result["success"])
+        self.assertEqual(doctor["error"], "exact_esp32_toolchain_missing")
+        self.assertEqual(compile_result["error"], "exact_esp32_toolchain_missing")
+        self.assertEqual(calls, [])
+
+    def test_prepare_environment_uses_compact_environment_summary(self):
+        """Preparation output must not echo large board-details payloads to the host."""
+        self.assertIsNotNone(self.adapter, "ESP32 DevKit V1 adapter is missing")
+        large_details = {"fqbn": self.adapter.TARGET_FQBN, "name": "DOIT ESP32 DEVKIT V1", "options": "x" * 50000}
+
+        def runner(command, timeout):
+            if command[1:3] == ["core", "list"]:
+                return {
+                    "returncode": 0,
+                    "stdout": json.dumps([{"id": "esp32:esp32", "installed": "3.3.11"}]),
+                    "stderr": "",
+                }
+            return {"returncode": 0, "stdout": json.dumps(large_details), "stderr": ""}
+
+        result = self.adapter.execute_request(
+            {"action": "prepare-environment"},
+            candidates=[{"backend": "arduino-ide-cli", "cli": "arduino-cli"}],
+            ports=[],
+            runner=runner,
+        )
+
+        self.assertTrue(result["success"])
+        self.assertNotIn("board_details", result["environment"])
+        self.assertLess(len(json.dumps(result)), 10000)
+
     def test_compile_requires_confirmed_profile_and_creates_esp32_binary(self):
         self.assertIsNotNone(self.adapter, "ESP32 DevKit V1 adapter is missing")
         calls: list[list[str]] = []
@@ -236,7 +690,9 @@ class Esp32DevKitV1Tests(unittest.TestCase):
         def runner(command, timeout):
             calls.append(command)
             build_dir = Path(command[command.index("--build-path") + 1])
+            cache_dir = Path(command[command.index("--build-cache-path") + 1])
             build_dir.mkdir(parents=True, exist_ok=True)
+            cache_dir.mkdir(parents=True, exist_ok=True)
             (build_dir / "blink.ino.bin").write_bytes(b"firmware")
             return {"returncode": 0, "stdout": "Sketch uses 200000 bytes", "stderr": ""}
 
@@ -270,7 +726,79 @@ class Esp32DevKitV1Tests(unittest.TestCase):
         self.assertTrue(compiled["success"])
         self.assertEqual(compiled["fqbn"], self.adapter.TARGET_FQBN)
         self.assertTrue(compiled["application_bin"].endswith("blink.ino.bin"))
+        self.assertIn("build_cache_dir", compiled)
         self.assertEqual(len(calls), 1)
+
+    def test_compile_build_dir_tracks_sketch_location_and_cleans_nested_stale_state(self):
+        self.assertIsNotNone(self.adapter, "ESP32 DevKit V1 adapter is missing")
+        calls: list[list[str]] = []
+
+        def runner(command, timeout):
+            calls.append(command)
+            build_dir = Path(command[command.index("--build-path") + 1])
+            cache_dir = Path(command[command.index("--build-cache-path") + 1])
+            self.assertEqual(build_dir.parent.name, ".chatmaker-esp32-builds")
+            self.assertEqual(build_dir.parent.parent, sketch_dir.parent)
+            self.assertEqual(cache_dir.parent.name, ".chatmaker-esp32-cache")
+            self.assertEqual(cache_dir.parent.parent, sketch_dir.parent)
+            self.assertEqual(cache_dir.drive, build_dir.drive)
+            build_dir.mkdir(parents=True, exist_ok=True)
+            (build_dir / "blink.ino.bin").write_bytes(b"fresh-firmware")
+            return {"returncode": 0, "stdout": "compiled", "stderr": ""}
+
+        with tempfile.TemporaryDirectory() as directory:
+            sketch_dir = Path(directory) / "blink"
+            sketch_dir.mkdir()
+            sketch = sketch_dir / "blink.ino"
+            sketch.write_text("void setup(){}\nvoid loop(){}\n", encoding="utf-8")
+            context = {
+                "cli": "arduino-cli",
+                "core_version": "3.3.11",
+                "ready_for_compile": True,
+                "fqbn_details_verified": True,
+            }
+            digest = self.adapter._build_digest(sketch, context["core_version"])
+            stale_build_dir = self.adapter.build_dir_for_sketch(sketch_dir, digest)
+            stable_cache_dir = self.adapter.build_cache_dir_for_sketch(
+                sketch_dir,
+                context["core_version"],
+            )
+            stale_nested = stale_build_dir / "stale" / "nested"
+            stale_nested.mkdir(parents=True)
+            (stale_nested / "old.txt").write_text("old", encoding="utf-8")
+            stable_cache_dir.mkdir(parents=True)
+            (stable_cache_dir / "cache.marker").write_text("keep", encoding="utf-8")
+
+            first = self.adapter.compile_result(
+                context,
+                {
+                    "sketch": str(sketch),
+                    "board_profile": "doit-esp32-devkit-v1-wroom32",
+                },
+                runner=runner,
+            )
+            second = self.adapter.compile_result(
+                context,
+                {
+                    "sketch": str(sketch),
+                    "board_profile": "doit-esp32-devkit-v1-wroom32",
+                },
+                runner=runner,
+            )
+
+            build_dir = Path(first["build_dir"])
+            self.assertEqual(build_dir, stale_build_dir)
+            self.assertEqual(Path(second["build_dir"]), build_dir)
+            self.assertEqual(Path(first["build_cache_dir"]), stable_cache_dir)
+            self.assertEqual(Path(second["build_cache_dir"]), stable_cache_dir)
+            self.assertFalse((build_dir / "stale").exists())
+            self.assertEqual((build_dir / "blink.ino.bin").read_bytes(), b"fresh-firmware")
+            self.assertEqual(
+                (stable_cache_dir / "cache.marker").read_text(encoding="utf-8"),
+                "keep",
+            )
+
+        self.assertEqual(len(calls), 2)
 
     def test_compile_request_uses_probed_exact_toolchain(self):
         self.assertIsNotNone(self.adapter, "ESP32 DevKit V1 adapter is missing")
@@ -296,7 +824,9 @@ class Esp32DevKitV1Tests(unittest.TestCase):
                     "stderr": "",
                 }
             build_dir = Path(command[command.index("--build-path") + 1])
+            cache_dir = Path(command[command.index("--build-cache-path") + 1])
             build_dir.mkdir(parents=True, exist_ok=True)
+            cache_dir.mkdir(parents=True, exist_ok=True)
             (build_dir / "blink.ino.bin").write_bytes(b"firmware")
             return {"returncode": 0, "stdout": "compiled", "stderr": ""}
 
@@ -345,7 +875,9 @@ class Esp32DevKitV1Tests(unittest.TestCase):
             sketch_dir = Path(command[-1])
             self.assertTrue((sketch_dir / f"{sketch_dir.name}.ino").is_file())
             build_dir = Path(command[command.index("--build-path") + 1])
+            cache_dir = Path(command[command.index("--build-cache-path") + 1])
             build_dir.mkdir(parents=True, exist_ok=True)
+            cache_dir.mkdir(parents=True, exist_ok=True)
             (build_dir / f"{sketch_dir.name}.ino.bin").write_bytes(b"firmware")
             return {"returncode": 0, "stdout": "compiled", "stderr": ""}
 
