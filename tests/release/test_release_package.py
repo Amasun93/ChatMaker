@@ -2,6 +2,9 @@ from __future__ import annotations
 
 import hashlib
 import importlib.util
+import json
+import subprocess
+import sys
 import tempfile
 import tomllib
 import unittest
@@ -10,7 +13,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[2]
-RELEASE_VERSION = "0.1.0-rc4"
+RELEASE_VERSION = "0.1.0-rc5"
 
 
 def load_builder():
@@ -23,6 +26,27 @@ def load_builder():
 
 
 class ReleasePackageTests(unittest.TestCase):
+    def test_release_cli_defaults_to_rc5(self):
+        with tempfile.TemporaryDirectory() as directory:
+            completed = subprocess.run(
+                [
+                    sys.executable,
+                    str(ROOT / "scripts" / "build_release.py"),
+                    "--root",
+                    str(ROOT),
+                    "--output",
+                    directory,
+                ],
+                cwd=ROOT,
+                text=True,
+                capture_output=True,
+                check=True,
+            )
+            result = json.loads(completed.stdout)
+
+        self.assertEqual(result["version"], RELEASE_VERSION)
+        self.assertEqual(Path(result["archive"]).name, f"ChatMaker-{RELEASE_VERSION}.zip")
+
     def test_release_zip_is_deterministic_and_contains_installable_project(self):
         builder = load_builder()
         with tempfile.TemporaryDirectory() as directory:
@@ -39,7 +63,7 @@ class ReleasePackageTests(unittest.TestCase):
         prefix = f"ChatMaker-{RELEASE_VERSION}/"
         metadata = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
 
-        self.assertEqual(metadata["project"]["version"], "0.1.0rc4")
+        self.assertEqual(metadata["project"]["version"], "0.1.0rc5")
         self.assertEqual(first_hash, second_hash)
         self.assertEqual(first_hash, first["sha256"])
         self.assertIn(prefix + "README.md", names)
@@ -51,6 +75,21 @@ class ReleasePackageTests(unittest.TestCase):
         self.assertIn(prefix + ".github/pull_request_template.md", names)
         self.assertIn(prefix + "skills/chatmaker/SKILL.md", names)
         self.assertIn(prefix + "runtime/chatmaker/installers/codex.py", names)
+        self.assertIn(prefix + "runtime/chatmaker/installers/workbuddy.py", names)
+        self.assertIn(prefix + "runtime/chatmaker/installers/skill_bundle.py", names)
+        self.assertIn(prefix + "runtime/chatmaker/hardware/esp32_devkit_v1.py", names)
+        self.assertIn(prefix + "runtime/chatmaker/route.py", names)
+        self.assertIn(prefix + "runtime/chatmaker/web/embed.py", names)
+        self.assertIn(prefix + "runtime/chatmaker/web/planner.py", names)
+        self.assertIn(prefix + "runtime/chatmaker/web/playground.py", names)
+        self.assertIn(prefix + "examples/chatduino/esp32/ap-led-sensor/ap-led-sensor.ino", names)
+        self.assertIn(prefix + "examples/chatduino/esp32/ap-led-sensor/page_html.h", names)
+        self.assertIn(prefix + "examples/chatweb/esp32-ap-control.html", names)
+        self.assertIn(prefix + "examples/chatweb/advanced-playground.html", names)
+        self.assertIn(prefix + "tests/browser/chatweb.spec.mjs", names)
+        self.assertIn(prefix + "package.json", names)
+        self.assertIn(prefix + "package-lock.json", names)
+        self.assertIn(prefix + "playwright.config.mjs", names)
         self.assertFalse(any("__pycache__" in name or ".git/" in name for name in names))
 
 

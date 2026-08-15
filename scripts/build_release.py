@@ -12,6 +12,9 @@ RELEASE_PATHS = (
     ".github/workflows/ci.yml",
     "CONTRIBUTING.md",
     "LICENSE",
+    "package-lock.json",
+    "package.json",
+    "playwright.config.mjs",
     "README.md",
     "README_EN.md",
     "RELEASE_NOTES.md",
@@ -75,7 +78,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Build a deterministic ChatMaker release ZIP.")
     parser.add_argument("--root", type=Path, default=Path(__file__).resolve().parents[1])
     parser.add_argument("--output", type=Path, default=Path("dist"))
-    parser.add_argument("--version", default="0.1.0-rc4")
+    parser.add_argument("--version", default="0.1.0-rc5")
     args = parser.parse_args()
     result = build_release(args.root, args.output, args.version)
     print(json.dumps(result, ensure_ascii=False, indent=2))

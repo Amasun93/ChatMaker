@@ -1,98 +1,124 @@
-# ChatMaker v0.1 安装说明
+# ChatMaker v0.1.0-rc5 安装说明 / Installation
 
-本文同时说明“已发布的 rc4 候选包”和“正在开发的仓库版”。两者不是同一套功能，不能把开发版命令当成 rc4 已有能力。
+> rc5 当前是本地发布候选，并未发布到 GitHub。公开的 rc1–rc4 仍是独立历史发布；不要把 rc5 的验证结果倒写到旧版本记录中。
+>
+> rc5 is currently a local release candidate, not a GitHub release. Public rc1–rc4 artifacts remain separate historical releases.
 
-## 已发布：`ChatMaker-0.1.0-rc4.zip`
+## 1. 共同前置条件 / Common prerequisites
 
-rc4 面向 Windows 64 位电脑、Codex 和 WorkBuddy，包含 Nano 与 Uno 的 Mind+ 1.x/2.x 工作流。它**不包含**新的 ESP32 `prepare-environment` 命令，也不包含 `chatmaker-web-embed` 页面嵌入命令。
+1. Windows 64 位；Python 3.11 或更高版本，并可使用 `python -m pip`。
+2. 下载 `ChatMaker-0.1.0-rc5.zip` 与同名 `.sha256`，校验后解压到长期保留的位置。
+3. 在解压后的 `ChatMaker-0.1.0-rc5` 目录打开 PowerShell。安装器和 editable install 会引用该目录，不要在使用期间移动或删除它。
 
-```text
-1. 安装 Python 3.11 或更高版本
-2. 安装 Mind+ 1.x 或 2.x（Nano 与 Uno 必需）
-3. 下载并解压 ChatMaker-0.1.0-rc4.zip
-4. 把文件夹放在长期保留的位置，不要安装后删除或移动
-5. 在解压后的 ChatMaker 文件夹打开 PowerShell
-```
+Windows 64-bit, Python 3.11+, and a persistent extracted directory are required. Run every command below from the extracted `ChatMaker-0.1.0-rc5` directory.
 
 ```powershell
+Get-FileHash .\ChatMaker-0.1.0-rc5.zip -Algorithm SHA256
+Get-Content .\ChatMaker-0.1.0-rc5.zip.sha256
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install --upgrade pip
 python -m pip install -e .
 chatmaker-doctor
+```
+
+两处 SHA-256 必须完全一致。`chatmaker-doctor` 校验资料包和三套 Skill，但不探测或证明真实硬件。
+
+The two SHA-256 values must match exactly. `chatmaker-doctor` validates packs and Skills; it does not prove hardware.
+
+## 2. Nano 与 Uno：Mind+ 前置条件 / Nano and Uno: Mind+ prerequisite
+
+Nano 和 Uno 只复用已安装的 Mind+ 1.x 或 2.x。rc5 不会把官方 Arduino CLI 当成这两块板的默认后端。先安装并至少启动一次 Mind+，再运行：
+
+Nano and Uno reuse an existing Mind+ 1.x or 2.x installation. Install and launch Mind+ once before these commands:
+
+```powershell
 chatmaker-nano --request-json '{"action":"doctor"}'
 chatmaker-uno --request-json '{"action":"doctor"}'
+chatmaker-nano --request-json '{"action":"compile","sketch":"examples/chatduino/nano/blink"}'
+chatmaker-uno --request-json '{"action":"compile","sketch":"examples/chatduino/uno/blink"}'
+chatmaker-nano-examples --root examples/chatduino/nano
 ```
 
-## 当前开发版：ESP32 与网页嵌入
+这些命令只编译，不上传。只有在明确要求 `compile-upload`、检测到唯一合格有线端口并通过安全检查时，运行层才可能进入上传阶段。
 
-需要新的 ESP32 或网页嵌入能力时，请从公开仓库 checkout 后以 editable 方式安装，而不是使用 rc4 ZIP：
+These examples compile only. Upload is a separate gate and is considered only for an explicit `compile-upload` request with one safe wired port.
 
-```powershell
-git clone https://github.com/Amasun93/ChatMaker.git
-cd ChatMaker
-python -m pip install -e .
-chatmaker-doctor
-```
+## 3. ESP32：官方 Arduino CLI 前置条件 / ESP32: official Arduino CLI prerequisite
 
-ESP32 开发版需要 Arduino IDE 2（其官方 Arduino CLI）或独立的官方 Arduino CLI；不能借用 Mind+ 的 CLI。Nano 和 Uno 仍继续复用 Mind+ 1.x/2.x，不受此限制。
+ESP32 不使用 Mind+ CLI。请安装 Arduino IDE 2（包含官方 Arduino CLI）或独立的官方 Arduino CLI。rc5 只接受 `DOIT ESP32 DEVKIT V1 + ESP-WROOM-32`、官方 Core `esp32:esp32@3.3.11` 和 FQBN `esp32:esp32:esp32doit-devkit-v1`。
 
-ESP32 只接受 `DOIT ESP32 DEVKIT V1 + ESP-WROOM-32 + esp32:esp32:esp32doit-devkit-v1` 这一个精确目标。准备命令只安装 ChatMaker 已验证的 `esp32:esp32@3.3.11`，不会自动追最新版，也不会静默替换更高、未知或名称近似的版本：
+ESP32 never uses a Mind+ CLI. Install Arduino IDE 2 or a standalone official Arduino CLI. rc5 accepts only the exact board/core/FQBN above.
 
 ```powershell
 chatmaker-esp32 --request-json '{"action":"prepare-environment"}'
+chatmaker-esp32 --request-json '{"action":"doctor"}'
+chatmaker-esp32 --request-json '{"action":"compile","board_profile":"doit-esp32-devkit-v1-wroom32","sketch":"examples/chatduino/esp32/blink-external-led"}'
+chatmaker-esp32 --request-json '{"action":"compile","board_profile":"doit-esp32-devkit-v1-wroom32","sketch":"examples/chatduino/esp32/ap-led-sensor"}'
 ```
 
-## 安装到 Codex
+`prepare-environment` 只安装锁定的官方 Core，不追随 `latest`，也不会静默降级未知或更高版本。上面两条是编译命令；它们不会烧录开发板。
+
+`prepare-environment` installs only the locked official core. The two example commands are compile-only and never upload firmware.
+
+## 4. 路由、资料和网页命令 / Router, catalog, and web commands
+
+以下示例覆盖 rc5 中的可执行路由、创意规划、默认单页生成、显式高级游乐场、本地预览和 ESP32 页面嵌入。
 
 ```powershell
+chatmaker-catalog --request-json '{"action":"search","query":"继电器","kind":"component"}'
+chatmaker-route --request-json '{"hardware":{"board":"arduino-nano-classic"}}'
+chatmaker-web-plan --brief-json '{"kind":"classroom-tool","idea":"收集课堂反馈","audience_scene":"学生下课前使用","desired_feeling":"清楚而轻松","primary_action":"选择最需要重讲的一步"}'
+chatmaker-web --request-json '{"kind":"classroom-tool","title":"课堂脉冲","prompt":"今天哪一步最需要再讲一次？","primary_label":"我需要再讲一次","direction_id":"editorial-signal"}' --output classroom-pulse.html
+chatmaker-web-plan --brief-json '{"kind":"classroom-tool","idea":"收集课堂反馈","audience_scene":"学生下课前使用","desired_feeling":"清楚而轻松","primary_action":"选择最需要重讲的一步"}' --advanced
+chatmaker-web-playground --kind classroom-tool --title "课堂方向游乐场" --brief "比较更多课堂反馈方向" --output advanced-playground.html --advanced
+chatmaker-web-preview classroom-pulse.html
+chatmaker-web-embed examples/chatweb/esp32-ap-control.html examples/chatduino/esp32/ap-led-sensor/page_html.h --symbol CHATMAKER_AP_PAGE
+```
+
+`chatmaker-web-preview` 默认只监听 `127.0.0.1`，按 Ctrl+C 结束。高级方向和游乐场必须显式传入 `--advanced`。`page_html.h` 是生成物；只编辑 `examples/chatweb/esp32-ap-control.html`。
+
+`chatmaker-web-preview` binds to `127.0.0.1` by default; stop it with Ctrl+C. Advanced directions require explicit `--advanced`. Edit the HTML source, not the generated header.
+
+## 5. 串口、WorkBuddy 和 Codex / Serial, WorkBuddy, and Codex
+
+```powershell
+chatmaker-serial --request-json '{"action":"list"}'
+'{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05"}}' | chatmaker-workbuddy-mcp
+'{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}' | chatmaker-workbuddy-mcp
 chatmaker-install-codex install
 chatmaker-install-codex doctor
-```
-
-安装器复制 `chatmaker`、`chatduino`、`chatweb` 三个 Skill。若存在同名 Skill，会先备份并生成恢复清单。安装后重启 Codex。
-
-需要恢复原状时：
-
-```powershell
-chatmaker-install-codex uninstall
-```
-
-## 安装到 WorkBuddy
-
-```powershell
 chatmaker-install-workbuddy install
 chatmaker-install-workbuddy doctor
 ```
 
-安装器会备份 `~/.workbuddy/mcp.json`，保留其他 MCP，只更新 ChatMaker 使用的兼容入口，并复制三个 Skill。这个入口同时提供 Nano、Uno、ESP32、资料目录和串口工具。安装后重启 WorkBuddy。
+WorkBuddy stdio 应报告服务版本 `1.7.0` 和 23 个工具。安装器会备份同名 Skill 或 WorkBuddy 配置，并保留无关 MCP。安装后重启对应应用。恢复原状：
 
-需要恢复原配置和原 Skill 时：
+WorkBuddy stdio should report server version `1.7.0` and 23 tools. The installers back up replaced Skills/configuration and preserve unrelated MCP entries. Restart the host application after installation. To restore:
 
 ```powershell
+chatmaker-install-codex uninstall
 chatmaker-install-workbuddy uninstall
 ```
 
-## 开发版最小烟测
+## 6. 开发与浏览器验证 / Development and browser verification
+
+发布包包含 Playwright 清单和浏览器测试，但不会预装 Node.js 或 Chromium。运行浏览器验证需要 Node.js 22（或兼容版本）和网络可用的首次浏览器安装：
+
+The archive includes Playwright manifests and tests, but not Node.js or Chromium. For browser verification, install Node.js 22 (or a compatible version), then run:
 
 ```powershell
-chatmaker-nano --request-json '{"action":"doctor"}'
-chatmaker-uno --request-json '{"action":"doctor"}'
-chatmaker-esp32 --request-json '{"action":"prepare-environment"}'
-chatmaker-esp32 --request-json '{"action":"doctor"}'
-chatmaker-nano-examples --root examples/chatduino/nano
-chatmaker-catalog --request-json '{"action":"search","query":"继电器","kind":"component"}'
-chatmaker-serial --request-json '{"action":"list"}'
-chatmaker-web-embed examples/chatweb/esp32-ap-control.html examples/chatduino/esp32/ap-led-sensor/page_html.h --symbol CHATMAKER_AP_PAGE
-chatmaker-web-preview examples/chatweb/classroom-pulse.html
+python scripts/validate_skills.py
+python -m unittest discover -s tests -v
+npm ci
+npx playwright install chromium
+npm run test:browser
 ```
 
-看到 Nano、Uno 或 ESP32 程序编译通过，只表示程序和编译环境通过。没有真实开发板时，烧录、串口、Wi-Fi、HTTP、断电重启和实体效果仍然是未验证状态。
+所有已安装命令均支持 `--help`：`chatmaker-doctor`、`chatmaker-catalog`、`chatmaker-route`、`chatmaker-nano`、`chatmaker-uno`、`chatmaker-esp32`、`chatmaker-nano-examples`、`chatmaker-serial`、`chatmaker-workbuddy-mcp`、`chatmaker-install-workbuddy`、`chatmaker-install-codex`、`chatmaker-web`、`chatmaker-web-plan`、`chatmaker-web-playground`、`chatmaker-web-preview`、`chatmaker-web-embed`。
 
-`chatmaker-web-embed` 会把单文件网页嵌入到 ESP32 固件头文件里。`examples/chatweb/esp32-ap-control.html` 是唯一可编辑页面源，生成出来的 `examples/chatduino/esp32/ap-led-sensor/page_html.h` 不要手改。
+## 7. 证据边界 / Evidence boundary
 
-## 校验下载包
+编译、上传、串口、浏览器、网络、断电重启和物理效果是不同的验收门。编译成功不能证明烧录或实物效果；浏览器模拟不能证明 ESP32 SoftAP、HTTP 或元器件工作。rc5 在没有匹配硬件证据时会保留这些状态为 `unverified`。
 
-```powershell
-Get-FileHash .\ChatMaker-0.1.0-rc4.zip -Algorithm SHA256
-Get-Content .\ChatMaker-0.1.0-rc4.zip.sha256
-```
-
-两处哈希必须完全一致。
+Compile, upload, serial, browser, network, power-cycle, and physical effects are separate gates. Compilation does not prove upload or physical behavior; browser simulation does not prove ESP32 SoftAP, HTTP, or components. rc5 leaves those states `unverified` without matching evidence.
