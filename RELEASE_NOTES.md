@@ -1,6 +1,6 @@
 # ChatMaker v0.1.0-rc5
 
-> 状态 / Status: 本地发布候选，尚未发布到 GitHub。Local release candidate; not yet published on GitHub.
+> 状态 / Status: [GitHub 公开预发布版](https://github.com/Amasun93/ChatMaker/releases/tag/v0.1.0-rc5)。Public GitHub prerelease.
 
 ## 中文
 

@@ -1,8 +1,8 @@
 # ChatMaker v0.1.0-rc5 安装说明 / Installation
 
-> rc5 当前是本地发布候选，并未发布到 GitHub。公开的 rc1–rc4 仍是独立历史发布；不要把 rc5 的验证结果倒写到旧版本记录中。
+> rc5 已作为 [GitHub 公开预发布版](https://github.com/Amasun93/ChatMaker/releases/tag/v0.1.0-rc5) 发布。rc1–rc4 仍是独立历史发布；不要把 rc5 的验证结果倒写到旧版本记录中。
 >
-> rc5 is currently a local release candidate, not a GitHub release. Public rc1–rc4 artifacts remain separate historical releases.
+> rc5 is available as a [public GitHub prerelease](https://github.com/Amasun93/ChatMaker/releases/tag/v0.1.0-rc5). Public rc1–rc4 artifacts remain separate historical releases.
 
 ## 1. 共同前置条件 / Common prerequisites
 

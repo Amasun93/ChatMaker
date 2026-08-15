@@ -12,7 +12,7 @@ ChatMaker 是面向老师、学生和黑客松参与者的 AI 创作伙伴。用
 
 对话窗口就是创作环境。Mind+、编译器、串口和浏览器在后台完成专业工作，用户不需要先学习一套 IDE。
 
-> 当前处于早期开发阶段。`v0.1.0-rc5` 是本地发布候选，尚未发布到 GitHub；公开版本仍为 rc4。rc5 包含 Nano/Uno Mind+ 编译、ESP32 官方 Core 准备与精确 FQBN 编译、手机 AP 页面嵌入、可执行路由和创意规划、显式高级游乐场、WorkBuddy 1.7.0 的 23 个工具，以及真实 Chromium 自动化。没有匹配实板证据，因此仍不能声称完成烧录或实物闭环。
+> 当前处于早期开发阶段。[`v0.1.0-rc5`](https://github.com/Amasun93/ChatMaker/releases/tag/v0.1.0-rc5) 已作为 GitHub 预发布版公开。它包含 Nano/Uno Mind+ 编译、ESP32 官方 Core 准备与精确 FQBN 编译、手机 AP 页面嵌入、可执行路由和创意规划、显式高级游乐场、WorkBuddy 1.7.0 的 23 个工具，以及真实 Chromium 自动化。没有匹配实板证据，因此仍不能声称完成烧录或实物闭环。
 
 ## 它补上的能力
 

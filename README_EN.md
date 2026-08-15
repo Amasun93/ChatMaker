@@ -8,7 +8,7 @@
 
 ChatMaker helps teachers, students, and hackathon participants move from a clear request or a rough idea to an implemented and verified project. The user chooses the direction and judges the visible result. ChatMaker handles concept development, professional implementation, tools, and evidence.
 
-> Early development status: `v0.1.0-rc5` is a local release candidate and has not been published on GitHub; rc4 remains the public release. rc5 includes Nano/Uno Mind+ compilation, controlled official ESP32 preparation and exact-FQBN compilation, the embedded AP page, executable routing and creative planning, an opt-in advanced playground, WorkBuddy 1.7.0 with 23 tools, and real Chromium automation. No matching physical-board evidence exists, so upload and physical behavior are not claimed.
+> Early development status: [`v0.1.0-rc5`](https://github.com/Amasun93/ChatMaker/releases/tag/v0.1.0-rc5) is now available as a public GitHub prerelease. It includes Nano/Uno Mind+ compilation, controlled official ESP32 preparation and exact-FQBN compilation, the embedded AP page, executable routing and creative planning, an opt-in advanced playground, WorkBuddy 1.7.0 with 23 tools, and real Chromium automation. No matching physical-board evidence exists, so upload and physical behavior are not claimed.
 
 ## Architecture
 
