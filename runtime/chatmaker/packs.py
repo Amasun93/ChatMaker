@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from copy import deepcopy
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -15,6 +16,7 @@ GATES = (
     "firmware_uploaded",
     "physical_effect_verified",
 )
+_RECORD_CACHE: dict[Path, tuple[int, int, dict[str, Any]]] = {}
 
 
 @dataclass(frozen=True)
@@ -28,10 +30,17 @@ class ValidationReport:
 
 
 def load_record(path: Path) -> dict[str, Any]:
-    value = yaml.safe_load(path.read_text(encoding="utf-8"))
+    resolved = Path(path).resolve()
+    stat = resolved.stat()
+    cached = _RECORD_CACHE.get(resolved)
+    if cached is not None and cached[0] == stat.st_mtime_ns and cached[1] == stat.st_size:
+        return deepcopy(cached[2])
+
+    value = yaml.safe_load(resolved.read_text(encoding="utf-8"))
     if not isinstance(value, dict):
         raise ValueError("record root must be a mapping")
-    return value
+    _RECORD_CACHE[resolved] = (stat.st_mtime_ns, stat.st_size, value)
+    return deepcopy(value)
 
 
 def _format_path(parts: Any) -> str:
@@ -56,9 +65,9 @@ def validate_record(record: dict[str, Any], schema_dir: Path) -> list[str]:
 
     verification = record.get("verification")
     if isinstance(verification, dict):
-        for gate_name in GATES:
-            gate = verification.get(gate_name)
+        for gate_name, gate in verification.items():
             if not isinstance(gate, dict):
+                errors.append(f"verification.{gate_name}: gate must be an object")
                 continue
             if gate.get("status") == "verified" and (not gate.get("checked_at") or not gate.get("evidence")):
                 errors.append(

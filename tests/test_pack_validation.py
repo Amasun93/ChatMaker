@@ -137,6 +137,40 @@ class PackValidationTests(unittest.TestCase):
         self.assertFalse(report.ok)
         self.assertTrue(any("source_reviewed" in error and "evidence" in error for error in report.errors))
 
+    def test_recipe_extension_gate_with_full_gate_shape_is_valid(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self.make_repository(root)
+            valid = recipe()
+            valid["verification"]["wifi_ap_available"] = {
+                "status": "verified",
+                "checked_at": "2026-08-15",
+                "evidence": "Observed the ChatMaker-ESP32 SSID from a phone.",
+            }
+            valid["verification"]["http_exchange_verified"] = {
+                "status": "unverified",
+                "checked_at": None,
+                "evidence": None,
+            }
+            write_yaml(root / "recipes" / "blink.yaml", valid)
+
+            report = self.validate(root)
+
+        self.assertTrue(report.ok, report.errors)
+
+    def test_recipe_extension_gate_must_use_the_same_gate_schema(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self.make_repository(root)
+            invalid = recipe()
+            invalid["verification"]["wifi_ap_available"] = {"status": "pending"}
+            write_yaml(root / "recipes" / "blink.yaml", invalid)
+
+            report = self.validate(root)
+
+        self.assertFalse(report.ok)
+        self.assertTrue(any("wifi_ap_available" in error for error in report.errors), report.errors)
+
     def test_duplicate_ids_fail_even_across_record_kinds(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

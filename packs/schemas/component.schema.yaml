@@ -52,3 +52,4 @@ $defs:
       code_compiled: {$ref: "#/$defs/gate"}
       firmware_uploaded: {$ref: "#/$defs/gate"}
       physical_effect_verified: {$ref: "#/$defs/gate"}
+    additionalProperties: {$ref: "#/$defs/gate"}

@@ -9,5 +9,5 @@ python runtime/doctor.py --packs
 python -m unittest discover -s tests -v
 ```
 
-A contribution must cite its sources and preserve all four evidence gates. Set a gate to `verified` only with a date and a specific evidence note. When a recipe references a board or component, that ID must already exist. Two wires may share a board pin only when every connection explicitly sets `shared: true`; this is intended for reviewed buses or power rails, not accidental signal conflicts.
+A contribution must cite its sources and preserve all four baseline evidence gates. Set any gate to `verified` only with a date and a specific evidence note. Recipes may add extension gates such as `wifi_ap_available` or `http_exchange_verified`, but only when that recipe actually needs the extra runtime proof. Boards and components should not inherit recipe-only extension gates by default. When a recipe references a board or component, that ID must already exist. Two wires may share a board pin only when every connection explicitly sets `shared: true`; this is intended for reviewed buses or power rails, not accidental signal conflicts.
 

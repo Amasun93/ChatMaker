@@ -35,6 +35,15 @@ def _records(project_root: Path | None = None) -> list[tuple[Path, dict[str, Any
     return records
 
 
+def _record_path(record_id: str, project_root: Path | None = None) -> Path | None:
+    root = _root(project_root)
+    for folder in CATALOG_FOLDERS.values():
+        candidate = root / "packs" / folder / f"{record_id}.yaml"
+        if candidate.is_file():
+            return candidate
+    return None
+
+
 def _search_text(record: dict[str, Any]) -> list[str]:
     values: list[Any] = [
         record.get("id"),
@@ -124,7 +133,9 @@ def get_catalog_record(
     *,
     project_root: Path | None = None,
 ) -> dict[str, Any]:
-    for path, record in _records(project_root):
+    path = _record_path(record_id, project_root)
+    if path is not None:
+        record = load_record(path)
         if record.get("id") == record_id:
             root = _root(project_root)
             return {
