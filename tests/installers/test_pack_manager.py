@@ -645,6 +645,39 @@ class PackManagerTests(unittest.TestCase):
             offline=True,
         )
 
+    def test_historical_installed_receipt_uses_current_key_window_not_registry_expiry(self):
+        for not_after, expected_verified in (
+            (None, True),
+            ("2026-08-17T00:00:00Z", False),
+        ):
+            with self.subTest(not_after=not_after):
+                fx = PackFixture()
+                try:
+                    fx.trust_store["keys"][0]["not_after"] = not_after
+                    fx.publish(
+                        "1.0.0",
+                        sequence=1,
+                        expires_at="2026-08-17T00:00:00Z",
+                    )
+                    fx.manager(
+                        now=datetime(2026, 8, 16, 12, 0, tzinfo=timezone.utc)
+                    ).ensure(PACK_ID)
+
+                    historical = fx.manager(
+                        transport=NoNetworkTransport(),
+                        now=datetime(2026, 8, 18, 12, 0, tzinfo=timezone.utc),
+                    )
+                    record = historical.status(PACK_ID)["packs"][0]
+
+                    self.assertEqual(record["verified"], expected_verified)
+                    if not expected_verified:
+                        self.assertEqual(record["error"]["code"], "pack_drift_detected")
+                        self.assertEqual(
+                            record["error"]["reason"], "installed_receipt_invalid"
+                        )
+                finally:
+                    fx.cleanup()
+
     def test_cli_adapter_returns_structured_json_for_status_and_errors(self):
         manager = self.fx.manager(transport=NoNetworkTransport())
         output = io.StringIO()
@@ -748,6 +781,44 @@ class PackManagerTests(unittest.TestCase):
         self.assertEqual(recovered["version"], "1.0.0")
         self.assertEqual(interrupted.paths.registry_state.read_bytes(), state_before)
         self.assertTrue(interrupted.paths.verified_registry.is_file())
+
+    def test_recovery_candidate_survives_intervening_parseable_bad_signature(self):
+        self.fx.publish("1.0.0", sequence=1)
+        original_registry = self.fx.transport.responses[REGISTRY_URL]
+        original_signature = self.fx.transport.responses[SIGNATURE_URL]
+
+        def fail_after_sequence(name: str) -> None:
+            if name == "registry.after_sequence_replace":
+                raise RuntimeError(name)
+
+        interrupted = self.fx.manager(failure_injector=fail_after_sequence)
+        self.assert_manager_error(
+            "registry_fetch_failed", interrupted.ensure, PACK_ID
+        )
+        pending_before = interrupted.paths.pending_registry.read_bytes()
+        sequence_before = interrupted.paths.registry_state.read_bytes()
+
+        self.fx.publish("1.1.0", sequence=2, corrupt_signature=True)
+        self.assert_manager_error(
+            "registry_signature_invalid", self.fx.manager().ensure, PACK_ID
+        )
+
+        self.assertEqual(interrupted.paths.pending_registry.read_bytes(), pending_before)
+        self.assertEqual(interrupted.paths.registry_state.read_bytes(), sequence_before)
+        registry_bytes, registry_final_url = original_registry
+        signature_bytes, signature_final_url = original_signature
+        self.fx.transport.set(
+            REGISTRY_URL, registry_bytes, final_url=registry_final_url
+        )
+        self.fx.transport.set(
+            SIGNATURE_URL, signature_bytes, final_url=signature_final_url
+        )
+
+        recovered = self.fx.manager().ensure(PACK_ID)
+
+        self.assertEqual(recovered["version"], "1.0.0")
+        self.assertTrue(interrupted.paths.verified_registry.is_file())
+        self.assertFalse(interrupted.paths.pending_registry.exists())
 
     def test_repeated_replay_cannot_create_its_own_recovery_receipt(self):
         self.fx.publish("1.0.0", sequence=1)
@@ -904,6 +975,37 @@ class PackManagerTests(unittest.TestCase):
                 "llmwiki/sections/start-here.md",
             },
         )
+
+    def test_first_install_fsyncs_new_store_ancestors_before_activation(self):
+        self.fx.publish("1.0.0", sequence=1)
+        synced: set[Path] = set()
+        synced_before_active: set[Path] | None = None
+        real_fsync_directory = pack_manager_module._fsync_directory
+
+        def track_directory(path: Path) -> None:
+            real_fsync_directory(path)
+            synced.add(path.resolve())
+
+        def capture_before_activation(name: str) -> None:
+            nonlocal synced_before_active
+            if name == "pack.before_active_replace":
+                synced_before_active = set(synced)
+
+        manager = self.fx.manager(phase_callback=capture_before_activation)
+        self.assertFalse(manager.paths.store.exists())
+
+        with mock.patch.object(
+            pack_manager_module, "_fsync_directory", track_directory
+        ):
+            manager.ensure(PACK_ID)
+
+        self.assertIsNotNone(synced_before_active)
+        required = {
+            manager.paths.store.resolve(),
+            (manager.paths.store / PACK_ID).resolve(),
+            (manager.paths.store / PACK_ID / "1.0.0").resolve(),
+        }
+        self.assertTrue(required.issubset(synced_before_active or set()))
 
     def test_unrelated_corrupt_cache_is_quarantined_before_offline_missing(self):
         manager = self.fx.manager(transport=NoNetworkTransport())

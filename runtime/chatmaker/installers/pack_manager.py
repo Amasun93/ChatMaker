@@ -886,7 +886,7 @@ class PackManager:
             and pending_before == candidate_raw
             and verified_before != candidate_raw
         )
-        if candidate_raw is not None:
+        if candidate_raw is not None and pending_before is None:
             _atomic_write(self.paths.pending_registry, candidate_raw)
         try:
             verified = verify_registry(
@@ -1074,11 +1074,20 @@ class PackManager:
             )
             if verification_time.tzinfo is None:
                 raise ValueError("generated_at must be timezone aware")
-            registry, _ = self._verify_receipt_value(
-                receipt,
-                verification_time=verification_time.astimezone(timezone.utc),
-                require_highest=False,
-            )
+            try:
+                registry, _ = self._verify_receipt_value(
+                    receipt,
+                    verification_time=self._current_time(),
+                    require_highest=False,
+                )
+            except RegistryError as exc:
+                if exc.code != "registry_expired" or exc.reason != "expired":
+                    raise
+                registry, _ = self._verify_receipt_value(
+                    receipt,
+                    verification_time=verification_time.astimezone(timezone.utc),
+                    require_highest=False,
+                )
             entry = self._select_entry(registry, pack_id, version)
             if entry["sha256"] != installed.get("archive_sha256"):
                 raise PackManagerError(
@@ -1266,6 +1275,7 @@ class PackManager:
 
     def _activate(self, pack_id: str, version: str, archive_sha256: str) -> None:
         _fsync_tree(self.paths.store / pack_id / version)
+        _fsync_directory(self.paths.store)
         state, old_raw = self._load_active()
         new_state = {
             "schema_version": "1.0",
