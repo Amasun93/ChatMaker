@@ -34,9 +34,7 @@ Compilation, firmware upload, browser interaction, serial evidence, and physical
 
 ## Development preview
 
-The current public candidate is [`v0.1.0-rc3`](https://github.com/Amasun93/ChatMaker/releases/tag/v0.1.0-rc3); it includes the twelve-component learning pack, Chinese catalog search/get, ten compiled Nano examples, and the persistent serial tools introduced in rc2. See the [installation guide](docs/installation.md). Physical upload and effects still require separate on-site evidence.
-
-Public `main` is ahead of rc3 with an independent Uno adapter using `arduino:avr:uno` for Mind+ 1.x, `mindplus:avr:uno` for Mind+ 2.x, and a fixed 115200 upload rule. It does not reuse the Nano bootloader fallback.
+The current public candidate is [`v0.1.0-rc4`](https://github.com/Amasun93/ChatMaker/releases/tag/v0.1.0-rc4). It includes the twelve-component learning pack, Chinese catalog search/get, ten compiled Nano examples, and an independent Uno adapter using `arduino:avr:uno` for Mind+ 1.x, `mindplus:avr:uno` for Mind+ 2.x, and a fixed 115200 upload rule. See the [installation guide](docs/installation.md). Physical upload and effects still require separate on-site evidence.
 
 ```powershell
 git clone https://github.com/Amasun93/ChatMaker.git

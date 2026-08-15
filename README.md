@@ -108,14 +108,15 @@ Skill 负责告诉 AI 应该怎样判断、哪些技术事实不能猜、什么�
 | 常用模块、库和示例 | 首批已验证 | 12 种元器件、12 个配方通过资料校验；支持中文搜索与完整资料读取；10 个 Nano 示例和 1 个 Uno 示例真实编译 |
 | ChatWeb 生成和本地预览 | 部分验证 | 3 套方案推荐、单文件生成、课堂页、模拟硬件页和 localhost 预览已通过真实浏览器检查 |
 | Codex / WorkBuddy 安装 | 已验证 | 三个 Skill、配置备份、卸载恢复、18 个真实 stdio MCP 工具和 Nano/Uno Blink 编译烟测通过；宿主需重启后显示 |
-| 串口运行诊断 | 已实现待硬件 | WorkBuddy 6 个串口工具与 Codex JSONL 会话通过自动测试；当前无有线 Nano，真实日志待现场读取 |
+| 串口运行诊断 | 已实现待硬件 | WorkBuddy 6 个串口工具与 Codex JSONL 会话通过自动测试；当前无有线 Nano/Uno，真实日志待现场读取 |
 | v0.1.0-rc2 发布候选 | 已发布 | [GitHub 预发布](https://github.com/Amasun93/ChatMaker/releases/tag/v0.1.0-rc2)；rc1 继续保留，rc2 新增串口运行层 |
 | v0.1.0-rc3 发布候选 | 已发布 | [GitHub 预发布](https://github.com/Amasun93/ChatMaker/releases/tag/v0.1.0-rc3)；包含 12 种模块、11 个配方、10 个编译示例和中文资料目录入口 |
+| v0.1.0-rc4 发布候选 | 已发布 | [GitHub 预发布](https://github.com/Amasun93/ChatMaker/releases/tag/v0.1.0-rc4)；新增独立 Uno 适配器、12 个配方、11 个 AVR 编译示例和 18 个 WorkBuddy 工具 |
 | 不依赖 Mind+ 的环境 | 下一阶段 | 尚未实现 |
 
 ## 开发预览
 
-当前公开版本为 [`v0.1.0-rc3`](https://github.com/Amasun93/ChatMaker/releases/tag/v0.1.0-rc3) 发布候选。公开 `main` 已在 rc3 基础上新增 Uno 独立适配器；下一份候选包会包含这项能力。Nano/Uno 编译、中文模块资料查询、串口诊断与网页创作可以用于培训试运行；真实开发板烧录和实物效果仍需在现场单独验收。
+当前公开版本为 [`v0.1.0-rc4`](https://github.com/Amasun93/ChatMaker/releases/tag/v0.1.0-rc4) 发布候选。它已经包含独立的 Uno 适配器、Nano/Uno 编译、中文模块资料查询、串口诊断与网页创作能力，可用于有人带领的培训试运行；真实开发板烧录和实物效果仍需在现场单独验收。
 
 完整安装、卸载和恢复说明见 [安装说明](docs/installation.md)。
 
