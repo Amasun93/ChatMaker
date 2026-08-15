@@ -1,0 +1,92 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: https://chatmaker.dev/schemas/llmwiki-index.schema.yaml
+title: ChatMaker compact LLMWiki board index
+type: object
+required: [schema_version, kind, board_id, max_section_bytes, sections]
+additionalProperties: false
+properties:
+  schema_version: {const: "1.0"}
+  kind: {const: llmwiki-index}
+  board_id:
+    enum: [arduino-nano-classic, arduino-uno-r3, esp32-devkit-v1]
+  max_section_bytes: {const: 65536}
+  sections:
+    type: array
+    minItems: 8
+    maxItems: 8
+    items:
+      type: object
+      required: [section_id, title, summary, consumers, topics, pack_id]
+      additionalProperties: false
+      properties:
+        section_id:
+          enum:
+            - start-here
+            - identify-and-safety
+            - pins-and-electrical
+            - toolchains-and-upload
+            - components-and-wiring
+            - libraries-and-examples
+            - web-and-protocol
+            - troubleshooting
+        title: {type: string, minLength: 1, maxLength: 120}
+        summary: {type: string, minLength: 1, maxLength: 280}
+        consumers:
+          type: array
+          minItems: 1
+          uniqueItems: true
+          items: {enum: [chatmaker, chatduino, chatweb]}
+        topics:
+          type: array
+          minItems: 1
+          uniqueItems: true
+          items: {type: string, pattern: "^[a-z0-9][a-z0-9-]*$"}
+        pack_id:
+          enum:
+            - chatmaker-board-arduino-nano-classic-wiki
+            - chatmaker-board-arduino-uno-r3-wiki
+            - chatmaker-board-esp32-devkit-v1-wiki
+    allOf:
+      - contains: {type: object, properties: {section_id: {const: start-here}}, required: [section_id]}
+        minContains: 1
+        maxContains: 1
+      - contains: {type: object, properties: {section_id: {const: identify-and-safety}}, required: [section_id]}
+        minContains: 1
+        maxContains: 1
+      - contains: {type: object, properties: {section_id: {const: pins-and-electrical}}, required: [section_id]}
+        minContains: 1
+        maxContains: 1
+      - contains: {type: object, properties: {section_id: {const: toolchains-and-upload}}, required: [section_id]}
+        minContains: 1
+        maxContains: 1
+      - contains: {type: object, properties: {section_id: {const: components-and-wiring}}, required: [section_id]}
+        minContains: 1
+        maxContains: 1
+      - contains: {type: object, properties: {section_id: {const: libraries-and-examples}}, required: [section_id]}
+        minContains: 1
+        maxContains: 1
+      - contains: {type: object, properties: {section_id: {const: web-and-protocol}}, required: [section_id]}
+        minContains: 1
+        maxContains: 1
+      - contains: {type: object, properties: {section_id: {const: troubleshooting}}, required: [section_id]}
+        minContains: 1
+        maxContains: 1
+allOf:
+  - if: {properties: {board_id: {const: arduino-nano-classic}}}
+    then:
+      properties:
+        sections:
+          items:
+            properties: {pack_id: {const: chatmaker-board-arduino-nano-classic-wiki}}
+  - if: {properties: {board_id: {const: arduino-uno-r3}}}
+    then:
+      properties:
+        sections:
+          items:
+            properties: {pack_id: {const: chatmaker-board-arduino-uno-r3-wiki}}
+  - if: {properties: {board_id: {const: esp32-devkit-v1}}}
+    then:
+      properties:
+        sections:
+          items:
+            properties: {pack_id: {const: chatmaker-board-esp32-devkit-v1-wiki}}

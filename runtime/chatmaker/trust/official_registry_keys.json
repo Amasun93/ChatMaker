@@ -1,0 +1,16 @@
+{
+  "schema_version": "1.0",
+  "registry_url": "https://raw.githubusercontent.com/Amasun93/ChatMaker/main/distribution/registry/registry.json",
+  "signature_url": "https://raw.githubusercontent.com/Amasun93/ChatMaker/main/distribution/registry/registry.sig.json",
+  "keys": [
+    {
+      "key_id": "chatmaker-official-2026-01",
+      "algorithm": "ed25519",
+      "public_key_base64": "ibJcQjKeXe/5ZmIaEV9HmIO3j9PbVhDzSlYA9Oj9Hak=",
+      "fingerprint_sha256": "70570b179cf452abcc7486f76a408a25faee3702433663e99b7418498d725f67",
+      "status": "active",
+      "not_before": "2026-08-16T00:00:00Z",
+      "not_after": null
+    }
+  ]
+}
