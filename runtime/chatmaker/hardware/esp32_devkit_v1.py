@@ -26,9 +26,10 @@ ESP32_PACKAGE_INDEX_URL = "https://espressif.github.io/arduino-esp32/package_esp
 PROCESS_TREE_CLEANUP_TIMEOUT = 5.0
 
 
-def _wait_for_process_exit(process, wait_timeout: float) -> None:
+def _wait_for_process_exit(process, wait_timeout: float) -> bool:
     try:
         process.wait(timeout=wait_timeout)
+        return True
     except subprocess.TimeoutExpired:
         try:
             process.kill()
@@ -36,8 +37,38 @@ def _wait_for_process_exit(process, wait_timeout: float) -> None:
             pass
         try:
             process.wait(timeout=wait_timeout)
+            return True
         except (OSError, subprocess.TimeoutExpired):
-            pass
+            return False
+    except OSError:
+        return False
+
+
+def _text_output(value: Any) -> str:
+    if value is None:
+        return ""
+    if isinstance(value, bytes):
+        return value.decode("utf-8", errors="replace")
+    return str(value)
+
+
+def _drain_process_output(
+    process,
+    timeout_error: subprocess.TimeoutExpired,
+    wait_timeout: float,
+) -> tuple[str, str]:
+    try:
+        stdout, stderr = process.communicate(timeout=wait_timeout)
+        return _text_output(stdout), _text_output(stderr)
+    except (OSError, subprocess.TimeoutExpired):
+        for stream_name in ("stdout", "stderr"):
+            stream = getattr(process, stream_name, None)
+            if stream is not None:
+                try:
+                    stream.close()
+                except OSError:
+                    pass
+        return _text_output(timeout_error.output), _text_output(timeout_error.stderr)
 
 
 def _terminate_process_tree(
@@ -46,7 +77,8 @@ def _terminate_process_tree(
     platform: str = os.name,
     taskkill_runner=None,
     wait_timeout: float = PROCESS_TREE_CLEANUP_TIMEOUT,
-) -> None:
+) -> bool:
+    tree_signal_sent = False
     if platform == "nt":
         runner = taskkill_runner or subprocess.run
         try:
@@ -57,7 +89,9 @@ def _terminate_process_tree(
                 timeout=wait_timeout,
                 check=False,
             )
-            if completed.returncode != 0:
+            if completed.returncode == 0:
+                tree_signal_sent = True
+            else:
                 process.kill()
         except (OSError, subprocess.TimeoutExpired):
             try:
@@ -67,12 +101,14 @@ def _terminate_process_tree(
     else:
         try:
             os.killpg(os.getpgid(process.pid), signal.SIGKILL)
+            tree_signal_sent = True
         except OSError:
             try:
                 process.kill()
             except OSError:
                 pass
-    _wait_for_process_exit(process, wait_timeout)
+    process_exited = _wait_for_process_exit(process, wait_timeout)
+    return tree_signal_sent and process_exited
 
 
 def _run(command: list[str], timeout: int = 30) -> dict[str, Any]:
@@ -96,13 +132,21 @@ def _run(command: list[str], timeout: int = 30) -> dict[str, Any]:
         try:
             stdout, stderr = process.communicate(timeout=timeout)
         except subprocess.TimeoutExpired as exc:
-            _terminate_process_tree(process)
+            process_tree_terminated = _terminate_process_tree(process)
+            stdout, stderr = _drain_process_output(
+                process, exc, PROCESS_TREE_CLEANUP_TIMEOUT
+            )
+            timeout_diagnostic = f"{type(exc).__name__}: {exc}"
+            stderr = "\n".join(
+                part for part in (stderr.strip(), timeout_diagnostic) if part
+            )
             return {
                 "command": command,
                 "returncode": None,
-                "stdout": "",
-                "stderr": f"{type(exc).__name__}: {exc}",
+                "stdout": stdout,
+                "stderr": stderr,
                 "timed_out": True,
+                "process_tree_terminated": process_tree_terminated,
             }
         return {
             "command": command,
@@ -211,6 +255,9 @@ def _execution_summary(execution: dict[str, Any]) -> dict[str, Any]:
     }
     if execution.get("command"):
         summary["command"] = execution["command"]
+    for key in ("timed_out", "process_tree_terminated"):
+        if key in execution:
+            summary[key] = execution[key]
     return summary
 
 

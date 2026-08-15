@@ -28,56 +28,47 @@ def load_builder():
 class ReleasePackageTests(unittest.TestCase):
     def test_release_zip_excludes_esp32_runtime_cache_directories(self):
         builder = load_builder()
-        build_sentinel = (
-            ROOT
-            / "examples"
-            / "chatduino"
-            / "esp32"
-            / ".chatmaker-esp32-builds"
-            / "release-test-sentinel"
-            / "should-not-ship.txt"
-        )
-        cache_sentinel = (
-            ROOT
-            / "examples"
-            / "chatduino"
-            / "esp32"
-            / ".chatmaker-esp32-cache"
-            / "release-test-sentinel"
-            / "should-not-ship.txt"
-        )
+        with tempfile.TemporaryDirectory() as directory:
+            fixture_root = Path(directory) / "source"
+            esp32_root = fixture_root / "examples" / "chatduino" / "esp32"
+            included = esp32_root / "blink" / "blink.ino"
+            build_sentinel = (
+                esp32_root
+                / ".chatmaker-esp32-builds"
+                / "release-test-sentinel"
+                / "should-not-ship.txt"
+            )
+            cache_sentinel = (
+                esp32_root
+                / ".chatmaker-esp32-cache"
+                / "release-test-sentinel"
+                / "should-not-ship.txt"
+            )
 
-        try:
+            included.parent.mkdir(parents=True, exist_ok=True)
             build_sentinel.parent.mkdir(parents=True, exist_ok=True)
             cache_sentinel.parent.mkdir(parents=True, exist_ok=True)
+            included.write_text("void setup() {}", encoding="utf-8")
             build_sentinel.write_text("build sentinel", encoding="utf-8")
             cache_sentinel.write_text("cache sentinel", encoding="utf-8")
 
-            with tempfile.TemporaryDirectory() as directory:
-                result = builder.build_release(ROOT, Path(directory), RELEASE_VERSION)
-                with zipfile.ZipFile(result["archive"]) as archive:
-                    names = set(archive.namelist())
-        finally:
-            if build_sentinel.exists():
-                build_sentinel.unlink()
-            if cache_sentinel.exists():
-                cache_sentinel.unlink()
-            for directory in (
-                build_sentinel.parent,
-                build_sentinel.parent.parent,
-                cache_sentinel.parent,
-                cache_sentinel.parent.parent,
-            ):
-                if directory.exists():
-                    directory.rmdir()
+            result = builder.build_release(
+                fixture_root, Path(directory) / "output", RELEASE_VERSION
+            )
+            with zipfile.ZipFile(result["archive"]) as archive:
+                names = set(archive.namelist())
 
         prefix = f"ChatMaker-{RELEASE_VERSION}/examples/chatduino/esp32/"
-        self.assertNotIn(
-            prefix + ".chatmaker-esp32-builds/release-test-sentinel/should-not-ship.txt",
-            names,
-        )
-        self.assertNotIn(
-            prefix + ".chatmaker-esp32-cache/release-test-sentinel/should-not-ship.txt",
+        self.assertIn(prefix + "blink/blink.ino", names)
+        self.assertFalse(
+            any(
+                cache_part in Path(name).parts
+                for name in names
+                for cache_part in (
+                    ".chatmaker-esp32-builds",
+                    ".chatmaker-esp32-cache",
+                )
+            ),
             names,
         )
 

@@ -71,10 +71,16 @@ class Esp32DevKitV1Tests(unittest.TestCase):
 
     def test_run_timeout_is_explicit(self):
         process = FakePopen(timeout_once=True)
-        with mock.patch.object(self.adapter.subprocess, "Popen", return_value=process):
+        with (
+            mock.patch.object(self.adapter.subprocess, "Popen", return_value=process),
+            mock.patch.object(
+                self.adapter, "_terminate_process_tree", return_value=True
+            ),
+        ):
             result = self.adapter._run(["arduino-cli", "compile"], timeout=1)
 
         self.assertIs(result.get("timed_out"), True)
+        self.assertIs(result.get("process_tree_terminated"), True)
 
     def test_run_timeout_invokes_process_tree_cleanup(self):
         process = FakePopen(timeout_once=True)
@@ -96,7 +102,7 @@ class Esp32DevKitV1Tests(unittest.TestCase):
             taskkill_calls.append((command, kwargs))
             return self.adapter.subprocess.CompletedProcess(command, 0, "", "")
 
-        cleanup(
+        terminated = cleanup(
             process,
             platform="nt",
             taskkill_runner=taskkill_runner,
@@ -118,6 +124,80 @@ class Esp32DevKitV1Tests(unittest.TestCase):
             ],
         )
         self.assertEqual(process.wait_calls, [2.0])
+        self.assertIs(terminated, True)
+
+    def test_windows_process_tree_cleanup_reports_incomplete_when_taskkill_fails(self):
+        process = FakePopen()
+
+        def taskkill_runner(command, **kwargs):
+            return self.adapter.subprocess.CompletedProcess(command, 1, "", "denied")
+
+        terminated = self.adapter._terminate_process_tree(
+            process,
+            platform="nt",
+            taskkill_runner=taskkill_runner,
+            wait_timeout=2.0,
+        )
+
+        self.assertIs(terminated, False)
+        self.assertEqual(process.kill_calls, 1)
+        self.assertEqual(process.wait_calls, [2.0])
+
+    def test_posix_process_tree_cleanup_uses_killpg_and_waits(self):
+        process = FakePopen()
+        with (
+            mock.patch.object(
+                self.adapter.os, "getpgid", return_value=4242, create=True
+            ) as getpgid,
+            mock.patch.object(self.adapter.os, "killpg", create=True) as killpg,
+            mock.patch.object(self.adapter.signal, "SIGKILL", 9, create=True),
+        ):
+            terminated = self.adapter._terminate_process_tree(
+                process,
+                platform="posix",
+                wait_timeout=2.0,
+            )
+
+        getpgid.assert_called_once_with(4242)
+        killpg.assert_called_once_with(4242, 9)
+        self.assertEqual(process.wait_calls, [2.0])
+        self.assertIs(terminated, True)
+
+    def test_execution_summary_preserves_timeout_cleanup_state(self):
+        summary = self.adapter._execution_summary(
+            {
+                "command": ["arduino-cli", "core", "list"],
+                "returncode": None,
+                "stdout": "",
+                "stderr": "TimeoutExpired",
+                "timed_out": True,
+                "process_tree_terminated": False,
+            }
+        )
+
+        self.assertIs(summary["timed_out"], True)
+        self.assertIs(summary["process_tree_terminated"], False)
+
+    def test_prepare_environment_surfaces_probe_timeout_state(self):
+        def runner(command, timeout):
+            return {
+                "returncode": None,
+                "stdout": "",
+                "stderr": "TimeoutExpired",
+                "timed_out": True,
+                "process_tree_terminated": True,
+            }
+
+        result = self.adapter.execute_request(
+            {"action": "prepare-environment"},
+            candidates=[{"backend": "arduino-ide-cli", "cli": "arduino-cli"}],
+            ports=[],
+            runner=runner,
+        )
+
+        execution = result["probe_before"][0]["core_execution"]
+        self.assertIs(execution["timed_out"], True)
+        self.assertIs(execution["process_tree_terminated"], True)
 
     def test_run_oserror_is_not_labeled_as_timeout(self):
         with mock.patch.object(
