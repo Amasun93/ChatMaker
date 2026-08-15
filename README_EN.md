@@ -32,11 +32,11 @@ Skills guide judgment and define facts that must not be guessed. Scripts and run
 
 Compilation, firmware upload, browser interaction, serial evidence, and physical effects remain separate completion gates.
 
-## rc5 local candidate
+## rc5 public prerelease
 
-The public release remains [`v0.1.0-rc4`](https://github.com/Amasun93/ChatMaker/releases/tag/v0.1.0-rc4). rc1, rc2, rc3, and rc4 remain historical releases with their original artifacts and verification records. rc5 is only a locally built candidate until commit, push, CI, tag, GitHub prerelease, and asset visibility have each been confirmed.
+The current public prerelease is [`v0.1.0-rc5`](https://github.com/Amasun93/ChatMaker/releases/tag/v0.1.0-rc5). rc1, rc2, rc3, and rc4 remain historical releases with their original artifacts and verification records.
 
-Therefore, cloning public `main` does not obtain this unpushed rc5 candidate. Only reviewers who have received the local rc5 ZIP and `.sha256` from the maintainer should install it with the sequence below; everyone else should continue using public rc4.
+Users can download the rc5 ZIP and matching `.sha256` from GitHub Releases, verify the archive, and then install it. Public `main` contains the current source. Neither route turns software tests or compilation into evidence of real upload, serial, network, or physical behavior.
 
 rc5 contains fourteen recipes and a WorkBuddy stdio server `1.7.0` with 23 tools: 2 catalog tools, 5 Nano tools, 5 Uno tools, 5 ESP32 tools, and 6 serial tools. `chatmaker-route` performs executable hardware/web/combined routing. `chatmaker-web-plan` asks at most two load-bearing questions or returns two or three curated directions; expanded directions and `chatmaker-web-playground` require explicit `--advanced`. Real Chromium automation covers the classroom, simulated-hardware, ESP32 AP, and advanced-playground pages.
 

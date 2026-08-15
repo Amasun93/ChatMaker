@@ -118,14 +118,14 @@ Skill 负责告诉 AI 应该怎样判断、哪些技术事实不能猜、什么�
 | v0.1.0-rc2 发布候选 | 已发布 | [GitHub 预发布](https://github.com/Amasun93/ChatMaker/releases/tag/v0.1.0-rc2)；rc1 继续保留，rc2 新增串口运行层 |
 | v0.1.0-rc3 发布候选 | 已发布 | [GitHub 预发布](https://github.com/Amasun93/ChatMaker/releases/tag/v0.1.0-rc3)；包含 12 种模块、11 个配方、10 个编译示例和中文资料目录入口 |
 | v0.1.0-rc4 发布候选 | 已发布 | [GitHub 预发布](https://github.com/Amasun93/ChatMaker/releases/tag/v0.1.0-rc4)；新增独立 Uno 适配器、12 个配方、11 个 AVR 编译示例和 18 个 WorkBuddy 工具 |
-| v0.1.0-rc5 发布候选 | 本地候选，未发布 | 当前源码候选；必须分别确认提交、推送、CI、标签、GitHub prerelease 和资产后，才能改为“已发布” |
+| v0.1.0-rc5 发布候选 | 已发布 | [GitHub 预发布](https://github.com/Amasun93/ChatMaker/releases/tag/v0.1.0-rc5)；193 项 Python 测试、4 项 Chromium 自动化、双 ZIP 确定性构建和下载哈希已验证，实物硬件门仍保持未验证 |
 | 不依赖 Mind+ 的环境 | 下一阶段 | 尚未实现 |
 
-## rc5 本地候选
+## rc5 公开预发布版
 
-当前公开版本仍为 [`v0.1.0-rc4`](https://github.com/Amasun93/ChatMaker/releases/tag/v0.1.0-rc4)。rc5 只是在本地构建和验证的候选；它还不是 GitHub 发布。
+当前公开预发布版是 [`v0.1.0-rc5`](https://github.com/Amasun93/ChatMaker/releases/tag/v0.1.0-rc5)。rc1、rc2、rc3 和 rc4 继续保留各自的历史产物与当时验证记录。
 
-因此，从公开 `main` 执行 `git clone` 得到的不是这份尚未推送的 rc5 候选。只有已经从维护者处取得本地 rc5 ZIP 和 `.sha256` 的审阅者，才应按下面步骤安装；其他用户继续使用公开 rc4。
+用户可以从 GitHub Release 下载 rc5 ZIP 与同名 `.sha256`，先校验哈希再安装；也可以从公开 `main` 获取当前源码。两种方式都不能把软件测试或编译结果写成真实烧录、串口、网络或物理效果成功。
 
 rc5 新增受控 ESP32 环境准备（只安装官方 `esp32:esp32@3.3.11`）、可执行项目路由、创意简报规划、显式高级游乐场和四页 Chromium 自动化。Nano/Uno 继续使用 Mind+；ESP32 只使用官方 Arduino CLI 和精确 DOIT FQBN。完整安装、命令、前置条件和卸载恢复说明见 [安装说明](docs/installation.md)。
 
