@@ -46,6 +46,23 @@ def _has_contract_interaction(contract: Any) -> bool:
     return False
 
 
+def chatweb_llmwiki_requests_for_intent(
+    request: dict[str, Any],
+    *,
+    board_id: str,
+) -> list[dict[str, str]]:
+    if not _has_web_intent(request) or not _has_hardware_intent(request):
+        return []
+    return [
+        {
+            "action": "section",
+            "board_id": board_id,
+            "consumer": "chatweb",
+            "section_id": "web-and-protocol",
+        }
+    ]
+
+
 def route_project_intent(request: dict[str, Any]) -> dict[str, Any]:
     has_hardware = _has_hardware_intent(request)
     has_web = _has_web_intent(request)

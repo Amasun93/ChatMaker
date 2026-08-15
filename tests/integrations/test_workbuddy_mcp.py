@@ -85,10 +85,12 @@ class WorkBuddyBridgeTests(unittest.TestCase):
         )
 
         instructions = response["result"]["instructions"]
+        self.assertIn("catalog_search/get", instructions)
         self.assertIn("esp32_compile_upload", instructions)
         self.assertIn("唯一非蓝牙有线端口", instructions)
         self.assertIn("HTTP", instructions)
         self.assertIn("llmwiki_get", instructions)
+        self.assertIn("start-here", instructions)
 
     def test_llmwiki_get_routes_index_or_section_to_shared_reader(self):
         original = self.server.llmwiki.execute_request
@@ -365,9 +367,15 @@ class WorkBuddyBridgeTests(unittest.TestCase):
             config.parent.mkdir(parents=True)
             original = {"mcpServers": {"existing": {"command": "keep-me"}}}
             config.write_text(json.dumps(original), encoding="utf-8")
+            (workbuddy_home / "host-settings.json").write_text(
+                json.dumps({"theme": "kept"}), encoding="utf-8"
+            )
             old_chatweb = workbuddy_home / "skills" / "chatweb"
             old_chatweb.mkdir(parents=True)
             (old_chatweb / "old-marker.txt").write_text("restore me", encoding="utf-8")
+            unrelated = workbuddy_home / "skills" / "teacher-helper"
+            unrelated.mkdir(parents=True)
+            (unrelated / "SKILL.md").write_text("---\nname: teacher-helper\n---\n", encoding="utf-8")
 
             try:
                 installed = self.installer.install(
@@ -379,8 +387,27 @@ class WorkBuddyBridgeTests(unittest.TestCase):
                 self.fail(f"WorkBuddy installer does not support Skill installation: {exc}")
 
             self.assertTrue(installed["success"])
+            self.assertEqual(installed["installed_skills"], ["chatmaker", "chatduino", "chatweb"])
             self.assertTrue((workbuddy_home / "skills" / "chatmaker" / "SKILL.md").is_file())
+            operation_manifest = json.loads(
+                Path(installed["manifest"]).read_text(encoding="utf-8")
+            )
+            installed_skill_names = {
+                entry["name"]
+                for entry in json.loads(
+                    Path(operation_manifest["skill_manifest"]).read_text(encoding="utf-8")
+                )["entries"]
+            }
+            self.assertEqual(installed_skill_names, {"chatmaker", "chatduino", "chatweb"})
+            self.assertEqual(
+                {path.name for path in (workbuddy_home / "skills").iterdir()},
+                {"chatmaker", "chatduino", "chatweb", "teacher-helper"},
+            )
             self.assertTrue(Path(installed["manifest"]).is_file())
+            self.assertEqual(
+                json.loads((workbuddy_home / "host-settings.json").read_text(encoding="utf-8")),
+                {"theme": "kept"},
+            )
 
             removed = self.installer.uninstall(config)
             restored_config = json.loads(config.read_text(encoding="utf-8"))
@@ -388,10 +415,15 @@ class WorkBuddyBridgeTests(unittest.TestCase):
             self.assertTrue(removed["success"])
             self.assertEqual(restored_config, original)
             self.assertEqual(
+                json.loads((workbuddy_home / "host-settings.json").read_text(encoding="utf-8")),
+                {"theme": "kept"},
+            )
+            self.assertEqual(
                 (old_chatweb / "old-marker.txt").read_text(encoding="utf-8"),
                 "restore me",
             )
             self.assertFalse((workbuddy_home / "skills" / "chatmaker").exists())
+            self.assertTrue((workbuddy_home / "skills" / "teacher-helper" / "SKILL.md").is_file())
 
 
 if __name__ == "__main__":
