@@ -96,13 +96,13 @@ Skill 负责告诉 AI 应该怎样判断、哪些技术事实不能猜、什么�
 
 这套结构让 AI 保留判断能力，同时在接线安全、端口选择、编译烧录和完成状态上受到明确约束。
 
-完整设计见 [ChatMaker 创作伙伴设计](docs/plans/2026-08-14-chatmaker-creative-partner-design.md)。
+完整设计见 [ChatMaker 创作伙伴设计](https://github.com/Amasun93/ChatMaker/blob/main/docs/plans/2026-08-14-chatmaker-creative-partner-design.md)。
 
 ## 板卡知识怎样按需出现
 
 Core 首次安装只带运行层、ChatMaker / ChatDuino / ChatWeb 三个 Skill、3 块板卡、12 种元器件、14 个配方、紧凑索引、schema 和当前案例，不带详细 Wiki 正文。这样基础安装更小，也不会把知识工作区、测试或构建缓存交给普通用户。
 
-当 AI 第一次读取某块板卡的详细章节时，`chatmaker-llmwiki` 默认执行一次自动安装：它从官方签名注册表找到精确版本，核对签名、下载地址、长度、SHA-256 和包内文件后才激活。再次读取直接复用；离线时可以继续使用已经验证并缓存的版本。这个自动动作只安装被动知识页，不会安装驱动、Mind+、Arduino Core、Node、Chromium，不会修改 PATH，也不会改 Codex / WorkBuddy 配置或请求管理员权限。
+当 AI 第一次读取某块板卡的详细章节时，`chatmaker-llmwiki` 默认执行一次自动安装：它从官方签名注册表找到精确版本，核对签名、下载地址、长度、SHA-256 和包内文件后才激活。再次读取直接复用；已安装版本可以离线重校验后继续读取，但缓存只有在签名 receipt 未过期时才能授权新的离线安装。这个自动动作只安装被动知识页，不会安装驱动、Mind+、Arduino Core、Node、Chromium，不会修改 PATH，也不会改 Codex / WorkBuddy 配置或请求管理员权限。
 
 ```powershell
 chatmaker-llmwiki --request-json '{"action":"section","board_id":"arduino-nano-classic","consumer":"chatduino","section_id":"identify-and-safety"}'
@@ -192,7 +192,7 @@ docs/         设计、路线和贡献说明
 5. 开发不依赖 Mind+ 的独立工具链和驱动诊断。
 6. 完成 Codex、WorkBuddy 安装器和公开发布包。
 
-详细路线见 [中文说明版](docs/plans/2026-08-14-chatmaker-v0.1-中文说明版.md) 和 [技术实施计划](docs/plans/2026-08-14-chatmaker-v0.1-implementation.md)。
+详细路线见 [中文说明版](https://github.com/Amasun93/ChatMaker/blob/main/docs/plans/2026-08-14-chatmaker-v0.1-%E4%B8%AD%E6%96%87%E8%AF%B4%E6%98%8E%E7%89%88.md) 和 [技术实施计划](https://github.com/Amasun93/ChatMaker/blob/main/docs/plans/2026-08-14-chatmaker-v0.1-implementation.md)。
 
 ## License
 

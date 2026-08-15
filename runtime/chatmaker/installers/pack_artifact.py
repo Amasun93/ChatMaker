@@ -7,12 +7,20 @@ import io
 import json
 import os
 import re
+import shutil
 import stat
+import tempfile
 import zipfile
 from pathlib import Path, PurePosixPath
 from typing import Any, BinaryIO, Mapping
 
 import jsonschema
+
+from ..llmwiki_semantics import (
+    LLMWikiSemanticError,
+    MAX_BODY_BYTES,
+    validate_pack_payload,
+)
 
 
 _REPO_ROOT = Path(__file__).resolve().parents[3]
@@ -31,8 +39,8 @@ _RESERVED_WINDOWS_NAMES = {
 }
 
 DEFAULT_MAX_FILES = 66
-DEFAULT_MAX_SINGLE_FILE_BYTES = 65_536
-DEFAULT_MAX_TOTAL_BYTES = 65 * 65_536 + 65_536
+DEFAULT_MAX_SINGLE_FILE_BYTES = MAX_BODY_BYTES + 4_096
+DEFAULT_MAX_TOTAL_BYTES = 65 * DEFAULT_MAX_SINGLE_FILE_BYTES + 65_536
 _ZIP_TIMESTAMP = (1980, 1, 1, 0, 0, 0)
 _ZIP_MODE = stat.S_IFREG | 0o644
 _WINDOWS_REPARSE_POINT = 0x400
@@ -194,6 +202,21 @@ def _source_files(source_dir: Path) -> list[tuple[str, bytes]]:
     return files
 
 
+def _validate_llmwiki_payload(
+    files: Mapping[str, bytes], *, board_id: str, pack_id: str
+) -> dict[str, Any]:
+    try:
+        return validate_pack_payload(
+            files,
+            expected_board_id=board_id,
+            expected_pack_id=pack_id,
+        )
+    except LLMWikiSemanticError as exc:
+        raise PackArtifactError(
+            "pack_content_invalid", reason=exc.reason, path=exc.path
+        ) from exc
+
+
 def build_pack(
     source_dir: Path | str,
     output_path: Path | str,
@@ -208,6 +231,9 @@ def build_pack(
 
     try:
         files = _source_files(Path(source_dir))
+        _validate_llmwiki_payload(
+            dict(files), board_id=board_id, pack_id=pack_id
+        )
         manifest = {
             "schema_version": "1.0",
             "format_version": 1,
@@ -356,6 +382,7 @@ def validate_pack_archive(
         if names != expected_order:
             raise PackArtifactError("pack_manifest_invalid", reason="archive_entries_mismatch")
         info_by_name = {info.filename: info for info in infos}
+        payload: dict[str, bytes] = {}
         for item in manifest["files"]:
             path = item["path"]
             if _PAYLOAD_PATTERN.fullmatch(path) is None:
@@ -377,11 +404,17 @@ def validate_pack_archive(
                 raise PackArtifactError(
                     "pack_content_invalid", reason="payload_hash_mismatch", path=path
                 )
+            payload[path] = data
         _validate_compatibility(
             manifest,
             core_version=core_version,
             pack_manifest_schema=pack_manifest_schema,
             llmwiki_index_schema=llmwiki_index_schema,
+        )
+        _validate_llmwiki_payload(
+            payload,
+            board_id=manifest["board_id"],
+            pack_id=manifest["pack_id"],
         )
         return manifest
     except PackArtifactError:
@@ -447,6 +480,7 @@ def validate_staging(staging_dir: Path | str, manifest: Mapping[str, Any]) -> Ma
         manifest_path = root / "pack-manifest.json"
         if manifest_path.read_bytes() != _canonical_json(manifest):
             raise PackArtifactError("pack_content_invalid", reason="staging_manifest_mismatch")
+        payload: dict[str, bytes] = {}
         for item in manifest["files"]:
             data = (root / PurePosixPath(item["path"])).read_bytes()
             if (
@@ -458,6 +492,12 @@ def validate_staging(staging_dir: Path | str, manifest: Mapping[str, Any]) -> Ma
                     reason="staging_payload_mismatch",
                     path=item["path"],
                 )
+            payload[item["path"]] = data
+        _validate_llmwiki_payload(
+            payload,
+            board_id=manifest["board_id"],
+            pack_id=manifest["pack_id"],
+        )
     except OSError as exc:
         raise PackArtifactError("pack_content_invalid", reason="staging_read_failed") from exc
     return manifest
@@ -467,6 +507,32 @@ def validate_pack_manifest(manifest: Mapping[str, Any]) -> Mapping[str, Any]:
     """Validate canonical manifest structure without reading payload bytes."""
 
     return _validate_manifest(dict(manifest))
+
+
+def staging_archive_sha256(
+    staging_dir: Path | str, manifest: Mapping[str, Any]
+) -> str:
+    """Reconstruct the canonical archive identity from an already validated store."""
+
+    root = Path(staging_dir)
+    canonical_manifest = _validate_manifest(dict(manifest))
+    buffer = io.BytesIO()
+    try:
+        with zipfile.ZipFile(buffer, "w", compression=zipfile.ZIP_STORED) as archive:
+            archive.comment = b""
+            archive.writestr(
+                _zip_info("pack-manifest.json"), _canonical_json(canonical_manifest)
+            )
+            for item in canonical_manifest["files"]:
+                archive.writestr(
+                    _zip_info(item["path"]),
+                    (root / PurePosixPath(item["path"])).read_bytes(),
+                )
+    except (OSError, zipfile.BadZipFile) as exc:
+        raise PackArtifactError(
+            "pack_content_invalid", reason="staging_archive_identity_failed"
+        ) from exc
+    return hashlib.sha256(buffer.getvalue()).hexdigest()
 
 
 def extract_validated_pack(
@@ -494,17 +560,28 @@ def extract_validated_pack(
         max_total_bytes=max_total_bytes,
     )
     destination = Path(staging_dir)
+    scratch: Path | None = None
     try:
+        _assert_safe_staging_root(destination.parent)
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        _assert_safe_staging_root(destination.parent)
         _assert_safe_staging_root(destination)
-        if destination.exists():
+        if os.path.lexists(destination):
+            _assert_safe_staging_root(destination)
             if not destination.is_dir():
                 raise PackArtifactError(
                     "pack_content_invalid", reason="staging_not_directory"
                 )
             if any(destination.iterdir()):
                 raise PackArtifactError("pack_content_invalid", reason="staging_not_empty")
-        destination.mkdir(parents=True, exist_ok=True)
-        _assert_safe_staging_root(destination)
+            destination.rmdir()
+        scratch = Path(
+            tempfile.mkdtemp(
+                prefix="chatmaker-pack-extract-",
+                dir=destination.parent,
+            )
+        )
+        _assert_safe_staging_root(scratch)
     except PackArtifactError:
         raise
     except OSError as exc:
@@ -514,18 +591,38 @@ def extract_validated_pack(
     try:
         archive, buffer = _open_archive(archive_bytes)
         for info in archive.infolist():
-            target = destination.joinpath(*PurePosixPath(info.filename).parts)
+            target = scratch.joinpath(*PurePosixPath(info.filename).parts)
             target.parent.mkdir(parents=True, exist_ok=True)
             target.write_bytes(archive.read(info))
     except (OSError, zipfile.BadZipFile) as exc:
+        if scratch is not None and scratch.exists():
+            shutil.rmtree(scratch, ignore_errors=True)
         raise PackArtifactError("pack_content_invalid", reason="staging_extract_failed") from exc
     finally:
         if archive is not None:
             archive.close()
         if buffer is not None:
             buffer.close()
-    validate_staging(destination, manifest)
-    return manifest
+    try:
+        validate_staging(scratch, manifest)
+        _assert_safe_staging_root(destination.parent)
+        if os.path.lexists(destination):
+            raise PackArtifactError(
+                "pack_archive_unsafe", reason="staging_link_or_reparse"
+            )
+        os.replace(scratch, destination)
+        scratch = None
+        validate_staging(destination, manifest)
+        return manifest
+    except PackArtifactError:
+        raise
+    except OSError as exc:
+        raise PackArtifactError(
+            "pack_content_invalid", reason="staging_extract_failed"
+        ) from exc
+    finally:
+        if scratch is not None and scratch.exists():
+            shutil.rmtree(scratch, ignore_errors=True)
 
 
 __all__ = [
@@ -535,6 +632,7 @@ __all__ = [
     "PackArtifactError",
     "build_pack",
     "extract_validated_pack",
+    "staging_archive_sha256",
     "validate_archive_path",
     "validate_pack_manifest",
     "validate_pack_archive",

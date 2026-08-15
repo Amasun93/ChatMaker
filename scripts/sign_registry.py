@@ -5,6 +5,7 @@ import base64
 import hashlib
 import json
 import os
+import subprocess
 import sys
 import tempfile
 from pathlib import Path
@@ -84,6 +85,45 @@ def _load_trust_store(path: Path) -> dict:
     return value
 
 
+def _registered_repository_paths(root: Path) -> set[Path]:
+    try:
+        worktrees = subprocess.run(
+            ["git", "-C", str(root), "worktree", "list", "--porcelain"],
+            check=True,
+            text=True,
+            capture_output=True,
+        ).stdout
+        common_value = subprocess.run(
+            ["git", "-C", str(root), "rev-parse", "--git-common-dir"],
+            check=True,
+            text=True,
+            capture_output=True,
+        ).stdout.strip()
+    except (OSError, subprocess.CalledProcessError) as exc:
+        raise SigningError("registered repository paths could not be verified") from exc
+    paths = {root.resolve()}
+    for line in worktrees.splitlines():
+        if line.startswith("worktree "):
+            paths.add(Path(line.removeprefix("worktree ")).resolve())
+    common = Path(common_value)
+    if not common.is_absolute():
+        common = root / common
+    paths.add(common.resolve())
+    return paths
+
+
+def _reject_private_key_in_repository(private_key_path: Path) -> None:
+    try:
+        candidate = private_key_path.resolve()
+    except OSError as exc:
+        raise SigningError("private key path could not be resolved") from exc
+    for boundary in _registered_repository_paths(ROOT):
+        if candidate == boundary or boundary in candidate.parents:
+            raise SigningError(
+                "private key must remain outside every registered worktree and common repository"
+            )
+
+
 def sign_registry(
     registry_path: Path,
     private_key_path: Path,
@@ -95,8 +135,7 @@ def sign_registry(
     _reject_output_input_collision(output_path, inputs)
     if not private_key_path.is_file():
         raise SigningError("private key path does not exist")
-    if ROOT == private_key_path.resolve() or ROOT in private_key_path.resolve().parents:
-        raise SigningError("private key must remain outside the repository")
+    _reject_private_key_in_repository(private_key_path)
     try:
         key_value = serialization.load_pem_private_key(
             private_key_path.read_bytes(), password=None

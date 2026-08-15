@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import importlib.util
 import json
+import re
 import subprocess
 import sys
 import tempfile
@@ -52,6 +53,9 @@ class ReleasePackageTests(unittest.TestCase):
             ),
         }
         self.assertEqual(registry["sequence"], 1)
+        generated_at = datetime.fromisoformat(registry["generated_at"].replace("Z", "+00:00"))
+        expires_at = datetime.fromisoformat(registry["expires_at"].replace("Z", "+00:00"))
+        self.assertLessEqual((expires_at - generated_at).days, 31)
         self.assertEqual(len(registry["packs"]), 3)
         for item in registry["packs"]:
             filename, length, digest = expected[item["pack_id"]]
@@ -89,6 +93,25 @@ class ReleasePackageTests(unittest.TestCase):
 
         prefix = f"ChatMaker-Core-{RELEASE_VERSION}/"
         self.assertFalse(any("knowledge_sources/" in name for name in names), names)
+
+    def test_core_readme_relative_links_resolve_inside_core(self):
+        builder = load_builder()
+        with tempfile.TemporaryDirectory() as directory:
+            result = builder.build_release(ROOT, Path(directory), RELEASE_VERSION)
+            prefix = f"ChatMaker-Core-{RELEASE_VERSION}/"
+            with zipfile.ZipFile(result["archive"]) as archive:
+                names = set(archive.namelist())
+                for readme_name in ("README.md", "README_EN.md"):
+                    text = archive.read(prefix + readme_name).decode("utf-8")
+                    for target in re.findall(r"\[[^]]+\]\(([^)]+)\)", text):
+                        if target.startswith(("https://", "http://", "#", "mailto:")):
+                            continue
+                        relative = target.split("#", 1)[0].replace("\\", "/")
+                        self.assertIn(
+                            prefix + relative,
+                            names,
+                            f"{readme_name} links to a file excluded from Core: {target}",
+                        )
 
     def test_release_zip_excludes_esp32_runtime_cache_directories(self):
         builder = load_builder()

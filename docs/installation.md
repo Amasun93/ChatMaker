@@ -66,13 +66,13 @@ chatmaker-pack update chatmaker-board-arduino-nano-classic-wiki
 chatmaker-pack rollback chatmaker-board-arduino-nano-classic-wiki --version 1.0.0
 ```
 
-- 离线时只能使用已验证的精确缓存或已安装版本；从未下载过的章节会明确返回缺包错误，不会猜内容。
+- 已安装并重新校验通过的版本可以继续离线读取。精确缓存只有在随附的签名注册表 receipt 仍处于有效期内时，才能授权一次新的离线安装；receipt 过期后缓存不能授权新安装。从未下载或已过期的缺包会明确报错，不会猜内容。
 - `update` 只接受注册表中的更高版本；失败时旧版本继续工作。`rollback` 只切换到本机已经完整验证的旧版本。
 - 默认用户数据在 `~/.chatmaker/` 的 cache、store、state 等分区。不要手动修改官方 store；漂移内容会被隔离。
 - 实验知识放在 `~/.chatmaker/overrides/`，或用 `CHATMAKER_PACKS_PATH` 指向独立目录。返回值会显示 `provenance=local_override`，避免把个人内容当成官方事实。
 - 运行这些内容命令不会写 Codex 或 WorkBuddy 配置。主机配置只有显式 host install/uninstall 才会改动，并继续使用备份恢复。
 
-- Offline mode can use only an exact verified cache or installed version; a never-downloaded section fails clearly instead of guessing.
+- An already installed version remains readable offline after full local revalidation. An exact cache can authorize a new offline install only while its signed registry receipt is still unexpired; an expired receipt cannot authorize a new install. Never-downloaded or expired missing content fails clearly instead of guessing.
 - `update` accepts only a newer registry version and preserves the old active version on failure. `rollback` selects only a previously verified local version.
 - User content lives under separated cache/store/state folders in `~/.chatmaker/`. Do not edit the official store by hand; drift is quarantined.
 - Put experiments under `~/.chatmaker/overrides/`, or point `CHATMAKER_PACKS_PATH` at a separate directory. Results remain labelled `provenance=local_override`.

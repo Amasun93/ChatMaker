@@ -7,10 +7,12 @@ import json
 import multiprocessing
 import os
 import shutil
+import subprocess
 import sys
 import tempfile
 import threading
 import unittest
+import zipfile
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 from pathlib import Path
@@ -31,12 +33,14 @@ try:
         FetchResponse,
         PackManager,
         PackManagerError,
+        StreamResponse,
     )
     from chatmaker.pack_cli import execute as execute_cli
 except ImportError:
     FetchResponse = None
     PackManager = None
     PackManagerError = None
+    StreamResponse = None
     execute_cli = None
 
 
@@ -48,6 +52,47 @@ REGISTRY_URL = (
 SIGNATURE_URL = REGISTRY_URL.replace("registry.json", "registry.sig.json")
 PACK_ID = "chatmaker-board-arduino-nano-classic-wiki"
 BOARD_ID = "arduino-nano-classic"
+SECTION_IDS = (
+    "start-here",
+    "identify-and-safety",
+    "pins-and-electrical",
+    "toolchains-and-upload",
+    "components-and-wiring",
+    "libraries-and-examples",
+    "web-and-protocol",
+    "troubleshooting",
+)
+
+
+def page(section_id: str, body: str) -> str:
+    return (
+        "---\n"
+        "schema_version: '1.0'\n"
+        "kind: llmwiki-page\n"
+        f"stable_id: {BOARD_ID}-{section_id}\n"
+        f"board_id: {BOARD_ID}\n"
+        f"section_id: {section_id}\n"
+        "source_refs:\n"
+        "  - source-arduino-nano-classic-documentation\n"
+        "---\n"
+        f"{body}"
+    )
+
+
+def create_junction(link: Path, target: Path) -> None:
+    completed = subprocess.run(
+        ["cmd.exe", "/d", "/c", "mklink", "/J", str(link), str(target)],
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    if completed.returncode != 0:
+        raise OSError(completed.stderr or completed.stdout)
+
+
+def remove_junction(path: Path) -> None:
+    if os.path.lexists(path):
+        os.rmdir(path)
 
 
 class MemoryTransport:
@@ -72,6 +117,28 @@ class MemoryTransport:
 class NoNetworkTransport:
     def fetch(self, url: str):
         raise AssertionError(f"offline operation attempted network access: {url}")
+
+
+class StreamingMemoryTransport(MemoryTransport):
+    def __init__(self) -> None:
+        super().__init__()
+        self.stream_calls: list[tuple[str, int]] = []
+
+    def fetch(self, url: str, **kwargs):
+        if url.endswith(".cmpack"):
+            raise AssertionError("pack archive used buffered fetch instead of fetch_to")
+        return super().fetch(url)
+
+    def fetch_to(self, url: str, sink, *, max_bytes: int):
+        with self._lock:
+            self.calls.append(url)
+            self.stream_calls.append((url, max_bytes))
+            response = self.responses[url]
+        if isinstance(response, BaseException):
+            raise response
+        data, final_url = response
+        sink.write(data)
+        return StreamResponse(length=len(data), final_url=final_url)
 
 
 def _crash_after_part_write(
@@ -137,12 +204,28 @@ class PackFixture:
             return self.archives[version]
         source = self.root / "sources" / version
         (source / "llmwiki" / "sections").mkdir(parents=True)
-        (source / "llmwiki" / "index.yaml").write_text(
-            "schema_version: '1.0'\n", encoding="utf-8"
+        (source / "llmwiki" / "index.yaml").write_bytes(
+            (ROOT / "packs" / "llmwiki" / "boards" / f"{BOARD_ID}.yaml").read_bytes()
         )
-        (source / "llmwiki" / "sections" / "start-here.md").write_text(
-            body or f"# Version {version}\n", encoding="utf-8"
-        )
+        for section_id in SECTION_IDS:
+            target = source / "llmwiki" / "sections" / f"{section_id}.md"
+            if section_id == "start-here":
+                target.write_text(
+                    page(section_id, body or f"# Version {version}\n"),
+                    encoding="utf-8",
+                    newline="\n",
+                )
+            else:
+                target.write_bytes(
+                    (
+                        ROOT
+                        / "knowledge_sources"
+                        / "published"
+                        / "boards"
+                        / BOARD_ID
+                        / f"{section_id}.md"
+                    ).read_bytes()
+                )
         output = self.root / "build" / f"{version}.cmpack"
         build_pack(
             source,
@@ -229,6 +312,32 @@ class PackFixture:
         kwargs.update(overrides)
         return PackManager(**kwargs)
 
+    def semantically_invalid_archive(self, version: str) -> bytes:
+        original = self.archive(version)
+        with zipfile.ZipFile(io.BytesIO(original), "r") as source:
+            entries = [(info, source.read(info)) for info in source.infolist()]
+        payloads = {info.filename: data for info, data in entries}
+        index_path = "llmwiki/index.yaml"
+        payloads[index_path] = payloads[index_path].replace(
+            b"board_id: arduino-nano-classic",
+            b"board_id: arduino-uno-r3",
+            1,
+        )
+        manifest = json.loads(payloads["pack-manifest.json"])
+        index_item = next(item for item in manifest["files"] if item["path"] == index_path)
+        index_item["length"] = len(payloads[index_path])
+        index_item["sha256"] = hashlib.sha256(payloads[index_path]).hexdigest()
+        payloads["pack-manifest.json"] = (
+            json.dumps(manifest, ensure_ascii=True, sort_keys=True, separators=(",", ":"))
+            + "\n"
+        ).encode("utf-8")
+        output = io.BytesIO()
+        with zipfile.ZipFile(output, "w", compression=zipfile.ZIP_STORED) as target:
+            target.comment = b""
+            for info, _ in entries:
+                target.writestr(info, payloads[info.filename])
+        return output.getvalue()
+
 
 class PackManagerTests(unittest.TestCase):
     def setUp(self) -> None:
@@ -283,6 +392,17 @@ class PackManagerTests(unittest.TestCase):
         self.assertTrue(manager.status(PACK_ID)["packs"][0]["verified"])
         self.assertEqual(manager.inspect_cache()["objects"][0]["sha256"], entry["sha256"])
 
+    def test_manager_streams_pack_to_part_with_expected_length_plus_one_ceiling(self):
+        transport = StreamingMemoryTransport()
+        self.fx.transport = transport
+        entry = self.fx.publish("1.0.0", sequence=1)
+        manager = self.fx.manager()
+
+        result = manager.ensure(PACK_ID)
+
+        self.assertTrue(result["success"], result)
+        self.assertEqual(transport.stream_calls, [(entry["url"], entry["length"] + 1)])
+
     def test_offline_exact_cached_archive_installs_without_network(self):
         self.fx.publish("1.0.0", sequence=1)
         online = self.fx.manager()
@@ -307,6 +427,23 @@ class PackManagerTests(unittest.TestCase):
         )
         self.assertEqual(error.details["cached_versions"], [])
         self.assertEqual(error.details["installed_versions"], [])
+
+    def test_unspecified_offline_ensure_activates_verified_installed_store_without_cache(self):
+        self.fx.publish("1.0.0", sequence=1)
+        manager = self.fx.manager()
+        manager.ensure(PACK_ID)
+        manager.paths.active.unlink()
+        for path in manager.paths.cache.iterdir():
+            path.unlink()
+
+        offline = self.fx.manager(transport=NoNetworkTransport())
+        result = offline.ensure(PACK_ID, offline=True)
+
+        self.assertTrue(result["success"], result)
+        self.assertTrue(result["changed"])
+        self.assertEqual(result["source"], "store")
+        self.assertEqual(result["version"], "1.0.0")
+        self.assertTrue(offline.status(PACK_ID)["packs"][0]["verified"])
 
     def test_bad_signature_and_registry_replay_leave_active_bytes_unchanged(self):
         self.fx.publish("1.0.0", sequence=1)
@@ -355,6 +492,22 @@ class PackManagerTests(unittest.TestCase):
             self.assertEqual(redirect_manager.paths.active.read_bytes(), redirect_active)
         finally:
             redirect_fx.cleanup()
+
+    def test_signed_hash_valid_but_semantically_invalid_pack_never_reaches_store(self):
+        malformed = self.fx.semantically_invalid_archive("1.0.0")
+        self.fx.publish(
+            "1.0.0",
+            sequence=1,
+            archive_bytes=malformed,
+            served_archive=malformed,
+        )
+        manager = self.fx.manager()
+
+        error = self.assert_manager_error("pack_content_invalid", manager.ensure, PACK_ID)
+
+        self.assertEqual(error.reason, "llmwiki_index_board_mismatch")
+        self.assertFalse((manager.paths.store / PACK_ID).exists())
+        self.assertFalse(manager.paths.active.exists())
 
     def test_concurrent_ensure_serializes_to_one_download(self):
         entry = self.fx.publish("1.0.0", sequence=1)
@@ -539,6 +692,103 @@ class PackManagerTests(unittest.TestCase):
         self.assertTrue(result["changed"])
         self.assertEqual(override.read_bytes(), override_before)
         self.assertTrue(list((manager.paths.quarantine / PACK_ID).iterdir()))
+
+    def test_ensure_repairs_active_and_installed_derived_metadata_from_signed_receipt(self):
+        entry = self.fx.publish("1.0.0", sequence=1)
+        manager = self.fx.manager()
+        manager.ensure(PACK_ID)
+        calls_before = list(self.fx.transport.calls)
+
+        active = json.loads(manager.paths.active.read_text(encoding="utf-8"))
+        active["packs"][PACK_ID]["archive_sha256"] = "f" * 64
+        manager.paths.active.write_text(json.dumps(active), encoding="utf-8")
+        metadata = json.loads(manager.paths.installed_metadata.read_text(encoding="utf-8"))
+        metadata["packs"][PACK_ID]["1.0.0"]["archive_sha256"] = "e" * 64
+        metadata["packs"][PACK_ID]["1.0.0"]["manifest_sha256"] = "d" * 64
+        manager.paths.installed_metadata.write_text(json.dumps(metadata), encoding="utf-8")
+
+        repaired = manager.ensure(PACK_ID)
+
+        self.assertTrue(repaired["success"], repaired)
+        self.assertTrue(repaired["changed"])
+        self.assertEqual(repaired["source"], "metadata-repair")
+        self.assertEqual(self.fx.transport.calls, calls_before)
+        active_after = json.loads(manager.paths.active.read_text(encoding="utf-8"))
+        self.assertEqual(active_after["packs"][PACK_ID]["archive_sha256"], entry["sha256"])
+        metadata_after = json.loads(
+            manager.paths.installed_metadata.read_text(encoding="utf-8")
+        )
+        self.assertEqual(
+            metadata_after["packs"][PACK_ID]["1.0.0"]["archive_sha256"],
+            entry["sha256"],
+        )
+        self.assertFalse(manager.paths.quarantine.exists())
+
+    def test_ensure_rebuilds_corrupt_installed_metadata_from_durable_signed_receipt(self):
+        entry = self.fx.publish("1.0.0", sequence=1)
+        manager = self.fx.manager()
+        manager.ensure(PACK_ID)
+        calls_before = list(self.fx.transport.calls)
+        manager.paths.installed_metadata.write_bytes(b"not-json")
+
+        repaired = manager.ensure(PACK_ID)
+
+        self.assertTrue(repaired["success"], repaired)
+        self.assertTrue(repaired["changed"])
+        self.assertEqual(repaired["source"], "metadata-repair")
+        self.assertEqual(self.fx.transport.calls, calls_before)
+        metadata = json.loads(manager.paths.installed_metadata.read_text(encoding="utf-8"))
+        self.assertEqual(
+            metadata["packs"][PACK_ID]["1.0.0"]["archive_sha256"], entry["sha256"]
+        )
+        self.assertTrue(manager.status(PACK_ID)["packs"][0]["verified"])
+
+    def test_corrupt_exact_cache_is_quarantined_with_receipt_then_redownloaded_online(self):
+        entry = self.fx.publish("1.0.0", sequence=1)
+        manager = self.fx.manager()
+        manager.ensure(PACK_ID)
+        shutil.rmtree(manager.paths.store / PACK_ID)
+        manager.paths.active.unlink()
+        cache = manager.paths.cache / f"{entry['sha256']}.cmpack"
+        receipt = cache.with_suffix(".receipt.json")
+        cache.write_bytes(b"corrupt exact object")
+        calls_before = self.fx.transport.calls.count(entry["url"])
+
+        result = manager.ensure(PACK_ID)
+
+        self.assertTrue(result["success"], result)
+        self.assertEqual(result["source"], "download")
+        self.assertEqual(
+            self.fx.transport.calls.count(entry["url"]), calls_before + 1
+        )
+        quarantined = list((manager.paths.quarantine / "cache").iterdir())
+        self.assertTrue(any(cache.name in path.name for path in quarantined))
+        self.assertTrue(any(receipt.name in path.name for path in quarantined))
+        self.assertTrue(manager.status(PACK_ID)["packs"][0]["verified"])
+
+    def test_signed_same_version_archive_identity_change_remains_rejected(self):
+        first = self.fx.publish("1.0.0", sequence=1)
+        manager = self.fx.manager()
+        manager.ensure(PACK_ID)
+        active_before = manager.paths.active.read_bytes()
+        alternate = PackFixture()
+        self.addCleanup(alternate.cleanup)
+        changed_archive = alternate.archive(
+            "1.0.0", body="# Different signed bytes\n"
+        )
+        self.fx.publish(
+            "1.0.0",
+            sequence=2,
+            archive_bytes=changed_archive,
+            served_archive=changed_archive,
+        )
+
+        error = self.assert_manager_error("pack_drift_detected", manager.update, PACK_ID)
+
+        self.assertEqual(error.reason, "installed_archive_identity_changed")
+        self.assertEqual(manager.paths.active.read_bytes(), active_before)
+        status = manager.status(PACK_ID)["packs"][0]
+        self.assertEqual(status["archive_sha256"], first["sha256"])
         self.assertTrue(manager.status(PACK_ID)["packs"][0]["verified"])
 
     def test_self_consistent_manifest_rewrite_is_still_official_drift(self):
@@ -744,6 +994,53 @@ class PackManagerTests(unittest.TestCase):
         self.assertEqual(error.reason, "managed_path_unsafe")
         self.assertEqual(list(outside.iterdir()), [])
 
+    @unittest.skipUnless(os.name == "nt", "Windows junction semantics only")
+    def test_nested_store_pack_junction_is_rejected_before_any_outside_write(self):
+        outside = self.fx.root / "outside-store-pack"
+        outside.mkdir()
+        pack_root = self.fx.user_root / "store" / PACK_ID
+        pack_root.parent.mkdir(parents=True)
+        create_junction(pack_root, outside)
+        self.fx.publish("1.0.0", sequence=1)
+
+        try:
+            error = self.assert_manager_error(
+                "pack_activation_failed", self.fx.manager().ensure, PACK_ID
+            )
+            self.assertEqual(error.reason, "managed_path_unsafe")
+            self.assertEqual(list(outside.iterdir()), [])
+        finally:
+            remove_junction(pack_root)
+
+    @unittest.skipUnless(os.name == "nt", "Windows junction semantics only")
+    def test_nested_quarantine_pack_junction_is_rejected_before_move(self):
+        self.fx.publish("1.0.0", sequence=1)
+        manager = self.fx.manager()
+        manager.ensure(PACK_ID)
+        selected = (
+            manager.paths.store
+            / PACK_ID
+            / "1.0.0"
+            / "llmwiki"
+            / "sections"
+            / "start-here.md"
+        )
+        selected.write_bytes(b"drift")
+        outside = self.fx.root / "outside-quarantine-pack"
+        outside.mkdir()
+        manager.paths.quarantine.mkdir(parents=True, exist_ok=True)
+        junction = manager.paths.quarantine / PACK_ID
+        create_junction(junction, outside)
+
+        try:
+            error = self.assert_manager_error(
+                "pack_activation_failed", manager.ensure, PACK_ID
+            )
+            self.assertEqual(error.reason, "managed_path_unsafe")
+            self.assertEqual(list(outside.iterdir()), [])
+        finally:
+            remove_junction(junction)
+
     def test_hardlinked_lock_file_is_rejected_without_mutating_the_other_name(self):
         outside = self.fx.root / "outside-lock"
         outside.write_bytes(b"")
@@ -760,6 +1057,28 @@ class PackManagerTests(unittest.TestCase):
         )
 
         self.assertEqual(error.reason, "manager_lock_unsafe")
+        self.assertEqual(outside.read_bytes(), b"")
+
+    def test_hardlinked_hidden_sequence_lock_is_rejected_by_managed_layout(self):
+        outside = self.fx.root / "outside-sequence-lock"
+        outside.write_bytes(b"")
+        lock = (
+            self.fx.user_root
+            / "state"
+            / ".registry-sequences.json.lock"
+        )
+        lock.parent.mkdir(parents=True)
+        try:
+            os.link(outside, lock)
+        except OSError as exc:
+            self.skipTest(f"hard links unavailable: {exc}")
+        self.fx.publish("1.0.0", sequence=1)
+
+        error = self.assert_manager_error(
+            "pack_activation_failed", self.fx.manager().ensure, PACK_ID
+        )
+
+        self.assertEqual(error.reason, "managed_path_unsafe")
         self.assertEqual(outside.read_bytes(), b"")
 
     def test_sequence_accepted_before_receipt_failure_recovers_same_registry(self):
@@ -781,6 +1100,34 @@ class PackManagerTests(unittest.TestCase):
         self.assertEqual(recovered["version"], "1.0.0")
         self.assertEqual(interrupted.paths.registry_state.read_bytes(), state_before)
         self.assertTrue(interrupted.paths.verified_registry.is_file())
+
+    def test_stale_current_receipt_does_not_block_installed_historical_receipt(self):
+        self.fx.publish("1.0.0", sequence=1)
+        self.fx.manager().ensure(PACK_ID)
+        self.fx.publish(
+            "1.0.0",
+            sequence=2,
+            archive_bytes=self.fx.archive("1.0.0"),
+        )
+
+        def fail_after_sequence(name: str) -> None:
+            if name == "registry.after_sequence_replace":
+                raise RuntimeError(name)
+
+        interrupted = self.fx.manager(failure_injector=fail_after_sequence)
+        error = self.assert_manager_error(
+            "registry_fetch_failed", interrupted.update, PACK_ID
+        )
+        self.assertEqual(error.reason, "failure_injected")
+
+        result = self.fx.manager(transport=NoNetworkTransport()).ensure(
+            PACK_ID,
+            offline=True,
+        )
+
+        self.assertFalse(result["changed"])
+        self.assertEqual(result["source"], "active")
+        self.assertEqual(result["version"], "1.0.0")
 
     def test_recovery_candidate_survives_intervening_parseable_bad_signature(self):
         self.fx.publish("1.0.0", sequence=1)
@@ -936,6 +1283,19 @@ class PackManagerTests(unittest.TestCase):
             "cache",
         )
 
+    def test_update_returns_no_change_for_byte_identical_accepted_registry(self):
+        self.fx.publish("1.0.0", sequence=1)
+        manager = self.fx.manager()
+        manager.ensure(PACK_ID)
+        active_before = manager.paths.active.read_bytes()
+
+        unchanged = manager.update(PACK_ID)
+
+        self.assertTrue(unchanged["success"], unchanged)
+        self.assertFalse(unchanged["changed"])
+        self.assertEqual(unchanged["source"], "active")
+        self.assertEqual(manager.paths.active.read_bytes(), active_before)
+
     def test_status_rejects_metadata_only_archive_identity_tampering(self):
         self.fx.publish("1.0.0", sequence=1)
         manager = self.fx.manager()
@@ -998,7 +1358,7 @@ class PackManagerTests(unittest.TestCase):
             {
                 "pack-manifest.json",
                 "llmwiki/index.yaml",
-                "llmwiki/sections/start-here.md",
+                *(f"llmwiki/sections/{section_id}.md" for section_id in SECTION_IDS),
             },
         )
 
@@ -1052,6 +1412,55 @@ class PackManagerTests(unittest.TestCase):
         self.assertEqual(error.details["installed_versions"], [])
         self.assertFalse(corrupt.exists())
         self.assertTrue(list((manager.paths.quarantine / "cache").iterdir()))
+
+    def test_cross_directory_quarantine_fsyncs_source_destination_and_new_parent(self):
+        self.fx.publish("1.0.0", sequence=1)
+        manager = self.fx.manager()
+        manager.ensure(PACK_ID)
+        selected = (
+            manager.paths.store
+            / PACK_ID
+            / "1.0.0"
+            / "llmwiki"
+            / "sections"
+            / "start-here.md"
+        )
+        selected.write_bytes(b"drift")
+        synced: list[Path] = []
+        real_fsync_directory = pack_manager_module._fsync_directory
+
+        def track(path: Path) -> None:
+            real_fsync_directory(path)
+            synced.append(Path(path).resolve())
+
+        with mock.patch.object(pack_manager_module, "_fsync_directory", side_effect=track):
+            manager.ensure(PACK_ID)
+
+        self.assertIn((manager.paths.store / PACK_ID).resolve(), synced)
+        self.assertIn((manager.paths.quarantine / PACK_ID).resolve(), synced)
+        self.assertIn(manager.paths.quarantine.resolve(), synced)
+
+    def test_cache_quarantine_fsyncs_cache_destination_and_new_parent(self):
+        entry = self.fx.publish("1.0.0", sequence=1)
+        manager = self.fx.manager()
+        manager.ensure(PACK_ID)
+        shutil.rmtree(manager.paths.store / PACK_ID)
+        manager.paths.active.unlink()
+        cache = manager.paths.cache / f"{entry['sha256']}.cmpack"
+        cache.write_bytes(b"corrupt")
+        synced: list[Path] = []
+        real_fsync_directory = pack_manager_module._fsync_directory
+
+        def track(path: Path) -> None:
+            real_fsync_directory(path)
+            synced.append(Path(path).resolve())
+
+        with mock.patch.object(pack_manager_module, "_fsync_directory", side_effect=track):
+            manager.ensure(PACK_ID)
+
+        self.assertIn(manager.paths.cache.resolve(), synced)
+        self.assertIn((manager.paths.quarantine / "cache").resolve(), synced)
+        self.assertIn(manager.paths.quarantine.resolve(), synced)
 
 
 if __name__ == "__main__":

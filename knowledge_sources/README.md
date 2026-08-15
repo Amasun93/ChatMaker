@@ -20,7 +20,7 @@ Use this local sequence:
    succeeds. The later pack builder consumes approved declarations; it does not
    treat an unreviewed source as a page.
 
-The future published layout is:
+The governed published layout is:
 
 ```text
 knowledge_sources/
@@ -30,11 +30,13 @@ knowledge_sources/
         <section-id>.md
 ```
 
-No detailed pages are authored in this task. A page must carry YAML frontmatter
-with its stable ID, exact board ID, section ID, and `source_refs`; its body is
-limited to 65,536 UTF-8 bytes. The validator rejects paths outside that layout,
-unknown sources, malformed frontmatter, duplicate stable IDs, and any declared
-page whose source has not separately received publication approval.
+The current workspace contains eight approved pages for each of the three
+boards (24 pages total). A page must carry the exact six-field YAML frontmatter
+contract with its stable ID, exact board ID, section ID, and `source_refs`; its
+nonempty body alone is limited to 65,536 UTF-8 bytes. The validator rejects
+paths outside that layout, unknown sources, malformed frontmatter, duplicate
+stable IDs, and any declared page whose source has not separately received
+publication approval.
 
 LLMWiki is a file-system method: ordinary YAML manifests and Markdown files
 validated and later packed by ChatMaker. It is not a required external product

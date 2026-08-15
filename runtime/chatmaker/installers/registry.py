@@ -10,14 +10,22 @@ import os
 import re
 import tempfile
 from contextlib import contextmanager
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
+import stat
 from typing import Any, Callable, Mapping
 from urllib.parse import urlsplit
 
 import jsonschema
 from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
+
+from .file_lock import (
+    FileLockFailure,
+    UnsafeLockPath,
+    exclusive_file_lock,
+    is_reparse,
+)
 
 
 _REPO_ROOT = Path(__file__).resolve().parents[3]
@@ -38,6 +46,7 @@ _ALLOWED_PACK_IDS = {
     "chatmaker-board-arduino-uno-r3-wiki",
     "chatmaker-board-esp32-devkit-v1-wiki",
 }
+MAX_REGISTRY_VALIDITY = timedelta(days=31)
 
 VERIFICATION_PHASES = {
     "registry_bytes_fetched": "registry.bytes_fetched",
@@ -233,6 +242,13 @@ def verify_pack_download(
 def _load_sequence_state(path: Path) -> dict[str, Any]:
     if not path.exists():
         return {"schema_version": "1.0", "sequences": []}
+    if (
+        path.is_symlink()
+        or is_reparse(path)
+        or not stat.S_ISREG(path.lstat().st_mode)
+        or path.lstat().st_nlink != 1
+    ):
+        raise RegistryError("registry_fetch_failed", reason="sequence_state_unsafe")
     try:
         value = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
@@ -267,8 +283,75 @@ def _highest_sequence(state: Mapping[str, Any], registry_url: str, key_id: str) 
     return matches[0] if matches else 0
 
 
+def _fsync_directory(path: Path) -> None:
+    if os.name == "nt":
+        import ctypes
+        from ctypes import wintypes
+
+        kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+        kernel32.CreateFileW.argtypes = [
+            wintypes.LPCWSTR,
+            wintypes.DWORD,
+            wintypes.DWORD,
+            wintypes.LPVOID,
+            wintypes.DWORD,
+            wintypes.DWORD,
+            wintypes.HANDLE,
+        ]
+        kernel32.CreateFileW.restype = wintypes.HANDLE
+        handle = kernel32.CreateFileW(
+            str(path),
+            0x40000000,
+            0x00000001 | 0x00000002 | 0x00000004,
+            None,
+            3,
+            0x02000000,
+            None,
+        )
+        if handle == wintypes.HANDLE(-1).value:
+            raise ctypes.WinError(ctypes.get_last_error())
+        try:
+            if not kernel32.FlushFileBuffers(handle):
+                raise ctypes.WinError(ctypes.get_last_error())
+        finally:
+            kernel32.CloseHandle(handle)
+        return
+    descriptor = os.open(path, os.O_RDONLY)
+    try:
+        os.fsync(descriptor)
+    finally:
+        os.close(descriptor)
+
+
 def _atomic_write_state(path: Path, state: Mapping[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        parent_stat = path.parent.lstat()
+        if (
+            path.parent.is_symlink()
+            or is_reparse(path.parent)
+            or not stat.S_ISDIR(parent_stat.st_mode)
+        ):
+            raise RegistryError(
+                "registry_fetch_failed", reason="sequence_state_path_unsafe"
+            )
+        if os.path.lexists(path):
+            value = path.lstat()
+            if (
+                path.is_symlink()
+                or is_reparse(path)
+                or not stat.S_ISREG(value.st_mode)
+                or value.st_nlink != 1
+            ):
+                raise RegistryError(
+                    "registry_fetch_failed", reason="sequence_state_path_unsafe"
+                )
+    except RegistryError:
+        raise
+    except OSError as exc:
+        raise RegistryError(
+            "registry_fetch_failed", reason="sequence_state_path_unsafe"
+        ) from exc
     encoded = (
         json.dumps(state, ensure_ascii=True, sort_keys=True, separators=(",", ":"))
         + "\n"
@@ -288,6 +371,7 @@ def _atomic_write_state(path: Path, state: Mapping[str, Any]) -> None:
             os.fsync(handle.fileno())
         os.replace(temp_name, path)
         temp_name = None
+        _fsync_directory(path.parent)
     except OSError as exc:
         raise RegistryError("registry_fetch_failed", reason="sequence_state_write_failed") from exc
     finally:
@@ -301,47 +385,15 @@ def _atomic_write_state(path: Path, state: Mapping[str, Any]) -> None:
 @contextmanager
 def _sequence_state_lock(state_path: Path):
     lock_path = state_path.with_name(f".{state_path.name}.lock")
-    handle = None
-    locked = False
     try:
-        lock_path.parent.mkdir(parents=True, exist_ok=True)
-        handle = lock_path.open("a+b")
-        handle.seek(0, os.SEEK_END)
-        if handle.tell() == 0:
-            handle.write(b"\0")
-            handle.flush()
-            os.fsync(handle.fileno())
-        handle.seek(0)
-        if os.name == "nt":
-            import msvcrt
-
-            msvcrt.locking(handle.fileno(), msvcrt.LK_LOCK, 1)
-        else:
-            import fcntl
-
-            fcntl.flock(handle.fileno(), fcntl.LOCK_EX)
-        locked = True
-        yield
-    except RegistryError:
-        raise
-    except OSError as exc:
+        with exclusive_file_lock(lock_path):
+            yield
+    except UnsafeLockPath as exc:
+        raise RegistryError(
+            "registry_fetch_failed", reason="sequence_state_lock_unsafe"
+        ) from exc
+    except FileLockFailure as exc:
         raise RegistryError("registry_fetch_failed", reason="sequence_state_lock_failed") from exc
-    finally:
-        if handle is not None:
-            if locked:
-                try:
-                    handle.seek(0)
-                    if os.name == "nt":
-                        import msvcrt
-
-                        msvcrt.locking(handle.fileno(), msvcrt.LK_UNLCK, 1)
-                    else:
-                        import fcntl
-
-                        fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
-                except OSError:
-                    pass
-            handle.close()
 
 
 def _replace_sequence(
@@ -474,6 +526,10 @@ def verify_registry(
         )
         if generated_at > current_time:
             raise RegistryError("registry_expired", reason="generated_at_in_future")
+        if expires_at - generated_at > MAX_REGISTRY_VALIDITY:
+            raise RegistryError(
+                "registry_expired", reason="validity_window_too_long"
+            )
         if expires_at <= current_time or expires_at <= generated_at:
             raise RegistryError("registry_expired", reason="expired")
         for pack in value["packs"]:
@@ -512,6 +568,7 @@ def verify_registry(
 __all__ = [
     "DEFAULT_STATE_PATH",
     "DEFAULT_TRUST_STORE_PATH",
+    "MAX_REGISTRY_VALIDITY",
     "RegistryError",
     "VERIFICATION_PHASES",
     "load_trust_store",

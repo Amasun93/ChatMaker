@@ -11,6 +11,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest import mock
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -23,8 +24,10 @@ sys.path.insert(0, str(ROOT / "runtime"))
 
 try:
     from chatmaker.installers import registry
+    from chatmaker.installers.file_lock import exclusive_file_lock
 except (ImportError, ModuleNotFoundError):
     registry = None
+    exclusive_file_lock = None
 
 sys.path.insert(0, str(ROOT))
 from scripts import sign_registry as signer  # noqa: E402
@@ -320,6 +323,43 @@ class RegistryVerificationTests(unittest.TestCase):
                 )
                 self.assertEqual(error.reason, reason)
 
+    def test_fresh_state_rejects_expired_old_metadata_and_accepts_current_short_lived_metadata(self):
+        old = self.registry_value(sequence=1)
+        old["generated_at"] = "2026-08-01T00:00:00Z"
+        old["expires_at"] = "2026-08-08T00:00:00Z"
+        old_state = Path(self.tempdir.name) / "fresh-old.json"
+        error = self.assert_code(
+            "registry_expired",
+            self.verify,
+            *self.signed(old),
+            state_path=old_state,
+        )
+        self.assertEqual(error.reason, "expired")
+        self.assertFalse(old_state.exists())
+
+        current = self.registry_value(sequence=2)
+        current["generated_at"] = "2026-08-16T00:00:00Z"
+        current["expires_at"] = "2026-08-23T00:00:00Z"
+        current_state = Path(self.tempdir.name) / "fresh-current.json"
+        accepted = self.verify(
+            *self.signed(current),
+            state_path=current_state,
+        )
+        self.assertEqual(accepted["sequence"], 2)
+
+    def test_rejects_signed_registry_validity_windows_longer_than_31_days(self):
+        long_lived = self.registry_value()
+        long_lived["generated_at"] = "2026-08-16T00:00:00Z"
+        long_lived["expires_at"] = "2027-08-16T00:00:00Z"
+
+        error = self.assert_code(
+            "registry_expired",
+            self.verify,
+            *self.signed(long_lived),
+        )
+
+        self.assertEqual(error.reason, "validity_window_too_long")
+
     def test_rejects_non_allowlisted_registry_and_mutable_pack_url(self):
         signed = self.signed(self.registry_value())
         self.assert_code(
@@ -413,6 +453,107 @@ class RegistryVerificationTests(unittest.TestCase):
         self.assertEqual(error.reason, "failure_injected")
         state = json.loads(self.state_path.read_text(encoding="utf-8"))
         self.assertEqual(state["sequences"][0]["highest_sequence"], 7)
+
+    def test_sequence_lock_rejects_hardlink_without_mutating_external_file(self):
+        outside = Path(self.tempdir.name) / "outside-lock"
+        outside.write_bytes(b"")
+        lock = self.state_path.with_name(f".{self.state_path.name}.lock")
+        try:
+            os.link(outside, lock)
+        except OSError as exc:
+            self.skipTest(f"hard links unavailable: {exc}")
+
+        error = self.assert_code(
+            "registry_fetch_failed",
+            self.verify,
+            *self.signed(self.registry_value()),
+        )
+
+        self.assertEqual(error.reason, "sequence_state_lock_unsafe")
+        self.assertEqual(outside.read_bytes(), b"")
+
+    @unittest.skipUnless(os.name == "nt", "Windows junction semantics only")
+    def test_sequence_lock_rejects_real_junction_parent_without_outside_write(self):
+        outside = Path(self.tempdir.name) / "outside-state"
+        outside.mkdir()
+        junction = Path(self.tempdir.name) / "junction-state"
+        completed = subprocess.run(
+            ["cmd.exe", "/d", "/c", "mklink", "/J", str(junction), str(outside)],
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        if completed.returncode != 0:
+            self.skipTest(completed.stderr or completed.stdout)
+        try:
+            error = self.assert_code(
+                "registry_fetch_failed",
+                self.verify,
+                *self.signed(self.registry_value()),
+                state_path=junction / "state.json",
+            )
+            self.assertEqual(error.reason, "sequence_state_lock_unsafe")
+            self.assertEqual(list(outside.iterdir()), [])
+        finally:
+            os.rmdir(junction)
+
+    @unittest.skipUnless(os.name == "nt", "Windows junction semantics only")
+    def test_sequence_lock_rejects_nested_junction_ancestor_without_outside_write(self):
+        outside = Path(self.tempdir.name) / "outside-nested-state"
+        outside.mkdir()
+        junction = Path(self.tempdir.name) / "nested-junction-state"
+        completed = subprocess.run(
+            ["cmd.exe", "/d", "/c", "mklink", "/J", str(junction), str(outside)],
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        if completed.returncode != 0:
+            self.skipTest(completed.stderr or completed.stdout)
+        try:
+            error = self.assert_code(
+                "registry_fetch_failed",
+                self.verify,
+                *self.signed(self.registry_value()),
+                state_path=junction / "missing-parent" / "state.json",
+            )
+            self.assertEqual(error.reason, "sequence_state_lock_unsafe")
+            self.assertEqual(list(outside.iterdir()), [])
+        finally:
+            os.rmdir(junction)
+
+    def test_file_lock_preserves_oserror_raised_by_locked_operation(self):
+        if exclusive_file_lock is None:
+            self.fail("shared file lock module is missing")
+        lock = Path(self.tempdir.name) / "body-error.lock"
+
+        with self.assertRaisesRegex(FileNotFoundError, "locked body failed"):
+            with exclusive_file_lock(lock):
+                raise FileNotFoundError("locked body failed")
+
+    def test_sequence_state_parent_is_fsynced_before_after_replace_checkpoint(self):
+        synced: list[Path] = []
+        real_fsync_directory = registry._fsync_directory
+
+        def track(path: Path) -> None:
+            real_fsync_directory(path)
+            synced.append(Path(path).resolve())
+
+        def fail_after(name: str) -> None:
+            if name == "registry.after_sequence_replace":
+                self.assertIn(self.state_path.parent.resolve(), synced)
+                raise RuntimeError(name)
+
+        with mock.patch.object(registry, "_fsync_directory", side_effect=track):
+            error = self.assert_code(
+                "registry_fetch_failed",
+                self.verify,
+                *self.signed(self.registry_value()),
+                failure_injector=fail_after,
+            )
+
+        self.assertEqual(error.reason, "failure_injected")
+        self.assertIn(self.state_path.parent.resolve(), synced)
 
     def test_phase_contract_names_are_frozen_for_later_manager(self):
         self.assertEqual(
@@ -553,6 +694,54 @@ class RegistrySigningScriptTests(unittest.TestCase):
             self.sign_direct(self.private_path, output_path=alias)
         self.assertEqual(self.private_path.read_bytes(), original)
         self.assertEqual(alias.read_bytes(), original)
+
+    def test_signing_rejects_private_key_under_any_registered_linked_worktree(self):
+        repository = self.root / "repository"
+        linked = self.root / "linked-worktree"
+        subprocess.run(["git", "init", str(repository)], check=True, capture_output=True)
+        subprocess.run(
+            ["git", "-C", str(repository), "config", "user.email", "test@example.invalid"],
+            check=True,
+            capture_output=True,
+        )
+        subprocess.run(
+            ["git", "-C", str(repository), "config", "user.name", "Test"],
+            check=True,
+            capture_output=True,
+        )
+        (repository / "seed.txt").write_text("seed\n", encoding="utf-8")
+        subprocess.run(
+            ["git", "-C", str(repository), "add", "seed.txt"],
+            check=True,
+            capture_output=True,
+        )
+        subprocess.run(
+            ["git", "-C", str(repository), "commit", "-m", "seed"],
+            check=True,
+            capture_output=True,
+        )
+        subprocess.run(
+            [
+                "git",
+                "-C",
+                str(repository),
+                "worktree",
+                "add",
+                "-b",
+                "linked-test",
+                str(linked),
+            ],
+            check=True,
+            capture_output=True,
+        )
+        linked_private = linked / "private.pem"
+        linked_private.write_bytes(self.private_path.read_bytes())
+
+        with mock.patch.object(signer, "ROOT", repository.resolve()):
+            with self.assertRaises(signer.SigningError):
+                self.sign_direct(linked_private)
+
+        self.assertFalse(self.output_path.exists())
 
     def test_production_cli_rejects_caller_supplied_trust_store(self):
         result = self.run_cli("--trust-store", str(self.trust_path))

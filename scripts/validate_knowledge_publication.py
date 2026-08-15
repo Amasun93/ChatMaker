@@ -4,10 +4,20 @@ import argparse
 import json
 from pathlib import Path, PurePosixPath
 import stat
+import sys
 from typing import Any
 
 import yaml
 from jsonschema import Draft202012Validator, FormatChecker
+
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "runtime"))
+
+from chatmaker.llmwiki_semantics import (  # noqa: E402
+    LLMWikiSemanticError,
+    validate_page_bytes,
+)
 
 
 BOARD_IDS = ("arduino-nano-classic", "arduino-uno-r3", "esp32-devkit-v1")
@@ -190,19 +200,37 @@ def validate_knowledge_publication(root: Path) -> dict[str, Any]:
             continue
         if relative not in declarations:
             errors.append(f"{page_path}: page is not an approved declaration")
-        if frontmatter.get("schema_version") != "1.0":
-            errors.append(f"{page_path}: unsupported schema_version {frontmatter.get('schema_version')!r}")
-        required = {"kind", "stable_id", "board_id", "section_id", "source_refs"}
-        missing = sorted(name for name in required if name not in frontmatter)
-        text_fields = ("stable_id", "board_id", "section_id")
-        invalid_types = sorted(
-            name for name in text_fields if name in frontmatter and not isinstance(frontmatter[name], str)
-        )
-        if frontmatter.get("kind") != "llmwiki-page" or missing or invalid_types:
-            errors.append(f"{page_path}: malformed frontmatter: invalid page identity or missing {missing}")
+        declared = declarations.get(relative)
+        expected_board_id = page_path.parent.name
+        expected_section_id = page_path.stem
+        expected_source_refs = None
+        if declared is not None:
+            _, declaring_manifest, _ = declared
+            source_id = declaring_manifest.get("id")
+            if isinstance(source_id, str):
+                expected_source_refs = [source_id]
+        try:
+            validate_page_bytes(
+                page_path.read_bytes(),
+                expected_board_id=expected_board_id,
+                expected_section_id=expected_section_id,
+                expected_source_refs=expected_source_refs,
+                path=relative,
+            )
+        except (OSError, LLMWikiSemanticError) as exc:
+            reason = exc.reason if isinstance(exc, LLMWikiSemanticError) else "page_read_failed"
+            if reason == "llmwiki_page_frontmatter_invalid":
+                detail = f"malformed frontmatter: LLMWiki semantic validation failed: {reason}"
+            elif reason == "llmwiki_page_body_size_invalid":
+                detail = (
+                    "LLMWiki semantic validation failed: UTF-8 page body exceeds "
+                    "frozen 65,536-byte limit or is empty"
+                )
+            else:
+                detail = f"LLMWiki semantic validation failed: {reason}"
+            errors.append(f"{page_path}: {detail}")
         if isinstance(frontmatter.get("section_id"), str) and frontmatter["section_id"] != page_path.stem:
             errors.append(f"{page_path}: section_id does not match Markdown filename stem")
-        declared = declarations.get(relative)
         if declared is not None:
             _, manifest, declaration = declared
             if frontmatter.get("stable_id") != declaration.get("stable_id"):
@@ -239,8 +267,6 @@ def validate_knowledge_publication(root: Path) -> dict[str, Any]:
                         errors.append(
                             f"{page_path}: source reference '{source_ref}' does not match the declaring board scope"
                         )
-        if body is not None and len(body) > MAX_SECTION_BYTES:
-            errors.append(f"{page_path}: UTF-8 page body exceeds frozen 65,536-byte limit")
 
     for declared_path in sorted(declarations):
         page_path = workspace / declared_path

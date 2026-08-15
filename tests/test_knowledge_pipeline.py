@@ -76,6 +76,7 @@ class KnowledgePublicationPipelineTests(unittest.TestCase):
         board_id: Any = "arduino-nano-classic",
         section_id: Any = "start-here",
         body: str = "Use the canonical board record before following this guide.\n",
+        extra_frontmatter: dict[str, Any] | None = None,
     ) -> None:
         if source_refs is None:
             source_refs = ["source-arduino-nano-classic-documentation"]
@@ -87,6 +88,7 @@ class KnowledgePublicationPipelineTests(unittest.TestCase):
             "section_id": section_id,
             "source_refs": source_refs,
         }
+        frontmatter.update(extra_frontmatter or {})
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(
             "---\n"
@@ -186,6 +188,29 @@ class KnowledgePublicationPipelineTests(unittest.TestCase):
 
         self.assertTrue(result["success"], result["errors"])
         self.assertEqual(result["counts"], {"manifests": 3, "pages": 1})
+
+    def test_page_uses_exact_six_fields_and_a_nonempty_body(self):
+        for body, extra_frontmatter in (
+            ("Valid body.\n", {"title": "Duplicate display title"}),
+            (" \n\t", None),
+        ):
+            with self.subTest(body=body, extra=extra_frontmatter), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                workspace = self.make_workspace(root)
+                page_path = self.declare_page(workspace)
+                self.write_page(
+                    page_path,
+                    body=body,
+                    extra_frontmatter=extra_frontmatter,
+                )
+
+                result = self.validate(root)
+
+            self.assertFalse(result["success"], result)
+            self.assertTrue(
+                any("LLMWiki semantic" in error for error in result["errors"]),
+                result,
+            )
 
     def test_rejects_escaping_page_declaration_and_malformed_frontmatter(self):
         with tempfile.TemporaryDirectory() as directory:

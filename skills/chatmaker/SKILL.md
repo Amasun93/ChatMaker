@@ -19,7 +19,7 @@ Help the user discover a worthwhile idea, choose a direction, and turn it into a
 
 1. Restate the intended effect in everyday language.
 2. Ask only for information that changes safety, architecture, or the acceptance test.
-3. After the exact board identity is known, read the matching `llmwiki_get` start-here index before choosing the next specialist path.
+3. After the exact board identity is known, read the matching `start-here` section before choosing the next specialist path. In WorkBuddy, call `llmwiki_get` with the shared JSON request. In Codex, run `chatmaker-llmwiki --request-json '{"action":"section","board_id":"<exact-board-id>","consumer":"chatmaker","section_id":"start-here"}'` against the same runtime contract.
 4. Route Arduino, Nano, ESP32, wiring, upload, and serial work to `$chatduino`.
 5. Route classroom tools, native HTML, CSS, JavaScript, device interfaces, local preview, and browser interaction work to `$chatweb`.
 6. For combined projects, define the hardware-to-page message contract first, then invoke both specialists.

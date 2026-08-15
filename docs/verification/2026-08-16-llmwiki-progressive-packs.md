@@ -5,10 +5,10 @@
 ## 本次交付
 
 - 最小 Core：`ChatMaker-Core-0.1.0-rc5.zip`
-- 字节数：`206440`
-- SHA-256：`e5203e0dd84dd0f7aa500706835940fdce2e9a1fbb67af1a646dfd0fd248edb9`
-- 文件数：113
-- 注册表：sequence `1`，生成时间 `2026-08-16T00:00:00Z`，过期时间 `2027-08-16T00:00:00Z`
+- 字节数：`215201`
+- SHA-256：`71c705c7a6eacbba864f45ba372d4211285ecfb533b0fa3afbced6dee797ade5`
+- 文件数：115
+- 注册表：sequence `1`，生成时间 `2026-08-16T00:00:00Z`，过期时间 `2026-09-15T00:00:00Z`
 - 签名 key ID：`chatmaker-official-2026-01`
 - 公开锚指纹：`70570b179cf452abcc7486f76a408a25faee3702433663e99b7418498d725f67`
 
@@ -46,9 +46,9 @@ python -m unittest discover -s tests/release -p "test_clean_core_integration.py"
 
 ## 自动测试
 
-- `python -m unittest discover -s tests -v`：共 326 项，325 项通过，1 项跳过。跳过项是当前 Windows 账户没有创建目录符号链接权限的安全测试；同组其他路径/重解析点安全测试通过。
-- release 聚焦测试：10 项通过，其中包含上述 clean-Core 集成验收。
-- installer 聚焦测试：共 70 项，69 项通过，1 项按上面原因跳过。
+- `python -m unittest discover -s tests`：共 367 项，366 项通过，1 项跳过，耗时 241.604 秒。跳过项是当前 Windows 账户没有创建目录符号链接权限的安全测试；同组真实 junction、路径/重解析点与硬链接安全测试通过。
+- release package 聚焦测试：10 项通过；上述 clean-Core 集成验收另有 1 项通过，耗时 80.383 秒。
+- installer 子树共 102 项，其结果包含在上述整库运行中：101 项通过，1 项按上面原因跳过。另单独重跑 PackManager 50 项、PackArtifact 20 项、Registry 24 项和真实 loopback transport 4 项，除同一符号链接权限跳过外均通过。
 - WorkBuddy integration：15 项通过。
 - LLMWiki 文档与 schema 合同：17 项通过。
 - 生产 registry 签名、三个 commit-pinned URL 字符串、当前本地 artifact 长度和 SHA-256 均由自动测试核对。

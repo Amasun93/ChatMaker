@@ -13,8 +13,15 @@ sys.path.insert(0, str(ROOT / "runtime"))
 
 
 try:
-    from chatmaker.resources import ResourceResolver, resource_generation_token
+    from chatmaker.resources import (
+        ResolvedResource,
+        ResourceIntegrityError,
+        ResourceResolver,
+        resource_generation_token,
+    )
 except ImportError:
+    ResolvedResource = None
+    ResourceIntegrityError = None
     ResourceResolver = None
     resource_generation_token = None
 
@@ -199,6 +206,21 @@ class ResourceLayerTests(unittest.TestCase):
         self.assertEqual(resolved.read_text(), "old official")
         self.assertEqual(resolved.generation, "1:old-state")
         self.assertEqual(resolved.provenance["version"], "1.0.0")
+
+    def test_read_text_cannot_bypass_verified_length_or_digest(self):
+        path = self._write(self.root, "selected.md", "selected body")
+        resolved = ResolvedResource(
+            path=path,
+            provenance={"kind": "official_pack", "pack_id": PACK_ID, "version": "1.0.0"},
+            generation="1:verified",
+            expected_length=1,
+            expected_sha256="0" * 64,
+        )
+
+        with self.assertRaises(ResourceIntegrityError) as caught:
+            resolved.read_text()
+
+        self.assertEqual(caught.exception.reason, "length_mismatch")
 
 
 if __name__ == "__main__":

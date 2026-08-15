@@ -38,7 +38,7 @@ Compilation, firmware upload, browser interaction, serial evidence, and physical
 
 The first Core install contains the Python runtime, the ChatMaker / ChatDuino / ChatWeb Skills, 3 boards, 12 components, 14 recipes, compact indexes, schemas, and current runnable examples. It deliberately excludes detailed Wiki bodies, the knowledge workspace, tests, optional `.cmpack` artifacts, and development caches.
 
-When an AI first requests a detailed board section, `chatmaker-llmwiki` defaults to automatic installation. It accepts a pack only after checking the official registry signature, immutable URL, length, SHA-256, manifest, and every payload file. Later reads reuse the verified installation; an exact cached or installed version remains available offline.
+When an AI first requests a detailed board section, `chatmaker-llmwiki` defaults to automatic installation. It accepts a pack only after checking the official registry signature, immutable URL, length, SHA-256, manifest, and every payload file. Later reads reuse the verified installation. An installed version remains readable after offline revalidation; an exact cache can authorize a new offline install only while its signed receipt is unexpired.
 
 Automatic installation is limited to passive knowledge pages. It never installs drivers, Mind+, Arduino cores, Node, Chromium, PATH changes, hooks, or administrator-level software, and it never edits Codex or WorkBuddy configuration. Host installers continue to manage only the three Skills and the WorkBuddy MCP entry; `chatmaker-pack` alone manages knowledge content.
 
@@ -59,7 +59,7 @@ Users can download the rc5 ZIP and matching `.sha256` from GitHub Releases, veri
 
 rc5 contains fourteen recipes and a WorkBuddy stdio server `1.7.0` with 23 tools: 2 catalog tools, 5 Nano tools, 5 Uno tools, 5 ESP32 tools, and 6 serial tools. `chatmaker-route` performs executable hardware/web/combined routing. `chatmaker-web-plan` asks at most two load-bearing questions or returns two or three curated directions; expanded directions and `chatmaker-web-playground` require explicit `--advanced`. Real Chromium automation covers the classroom, simulated-hardware, ESP32 AP, and advanced-playground pages.
 
-Nano and Uno continue to use Mind+ 1.x/2.x. ESP32 uses only an official Arduino CLI, the locked official core `esp32:esp32@3.3.11`, and exact FQBN `esp32:esp32:esp32doit-devkit-v1`. The AP page keeps `examples/chatweb/esp32-ap-control.html` as its only editable source and generates the embedded firmware header with `chatmaker-web-embed`. Compilation, upload, browser/serial/network operation, power-cycle, and physical effects remain separate gates. See the bilingual [installation guide](docs/installation.md) and [rc5 release notes](RELEASE_NOTES.md).
+Nano and Uno continue to use Mind+ 1.x/2.x. ESP32 uses only an official Arduino CLI, the locked official core `esp32:esp32@3.3.11`, and exact FQBN `esp32:esp32:esp32doit-devkit-v1`. The AP page keeps `examples/chatweb/esp32-ap-control.html` as its only editable source and generates the embedded firmware header with `chatmaker-web-embed`. Compilation, upload, browser/serial/network operation, power-cycle, and physical effects remain separate gates. See the bilingual [installation guide](docs/installation.md) and [rc5 release notes](https://github.com/Amasun93/ChatMaker/blob/main/RELEASE_NOTES.md).
 
 ```powershell
 Get-FileHash .\ChatMaker-0.1.0-rc5.zip -Algorithm SHA256
@@ -84,7 +84,7 @@ npx playwright install chromium
 npm run test:browser
 ```
 
-Read the [creative partner design](docs/plans/2026-08-14-chatmaker-creative-partner-design.md) and [implementation plan](docs/plans/2026-08-14-chatmaker-v0.1-implementation.md) for current scope and evidence.
+Read the [creative partner design](https://github.com/Amasun93/ChatMaker/blob/main/docs/plans/2026-08-14-chatmaker-creative-partner-design.md) and [implementation plan](https://github.com/Amasun93/ChatMaker/blob/main/docs/plans/2026-08-14-chatmaker-v0.1-implementation.md) for current scope and evidence.
 
 Current source uses WorkBuddy stdio server `1.8.0` with 24 tools, including `llmwiki_get`. The public rc5 paragraph above remains historical and still describes the rc5 artifact accurately.
 

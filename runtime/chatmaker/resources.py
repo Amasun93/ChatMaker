@@ -26,6 +26,22 @@ class ActiveResourceProvider(Protocol):
     def generation_token(self) -> str: ...
 
 
+class ResourceIntegrityError(RuntimeError):
+    """A selected verified resource no longer matches its manifest identity."""
+
+    def __init__(
+        self,
+        reason: str,
+        *,
+        path: Path,
+        provenance: Mapping[str, Any],
+    ) -> None:
+        self.reason = reason
+        self.path = path
+        self.provenance = dict(provenance)
+        super().__init__(f"resource_integrity_error: {reason}")
+
+
 @dataclass(frozen=True)
 class ResolvedResource:
     """A resource path plus the provenance that made it authoritative."""
@@ -37,17 +53,28 @@ class ResolvedResource:
     expected_sha256: str | None = None
 
     def read_bytes(self) -> bytes:
-        data = self.path.read_bytes()
+        try:
+            data = self.path.read_bytes()
+        except OSError as exc:
+            if self.expected_length is not None or self.expected_sha256 is not None:
+                raise ResourceIntegrityError(
+                    "read_failed", path=self.path, provenance=self.provenance
+                ) from exc
+            raise
         if self.expected_length is not None and len(data) != self.expected_length:
-            raise RuntimeError("resource length does not match verified manifest")
+            raise ResourceIntegrityError(
+                "length_mismatch", path=self.path, provenance=self.provenance
+            )
         if self.expected_sha256 is not None:
             digest = hashlib.sha256(data).hexdigest()
             if digest != self.expected_sha256:
-                raise RuntimeError("resource digest does not match verified manifest")
+                raise ResourceIntegrityError(
+                    "sha256_mismatch", path=self.path, provenance=self.provenance
+                )
         return data
 
     def read_text(self, encoding: str = "utf-8") -> str:
-        return self.path.read_text(encoding=encoding)
+        return self.read_bytes().decode(encoding)
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -256,6 +283,7 @@ __all__ = [
     "DEFAULT_BUILTIN_ROOT",
     "DEFAULT_USER_ROOT",
     "ResolvedResource",
+    "ResourceIntegrityError",
     "ResourceResolver",
     "resolve_resource",
     "resource_generation_token",

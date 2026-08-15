@@ -44,7 +44,7 @@
         "required": ["path", "length", "sha256"],
         "properties": {
           "path": {"type": "string", "pattern": "^llmwiki/(?:index\\.yaml|sections/[a-z0-9][a-z0-9-]*\\.md)$"},
-          "length": {"type": "integer", "minimum": 1, "maximum": 65536},
+          "length": {"type": "integer", "minimum": 1, "maximum": 69632},
           "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
         }
       }

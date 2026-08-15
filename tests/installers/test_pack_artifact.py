@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import io
 import json
+import os
 import re
 import stat
 import subprocess
@@ -14,9 +15,40 @@ from copy import deepcopy
 from pathlib import Path
 from unittest import mock
 
+import yaml
+
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "runtime"))
+
+BOARD_ID = "arduino-nano-classic"
+PACK_ID = "chatmaker-board-arduino-nano-classic-wiki"
+SECTIONS = (
+    "start-here",
+    "identify-and-safety",
+    "pins-and-electrical",
+    "toolchains-and-upload",
+    "components-and-wiring",
+    "libraries-and-examples",
+    "web-and-protocol",
+    "troubleshooting",
+)
+
+
+def create_junction(link: Path, target: Path) -> None:
+    completed = subprocess.run(
+        ["cmd.exe", "/d", "/c", "mklink", "/J", str(link), str(target)],
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    if completed.returncode != 0:
+        raise OSError(completed.stderr or completed.stdout)
+
+
+def remove_junction(path: Path) -> None:
+    if os.path.lexists(path):
+        os.rmdir(path)
 
 try:
     from chatmaker.installers import pack_artifact
@@ -34,20 +66,34 @@ class PackArtifactTests(unittest.TestCase):
         self.source = self.root / "source"
         (self.source / "llmwiki" / "sections").mkdir(parents=True)
         (self.source / "llmwiki" / "index.yaml").write_bytes(
-            b"schema_version: '1.0'\nkind: llmwiki-index\n"
+            (ROOT / "packs" / "llmwiki" / "boards" / f"{BOARD_ID}.yaml").read_bytes()
         )
-        (self.source / "llmwiki" / "sections" / "start-here.md").write_bytes(
-            b"# Start here\n\nUse the exact board.\n"
-        )
+        for section_id in SECTIONS:
+            (self.source / "llmwiki" / "sections" / f"{section_id}.md").write_bytes(
+                (
+                    ROOT
+                    / "knowledge_sources"
+                    / "published"
+                    / "boards"
+                    / BOARD_ID
+                    / f"{section_id}.md"
+                ).read_bytes()
+            )
+
+    def replace_page_body(self, section_id: str, body: str) -> None:
+        path = self.source / "llmwiki" / "sections" / f"{section_id}.md"
+        raw = path.read_text(encoding="utf-8")
+        prefix, _, _ = raw.partition("\n---\n")
+        path.write_text(prefix + "\n---\n" + body, encoding="utf-8")
 
     def build(self, name: str = "pack.cmpack") -> Path:
         output = self.root / name
         pack_artifact.build_pack(
             self.source,
             output,
-            pack_id="chatmaker-board-arduino-nano-classic-wiki",
+            pack_id=PACK_ID,
             pack_version="1.0.0",
-            board_id="arduino-nano-classic",
+            board_id=BOARD_ID,
             core_minimum="0.1.0",
             core_maximum_exclusive="0.2.0",
         )
@@ -93,7 +139,7 @@ class PackArtifactTests(unittest.TestCase):
                 [
                     "pack-manifest.json",
                     "llmwiki/index.yaml",
-                    "llmwiki/sections/start-here.md",
+                    *[f"llmwiki/sections/{section_id}.md" for section_id in sorted(SECTIONS)],
                 ],
             )
             self.assertEqual(archive.comment, b"")
@@ -119,7 +165,10 @@ class PackArtifactTests(unittest.TestCase):
             )
             self.assertEqual(
                 [item["path"] for item in manifest["files"]],
-                ["llmwiki/index.yaml", "llmwiki/sections/start-here.md"],
+                [
+                    "llmwiki/index.yaml",
+                    *[f"llmwiki/sections/{section_id}.md" for section_id in sorted(SECTIONS)],
+                ],
             )
 
     def test_validates_and_extracts_exact_payload_then_revalidates_staging(self):
@@ -142,7 +191,14 @@ class PackArtifactTests(unittest.TestCase):
         self.assertEqual(extracted, manifest)
         self.assertEqual(
             (staging / "llmwiki" / "sections" / "start-here.md").read_bytes(),
-            b"# Start here\n\nUse the exact board.\n",
+            (
+                ROOT
+                / "knowledge_sources"
+                / "published"
+                / "boards"
+                / BOARD_ID
+                / "start-here.md"
+            ).read_bytes(),
         )
         self.assertEqual(
             pack_artifact.validate_staging(staging, manifest),
@@ -159,9 +215,7 @@ class PackArtifactTests(unittest.TestCase):
     def test_extraction_uses_the_same_archive_bytes_that_were_validated(self):
         archive = self.build("original.cmpack")
         original_bytes = archive.read_bytes()
-        (self.source / "llmwiki" / "sections" / "start-here.md").write_bytes(
-            b"# Replaced after validation\n"
-        )
+        self.replace_page_body("start-here", "# Replaced after validation\n")
         replacement = self.build("replacement.cmpack")
         real_validate = pack_artifact.validate_pack_archive
 
@@ -184,8 +238,78 @@ class PackArtifactTests(unittest.TestCase):
         self.assertNotEqual(archive.read_bytes(), original_bytes)
         self.assertEqual(
             (staging / "llmwiki" / "sections" / "start-here.md").read_bytes(),
-            b"# Start here\n\nUse the exact board.\n",
+            (
+                ROOT
+                / "knowledge_sources"
+                / "published"
+                / "boards"
+                / BOARD_ID
+                / "start-here.md"
+            ).read_bytes(),
         )
+
+    def test_extraction_keeps_scratch_on_destination_volume_for_atomic_move(self):
+        archive = self.build()
+        staging = self.root / "same-volume-staging"
+        real_mkdtemp = tempfile.mkdtemp
+
+        def reject_other_volume(*args, **kwargs):
+            directory = kwargs.get("dir")
+            if directory is None or Path(directory) != staging.parent:
+                raise OSError("simulated cross-volume scratch")
+            return real_mkdtemp(*args, **kwargs)
+
+        with mock.patch.object(
+            pack_artifact.tempfile,
+            "mkdtemp",
+            side_effect=reject_other_volume,
+        ):
+            manifest = pack_artifact.extract_validated_pack(
+                archive,
+                staging,
+                core_version="0.1.0",
+            )
+
+        self.assertEqual(manifest["pack_id"], PACK_ID)
+        self.assertTrue(
+            (staging / "llmwiki" / "sections" / "start-here.md").is_file()
+        )
+
+    def test_builder_rejects_semantically_invalid_index_page_set_and_body(self):
+        index_path = self.source / "llmwiki" / "index.yaml"
+        index = yaml.safe_load(index_path.read_text(encoding="utf-8"))
+        index["board_id"] = "arduino-uno-r3"
+        index_path.write_text(
+            yaml.safe_dump(index, allow_unicode=True, sort_keys=False),
+            encoding="utf-8",
+        )
+        error = self.assert_code("pack_content_invalid", self.build, "wrong-board.cmpack")
+        self.assertEqual(error.reason, "llmwiki_index_board_mismatch")
+
+        index_path.write_bytes(
+            (ROOT / "packs" / "llmwiki" / "boards" / f"{BOARD_ID}.yaml").read_bytes()
+        )
+        missing = self.source / "llmwiki" / "sections" / "troubleshooting.md"
+        original_missing = missing.read_bytes()
+        missing.unlink()
+        error = self.assert_code("pack_content_invalid", self.build, "missing-page.cmpack")
+        self.assertEqual(error.reason, "llmwiki_page_set_mismatch")
+        missing.write_bytes(original_missing)
+
+        self.replace_page_body("start-here", "")
+        error = self.assert_code("pack_content_invalid", self.build, "empty-body.cmpack")
+        self.assertEqual(error.reason, "llmwiki_page_body_size_invalid")
+
+    def test_builder_applies_65536_byte_limit_to_body_not_frontmatter(self):
+        self.replace_page_body("start-here", "x" * 65_536)
+        accepted = self.build("body-limit.cmpack")
+        self.assertTrue(accepted.is_file())
+
+        self.replace_page_body("start-here", "x" * 65_537)
+        error = self.assert_code(
+            "pack_content_invalid", self.build, "body-too-large.cmpack"
+        )
+        self.assertEqual(error.reason, "llmwiki_page_body_size_invalid")
 
     def test_rejects_manifest_hash_length_extra_entry_and_duplicate_path(self):
         archive = self.build()
@@ -437,6 +561,59 @@ class PackArtifactTests(unittest.TestCase):
             )
         self.assertFalse(staging.exists())
 
+    @unittest.skipUnless(os.name == "nt", "Windows junction semantics only")
+    def test_extraction_swap_to_real_junction_never_writes_outside_destination(self):
+        archive = self.build()
+        staging = self.root / "swap-staging"
+        outside = self.root / "outside-staging"
+        outside.mkdir()
+        calls = 0
+        real_read = zipfile.ZipFile.read
+
+        def swap_after_validation(archive_object, name, *args, **kwargs):
+            nonlocal calls
+            data = real_read(archive_object, name, *args, **kwargs)
+            calls += 1
+            if calls == 11:
+                if staging.exists():
+                    os.rmdir(staging)
+                create_junction(staging, outside)
+            return data
+
+        try:
+            with mock.patch.object(zipfile.ZipFile, "read", swap_after_validation):
+                self.assert_code(
+                    "pack_archive_unsafe",
+                    pack_artifact.extract_validated_pack,
+                    archive,
+                    staging,
+                    core_version="0.1.0",
+                )
+            self.assertEqual(list(outside.iterdir()), [])
+        finally:
+            remove_junction(staging)
+
+    @unittest.skipUnless(os.name == "nt", "Windows junction semantics only")
+    def test_extraction_rejects_nested_junction_before_creating_descendants(self):
+        archive = self.build()
+        outside = self.root / "outside-nested-staging"
+        outside.mkdir()
+        junction = self.root / "nested-staging-junction"
+        create_junction(junction, outside)
+
+        try:
+            error = self.assert_code(
+                "pack_archive_unsafe",
+                pack_artifact.extract_validated_pack,
+                archive,
+                junction / "missing-parent" / "staging",
+                core_version="0.1.0",
+            )
+            self.assertEqual(error.reason, "staging_link_or_reparse")
+            self.assertEqual(list(outside.iterdir()), [])
+        finally:
+            remove_junction(junction)
+
     def test_regular_file_staging_returns_a_stable_error(self):
         archive = self.build()
         staging = self.root / "staging-is-a-file"
@@ -470,10 +647,7 @@ class BuildPackScriptTests(unittest.TestCase):
             self.fail("Task 3 pack_artifact module is missing")
         with tempfile.TemporaryDirectory() as tempdir:
             root = Path(tempdir)
-            source = root / "source"
-            (source / "llmwiki" / "sections").mkdir(parents=True)
-            (source / "llmwiki" / "index.yaml").write_text("schema_version: '1.0'\n", encoding="utf-8")
-            (source / "llmwiki" / "sections" / "start-here.md").write_text("# Start\n", encoding="utf-8")
+            source = self.prepare_documented_source(root)
             output = root / "out.cmpack"
             result = subprocess.run(
                 [

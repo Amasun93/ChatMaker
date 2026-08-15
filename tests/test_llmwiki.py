@@ -11,6 +11,8 @@ from unittest import mock
 from datetime import datetime, timezone
 from pathlib import Path
 
+import yaml
+
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
@@ -292,6 +294,37 @@ class LLMWikiReaderTests(unittest.TestCase):
         self.assertFalse(result["sections"][1]["available"])
         self.assertEqual(resolver.reads, [])
 
+    def test_reader_rejects_index_metadata_outside_shared_semantic_bounds(self):
+        with tempfile.TemporaryDirectory() as directory:
+            project_root = Path(directory)
+            index_path = (
+                project_root
+                / "packs"
+                / "llmwiki"
+                / "boards"
+                / f"{BOARD_ID}.yaml"
+            )
+            index_path.parent.mkdir(parents=True)
+            index = yaml.safe_load(
+                (ROOT / "packs" / "llmwiki" / "boards" / f"{BOARD_ID}.yaml").read_text(
+                    encoding="utf-8"
+                )
+            )
+            index["sections"][0]["title"] = "x" * 121
+            index_path.write_text(
+                yaml.safe_dump(index, allow_unicode=True, sort_keys=False),
+                encoding="utf-8",
+            )
+
+            result = execute_request(
+                {"action": "index", "board_id": BOARD_ID, "consumer": "chatduino"},
+                resolver=RecordingResolver(),
+                project_root=project_root,
+            )
+
+        self.assertFalse(result["success"], result)
+        self.assertEqual(result["error"]["code"], "pack_content_invalid")
+
     def test_section_defaults_auto_install_and_only_reads_selected_body_once(self):
         resolver = RecordingResolver()
         manager = InstallingManager(resolver)
@@ -400,6 +433,33 @@ class LLMWikiReaderTests(unittest.TestCase):
         self.assertFalse(result["success"])
         self.assertEqual(result["error"]["code"], "pack_content_invalid")
 
+    def test_duplicate_frontmatter_key_fails_closed(self):
+        stable_id = f"{BOARD_ID}-start-here"
+        duplicate = page(BOARD_ID, "start-here", "Ambiguous identity.\n").replace(
+            f"stable_id: {stable_id}\n",
+            f"stable_id: attacker-controlled\nstable_id: {stable_id}\n",
+            1,
+        )
+        resolver = RecordingResolver()
+        resolver.put(
+            PACK_ID,
+            "llmwiki/sections/start-here.md",
+            duplicate,
+        )
+
+        result = self.request(
+            {
+                "action": "section",
+                "board_id": BOARD_ID,
+                "consumer": "chatduino",
+                "section_id": "start-here",
+            },
+            resolver=resolver,
+        )
+
+        self.assertFalse(result["success"])
+        self.assertEqual(result["error"]["code"], "pack_content_invalid")
+
     def test_body_limit_applies_to_body_bytes_after_frontmatter(self):
         body = "a" * 65_536
         raw = page(BOARD_ID, "start-here", body).encode("utf-8")
@@ -440,6 +500,149 @@ class LLMWikiReaderTests(unittest.TestCase):
         self.assertFalse(result["success"])
         self.assertEqual(result["error"]["code"], "pack_content_invalid")
         self.assertIn("section body size is invalid", result["error"]["message"])
+
+    def test_official_selected_body_drift_is_quarantined_and_retried_once(self):
+        with tempfile.TemporaryDirectory() as directory:
+            fixture = SignedRegistryFixture(Path(directory))
+            fixture.publish(
+                "1.0.0",
+                1,
+                "Original canonical guidance.\n",
+            )
+            manager = fixture.manager()
+            resolver = ResourceResolver(user_root=fixture.user_root, manager=manager)
+            request = {
+                "action": "section",
+                "board_id": BOARD_ID,
+                "consumer": "chatduino",
+                "section_id": "start-here",
+            }
+            installed = self.request(request, manager=manager, resolver=resolver)
+            self.assertTrue(installed["success"], installed)
+            selected = (
+                manager.paths.store
+                / PACK_ID
+                / "1.0.0"
+                / "llmwiki"
+                / "sections"
+                / "start-here.md"
+            )
+            selected.write_bytes(b"drift")
+            calls_before = list(fixture.transport.calls)
+
+            recovered = self.request(request, manager=manager, resolver=resolver)
+
+            self.assertTrue(recovered["success"], recovered)
+            self.assertEqual(recovered["body"], "Original canonical guidance.\n")
+            self.assertEqual(fixture.transport.calls, calls_before)
+            self.assertTrue(list((manager.paths.quarantine / PACK_ID).iterdir()))
+            self.assertTrue(manager.status(PACK_ID)["packs"][0]["verified"])
+
+    def test_deleted_official_selected_body_is_quarantined_and_retried_once(self):
+        with tempfile.TemporaryDirectory() as directory:
+            fixture = SignedRegistryFixture(Path(directory))
+            fixture.publish("1.0.0", 1, "Original canonical guidance.\n")
+            manager = fixture.manager()
+            resolver = ResourceResolver(user_root=fixture.user_root, manager=manager)
+            request = {
+                "action": "section",
+                "board_id": BOARD_ID,
+                "consumer": "chatduino",
+                "section_id": "start-here",
+            }
+            installed = self.request(request, manager=manager, resolver=resolver)
+            self.assertTrue(installed["success"], installed)
+            selected = (
+                manager.paths.store
+                / PACK_ID
+                / "1.0.0"
+                / "llmwiki"
+                / "sections"
+                / "start-here.md"
+            )
+            selected.unlink()
+            calls_before = list(fixture.transport.calls)
+
+            recovered = self.request(request, manager=manager, resolver=resolver)
+
+            self.assertTrue(recovered["success"], recovered)
+            self.assertEqual(recovered["body"], "Original canonical guidance.\n")
+            self.assertEqual(fixture.transport.calls, calls_before)
+            self.assertTrue(list((manager.paths.quarantine / PACK_ID).iterdir()))
+            self.assertTrue(manager.status(PACK_ID)["packs"][0]["verified"])
+
+    def test_auto_install_false_reports_stable_drift_after_quarantine(self):
+        with tempfile.TemporaryDirectory() as directory:
+            fixture = SignedRegistryFixture(Path(directory))
+            fixture.publish("1.0.0", 1, "Original guidance.\n")
+            manager = fixture.manager()
+            resolver = ResourceResolver(user_root=fixture.user_root, manager=manager)
+            request = {
+                "action": "section",
+                "board_id": BOARD_ID,
+                "consumer": "chatduino",
+                "section_id": "start-here",
+            }
+            self.assertTrue(
+                self.request(request, manager=manager, resolver=resolver)["success"]
+            )
+            selected = (
+                manager.paths.store
+                / PACK_ID
+                / "1.0.0"
+                / "llmwiki"
+                / "sections"
+                / "start-here.md"
+            )
+            selected.write_bytes(b"drift")
+            calls_before = list(fixture.transport.calls)
+
+            result = self.request(
+                {**request, "auto_install": False},
+                manager=manager,
+                resolver=resolver,
+            )
+
+            self.assertFalse(result["success"], result)
+            self.assertEqual(result["error"]["code"], "pack_drift_detected")
+            self.assertEqual(fixture.transport.calls, calls_before)
+            self.assertTrue(list((manager.paths.quarantine / PACK_ID).iterdir()))
+            self.assertEqual(manager.status(PACK_ID)["packs"], [])
+
+    def test_malformed_local_override_is_never_quarantined_or_auto_repaired(self):
+        with tempfile.TemporaryDirectory() as directory:
+            fixture = SignedRegistryFixture(Path(directory))
+            fixture.publish("1.0.0", 1, "Official guidance.\n")
+            manager = fixture.manager()
+            resolver = ResourceResolver(user_root=fixture.user_root, manager=manager)
+            override = (
+                manager.paths.overrides
+                / PACK_ID
+                / "llmwiki"
+                / "sections"
+                / "start-here.md"
+            )
+            override.parent.mkdir(parents=True)
+            override.write_bytes(b"local experiment without frontmatter")
+            before = override.read_bytes()
+            calls_before = list(fixture.transport.calls)
+
+            result = self.request(
+                {
+                    "action": "section",
+                    "board_id": BOARD_ID,
+                    "consumer": "chatduino",
+                    "section_id": "start-here",
+                },
+                manager=manager,
+                resolver=resolver,
+            )
+
+            self.assertFalse(result["success"], result)
+            self.assertEqual(result["error"]["code"], "pack_content_invalid")
+            self.assertEqual(override.read_bytes(), before)
+            self.assertEqual(fixture.transport.calls, calls_before)
+            self.assertFalse(manager.paths.quarantine.exists())
 
     def test_signed_registry_downloads_once_then_cached_offline_read_survives_bad_updates(self):
         with tempfile.TemporaryDirectory() as directory:

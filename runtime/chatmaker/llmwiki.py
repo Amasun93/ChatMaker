@@ -5,45 +5,24 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
-import re
 import sys
 from typing import Any, Mapping
 
-import yaml
-
 from .installers.pack_manager import PackManager, PackManagerError
-from .resources import ResourceResolver
+from .llmwiki_semantics import (
+    BOARD_IDS,
+    CONSUMERS,
+    LLMWikiSemanticError,
+    MAX_BODY_BYTES,
+    PACK_IDS,
+    SECTION_IDS,
+    validate_index_bytes,
+    validate_page_bytes,
+)
+from .resources import ResourceIntegrityError, ResourceResolver
 
 
 API_VERSION = "1"
-MAX_BODY_BYTES = 65_536
-BOARD_IDS = ("arduino-nano-classic", "arduino-uno-r3", "esp32-devkit-v1")
-CONSUMERS = ("chatmaker", "chatduino", "chatweb")
-SECTION_IDS = (
-    "start-here",
-    "identify-and-safety",
-    "pins-and-electrical",
-    "toolchains-and-upload",
-    "components-and-wiring",
-    "libraries-and-examples",
-    "web-and-protocol",
-    "troubleshooting",
-)
-PACK_IDS = {board_id: f"chatmaker-board-{board_id}-wiki" for board_id in BOARD_IDS}
-SOURCE_REFS = {
-    "arduino-nano-classic": "source-arduino-nano-classic-documentation",
-    "arduino-uno-r3": "source-arduino-uno-r3-documentation",
-    "esp32-devkit-v1": "source-esp32-devkit-v1-doit-board-definition",
-}
-_SAFE_ID = re.compile(r"^[a-z0-9][a-z0-9-]*$")
-_INDEX_SECTION_KEYS = {
-    "section_id",
-    "title",
-    "summary",
-    "consumers",
-    "topics",
-    "pack_id",
-}
 
 
 class LLMWikiContentError(Exception):
@@ -84,93 +63,35 @@ def _invalid(request: Any, message: str) -> dict[str, Any]:
 def _load_index(root: Path, board_id: str) -> dict[str, Any]:
     path = root / "packs" / "llmwiki" / "boards" / f"{board_id}.yaml"
     try:
-        value = yaml.safe_load(path.read_text(encoding="utf-8"))
-    except (OSError, UnicodeError, yaml.YAMLError) as exc:
+        return validate_index_bytes(
+            path.read_bytes(),
+            expected_board_id=board_id,
+            expected_pack_id=PACK_IDS[board_id],
+        )
+    except OSError as exc:
         raise LLMWikiContentError("compact index is unreadable") from exc
-    expected_keys = {"schema_version", "kind", "board_id", "max_section_bytes", "sections"}
-    if (
-        not isinstance(value, dict)
-        or set(value) != expected_keys
-        or value.get("schema_version") != "1.0"
-        or value.get("kind") != "llmwiki-index"
-        or value.get("board_id") != board_id
-        or value.get("max_section_bytes") != MAX_BODY_BYTES
-        or not isinstance(value.get("sections"), list)
-        or len(value["sections"]) != len(SECTION_IDS)
-    ):
-        raise LLMWikiContentError("compact index identity is invalid")
-    seen: list[str] = []
-    expected_pack = PACK_IDS[board_id]
-    for section in value["sections"]:
-        if not isinstance(section, dict) or set(section) != _INDEX_SECTION_KEYS:
-            raise LLMWikiContentError("compact index section metadata is invalid")
-        section_id = section.get("section_id")
-        consumers = section.get("consumers")
-        topics = section.get("topics")
-        if (
-            section_id not in SECTION_IDS
-            or _SAFE_ID.fullmatch(section_id) is None
-            or section.get("pack_id") != expected_pack
-            or not isinstance(section.get("title"), str)
-            or not section["title"]
-            or not isinstance(section.get("summary"), str)
-            or not section["summary"]
-            or not isinstance(consumers, list)
-            or not consumers
-            or len(consumers) != len(set(consumers))
-            or any(consumer not in CONSUMERS for consumer in consumers)
-            or not isinstance(topics, list)
-            or not topics
-            or len(topics) != len(set(topics))
-            or any(not isinstance(topic, str) or _SAFE_ID.fullmatch(topic) is None for topic in topics)
-        ):
-            raise LLMWikiContentError("compact index section mapping is invalid")
-        seen.append(section_id)
-    if tuple(seen) != SECTION_IDS:
-        raise LLMWikiContentError("compact index sections are not exact and unique")
-    return value
+    except LLMWikiSemanticError as exc:
+        raise LLMWikiContentError(str(exc)) from exc
 
 
 def _section_resource(section_id: str) -> str:
-    if section_id not in SECTION_IDS or _SAFE_ID.fullmatch(section_id) is None:
+    if section_id not in SECTION_IDS:
         raise LLMWikiContentError("unsafe section identity")
     return f"llmwiki/sections/{section_id}.md"
 
 
 def _parse_page(raw: bytes, *, board_id: str, section_id: str) -> tuple[str, int]:
     try:
-        raw.decode("utf-8")
-    except UnicodeDecodeError as exc:
-        raise LLMWikiContentError("section is not valid UTF-8") from exc
-    if raw.startswith(b"---\r\n"):
-        opening = len(b"---\r\n")
-        closing = b"\r\n---\r\n"
-    elif raw.startswith(b"---\n"):
-        opening = len(b"---\n")
-        closing = b"\n---\n"
-    else:
-        raise LLMWikiContentError("section frontmatter is missing")
-    boundary = raw.find(closing, opening)
-    if boundary < 0:
-        raise LLMWikiContentError("section frontmatter is incomplete")
-    try:
-        frontmatter = yaml.safe_load(raw[opening:boundary].decode("utf-8"))
-    except (UnicodeError, yaml.YAMLError) as exc:
-        raise LLMWikiContentError("section frontmatter is malformed") from exc
-    expected_frontmatter = {
-        "schema_version": "1.0",
-        "kind": "llmwiki-page",
-        "stable_id": f"{board_id}-{section_id}",
-        "board_id": board_id,
-        "section_id": section_id,
-        "source_refs": [SOURCE_REFS[board_id]],
-    }
-    if frontmatter != expected_frontmatter:
-        raise LLMWikiContentError("section identity or source reference is invalid")
-    body_bytes = raw[boundary + len(closing) :]
-    if not body_bytes or len(body_bytes) > MAX_BODY_BYTES:
-        raise LLMWikiContentError("section body size is invalid")
-    return body_bytes.decode("utf-8"), len(body_bytes)
+        page = validate_page_bytes(
+            raw,
+            expected_board_id=board_id,
+            expected_section_id=section_id,
+        )
+    except LLMWikiSemanticError as exc:
+        if exc.reason == "llmwiki_page_body_size_invalid":
+            raise LLMWikiContentError("section body size is invalid") from exc
+        raise LLMWikiContentError(str(exc)) from exc
+    return page.body, page.body_bytes
 
 
 def _resolve_optional(resolver: Any, path: str, pack_id: str):
@@ -311,9 +232,52 @@ def execute_request(
                     f"Installed pack is missing section: {section_id}",
                     request=request,
                 )
-        body, body_bytes = _parse_page(
-            resolved.read_bytes(), board_id=board_id, section_id=section_id
-        )
+        try:
+            body, body_bytes = _parse_page(
+                resolved.read_bytes(), board_id=board_id, section_id=section_id
+            )
+        except ResourceIntegrityError:
+            provenance = getattr(resolved, "provenance", {})
+            if not isinstance(provenance, Mapping) or provenance.get("kind") != "official_pack":
+                raise
+            recovery_manager = manager or getattr(resolver, "manager", None)
+            version = provenance.get("version")
+            if (
+                recovery_manager is None
+                or not isinstance(version, str)
+                or not callable(getattr(recovery_manager, "quarantine_active_drift", None))
+            ):
+                return _error(
+                    "pack_drift_detected",
+                    f"Official pack drift detected: {pack_id}",
+                    request=request,
+                )
+            recovery_manager.quarantine_active_drift(pack_id, version=version)
+            if not auto_install:
+                return _error(
+                    "pack_drift_detected",
+                    f"Official pack drift detected: {pack_id}",
+                    request=request,
+                )
+            recovery_manager.ensure(pack_id)
+            repaired = _resolve_optional(resolver, resource_path, pack_id)
+            if repaired is None:
+                return _error(
+                    "pack_drift_detected",
+                    f"Official pack repair did not restore section: {section_id}",
+                    request=request,
+                )
+            try:
+                body, body_bytes = _parse_page(
+                    repaired.read_bytes(), board_id=board_id, section_id=section_id
+                )
+            except ResourceIntegrityError:
+                return _error(
+                    "pack_drift_detected",
+                    f"Official pack drift persisted after one repair: {pack_id}",
+                    request=request,
+                )
+            resolved = repaired
         return {
             "success": True,
             "api_version": API_VERSION,

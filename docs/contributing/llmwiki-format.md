@@ -17,16 +17,18 @@ llmwiki/sections/<section-id>.md
 ```yaml
 ---
 schema_version: "1.0"
+kind: llmwiki-page
+stable_id: arduino-nano-classic-identify-and-safety
 board_id: arduino-nano-classic
 section_id: identify-and-safety
-title: 识别与安全
-source_manifest: knowledge_sources/manifests/arduino-nano-classic.yaml
+source_refs:
+  - source-arduino-nano-classic-documentation
 ---
 ```
 
-正文必须完整、小于 `packs/schemas/llmwiki-index.schema.yaml` 和发布校验器规定的单页上限。v1 不分页；不要把安全警告或代码块拆成半页。
+Front matter 必须恰好包含上面的六个字段，不能增加 `title`、`source_manifest` 或其他平行身份字段。正文必须非空且完整；65,536 字节上限只计算结束分隔线之后的 UTF-8 正文字节，不计算 front matter。v1 不分页；不要把安全警告或代码块拆成半页。
 
-The body must be complete and remain below the published single-page limit. Version 1 has no pagination, so never split a safety warning or code block across pages.
+Front matter must contain exactly those six fields, with no parallel `title`, `source_manifest`, or other identity fields. The body must be nonempty and complete. The 65,536-byte ceiling applies only to UTF-8 body bytes after the closing delimiter, excluding front matter. Version 1 has no pagination, so never split a safety warning or code block across pages.
 
 ## 内容边界 / Content boundary
 

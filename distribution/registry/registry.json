@@ -2,7 +2,7 @@
   "schema_version": "1.0",
   "sequence": 1,
   "generated_at": "2026-08-16T00:00:00Z",
-  "expires_at": "2027-08-16T00:00:00Z",
+  "expires_at": "2026-09-15T00:00:00Z",
   "packs": [
     {
       "pack_id": "chatmaker-board-arduino-nano-classic-wiki",
