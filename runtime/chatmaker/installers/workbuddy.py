@@ -5,20 +5,14 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
 from pathlib import Path
-import shutil
 import sys
-import tempfile
-import time
 from typing import Any
 
 from chatmaker.installers.skill_bundle import (
-    _write_json_atomic,
     doctor_bundle,
-    install_bundle,
-    uninstall_bundle,
 )
+from chatmaker.installers.transaction import InstallTransaction
 
 
 SERVER_KEY = "arduino-nano-mindplus"
@@ -44,22 +38,17 @@ def install(
     python_executable: str = sys.executable,
     source_skills: Path = PROJECT_ROOT / "skills",
 ) -> dict[str, Any]:
-    config_path = config_path.expanduser().resolve()
+    config_path = config_path.expanduser().absolute()
     workbuddy_home = config_path.parent
-    operation_manifest = workbuddy_home / OPERATION_MANIFEST_NAME
-    if operation_manifest.exists():
-        raise FileExistsError(
-            f"existing ChatMaker install manifest must be uninstalled first: {operation_manifest}"
-        )
     server_module = PACKAGE_ROOT / "integrations" / "mcp.py"
     if not server_module.is_file():
         raise FileNotFoundError("generic_mcp_server.py is missing")
     data = json.loads(config_path.read_text(encoding="utf-8")) if config_path.is_file() else {}
-    servers = data.setdefault("mcpServers", {})
+    servers = data.get("mcpServers", {})
     if not isinstance(servers, dict):
         raise ValueError("mcpServers must be an object")
     previous = servers.get(SERVER_KEY)
-    servers[SERVER_KEY] = {
+    server = {
         "type": "stdio",
         "command": str(Path(python_executable).resolve()) if Path(python_executable).exists() else python_executable,
         "args": ["-m", "chatmaker.integrations.mcp"],
@@ -68,81 +57,59 @@ def install(
         "defer_loading": False,
         "disabled": False,
     }
-    config_path.parent.mkdir(parents=True, exist_ok=True)
-    backup = None
-    config_existed = config_path.is_file()
-    if config_path.is_file():
-        backup = config_path.with_name(f"mcp.json.backup-{time.time_ns()}")
-        shutil.copy2(config_path, backup)
-    skill_result = install_bundle(workbuddy_home, source_skills, SKILL_MANIFEST_NAME)
-    try:
-        with tempfile.NamedTemporaryFile(
-            "w", encoding="utf-8", delete=False, dir=config_path.parent,
-            prefix="mcp-", suffix=".json.tmp"
-        ) as temporary:
-            json.dump(data, temporary, ensure_ascii=False, indent=2)
-            temporary.write("\n")
-            temporary_name = temporary.name
-        os.replace(temporary_name, config_path)
-        _write_json_atomic(
-            operation_manifest,
+    transaction = InstallTransaction(
+        root=workbuddy_home / ".chatmaker",
+        installation_id=f"workbuddy:{config_path}",
+    )
+    result = transaction.apply(
+        [
             {
-                "schema_version": "1.0",
-                "config": str(config_path),
-                "config_existed": config_existed,
-                "config_backup": str(backup) if backup else None,
-                "skill_manifest": skill_result["manifest"],
+                "kind": "skill_bundle",
+                "source": Path(source_skills).expanduser().absolute(),
+                "path": workbuddy_home / "skills",
+                "names": ["chatmaker", "chatduino", "chatweb"],
             },
-        )
-    except Exception:
-        uninstall_bundle(workbuddy_home, SKILL_MANIFEST_NAME)
-        raise
+            {
+                "kind": "mcp_server",
+                "path": config_path,
+                "server_key": SERVER_KEY,
+                "server": server,
+            },
+        ]
+    )
+    value = result.to_dict()
+    backup = next(
+        (
+            path
+            for identity, path in result.details.get("backups", {}).items()
+            if identity.startswith("mcp:")
+        ),
+        None,
+    )
     return _with_content_boundary(
         {
-            "success": True,
+            **value,
             "config": str(config_path),
             "backup": str(backup) if backup else None,
-            "manifest": str(operation_manifest),
             "server": SERVER_KEY,
-            "installed_skills": skill_result["installed_skills"],
+            "installed_skills": ["chatmaker", "chatduino", "chatweb"],
             "replaced_existing_entry": previous is not None,
-            "preserved_other_servers": len(servers) - 1,
+            "preserved_other_servers": len(servers) - (1 if SERVER_KEY in servers else 0),
             "restart_workbuddy": True,
         }
     )
 
 
 def uninstall(config_path: Path) -> dict[str, Any]:
-    config_path = config_path.expanduser().resolve()
+    config_path = config_path.expanduser().absolute()
     workbuddy_home = config_path.parent
-    operation_manifest = workbuddy_home / OPERATION_MANIFEST_NAME
-    if not operation_manifest.is_file():
-        raise FileNotFoundError(f"install manifest not found: {operation_manifest}")
-    manifest = json.loads(operation_manifest.read_text(encoding="utf-8"))
-    recorded_config = Path(manifest["config"]).resolve()
-    if recorded_config != config_path:
-        raise ValueError(f"manifest belongs to another config: {recorded_config}")
-
-    backup_value = manifest.get("config_backup")
-    if manifest.get("config_existed"):
-        backup = Path(backup_value).resolve() if backup_value else None
-        if backup is None or not backup.is_file():
-            raise FileNotFoundError(f"WorkBuddy config backup not found: {backup}")
-        shutil.copy2(backup, config_path)
-        config_restored = True
-    else:
-        if config_path.exists():
-            config_path.unlink()
-        config_restored = False
-
-    skills = uninstall_bundle(workbuddy_home, SKILL_MANIFEST_NAME)
-    operation_manifest.unlink()
+    result = InstallTransaction(
+        root=workbuddy_home / ".chatmaker",
+        installation_id=f"workbuddy:{config_path}",
+    ).uninstall()
     return {
-        "success": True,
+        **result.to_dict(),
         "config": str(config_path),
-        "config_restored": config_restored,
-        "restored_skills": skills["restored_skills"],
-        "removed_skills": skills["removed_skills"],
         "restart_workbuddy": True,
     }
 

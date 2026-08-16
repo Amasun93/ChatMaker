@@ -11,7 +11,7 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "runtime"))
 
 from chatmaker.installers.codex import doctor, install, uninstall  # noqa: E402
-from chatmaker.installers import skill_bundle  # noqa: E402
+from chatmaker.installers import transaction  # noqa: E402
 
 
 class CodexInstallerTests(unittest.TestCase):
@@ -42,7 +42,11 @@ class CodexInstallerTests(unittest.TestCase):
             self.assertEqual((old_chatduino / "old-marker.txt").read_text(encoding="utf-8"), "keep me")
             self.assertFalse((codex_home / "skills" / "chatmaker").exists())
             self.assertFalse((codex_home / "skills" / "chatweb").exists())
-            self.assertFalse(Path(installed["manifest"]).exists())
+            self.assertTrue(Path(installed["manifest"]).exists(), "audit journal was removed")
+            self.assertEqual(
+                list((codex_home / ".chatmaker" / "state").glob("*.json")),
+                [],
+            )
 
     def test_second_install_preserves_the_original_restore_point(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -50,10 +54,18 @@ class CodexInstallerTests(unittest.TestCase):
             old_chatmaker = codex_home / "skills" / "chatmaker"
             old_chatmaker.mkdir(parents=True)
             (old_chatmaker / "old-marker.txt").write_text("original", encoding="utf-8")
-            install(codex_home, source_skills=ROOT / "skills")
+            first = install(codex_home, source_skills=ROOT / "skills")
+            backups_before = sorted((codex_home / ".chatmaker" / "backups").glob("**/*"))
 
-            with self.assertRaisesRegex(FileExistsError, "uninstalled first"):
-                install(codex_home, source_skills=ROOT / "skills")
+            second = install(codex_home, source_skills=ROOT / "skills")
+
+            self.assertEqual(first["status"], "installed")
+            self.assertEqual(second["status"], "already_current")
+            self.assertEqual(second["transaction_id"], first["transaction_id"])
+            self.assertEqual(
+                sorted((codex_home / ".chatmaker" / "backups").glob("**/*")),
+                backups_before,
+            )
 
             uninstall(codex_home)
             marker = old_chatmaker / "old-marker.txt"
@@ -66,7 +78,7 @@ class CodexInstallerTests(unittest.TestCase):
             old_chatmaker = codex_home / "skills" / "chatmaker"
             old_chatmaker.mkdir(parents=True)
             (old_chatmaker / "old-marker.txt").write_text("original", encoding="utf-8")
-            real_activate = skill_bundle._activate_staging
+            real_activate = transaction._activate_staging
 
             def fail_when_activating_chatduino(source, target):
                 if Path(target).name == "chatduino":
@@ -74,7 +86,7 @@ class CodexInstallerTests(unittest.TestCase):
                 return real_activate(source, target)
 
             with mock.patch.object(
-                skill_bundle,
+                transaction,
                 "_activate_staging",
                 side_effect=fail_when_activating_chatduino,
             ):
@@ -91,14 +103,14 @@ class CodexInstallerTests(unittest.TestCase):
     def test_windows_directory_activation_permission_error_falls_back_to_copy(self):
         with tempfile.TemporaryDirectory() as directory:
             codex_home = Path(directory) / ".codex"
-            real_replace = skill_bundle.os.replace
+            real_replace = transaction.os.replace
 
             def reject_chatduino_rename(source, target):
                 if Path(target).name == "chatduino":
                     raise PermissionError("simulated watcher lock")
                 return real_replace(source, target)
 
-            with mock.patch.object(skill_bundle.os, "replace", side_effect=reject_chatduino_rename):
+            with mock.patch.object(transaction.os, "replace", side_effect=reject_chatduino_rename):
                 try:
                     installed = install(codex_home, source_skills=ROOT / "skills")
                 except PermissionError as exc:
