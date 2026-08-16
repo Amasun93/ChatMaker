@@ -36,7 +36,7 @@ def main(argv: list[str] | None = None) -> int:
             "ok": report.ok,
             "counts": report.counts,
             "errors": report.errors,
-            "llmwiki_indexes": len(list((root / "packs" / "llmwiki" / "boards").glob("*.yaml"))),
+            "knowledge_indexes": len(list((root / "knowledge" / "boards").glob("*.yaml"))),
             "verification_snapshot_count": len(snapshot),
             "verification_snapshot_sha256": digest,
         }
@@ -54,4 +54,3 @@ def main(argv: list[str] | None = None) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

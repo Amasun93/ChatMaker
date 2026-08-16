@@ -1,6 +1,6 @@
 ---
 schema_version: "1.0"
-kind: llmwiki-page
+kind: knowledge-page
 stable_id: arduino-nano-classic-components-and-wiring
 board_id: arduino-nano-classic
 section_id: components-and-wiring

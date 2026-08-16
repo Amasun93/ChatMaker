@@ -8,7 +8,7 @@ import sys
 from typing import Any
 
 from chatmaker import catalog
-from chatmaker import llmwiki
+from chatmaker import knowledge
 from chatmaker.hardware import esp32_devkit_v1 as esp32_bridge
 from chatmaker.hardware import nano_mindplus as bridge
 from chatmaker.hardware import serial_monitor
@@ -16,7 +16,7 @@ from chatmaker.hardware import uno_mindplus as uno_bridge
 
 
 SERVER_NAME = "chatmaker-hardware"
-SERVER_VERSION = "1.8.0"
+SERVER_VERSION = "1.9.0"
 PROTOCOL_VERSION = "2024-11-05"
 
 TOOLS = [
@@ -45,9 +45,9 @@ TOOLS = [
         },
     },
     {
-        "name": "llmwiki_get",
+        "name": "knowledge_get",
         "description": (
-            "读取某块板卡的 LLMWiki 起始索引或一个完整章节。未传 section_id 时返回索引；"
+            "读取某块板卡的 ChatMaker Knowledge 起始索引或一个完整章节。未传 section_id 时返回索引；"
             "传入 section_id 时按需静默确保官方知识包可用并返回完整章节。"
         ),
         "inputSchema": {
@@ -363,7 +363,7 @@ def _tool_result(name: str, arguments: dict[str, Any]) -> dict[str, Any]:
         )
     elif name == "catalog_get":
         result = catalog.get_catalog_record(str(arguments.get("id", "")))
-    elif name == "llmwiki_get":
+    elif name == "knowledge_get":
         request = {
             "action": "section" if "section_id" in arguments else "index",
             "board_id": arguments.get("board_id", ""),
@@ -372,7 +372,7 @@ def _tool_result(name: str, arguments: dict[str, Any]) -> dict[str, Any]:
         if "section_id" in arguments:
             request["section_id"] = arguments.get("section_id", "")
             request["auto_install"] = arguments.get("auto_install", True)
-        result = llmwiki.execute_request(request)
+        result = knowledge.execute_request(request)
     elif name == "serial_list":
         result = serial_monitor.SERIAL_MANAGER.list()
     elif name == "serial_open":
@@ -476,7 +476,7 @@ def handle(request: dict[str, Any]) -> dict[str, Any] | None:
             "serverInfo": {"name": SERVER_NAME, "version": SERVER_VERSION},
             "instructions": (
                 "处理 Arduino Uno Rev3、经典 Nano ATmega328P、精确确认的 DOIT ESP32 DEVKIT V1 和杜邦线通用模块。"
-                "先用 catalog_search/get 读取匹配资料，确认精确板卡身份后用 llmwiki_get 读取 start-here 索引或指定章节，"
+                "先用 catalog_search/get 读取匹配资料，确认精确板卡身份后用 knowledge_get 读取 start-here 索引或指定章节，"
                 "再按板型调用对应 doctor。ESP32 只接受官方 3.3.11 core "
                 "和精确 DOIT FQBN；先调用 esp32_prepare_environment 自动检查，并且只安装 ChatMaker 验证的锁定版本。"
                 "ESP-WROOM-32 模块丝印本身不算载板确认，也不会替换成 FireBeetle。"

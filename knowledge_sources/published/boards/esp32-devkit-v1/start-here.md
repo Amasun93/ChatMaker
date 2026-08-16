@@ -1,6 +1,6 @@
 ---
 schema_version: "1.0"
-kind: llmwiki-page
+kind: knowledge-page
 stable_id: esp32-devkit-v1-start-here
 board_id: esp32-devkit-v1
 section_id: start-here

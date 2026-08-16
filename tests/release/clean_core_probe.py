@@ -18,7 +18,7 @@ from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
 from chatmaker.installers.pack_manager import FetchResponse, PackManager
-from chatmaker.llmwiki import execute_request
+from chatmaker.knowledge import execute_request
 from chatmaker.resources import ResourceResolver
 
 
@@ -27,7 +27,7 @@ REGISTRY_URL = (
     "distribution/registry/registry.json"
 )
 SIGNATURE_URL = REGISTRY_URL.replace("registry.json", "registry.sig.json")
-PACK_ID = "chatmaker-board-arduino-nano-classic-wiki"
+PACK_ID = "chatmaker-board-arduino-nano-classic-knowledge"
 BOARD_ID = "arduino-nano-classic"
 NOW = datetime(2026, 8, 18, 12, 0, tzinfo=timezone.utc)
 
@@ -72,7 +72,7 @@ def _fixture(pack_bytes: bytes) -> tuple[dict[str, object], dict[str, bytes]]:
     pack_url = (
         "https://raw.githubusercontent.com/Amasun93/ChatMaker/"
         "1111111111111111111111111111111111111111/distribution/packs/"
-        "chatmaker-board-arduino-nano-classic-wiki-1.0.0.cmpack"
+        "chatmaker-board-arduino-nano-classic-knowledge-1.0.0.cmpack"
     )
     registry = {
         "schema_version": "1.0",
@@ -94,7 +94,7 @@ def _fixture(pack_bytes: bytes) -> tuple[dict[str, object], dict[str, bytes]]:
                         "maximum_exclusive": "0.2.0",
                     },
                     "pack_manifest_schema": ["1.0"],
-                    "llmwiki_index_schema": ["1.0"],
+                    "knowledge_index_schema": ["1.0"],
                 },
             }
         ],

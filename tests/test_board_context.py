@@ -19,12 +19,12 @@ sys.path.insert(0, str(ROOT / "runtime"))
 from chatmaker.catalog import get_catalog_record, open_board  # noqa: E402
 from chatmaker.installers.pack_artifact import build_pack  # noqa: E402
 from chatmaker.installers.pack_manager import FetchResponse, PackManager  # noqa: E402
-from chatmaker.llmwiki import execute_request as llmwiki_request  # noqa: E402
+from chatmaker.knowledge import execute_request as knowledge_request  # noqa: E402
 from chatmaker.packs import canonical_verification_snapshot  # noqa: E402
 from chatmaker.resources import ResourceResolver  # noqa: E402
 
 
-PACK_ID = "chatmaker-board-arduino-nano-classic-wiki"
+PACK_ID = "chatmaker-board-arduino-nano-classic-knowledge"
 BOARD_ID = "arduino-nano-classic"
 SECTION_IDS = (
     "start-here",
@@ -48,7 +48,7 @@ def page(body: str) -> str:
     return (
         "---\n"
         "schema_version: '1.0'\n"
-        "kind: llmwiki-page\n"
+        "kind: knowledge-page\n"
         f"stable_id: {BOARD_ID}-start-here\n"
         f"board_id: {BOARD_ID}\n"
         "section_id: start-here\n"
@@ -100,12 +100,12 @@ class SignedRegistryFixture:
 
     def publish(self, version: str, body: str) -> None:
         source = self.root / "source"
-        (source / "llmwiki" / "sections").mkdir(parents=True, exist_ok=True)
-        (source / "llmwiki" / "index.yaml").write_bytes(
-            (ROOT / "packs" / "llmwiki" / "boards" / f"{BOARD_ID}.yaml").read_bytes()
+        (source / "knowledge" / "sections").mkdir(parents=True, exist_ok=True)
+        (source / "knowledge" / "index.yaml").write_bytes(
+            (ROOT / "knowledge" / "boards" / f"{BOARD_ID}.yaml").read_bytes()
         )
         for section_id in SECTION_IDS:
-            target = source / "llmwiki" / "sections" / f"{section_id}.md"
+            target = source / "knowledge" / "sections" / f"{section_id}.md"
             if section_id == "start-here":
                 target.write_text(page(body), encoding="utf-8", newline="\n")
             else:
@@ -155,7 +155,7 @@ class SignedRegistryFixture:
                             "maximum_exclusive": "0.2.0",
                         },
                         "pack_manifest_schema": ["1.0"],
-                        "llmwiki_index_schema": ["1.0"],
+                        "knowledge_index_schema": ["1.0"],
                     },
                 }
             ],
@@ -196,7 +196,7 @@ class BoardContextTests(unittest.TestCase):
         self.assertTrue(result["recipes"])
         self.assertNotIn("pins", result["components"][0])
         self.assertNotIn("wiring", result["recipes"][0])
-        self.assertEqual(result["llmwiki"]["board_id"], BOARD_ID)
+        self.assertEqual(result["knowledge"]["board_id"], BOARD_ID)
 
     def test_basic_led_canonical_path_hash_and_verification_snapshot_survive_pack_install_and_override(self):
         initial = get_catalog_record("basic-led", project_root=ROOT)
@@ -216,7 +216,7 @@ class BoardContextTests(unittest.TestCase):
                 environ={},
             )
 
-            official = llmwiki_request(
+            official = knowledge_request(
                 {
                     "action": "section",
                     "board_id": BOARD_ID,
@@ -229,7 +229,7 @@ class BoardContextTests(unittest.TestCase):
             )
 
             override_root = Path(directory) / "overrides"
-            override_path = override_root / PACK_ID / "llmwiki" / "sections" / "start-here.md"
+            override_path = override_root / PACK_ID / "knowledge" / "sections" / "start-here.md"
             override_path.parent.mkdir(parents=True, exist_ok=True)
             override_path.write_text(page("Override body.\n"), encoding="utf-8", newline="\n")
             override_resolver = ResourceResolver(
@@ -239,7 +239,7 @@ class BoardContextTests(unittest.TestCase):
                 override_paths=[override_root],
                 environ={},
             )
-            override = llmwiki_request(
+            override = knowledge_request(
                 {
                     "action": "section",
                     "board_id": BOARD_ID,
@@ -262,7 +262,7 @@ class BoardContextTests(unittest.TestCase):
         self.assertEqual(override["provenance"]["kind"], "local_override")
         self.assertEqual(
             override["provenance"]["path"],
-            f"{PACK_ID}/llmwiki/sections/start-here.md",
+            f"{PACK_ID}/knowledge/sections/start-here.md",
         )
         self.assertEqual(after["source_path"], initial["source_path"])
         self.assertEqual(after_path, initial_path)

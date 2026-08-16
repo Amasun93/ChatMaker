@@ -14,8 +14,8 @@ from jsonschema import Draft202012Validator, FormatChecker
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "runtime"))
 
-from chatmaker.llmwiki_semantics import (  # noqa: E402
-    LLMWikiSemanticError,
+from chatmaker.knowledge_semantics import (  # noqa: E402
+    KnowledgeSemanticError,
     validate_page_bytes,
 )
 
@@ -217,17 +217,17 @@ def validate_knowledge_publication(root: Path) -> dict[str, Any]:
                 expected_source_refs=expected_source_refs,
                 path=relative,
             )
-        except (OSError, LLMWikiSemanticError) as exc:
-            reason = exc.reason if isinstance(exc, LLMWikiSemanticError) else "page_read_failed"
-            if reason == "llmwiki_page_frontmatter_invalid":
-                detail = f"malformed frontmatter: LLMWiki semantic validation failed: {reason}"
-            elif reason == "llmwiki_page_body_size_invalid":
+        except (OSError, KnowledgeSemanticError) as exc:
+            reason = exc.reason if isinstance(exc, KnowledgeSemanticError) else "page_read_failed"
+            if reason == "knowledge_page_frontmatter_invalid":
+                detail = f"malformed frontmatter: Knowledge semantic validation failed: {reason}"
+            elif reason == "knowledge_page_body_size_invalid":
                 detail = (
-                    "LLMWiki semantic validation failed: UTF-8 page body exceeds "
+                    "Knowledge semantic validation failed: UTF-8 page body exceeds "
                     "frozen 65,536-byte limit or is empty"
                 )
             else:
-                detail = f"LLMWiki semantic validation failed: {reason}"
+                detail = f"Knowledge semantic validation failed: {reason}"
             errors.append(f"{page_path}: {detail}")
         if isinstance(frontmatter.get("section_id"), str) and frontmatter["section_id"] != page_path.stem:
             errors.append(f"{page_path}: section_id does not match Markdown filename stem")
@@ -283,7 +283,7 @@ def validate_knowledge_publication(root: Path) -> dict[str, Any]:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Check governed ChatMaker LLMWiki source publication files.")
+    parser = argparse.ArgumentParser(description="Check governed ChatMaker Knowledge source publication files.")
     parser.add_argument("--root", type=Path, default=Path(__file__).resolve().parents[1])
     args = parser.parse_args(argv)
     try:

@@ -26,8 +26,8 @@ except ImportError:
     resource_generation_token = None
 
 
-PACK_ID = "chatmaker-board-arduino-nano-classic-wiki"
-RESOURCE = "llmwiki/sections/start-here.md"
+PACK_ID = "chatmaker-board-arduino-nano-classic-knowledge"
+RESOURCE = "knowledge/sections/start-here.md"
 
 
 class _VerifiedManager:

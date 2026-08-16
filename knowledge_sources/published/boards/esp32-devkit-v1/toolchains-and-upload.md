@@ -1,6 +1,6 @@
 ---
 schema_version: "1.0"
-kind: llmwiki-page
+kind: knowledge-page
 stable_id: esp32-devkit-v1-toolchains-and-upload
 board_id: esp32-devkit-v1
 section_id: toolchains-and-upload

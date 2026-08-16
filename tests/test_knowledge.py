@@ -2,18 +2,13 @@ from __future__ import annotations
 
 import base64
 import hashlib
-import io
 import json
-import re
 import sys
 import tempfile
 import threading
 import unittest
-import zipfile
-from contextlib import contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
-from unittest import mock
 
 import yaml
 
@@ -34,8 +29,7 @@ from chatmaker.knowledge_semantics import (
     validate_pack_payload,
     validate_page_bytes,
 )
-from chatmaker.installers import pack_artifact, pack_manager, registry
-from chatmaker.installers.pack_artifact import PackArtifactError, build_pack
+from chatmaker.installers.pack_artifact import build_pack
 from chatmaker.installers.pack_manager import FetchResponse, PackManager, PackManagerError
 from chatmaker.resources import ResourceIntegrityError, ResourceResolver
 
@@ -276,7 +270,7 @@ class KnowledgeSignedRegistryFixture:
                 "compatibility": {
                     "core": {"minimum": "0.1.0", "maximum_exclusive": "0.2.0"},
                     "pack_manifest_schema": ["1.0"],
-                    "llmwiki_index_schema": ["1.0"],
+                    "knowledge_index_schema": ["1.0"],
                 },
             }],
         }
@@ -305,141 +299,9 @@ class KnowledgeSignedRegistryFixture:
             now=NOW,
         )
 
-    @contextmanager
-    def knowledge_pack_format(self):
-        """Use the new payload contract only inside this migration test fixture."""
-
-        original_manifest_schema = pack_artifact._manifest_schema
-        registry_schema = json.loads(registry._REGISTRY_SCHEMA_PATH.read_text(encoding="utf-8"))
-        registry_schema["$defs"]["packId"]["enum"].append(PACK_ID)
-        registry_schema["$defs"]["pack"]["properties"]["url"]["pattern"] = (
-            registry_schema["$defs"]["pack"]["properties"]["url"]["pattern"].replace(
-                "-wiki-", "-knowledge-"
-            )
-        )
-        for condition in registry_schema["$defs"]["pack"]["allOf"]:
-            if condition["if"]["properties"]["board_id"]["const"] == BOARD_ID:
-                condition["then"]["properties"]["pack_id"]["const"] = PACK_ID
-        registry_schema_path = self.root / "schemas" / "registry.schema.json"
-        registry_schema_path.parent.mkdir(parents=True, exist_ok=True)
-        registry_schema_path.write_text(
-            json.dumps(registry_schema, separators=(",", ":")), encoding="utf-8"
-        )
-
-        def manifest_schema() -> dict:
-            schema = original_manifest_schema()
-            schema["properties"]["pack_id"]["enum"].append(PACK_ID)
-            files = schema["properties"]["files"]
-            files["contains"]["properties"]["path"]["const"] = "knowledge/index.yaml"
-            files["items"]["properties"]["path"]["pattern"] = (
-                r"^knowledge/(?:index\.yaml|sections/[a-z0-9][a-z0-9-]*\.md)$"
-            )
-            for condition in schema["allOf"]:
-                if condition["if"]["properties"]["board_id"]["const"] == BOARD_ID:
-                    condition["then"]["properties"]["pack_id"]["const"] = PACK_ID
-            return schema
-
-        def source_files(root: Path) -> list[tuple[str, bytes]]:
-            return sorted(
-                (
-                    (path.relative_to(root).as_posix(), path.read_bytes())
-                    for path in root.rglob("*")
-                    if path.is_file()
-                ),
-                key=lambda item: item[0],
-            )
-
-        def validate_knowledge_payload(files, *, board_id: str, pack_id: str):
-            try:
-                return validate_pack_payload(
-                    files,
-                    expected_board_id=board_id,
-                    expected_pack_id=pack_id,
-                )
-            except KnowledgeSemanticError as exc:
-                raise PackArtifactError(
-                    "pack_content_invalid", reason=exc.reason, path=exc.path
-                ) from exc
-
-        def validate_archive(source, **_kwargs):
-            raw = source if isinstance(source, bytes) else Path(source).read_bytes()
-            with zipfile.ZipFile(io.BytesIO(raw), "r") as archive:
-                manifest_raw = archive.read("pack-manifest.json")
-                manifest = pack_artifact._validate_manifest(json.loads(manifest_raw))
-                files = {item["path"]: archive.read(item["path"]) for item in manifest["files"]}
-            validate_knowledge_payload(
-                files,
-                board_id=manifest["board_id"],
-                pack_id=manifest["pack_id"],
-            )
-            return manifest
-
-        def validate_staging(staging_dir, manifest):
-            root = Path(staging_dir)
-            manifest = pack_artifact._validate_manifest(dict(manifest))
-            files = {
-                item["path"]: (root / item["path"]).read_bytes()
-                for item in manifest["files"]
-            }
-            validate_knowledge_payload(
-                files,
-                board_id=manifest["board_id"],
-                pack_id=manifest["pack_id"],
-            )
-            return manifest
-
-        def extract_archive(source, staging_dir, **_kwargs):
-            raw = source if isinstance(source, bytes) else Path(source).read_bytes()
-            manifest = validate_archive(raw)
-            target = Path(staging_dir)
-            target.mkdir(parents=True, exist_ok=True)
-            with zipfile.ZipFile(io.BytesIO(raw), "r") as archive:
-                for path in ["pack-manifest.json", *(item["path"] for item in manifest["files"])]:
-                    destination = target / path
-                    destination.parent.mkdir(parents=True, exist_ok=True)
-                    destination.write_bytes(archive.read(path))
-            return validate_staging(target, manifest)
-
-        with (
-            mock.patch.object(pack_artifact, "_source_files", source_files),
-            mock.patch.object(pack_artifact, "_manifest_schema", manifest_schema),
-            mock.patch.object(
-                pack_artifact,
-                "_PAYLOAD_PATTERN",
-                re.compile(r"^knowledge/(?:index\.yaml|sections/[a-z0-9][a-z0-9-]*\.md)$"),
-            ),
-            mock.patch.object(
-                pack_artifact,
-                "_validate_llmwiki_payload",
-                validate_knowledge_payload,
-            ),
-            mock.patch.dict(pack_manager.ALLOWED_PACKS, {PACK_ID: BOARD_ID}),
-            mock.patch.object(pack_manager, "validate_pack_archive", validate_archive),
-            mock.patch.object(pack_manager, "validate_staging", validate_staging),
-            mock.patch.object(pack_manager, "extract_validated_pack", extract_archive),
-            mock.patch.object(
-                registry,
-                "_ALLOWED_PACK_IDS",
-                {*registry._ALLOWED_PACK_IDS, PACK_ID},
-            ),
-            mock.patch.object(
-                registry,
-                "_PACK_URL_PATTERN",
-                re.compile(
-                    r"^https://raw\.githubusercontent\.com/Amasun93/ChatMaker/"
-                    r"[0-9a-f]{40}/distribution/packs/chatmaker-board-"
-                    r"(?:arduino-nano-classic|arduino-uno-r3|esp32-devkit-v1)"
-                    r"-knowledge-[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.-]+)?\.cmpack$"
-                ),
-            ),
-            mock.patch.object(registry, "_REGISTRY_SCHEMA_PATH", registry_schema_path),
-        ):
-            yield
-
-
 class KnowledgeReaderTests(unittest.TestCase):
     def write_index(self, root: Path) -> None:
-        path = root / "packs" / "knowledge" / "boards" / f"{BOARD_ID}.yaml"
+        path = root / "knowledge" / "boards" / f"{BOARD_ID}.yaml"
         path.parent.mkdir(parents=True)
         path.write_text(
             yaml.safe_dump(index_payload(), allow_unicode=True, sort_keys=False),
@@ -755,39 +617,38 @@ class KnowledgeReaderTests(unittest.TestCase):
             root = Path(directory)
             self.write_index(root)
             fixture = KnowledgeSignedRegistryFixture(root)
-            with fixture.knowledge_pack_format():
-                pack_url = fixture.publish("1.0.0", 1, "Cached official guidance.\n")
-                manager = fixture.manager()
-                resolver = ResourceResolver(
-                    user_root=fixture.user_root,
-                    builtin_root=root / "builtin",
-                    manager=manager,
-                    environ={},
-                )
-                request = {
-                    "action": "section",
-                    "board_id": BOARD_ID,
-                    "consumer": "chatduino",
-                    "section_id": "start-here",
-                }
+            pack_url = fixture.publish("1.0.0", 1, "Cached official guidance.\n")
+            manager = fixture.manager()
+            resolver = ResourceResolver(
+                user_root=fixture.user_root,
+                builtin_root=root / "builtin",
+                manager=manager,
+                environ={},
+            )
+            request = {
+                "action": "section",
+                "board_id": BOARD_ID,
+                "consumer": "chatduino",
+                "section_id": "start-here",
+            }
 
-                first = self.request(request, root=root, manager=manager, resolver=resolver)
-                calls_after_first = list(fixture.transport.calls)
-                fixture.transport.responses = {
-                    url: AssertionError(f"offline read attempted {url}")
-                    for url in fixture.transport.responses
-                }
-                offline = self.request(request, root=root, manager=manager, resolver=resolver)
-                calls_after_offline = list(fixture.transport.calls)
-                fixture.publish("1.1.0", 2, "Replacement guidance.\n", corrupt=True)
-                with self.assertRaises(PackManagerError) as bad_update:
-                    manager.update(PACK_ID)
-                after_bad_update = self.request(
-                    request,
-                    root=root,
-                    manager=manager,
-                    resolver=resolver,
-                )
+            first = self.request(request, root=root, manager=manager, resolver=resolver)
+            calls_after_first = list(fixture.transport.calls)
+            fixture.transport.responses = {
+                url: AssertionError(f"offline read attempted {url}")
+                for url in fixture.transport.responses
+            }
+            offline = self.request(request, root=root, manager=manager, resolver=resolver)
+            calls_after_offline = list(fixture.transport.calls)
+            fixture.publish("1.1.0", 2, "Replacement guidance.\n", corrupt=True)
+            with self.assertRaises(PackManagerError) as bad_update:
+                manager.update(PACK_ID)
+            after_bad_update = self.request(
+                request,
+                root=root,
+                manager=manager,
+                resolver=resolver,
+            )
 
         self.assertTrue(first["success"], first)
         self.assertTrue(offline["success"], offline)

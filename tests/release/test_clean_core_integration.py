@@ -43,7 +43,7 @@ EXPECTED_COMMANDS = {
     "chatmaker-web-preview",
     "chatmaker-web-embed",
     "chatmaker-pack",
-    "chatmaker-llmwiki",
+    "chatmaker-knowledge",
 }
 
 
@@ -117,7 +117,7 @@ class CleanCoreIntegrationTests(unittest.TestCase):
                 {path.name for path in (core / "skills").iterdir() if path.is_dir()},
                 {"chatmaker", "chatduino", "chatweb"},
             )
-            self.assertFalse(any((core / "packs" / "llmwiki").rglob("*.md")))
+            self.assertFalse(any((core / "knowledge").rglob("*.md")))
             for excluded in (
                 "knowledge_sources",
                 "tests",
@@ -211,7 +211,7 @@ class CleanCoreIntegrationTests(unittest.TestCase):
                 doctor["packs"]["counts"],
                 {"board": 3, "component": 12, "recipe": 14},
             )
-            self.assertEqual(doctor["packs"]["llmwiki_indexes"], 3)
+            self.assertEqual(doctor["packs"]["knowledge_indexes"], 3)
             self.assertEqual(
                 set(doctor["skills"]["results"]),
                 {"chatmaker", "chatduino", "chatweb"},
@@ -249,7 +249,7 @@ class CleanCoreIntegrationTests(unittest.TestCase):
             index = json.loads(
                 self._run(
                     [
-                        str(self._command(venv, "chatmaker-llmwiki")),
+                        str(self._command(venv, "chatmaker-knowledge")),
                         "--request-json",
                         '{"action":"index","board_id":"arduino-nano-classic","consumer":"chatduino"}',
                     ],
@@ -323,11 +323,39 @@ class CleanCoreIntegrationTests(unittest.TestCase):
                 original_config,
             )
 
-            pack = (
-                ROOT
-                / "distribution"
-                / "packs"
-                / "chatmaker-board-arduino-nano-classic-wiki-1.0.0.cmpack"
+            pack_source = base / "pack-source"
+            pack_sections = pack_source / "knowledge" / "sections"
+            pack_sections.mkdir(parents=True)
+            shutil.copy2(
+                ROOT / "knowledge" / "boards" / "arduino-nano-classic.yaml",
+                pack_source / "knowledge" / "index.yaml",
+            )
+            for page in (
+                ROOT / "knowledge_sources" / "published" / "boards" / "arduino-nano-classic"
+            ).glob("*.md"):
+                shutil.copy2(page, pack_sections / page.name)
+            pack = build / "chatmaker-board-arduino-nano-classic-knowledge-1.0.0.cmpack"
+            self._run(
+                [
+                    sys.executable,
+                    str(ROOT / "scripts" / "build_pack.py"),
+                    "--source",
+                    str(pack_source),
+                    "--output",
+                    str(pack),
+                    "--pack-id",
+                    "chatmaker-board-arduino-nano-classic-knowledge",
+                    "--pack-version",
+                    "1.0.0",
+                    "--board-id",
+                    "arduino-nano-classic",
+                    "--core-minimum",
+                    "0.1.0",
+                    "--core-maximum-exclusive",
+                    "0.2.0",
+                ],
+                cwd=ROOT,
+                env=os.environ.copy(),
             )
             probe = json.loads(
                 self._run(

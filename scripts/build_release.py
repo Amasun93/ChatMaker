@@ -16,7 +16,7 @@ CORE_PATHS = (
     "examples",
     "packs/boards",
     "packs/components",
-    "packs/llmwiki/boards",
+    "knowledge/boards",
     "packs/recipes",
     "packs/schemas",
     "runtime",

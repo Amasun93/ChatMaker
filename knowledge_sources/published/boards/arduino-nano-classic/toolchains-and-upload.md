@@ -1,6 +1,6 @@
 ---
 schema_version: "1.0"
-kind: llmwiki-page
+kind: knowledge-page
 stable_id: arduino-nano-classic-toolchains-and-upload
 board_id: arduino-nano-classic
 section_id: toolchains-and-upload

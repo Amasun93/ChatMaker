@@ -1,6 +1,6 @@
 ---
 schema_version: "1.0"
-kind: llmwiki-page
+kind: knowledge-page
 stable_id: arduino-nano-classic-identify-and-safety
 board_id: arduino-nano-classic
 section_id: identify-and-safety

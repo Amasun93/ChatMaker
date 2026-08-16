@@ -17,9 +17,9 @@
     "format_version": {"const": 1},
     "pack_id": {
       "enum": [
-        "chatmaker-board-arduino-nano-classic-wiki",
-        "chatmaker-board-arduino-uno-r3-wiki",
-        "chatmaker-board-esp32-devkit-v1-wiki"
+        "chatmaker-board-arduino-nano-classic-knowledge",
+        "chatmaker-board-arduino-uno-r3-knowledge",
+        "chatmaker-board-esp32-devkit-v1-knowledge"
       ]
     },
     "pack_version": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:-[0-9A-Za-z.-]+)?$"},
@@ -33,7 +33,7 @@
       "uniqueItems": true,
       "contains": {
         "type": "object",
-        "properties": {"path": {"const": "llmwiki/index.yaml"}},
+        "properties": {"path": {"const": "knowledge/index.yaml"}},
         "required": ["path"]
       },
       "minContains": 1,
@@ -43,7 +43,7 @@
         "additionalProperties": false,
         "required": ["path", "length", "sha256"],
         "properties": {
-          "path": {"type": "string", "pattern": "^llmwiki/(?:index\\.yaml|sections/[a-z0-9][a-z0-9-]*\\.md)$"},
+          "path": {"type": "string", "pattern": "^knowledge/(?:index\\.yaml|sections/[a-z0-9][a-z0-9-]*\\.md)$"},
           "length": {"type": "integer", "minimum": 1, "maximum": 69632},
           "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
         }
@@ -54,7 +54,7 @@
     "compatibility": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["core", "llmwiki_index_schema"],
+      "required": ["core", "knowledge_index_schema"],
       "properties": {
         "core": {
           "type": "object",
@@ -65,7 +65,7 @@
             "maximum_exclusive": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"}
           }
         },
-        "llmwiki_index_schema": {
+        "knowledge_index_schema": {
           "type": "array",
           "minItems": 1,
           "uniqueItems": true,
@@ -77,15 +77,15 @@
   "allOf": [
     {
       "if": {"properties": {"board_id": {"const": "arduino-nano-classic"}}},
-      "then": {"properties": {"pack_id": {"const": "chatmaker-board-arduino-nano-classic-wiki"}}}
+      "then": {"properties": {"pack_id": {"const": "chatmaker-board-arduino-nano-classic-knowledge"}}}
     },
     {
       "if": {"properties": {"board_id": {"const": "arduino-uno-r3"}}},
-      "then": {"properties": {"pack_id": {"const": "chatmaker-board-arduino-uno-r3-wiki"}}}
+      "then": {"properties": {"pack_id": {"const": "chatmaker-board-arduino-uno-r3-knowledge"}}}
     },
     {
       "if": {"properties": {"board_id": {"const": "esp32-devkit-v1"}}},
-      "then": {"properties": {"pack_id": {"const": "chatmaker-board-esp32-devkit-v1-wiki"}}}
+      "then": {"properties": {"pack_id": {"const": "chatmaker-board-esp32-devkit-v1-knowledge"}}}
     }
   ]
 }

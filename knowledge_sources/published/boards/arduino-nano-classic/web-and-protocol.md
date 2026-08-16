@@ -1,6 +1,6 @@
 ---
 schema_version: "1.0"
-kind: llmwiki-page
+kind: knowledge-page
 stable_id: arduino-nano-classic-web-and-protocol
 board_id: arduino-nano-classic
 section_id: web-and-protocol

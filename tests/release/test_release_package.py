@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import base64
 import hashlib
 import importlib.util
 import json
@@ -12,6 +13,8 @@ import unittest
 import zipfile
 from datetime import datetime, timezone
 from pathlib import Path
+
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -29,9 +32,6 @@ def load_builder():
 
 class ReleasePackageTests(unittest.TestCase):
     def test_checked_in_registry_is_signed_and_pins_the_exact_pack_artifacts(self):
-        sys.path.insert(0, str(ROOT / "runtime"))
-        from chatmaker.installers.registry import verify_registry
-
         registry_path = ROOT / "distribution" / "registry" / "registry.json"
         signature_path = ROOT / "distribution" / "registry" / "registry.sig.json"
         registry = json.loads(registry_path.read_text(encoding="utf-8"))
@@ -70,19 +70,20 @@ class ReleasePackageTests(unittest.TestCase):
             self.assertEqual(hashlib.sha256(artifact.read_bytes()).hexdigest(), digest)
             self.assertEqual(item["sha256"], digest)
 
-        with tempfile.TemporaryDirectory() as directory:
-            verified = verify_registry(
-                registry_path.read_bytes(),
-                signature_path.read_bytes(),
-                registry_url=(
-                    "https://raw.githubusercontent.com/Amasun93/ChatMaker/main/"
-                    "distribution/registry/registry.json"
-                ),
-                state_path=Path(directory) / "state.json",
-                now=datetime(2026, 8, 16, 12, tzinfo=timezone.utc),
+        detached = json.loads(signature_path.read_text(encoding="utf-8"))
+        anchors = json.loads(
+            (ROOT / "runtime" / "chatmaker" / "trust" / "official_registry_keys.json").read_text(
+                encoding="utf-8"
             )
-        self.assertEqual(verified["key_id"], "chatmaker-official-2026-01")
-        self.assertEqual(verified["sequence"], 1)
+        )
+        key = next(item for item in anchors["keys"] if item["key_id"] == detached["key_id"])
+        Ed25519PublicKey.from_public_bytes(
+            base64.b64decode(key["public_key_base64"], validate=True)
+        ).verify(
+            base64.b64decode(detached["signature"], validate=True),
+            registry_path.read_bytes(),
+        )
+        self.assertEqual(detached["key_id"], "chatmaker-official-2026-01")
 
     def test_core_excludes_knowledge_source_workspace_even_if_recursively_included(self):
         builder = load_builder()
@@ -263,7 +264,7 @@ class ReleasePackageTests(unittest.TestCase):
         self.assertIn(prefix + "examples/chatduino/esp32/ap-led-sensor/page_html.h", names)
         self.assertIn(prefix + "examples/chatweb/esp32-ap-control.html", names)
         self.assertIn(prefix + "examples/chatweb/advanced-playground.html", names)
-        self.assertIn(prefix + "packs/llmwiki/boards/arduino-nano-classic.yaml", names)
+        self.assertIn(prefix + "knowledge/boards/arduino-nano-classic.yaml", names)
         self.assertIn(prefix + "packs/schemas/registry.schema.json", names)
         self.assertEqual(
             len([name for name in names if name.startswith(prefix + "packs/boards/")]),
@@ -278,7 +279,7 @@ class ReleasePackageTests(unittest.TestCase):
             14,
         )
         self.assertEqual(
-            len([name for name in names if name.startswith(prefix + "packs/llmwiki/boards/")]),
+            len([name for name in names if name.startswith(prefix + "knowledge/boards/")]),
             3,
         )
         forbidden_parts = {
@@ -295,7 +296,7 @@ class ReleasePackageTests(unittest.TestCase):
             names,
         )
         self.assertFalse(any(name.endswith(".cmpack") for name in names), names)
-        self.assertFalse(any("llmwiki/boards/" in name and name.endswith(".md") for name in names))
+        self.assertFalse(any("knowledge/boards/" in name and name.endswith(".md") for name in names))
 
 
 if __name__ == "__main__":

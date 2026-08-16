@@ -61,10 +61,10 @@ class WorkBuddyBridgeTests(unittest.TestCase):
                 "serial_close",
                 "catalog_search",
                 "catalog_get",
-                "llmwiki_get",
+                "knowledge_get",
             },
         )
-        self.assertEqual(self.server.SERVER_VERSION, "1.8.0")
+        self.assertEqual(self.server.SERVER_VERSION, "1.9.0")
         self.assertEqual(len(names), 24)
         self.assertFalse(any("starcore" in name for name in names))
         upload_tool = next(
@@ -89,25 +89,25 @@ class WorkBuddyBridgeTests(unittest.TestCase):
         self.assertIn("esp32_compile_upload", instructions)
         self.assertIn("唯一非蓝牙有线端口", instructions)
         self.assertIn("HTTP", instructions)
-        self.assertIn("llmwiki_get", instructions)
+        self.assertIn("knowledge_get", instructions)
         self.assertIn("start-here", instructions)
 
-    def test_llmwiki_get_routes_index_or_section_to_shared_reader(self):
-        original = self.server.llmwiki.execute_request
+    def test_knowledge_get_routes_index_or_section_to_shared_reader(self):
+        original = self.server.knowledge.execute_request
         captured = []
 
         def fake(request):
             captured.append(request)
             return {"success": True, "action": request["action"]}
 
-        self.server.llmwiki.execute_request = fake
+        self.server.knowledge.execute_request = fake
         try:
             index = self.server._tool_result(
-                "llmwiki_get",
+                "knowledge_get",
                 {"board_id": "arduino-nano-classic", "consumer": "chatmaker"},
             )
             section = self.server._tool_result(
-                "llmwiki_get",
+                "knowledge_get",
                 {
                     "board_id": "arduino-nano-classic",
                     "consumer": "chatduino",
@@ -116,7 +116,7 @@ class WorkBuddyBridgeTests(unittest.TestCase):
                 },
             )
         finally:
-            self.server.llmwiki.execute_request = original
+            self.server.knowledge.execute_request = original
 
         self.assertFalse(index["isError"])
         self.assertFalse(section["isError"])

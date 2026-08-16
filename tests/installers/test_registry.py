@@ -41,7 +41,7 @@ PACK_URL = (
     "https://raw.githubusercontent.com/Amasun93/ChatMaker/"
     + "1" * 40
     + "/distribution/packs/"
-    "chatmaker-board-arduino-nano-classic-wiki-1.0.0.cmpack"
+    "chatmaker-board-arduino-nano-classic-knowledge-1.0.0.cmpack"
 )
 NOW = datetime(2026, 8, 18, 12, 0, tzinfo=timezone.utc)
 
@@ -114,7 +114,7 @@ class RegistryVerificationTests(unittest.TestCase):
             "expires_at": "2026-08-25T00:00:00Z",
             "packs": [
                 {
-                    "pack_id": "chatmaker-board-arduino-nano-classic-wiki",
+                    "pack_id": "chatmaker-board-arduino-nano-classic-knowledge",
                     "pack_type": "knowledge",
                     "version": "1.0.0",
                     "board_id": "arduino-nano-classic",
@@ -127,7 +127,7 @@ class RegistryVerificationTests(unittest.TestCase):
                             "maximum_exclusive": "0.2.0",
                         },
                         "pack_manifest_schema": ["1.0"],
-                        "llmwiki_index_schema": ["1.0"],
+                        "knowledge_index_schema": ["1.0"],
                     },
                 }
             ],

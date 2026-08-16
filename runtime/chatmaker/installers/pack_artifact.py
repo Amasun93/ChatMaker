@@ -16,8 +16,8 @@ from typing import Any, BinaryIO, Mapping
 
 import jsonschema
 
-from ..llmwiki_semantics import (
-    LLMWikiSemanticError,
+from ..knowledge_semantics import (
+    KnowledgeSemanticError,
     MAX_BODY_BYTES,
     validate_pack_payload,
 )
@@ -26,7 +26,7 @@ from ..llmwiki_semantics import (
 _REPO_ROOT = Path(__file__).resolve().parents[3]
 _MANIFEST_SCHEMA_PATH = _REPO_ROOT / "packs" / "schemas" / "pack-manifest.schema.json"
 _PAYLOAD_PATTERN = re.compile(
-    r"^llmwiki/(?:index\.yaml|sections/[a-z0-9][a-z0-9-]*\.md)$"
+    r"^knowledge/(?:index\.yaml|sections/[a-z0-9][a-z0-9-]*\.md)$"
 )
 _SEMVER_PATTERN = re.compile(r"^[0-9]+\.[0-9]+\.[0-9]+$")
 _RESERVED_WINDOWS_NAMES = {
@@ -371,12 +371,12 @@ def _source_files(source_dir: Path) -> list[tuple[str, bytes]]:
             )
         files.append((relative, data))
     names = [path for path, _ in files]
-    if names.count("llmwiki/index.yaml") != 1 or len(files) < 2 or len(files) > 65:
+    if names.count("knowledge/index.yaml") != 1 or len(files) < 2 or len(files) > 65:
         raise PackArtifactError("pack_content_invalid", reason="source_layout_invalid")
     return files
 
 
-def _validate_llmwiki_payload(
+def _validate_knowledge_payload(
     files: Mapping[str, bytes], *, board_id: str, pack_id: str
 ) -> dict[str, Any]:
     try:
@@ -385,7 +385,7 @@ def _validate_llmwiki_payload(
             expected_board_id=board_id,
             expected_pack_id=pack_id,
         )
-    except LLMWikiSemanticError as exc:
+    except KnowledgeSemanticError as exc:
         raise PackArtifactError(
             "pack_content_invalid", reason=exc.reason, path=exc.path
         ) from exc
@@ -405,7 +405,7 @@ def build_pack(
 
     try:
         files = _source_files(Path(source_dir))
-        _validate_llmwiki_payload(
+        _validate_knowledge_payload(
             dict(files), board_id=board_id, pack_id=pack_id
         )
         manifest = {
@@ -420,7 +420,7 @@ def build_pack(
                     "minimum": core_minimum,
                     "maximum_exclusive": core_maximum_exclusive,
                 },
-                "llmwiki_index_schema": ["1.0"],
+                "knowledge_index_schema": ["1.0"],
             },
             "files": [
                 {
@@ -481,7 +481,7 @@ def _validate_compatibility(
     *,
     core_version: str,
     pack_manifest_schema: str,
-    llmwiki_index_schema: str,
+    knowledge_index_schema: str,
 ) -> None:
     current = _version(core_version, field="core_version")
     compatibility = manifest["compatibility"]
@@ -493,8 +493,8 @@ def _validate_compatibility(
         raise PackArtifactError("pack_incompatible", reason="core_version_out_of_range")
     if pack_manifest_schema != manifest["schema_version"]:
         raise PackArtifactError("pack_incompatible", reason="manifest_schema_unsupported")
-    if llmwiki_index_schema not in compatibility["llmwiki_index_schema"]:
-        raise PackArtifactError("pack_incompatible", reason="llmwiki_schema_unsupported")
+    if knowledge_index_schema not in compatibility["knowledge_index_schema"]:
+        raise PackArtifactError("pack_incompatible", reason="knowledge_schema_unsupported")
 
 
 def validate_pack_archive(
@@ -502,7 +502,7 @@ def validate_pack_archive(
     *,
     core_version: str,
     pack_manifest_schema: str = "1.0",
-    llmwiki_index_schema: str = "1.0",
+    knowledge_index_schema: str = "1.0",
     max_files: int = DEFAULT_MAX_FILES,
     max_single_file_bytes: int = DEFAULT_MAX_SINGLE_FILE_BYTES,
     max_total_bytes: int = DEFAULT_MAX_TOTAL_BYTES,
@@ -529,7 +529,7 @@ def validate_pack_archive(
                     "pack_archive_unsafe", reason="duplicate_or_alias_path", path=info.filename
                 )
             seen_aliases.add(alias)
-            if info.filename != "pack-manifest.json" and not info.filename.startswith("llmwiki/"):
+            if info.filename != "pack-manifest.json" and not info.filename.startswith("knowledge/"):
                 raise PackArtifactError(
                     "pack_archive_unsafe", reason="canonical_record_injection", path=info.filename
                 )
@@ -583,9 +583,9 @@ def validate_pack_archive(
             manifest,
             core_version=core_version,
             pack_manifest_schema=pack_manifest_schema,
-            llmwiki_index_schema=llmwiki_index_schema,
+            knowledge_index_schema=knowledge_index_schema,
         )
-        _validate_llmwiki_payload(
+        _validate_knowledge_payload(
             payload,
             board_id=manifest["board_id"],
             pack_id=manifest["pack_id"],
@@ -667,7 +667,7 @@ def validate_staging(staging_dir: Path | str, manifest: Mapping[str, Any]) -> Ma
                     path=item["path"],
                 )
             payload[item["path"]] = data
-        _validate_llmwiki_payload(
+        _validate_knowledge_payload(
             payload,
             board_id=manifest["board_id"],
             pack_id=manifest["pack_id"],
@@ -715,7 +715,7 @@ def extract_validated_pack(
     *,
     core_version: str,
     pack_manifest_schema: str = "1.0",
-    llmwiki_index_schema: str = "1.0",
+    knowledge_index_schema: str = "1.0",
     max_files: int = DEFAULT_MAX_FILES,
     max_single_file_bytes: int = DEFAULT_MAX_SINGLE_FILE_BYTES,
     max_total_bytes: int = DEFAULT_MAX_TOTAL_BYTES,
@@ -728,7 +728,7 @@ def extract_validated_pack(
         archive_bytes,
         core_version=core_version,
         pack_manifest_schema=pack_manifest_schema,
-        llmwiki_index_schema=llmwiki_index_schema,
+        knowledge_index_schema=knowledge_index_schema,
         max_files=max_files,
         max_single_file_bytes=max_single_file_bytes,
         max_total_bytes=max_total_bytes,

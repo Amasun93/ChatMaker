@@ -39,12 +39,12 @@ _PACK_URL_PATTERN = re.compile(
     r"^https://raw\.githubusercontent\.com/Amasun93/ChatMaker/"
     r"[0-9a-f]{40}/distribution/packs/"
     r"chatmaker-board-(?:arduino-nano-classic|arduino-uno-r3|esp32-devkit-v1)"
-    r"-wiki-[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.-]+)?\.cmpack$"
+    r"-knowledge-[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.-]+)?\.cmpack$"
 )
 _ALLOWED_PACK_IDS = {
-    "chatmaker-board-arduino-nano-classic-wiki",
-    "chatmaker-board-arduino-uno-r3-wiki",
-    "chatmaker-board-esp32-devkit-v1-wiki",
+    "chatmaker-board-arduino-nano-classic-knowledge",
+    "chatmaker-board-arduino-uno-r3-knowledge",
+    "chatmaker-board-esp32-devkit-v1-knowledge",
 }
 MAX_REGISTRY_VALIDITY = timedelta(days=31)
 

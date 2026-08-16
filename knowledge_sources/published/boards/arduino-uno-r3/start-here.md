@@ -1,6 +1,6 @@
 ---
 schema_version: "1.0"
-kind: llmwiki-page
+kind: knowledge-page
 stable_id: arduino-uno-r3-start-here
 board_id: arduino-uno-r3
 section_id: start-here

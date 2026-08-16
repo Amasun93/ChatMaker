@@ -49,7 +49,7 @@ class RouteTests(unittest.TestCase):
         self.assertEqual(result["stage"], "routed")
         self.assertEqual(result["specialists"], ["chatduino"])
         self.assertEqual(result["contract_requirements"], [])
-        self.assertEqual(result["llmwiki_requests"], [])
+        self.assertEqual(result["knowledge_requests"], [])
 
     def test_web_intent_routes_to_chatweb(self):
         self.assertIsNotNone(self.route, "chatmaker.route is missing")
@@ -68,7 +68,7 @@ class RouteTests(unittest.TestCase):
         self.assertEqual(result["route"], "web")
         self.assertEqual(result["stage"], "routed")
         self.assertEqual(result["specialists"], ["chatweb"])
-        self.assertEqual(result["llmwiki_requests"], [])
+        self.assertEqual(result["knowledge_requests"], [])
 
     def test_ambiguous_intent_routes_to_clarify(self):
         self.assertIsNotNone(self.route, "chatmaker.route is missing")
@@ -79,7 +79,7 @@ class RouteTests(unittest.TestCase):
         self.assertEqual(result["route"], "clarify")
         self.assertEqual(result["stage"], "clarify")
         self.assertIn("hardware_or_web_outcome", result["missing"])
-        self.assertEqual(result["llmwiki_requests"], [])
+        self.assertEqual(result["knowledge_requests"], [])
 
     def test_combined_intent_without_contract_stays_blocked_in_planning(self):
         self.assertIsNotNone(self.route, "chatmaker.route is missing")
@@ -107,7 +107,7 @@ class RouteTests(unittest.TestCase):
             result["contract_requirements"],
             ["transport", "request_response_or_message_interaction"],
         )
-        self.assertEqual(result["llmwiki_requests"], [])
+        self.assertEqual(result["knowledge_requests"], [])
 
     def test_combined_intent_with_contract_routes_without_promoting_web_to_hardware(self):
         self.assertIsNotNone(self.route, "chatmaker.route is missing")
@@ -145,7 +145,7 @@ class RouteTests(unittest.TestCase):
             result["evidence_boundaries"]["hardware_effect_requires_separate_verification"]
         )
         self.assertEqual(
-            result["llmwiki_requests"],
+            result["knowledge_requests"],
             [
                 {
                     "action": "section",
@@ -156,7 +156,7 @@ class RouteTests(unittest.TestCase):
             ],
         )
 
-    def test_combined_intent_without_exact_board_identity_plans_no_llmwiki_request(self):
+    def test_combined_intent_without_exact_board_identity_plans_no_knowledge_request(self):
         self.assertIsNotNone(self.route, "chatmaker.route is missing")
 
         requests = [
@@ -201,7 +201,7 @@ class RouteTests(unittest.TestCase):
                 result = self.route.execute_request(request)
                 self.assertTrue(result["success"], result)
                 self.assertEqual(result["route"], "combined")
-                self.assertEqual(result["llmwiki_requests"], [])
+                self.assertEqual(result["knowledge_requests"], [])
 
     def test_combined_contract_rejects_non_string_or_blank_communication_fields(self):
         self.assertIsNotNone(self.route, "chatmaker.route is missing")
@@ -226,7 +226,7 @@ class RouteTests(unittest.TestCase):
                 )
                 self.assertFalse(result["success"], result)
                 self.assertIn("transport", result["contract_requirements"])
-                self.assertEqual(result["llmwiki_requests"], [])
+                self.assertEqual(result["knowledge_requests"], [])
 
         interaction_cases = {
             "request": lambda invalid: {
@@ -256,7 +256,7 @@ class RouteTests(unittest.TestCase):
                         "request_response_or_message_interaction",
                         result["contract_requirements"],
                     )
-                    self.assertEqual(result["llmwiki_requests"], [])
+                    self.assertEqual(result["knowledge_requests"], [])
 
     def test_combined_contract_accepts_stripped_nonempty_communication_strings(self):
         self.assertIsNotNone(self.route, "chatmaker.route is missing")
@@ -283,7 +283,7 @@ class RouteTests(unittest.TestCase):
                 self.assertTrue(result["success"], result)
                 self.assertEqual(result["status"], "ready")
                 self.assertEqual(
-                    result["llmwiki_requests"],
+                    result["knowledge_requests"],
                     [
                         {
                             "action": "section",
@@ -325,7 +325,7 @@ class RouteTests(unittest.TestCase):
         payload = json.loads(completed.stdout)
         self.assertTrue(payload["success"], payload)
         self.assertEqual(payload["route"], "web")
-        self.assertEqual(payload["llmwiki_requests"], [])
+        self.assertEqual(payload["knowledge_requests"], [])
 
     def test_json_cli_plans_only_web_and_protocol_for_exact_combined_board_identity(self):
         self.assertIsNotNone(self.route, "chatmaker.route is missing")
@@ -372,7 +372,7 @@ class RouteTests(unittest.TestCase):
         self.assertTrue(payload["success"], payload)
         self.assertEqual(payload["route"], "combined")
         self.assertEqual(
-            payload["llmwiki_requests"],
+            payload["knowledge_requests"],
             [
                 {
                     "action": "section",

@@ -252,8 +252,8 @@ class CatalogTests(unittest.TestCase):
             set(result["components"][0]),
             {"id", "kind", "name", "aliases", "category", "interface", "summary", "verification"},
         )
-        self.assertEqual(len(result["llmwiki"]["sections"]), 8)
-        self.assertEqual(result["llmwiki"]["sections"][0]["section_id"], "start-here")
+        self.assertEqual(len(result["knowledge"]["sections"]), 8)
+        self.assertEqual(result["knowledge"]["sections"][0]["section_id"], "start-here")
 
     def test_json_cli_searches_the_checked_in_catalog(self):
         self.assertIsNotNone(self.catalog, "catalog runtime is missing")

@@ -47,9 +47,9 @@ from .registry import (
 DEFAULT_USER_ROOT = Path.home() / ".chatmaker"
 DEFAULT_CORE_VERSION = "0.1.0"
 ALLOWED_PACKS = {
-    "chatmaker-board-arduino-nano-classic-wiki": "arduino-nano-classic",
-    "chatmaker-board-arduino-uno-r3-wiki": "arduino-uno-r3",
-    "chatmaker-board-esp32-devkit-v1-wiki": "esp32-devkit-v1",
+    "chatmaker-board-arduino-nano-classic-knowledge": "arduino-nano-classic",
+    "chatmaker-board-arduino-uno-r3-knowledge": "arduino-uno-r3",
+    "chatmaker-board-esp32-devkit-v1-knowledge": "esp32-devkit-v1",
 }
 _VERSION_PATTERN = re.compile(
     r"^(?P<major>0|[1-9][0-9]*)\.(?P<minor>0|[1-9][0-9]*)\."
@@ -217,7 +217,7 @@ class UrlTransport:
 
 
 class PackManagerError(Exception):
-    """Stable manager error suitable for CLI and later LLMWiki envelopes."""
+    """Stable manager error suitable for CLI and later Knowledge envelopes."""
 
     def __init__(
         self,
@@ -1628,8 +1628,8 @@ class PackManager:
             raise PackManagerError("pack_incompatible", reason="core_version_out_of_range")
         if "1.0" not in compatibility["pack_manifest_schema"]:
             raise PackManagerError("pack_incompatible", reason="manifest_schema_unsupported")
-        if "1.0" not in compatibility["llmwiki_index_schema"]:
-            raise PackManagerError("pack_incompatible", reason="llmwiki_schema_unsupported")
+        if "1.0" not in compatibility["knowledge_index_schema"]:
+            raise PackManagerError("pack_incompatible", reason="knowledge_schema_unsupported")
 
     @staticmethod
     def _match_manifest(entry: Mapping[str, Any], manifest: Mapping[str, Any]) -> None:
@@ -1640,8 +1640,8 @@ class PackManager:
             or manifest.get("board_id") != entry.get("board_id")
             or manifest.get("compatibility", {}).get("core")
             != entry.get("compatibility", {}).get("core")
-            or manifest.get("compatibility", {}).get("llmwiki_index_schema")
-            != entry.get("compatibility", {}).get("llmwiki_index_schema")
+            or manifest.get("compatibility", {}).get("knowledge_index_schema")
+            != entry.get("compatibility", {}).get("knowledge_index_schema")
         ):
             raise PackManagerError(
                 "pack_content_invalid", reason="registry_manifest_mismatch"

@@ -1,6 +1,6 @@
 ---
 schema_version: "1.0"
-kind: llmwiki-page
+kind: knowledge-page
 stable_id: arduino-uno-r3-components-and-wiring
 board_id: arduino-uno-r3
 section_id: components-and-wiring

@@ -12,7 +12,7 @@ from typing import Any, Mapping, Protocol, Sequence
 
 DEFAULT_USER_ROOT = Path.home() / ".chatmaker"
 DEFAULT_BUILTIN_ROOT = (
-    Path(__file__).resolve().parents[2] / "packs" / "llmwiki" / "builtin"
+    Path(__file__).resolve().parents[2] / "knowledge" / "builtin"
 )
 
 

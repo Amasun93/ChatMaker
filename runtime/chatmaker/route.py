@@ -49,7 +49,7 @@ def _has_contract_interaction(contract: Any) -> bool:
     return False
 
 
-def chatweb_llmwiki_requests_for_intent(
+def chatweb_knowledge_requests_for_intent(
     request: dict[str, Any],
     *,
     board_id: str,
@@ -82,7 +82,7 @@ def _exact_board_id(request: dict[str, Any]) -> str | None:
     return normalized
 
 
-def _planned_llmwiki_requests(
+def _planned_knowledge_requests(
     request: dict[str, Any],
     *,
     route_result: dict[str, Any],
@@ -94,7 +94,7 @@ def _planned_llmwiki_requests(
     board_id = _exact_board_id(request)
     if board_id is None:
         return []
-    return chatweb_llmwiki_requests_for_intent(request, board_id=board_id)
+    return chatweb_knowledge_requests_for_intent(request, board_id=board_id)
 
 
 def route_project_intent(request: dict[str, Any]) -> dict[str, Any]:
@@ -158,7 +158,7 @@ def route_project_intent(request: dict[str, Any]) -> dict[str, Any]:
 
 def execute_request(request: dict[str, Any]) -> dict[str, Any]:
     result = route_project_intent(request)
-    result["llmwiki_requests"] = _planned_llmwiki_requests(
+    result["knowledge_requests"] = _planned_knowledge_requests(
         request,
         route_result=result,
     )

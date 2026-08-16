@@ -23,7 +23,7 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "runtime"))
 
 BOARD_ID = "arduino-nano-classic"
-PACK_ID = "chatmaker-board-arduino-nano-classic-wiki"
+PACK_ID = "chatmaker-board-arduino-nano-classic-knowledge"
 SECTIONS = (
     "start-here",
     "identify-and-safety",
@@ -142,12 +142,12 @@ class PackArtifactTests(unittest.TestCase):
         self.addCleanup(self.tempdir.cleanup)
         self.root = Path(self.tempdir.name)
         self.source = self.root / "source"
-        (self.source / "llmwiki" / "sections").mkdir(parents=True)
-        (self.source / "llmwiki" / "index.yaml").write_bytes(
-            (ROOT / "packs" / "llmwiki" / "boards" / f"{BOARD_ID}.yaml").read_bytes()
+        (self.source / "knowledge" / "sections").mkdir(parents=True)
+        (self.source / "knowledge" / "index.yaml").write_bytes(
+            (ROOT / "knowledge" / "boards" / f"{BOARD_ID}.yaml").read_bytes()
         )
         for section_id in SECTIONS:
-            (self.source / "llmwiki" / "sections" / f"{section_id}.md").write_bytes(
+            (self.source / "knowledge" / "sections" / f"{section_id}.md").write_bytes(
                 (
                     ROOT
                     / "knowledge_sources"
@@ -159,10 +159,10 @@ class PackArtifactTests(unittest.TestCase):
             )
 
     def replace_page_body(self, section_id: str, body: str) -> None:
-        path = self.source / "llmwiki" / "sections" / f"{section_id}.md"
+        path = self.source / "knowledge" / "sections" / f"{section_id}.md"
         raw = path.read_text(encoding="utf-8")
         prefix, _, _ = raw.partition("\n---\n")
-        path.write_text(prefix + "\n---\n" + body, encoding="utf-8")
+        path.write_text(prefix + "\n---\n" + body, encoding="utf-8", newline="\n")
 
     def build(self, name: str = "pack.cmpack") -> Path:
         output = self.root / name
@@ -216,8 +216,8 @@ class PackArtifactTests(unittest.TestCase):
                 [info.filename for info in infos],
                 [
                     "pack-manifest.json",
-                    "llmwiki/index.yaml",
-                    *[f"llmwiki/sections/{section_id}.md" for section_id in sorted(SECTIONS)],
+                    "knowledge/index.yaml",
+                    *[f"knowledge/sections/{section_id}.md" for section_id in sorted(SECTIONS)],
                 ],
             )
             self.assertEqual(archive.comment, b"")
@@ -244,8 +244,8 @@ class PackArtifactTests(unittest.TestCase):
             self.assertEqual(
                 [item["path"] for item in manifest["files"]],
                 [
-                    "llmwiki/index.yaml",
-                    *[f"llmwiki/sections/{section_id}.md" for section_id in sorted(SECTIONS)],
+                    "knowledge/index.yaml",
+                    *[f"knowledge/sections/{section_id}.md" for section_id in sorted(SECTIONS)],
                 ],
             )
 
@@ -255,7 +255,7 @@ class PackArtifactTests(unittest.TestCase):
             archive,
             core_version="0.1.0",
             pack_manifest_schema="1.0",
-            llmwiki_index_schema="1.0",
+            knowledge_index_schema="1.0",
         )
         self.assertEqual(manifest["pack_type"], "knowledge")
         staging = self.root / "staging"
@@ -264,11 +264,11 @@ class PackArtifactTests(unittest.TestCase):
             staging,
             core_version="0.1.0",
             pack_manifest_schema="1.0",
-            llmwiki_index_schema="1.0",
+            knowledge_index_schema="1.0",
         )
         self.assertEqual(extracted, manifest)
         self.assertEqual(
-            (staging / "llmwiki" / "sections" / "start-here.md").read_bytes(),
+            (staging / "knowledge" / "sections" / "start-here.md").read_bytes(),
             (
                 ROOT
                 / "knowledge_sources"
@@ -282,7 +282,7 @@ class PackArtifactTests(unittest.TestCase):
             pack_artifact.validate_staging(staging, manifest),
             manifest,
         )
-        (staging / "llmwiki" / "sections" / "start-here.md").write_bytes(b"drift")
+        (staging / "knowledge" / "sections" / "start-here.md").write_bytes(b"drift")
         self.assert_code(
             "pack_content_invalid",
             pack_artifact.validate_staging,
@@ -315,7 +315,7 @@ class PackArtifactTests(unittest.TestCase):
             )
         self.assertNotEqual(archive.read_bytes(), original_bytes)
         self.assertEqual(
-            (staging / "llmwiki" / "sections" / "start-here.md").read_bytes(),
+            (staging / "knowledge" / "sections" / "start-here.md").read_bytes(),
             (
                 ROOT
                 / "knowledge_sources"
@@ -350,11 +350,11 @@ class PackArtifactTests(unittest.TestCase):
 
         self.assertEqual(manifest["pack_id"], PACK_ID)
         self.assertTrue(
-            (staging / "llmwiki" / "sections" / "start-here.md").is_file()
+            (staging / "knowledge" / "sections" / "start-here.md").is_file()
         )
 
     def test_builder_rejects_semantically_invalid_index_page_set_and_body(self):
-        index_path = self.source / "llmwiki" / "index.yaml"
+        index_path = self.source / "knowledge" / "index.yaml"
         index = yaml.safe_load(index_path.read_text(encoding="utf-8"))
         index["board_id"] = "arduino-uno-r3"
         index_path.write_text(
@@ -362,21 +362,21 @@ class PackArtifactTests(unittest.TestCase):
             encoding="utf-8",
         )
         error = self.assert_code("pack_content_invalid", self.build, "wrong-board.cmpack")
-        self.assertEqual(error.reason, "llmwiki_index_board_mismatch")
+        self.assertEqual(error.reason, "knowledge_index_board_mismatch")
 
         index_path.write_bytes(
-            (ROOT / "packs" / "llmwiki" / "boards" / f"{BOARD_ID}.yaml").read_bytes()
+            (ROOT / "knowledge" / "boards" / f"{BOARD_ID}.yaml").read_bytes()
         )
-        missing = self.source / "llmwiki" / "sections" / "troubleshooting.md"
+        missing = self.source / "knowledge" / "sections" / "troubleshooting.md"
         original_missing = missing.read_bytes()
         missing.unlink()
         error = self.assert_code("pack_content_invalid", self.build, "missing-page.cmpack")
-        self.assertEqual(error.reason, "llmwiki_page_set_mismatch")
+        self.assertEqual(error.reason, "knowledge_page_set_mismatch")
         missing.write_bytes(original_missing)
 
         self.replace_page_body("start-here", "")
         error = self.assert_code("pack_content_invalid", self.build, "empty-body.cmpack")
-        self.assertEqual(error.reason, "llmwiki_page_body_size_invalid")
+        self.assertEqual(error.reason, "knowledge_page_body_size_invalid")
 
     def test_builder_applies_65536_byte_limit_to_body_not_frontmatter(self):
         self.replace_page_body("start-here", "x" * 65_536)
@@ -387,7 +387,7 @@ class PackArtifactTests(unittest.TestCase):
         error = self.assert_code(
             "pack_content_invalid", self.build, "body-too-large.cmpack"
         )
-        self.assertEqual(error.reason, "llmwiki_page_body_size_invalid")
+        self.assertEqual(error.reason, "knowledge_page_body_size_invalid")
 
     def test_rejects_manifest_hash_length_extra_entry_and_duplicate_path(self):
         archive = self.build()
@@ -424,7 +424,7 @@ class PackArtifactTests(unittest.TestCase):
         def add_extra(target, entries):
             for info, data in entries:
                 target.writestr(self.canonical_info(info.filename), data)
-            target.writestr(self.canonical_info("llmwiki/sections/extra.md"), b"extra")
+            target.writestr(self.canonical_info("knowledge/sections/extra.md"), b"extra")
 
         extra = self.rewrite_archive(archive, add_extra)
         self.assert_code(
@@ -462,7 +462,7 @@ class PackArtifactTests(unittest.TestCase):
         cases = [
             ("../escape.md", stat.S_IFREG | 0o644),
             ("/absolute.md", stat.S_IFREG | 0o644),
-            ("llmwiki/sections/link.md", stat.S_IFLNK | 0o777),
+            ("knowledge/sections/link.md", stat.S_IFLNK | 0o777),
             ("packs/boards/injected.yaml", stat.S_IFREG | 0o644),
         ]
         for name, mode in cases:
@@ -525,7 +525,7 @@ class PackArtifactTests(unittest.TestCase):
             pack_artifact.validate_pack_archive,
             archive,
             core_version="0.1.0",
-            llmwiki_index_schema="2.0",
+            knowledge_index_schema="2.0",
         )
 
     def test_rejects_file_count_single_file_and_total_size_limits(self):
@@ -556,12 +556,12 @@ class PackArtifactTests(unittest.TestCase):
         bad_paths = [
             r"\\server\share\x.md",
             r"C:relative.md",
-            r"llmwiki\..\escape.md",
-            "llmwiki//index.yaml",
-            "llmwiki/./index.yaml",
-            "llmwiki/sections/file.md:stream",
-            "llmwiki/sections/CON.md",
-            "llmwiki/sections/name. ",
+            r"knowledge\..\escape.md",
+            "knowledge//index.yaml",
+            "knowledge/./index.yaml",
+            "knowledge/sections/file.md:stream",
+            "knowledge/sections/CON.md",
+            "knowledge/sections/name. ",
         ]
         for value in bad_paths:
             with self.subTest(value=value):
@@ -577,7 +577,7 @@ class PackArtifactTests(unittest.TestCase):
         def add_case_alias(target, entries):
             for info, data in entries:
                 target.writestr(self.canonical_info(info.filename), data)
-            target.writestr(self.canonical_info("LLMWIKI/INDEX.YAML"), b"alias")
+            target.writestr(self.canonical_info("KNOWLEDGE/INDEX.YAML"), b"alias")
 
         alias = self.rewrite_archive(archive, add_case_alias)
         self.assert_code(
@@ -597,7 +597,7 @@ class PackArtifactTests(unittest.TestCase):
         )
         (self.source / "packs" / "boards.yaml").unlink()
         (self.source / "packs").rmdir()
-        (self.source / "llmwiki" / "sections" / "empty.md").write_bytes(b"")
+        (self.source / "knowledge" / "sections" / "empty.md").write_bytes(b"")
         self.assert_code("pack_content_invalid", self.build, "empty.cmpack")
 
     def test_malformed_archive_returns_a_stable_error(self):
@@ -739,7 +739,7 @@ class PackArtifactTests(unittest.TestCase):
             else:
                 self.assertIsNone(extraction_error)
                 self.assertTrue(
-                    (staging / "llmwiki" / "sections" / "start-here.md").is_file()
+                    (staging / "knowledge" / "sections" / "start-here.md").is_file()
                 )
         finally:
             if swapped and scratch is not None:
@@ -803,7 +803,7 @@ class PackArtifactTests(unittest.TestCase):
             self.assertIsNone(extraction_error)
             self.assertEqual((outside_files, outside_bytes), ([], 0))
             self.assertTrue(
-                (staging / "llmwiki" / "sections" / "start-here.md").is_file()
+                (staging / "knowledge" / "sections" / "start-here.md").is_file()
             )
         finally:
             if applied and scratch is not None:
@@ -864,7 +864,7 @@ class PackArtifactTests(unittest.TestCase):
         self.assertFalse(replaced)
         self.assertIsNone(extraction_error)
         self.assertTrue(
-            (staging / "llmwiki" / "sections" / "start-here.md").is_file()
+            (staging / "knowledge" / "sections" / "start-here.md").is_file()
         )
 
     @unittest.skipUnless(os.name == "nt", "Windows file identity semantics only")
@@ -880,7 +880,7 @@ class PackArtifactTests(unittest.TestCase):
 
         self.assertEqual(manifest["pack_id"], PACK_ID)
         self.assertTrue(
-            (staging / "llmwiki" / "sections" / "start-here.md").is_file()
+            (staging / "knowledge" / "sections" / "start-here.md").is_file()
         )
 
     @unittest.skipUnless(os.name == "nt", "Windows junction semantics only")
@@ -921,10 +921,10 @@ class PackArtifactTests(unittest.TestCase):
 
 class BuildPackScriptTests(unittest.TestCase):
     def prepare_documented_source(self, root: Path, board_id: str = "arduino-nano-classic") -> Path:
-        source = root / "prepared-source-root" / "llmwiki"
+        source = root / "prepared-source-root" / "knowledge"
         (source / "sections").mkdir(parents=True)
         (source / "index.yaml").write_bytes(
-            (ROOT / "packs" / "llmwiki" / "boards" / f"{board_id}.yaml").read_bytes()
+            (ROOT / "knowledge" / "boards" / f"{board_id}.yaml").read_bytes()
         )
         for page in sorted(
             (ROOT / "knowledge_sources" / "published" / "boards" / board_id).glob("*.md")
@@ -948,7 +948,7 @@ class BuildPackScriptTests(unittest.TestCase):
                     "--output",
                     str(output),
                     "--pack-id",
-                    "chatmaker-board-arduino-nano-classic-wiki",
+                    "chatmaker-board-arduino-nano-classic-knowledge",
                     "--pack-version",
                     "1.0.0",
                     "--board-id",
@@ -973,8 +973,8 @@ class BuildPackScriptTests(unittest.TestCase):
             encoding="utf-8"
         )
         self.assertIn("pack-manifest.json", document)
-        self.assertIn("llmwiki/index.yaml", document)
-        self.assertIn("llmwiki/sections/<section-id>.md", document)
+        self.assertIn("knowledge/index.yaml", document)
+        self.assertIn("knowledge/sections/<section-id>.md", document)
         self.assertIn(
             "Do not pass `knowledge_sources/published/boards/<board-id>` directly to `--source`",
             document,

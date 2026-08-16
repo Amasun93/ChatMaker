@@ -82,7 +82,7 @@ class KnowledgePublicationPipelineTests(unittest.TestCase):
             source_refs = ["source-arduino-nano-classic-documentation"]
         frontmatter = {
             "schema_version": "1.0",
-            "kind": "llmwiki-page",
+            "kind": "knowledge-page",
             "stable_id": stable_id,
             "board_id": board_id,
             "section_id": section_id,
@@ -96,6 +96,7 @@ class KnowledgePublicationPipelineTests(unittest.TestCase):
             + "---\n"
             + body,
             encoding="utf-8",
+            newline="\n",
         )
 
     def validate(self, root: Path) -> dict:
@@ -208,7 +209,7 @@ class KnowledgePublicationPipelineTests(unittest.TestCase):
 
             self.assertFalse(result["success"], result)
             self.assertTrue(
-                any("LLMWiki semantic" in error for error in result["errors"]),
+                any("Knowledge semantic" in error for error in result["errors"]),
                 result,
             )
 
@@ -219,7 +220,9 @@ class KnowledgePublicationPipelineTests(unittest.TestCase):
             self.declare_page(workspace, path="published/boards/arduino-nano-classic/../../escape.md")
             malformed = workspace / "published" / "boards" / "arduino-nano-classic" / "broken.md"
             malformed.parent.mkdir(parents=True, exist_ok=True)
-            malformed.write_text("---\nnot: [valid\n---\nbody\n", encoding="utf-8")
+            malformed.write_text(
+                "---\nnot: [valid\n---\nbody\n", encoding="utf-8", newline="\n"
+            )
 
             result = self.validate(root)
 

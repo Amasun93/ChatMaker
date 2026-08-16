@@ -384,14 +384,14 @@ class PackValidationTests(unittest.TestCase):
         self.assertEqual(signal_pins, {"GPIO23"})
         self.assertTrue((ROOT / record["source_file"]).is_file())
 
-    def test_canonical_verification_snapshot_ignores_llmwiki_sidecars(self):
+    def test_canonical_verification_snapshot_ignores_knowledge_sidecars(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             self.make_repository(root)
-            llmwiki = root / "llmwiki" / "boards" / "board-one.yaml"
-            llmwiki.parent.mkdir(parents=True, exist_ok=True)
-            llmwiki.write_text(
-                "schema_version: '1.0'\nkind: llmwiki-index\nboard_id: board-one\n",
+            knowledge = root / "knowledge" / "boards" / "board-one.yaml"
+            knowledge.parent.mkdir(parents=True, exist_ok=True)
+            knowledge.write_text(
+                "schema_version: '1.0'\nkind: knowledge-index\nboard_id: board-one\n",
                 encoding="utf-8",
             )
 

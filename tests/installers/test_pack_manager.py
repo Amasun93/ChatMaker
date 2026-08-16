@@ -50,7 +50,7 @@ REGISTRY_URL = (
     "distribution/registry/registry.json"
 )
 SIGNATURE_URL = REGISTRY_URL.replace("registry.json", "registry.sig.json")
-PACK_ID = "chatmaker-board-arduino-nano-classic-wiki"
+PACK_ID = "chatmaker-board-arduino-nano-classic-knowledge"
 BOARD_ID = "arduino-nano-classic"
 SECTION_IDS = (
     "start-here",
@@ -68,7 +68,7 @@ def page(section_id: str, body: str) -> str:
     return (
         "---\n"
         "schema_version: '1.0'\n"
-        "kind: llmwiki-page\n"
+        "kind: knowledge-page\n"
         f"stable_id: {BOARD_ID}-{section_id}\n"
         f"board_id: {BOARD_ID}\n"
         f"section_id: {section_id}\n"
@@ -203,12 +203,12 @@ class PackFixture:
         if version in self.archives:
             return self.archives[version]
         source = self.root / "sources" / version
-        (source / "llmwiki" / "sections").mkdir(parents=True)
-        (source / "llmwiki" / "index.yaml").write_bytes(
-            (ROOT / "packs" / "llmwiki" / "boards" / f"{BOARD_ID}.yaml").read_bytes()
+        (source / "knowledge" / "sections").mkdir(parents=True)
+        (source / "knowledge" / "index.yaml").write_bytes(
+            (ROOT / "knowledge" / "boards" / f"{BOARD_ID}.yaml").read_bytes()
         )
         for section_id in SECTION_IDS:
-            target = source / "llmwiki" / "sections" / f"{section_id}.md"
+            target = source / "knowledge" / "sections" / f"{section_id}.md"
             if section_id == "start-here":
                 target.write_text(
                     page(section_id, body or f"# Version {version}\n"),
@@ -268,7 +268,7 @@ class PackFixture:
             "compatibility": {
                 "core": {"minimum": "0.1.0", "maximum_exclusive": "0.2.0"},
                 "pack_manifest_schema": ["1.0"],
-                "llmwiki_index_schema": ["1.0"],
+                "knowledge_index_schema": ["1.0"],
             },
         }
         value = {
@@ -317,7 +317,7 @@ class PackFixture:
         with zipfile.ZipFile(io.BytesIO(original), "r") as source:
             entries = [(info, source.read(info)) for info in source.infolist()]
         payloads = {info.filename: data for info, data in entries}
-        index_path = "llmwiki/index.yaml"
+        index_path = "knowledge/index.yaml"
         payloads[index_path] = payloads[index_path].replace(
             b"board_id: arduino-nano-classic",
             b"board_id: arduino-uno-r3",
@@ -505,7 +505,7 @@ class PackManagerTests(unittest.TestCase):
 
         error = self.assert_manager_error("pack_content_invalid", manager.ensure, PACK_ID)
 
-        self.assertEqual(error.reason, "llmwiki_index_board_mismatch")
+        self.assertEqual(error.reason, "knowledge_index_board_mismatch")
         self.assertFalse((manager.paths.store / PACK_ID).exists())
         self.assertFalse(manager.paths.active.exists())
 
@@ -673,7 +673,7 @@ class PackManagerTests(unittest.TestCase):
         self.fx.publish("1.0.0", sequence=1)
         manager = self.fx.manager()
         manager.ensure(PACK_ID)
-        override = manager.paths.overrides / PACK_ID / "llmwiki" / "sections" / "start-here.md"
+        override = manager.paths.overrides / PACK_ID / "knowledge" / "sections" / "start-here.md"
         override.parent.mkdir(parents=True)
         override.write_text("my local override", encoding="utf-8")
         override_before = override.read_bytes()
@@ -681,7 +681,7 @@ class PackManagerTests(unittest.TestCase):
             manager.paths.store
             / PACK_ID
             / "1.0.0"
-            / "llmwiki"
+            / "knowledge"
             / "sections"
             / "start-here.md"
         )
@@ -796,7 +796,7 @@ class PackManagerTests(unittest.TestCase):
         manager = self.fx.manager()
         manager.ensure(PACK_ID)
         store = manager.paths.store / PACK_ID / "1.0.0"
-        payload = store / "llmwiki" / "sections" / "start-here.md"
+        payload = store / "knowledge" / "sections" / "start-here.md"
         changed = b"# Locally rewritten official content\n"
         payload.write_bytes(changed)
         manifest_path = store / "pack-manifest.json"
@@ -804,7 +804,7 @@ class PackManagerTests(unittest.TestCase):
         item = next(
             value
             for value in manifest["files"]
-            if value["path"] == "llmwiki/sections/start-here.md"
+            if value["path"] == "knowledge/sections/start-here.md"
         )
         item["length"] = len(changed)
         item["sha256"] = hashlib.sha256(changed).hexdigest()
@@ -1021,7 +1021,7 @@ class PackManagerTests(unittest.TestCase):
             manager.paths.store
             / PACK_ID
             / "1.0.0"
-            / "llmwiki"
+            / "knowledge"
             / "sections"
             / "start-here.md"
         )
@@ -1224,7 +1224,7 @@ class PackManagerTests(unittest.TestCase):
                         manager.paths.store
                         / PACK_ID
                         / "1.1.0"
-                        / "llmwiki"
+                        / "knowledge"
                         / "sections"
                         / "start-here.md"
                     )
@@ -1357,8 +1357,8 @@ class PackManagerTests(unittest.TestCase):
             seen,
             {
                 "pack-manifest.json",
-                "llmwiki/index.yaml",
-                *(f"llmwiki/sections/{section_id}.md" for section_id in SECTION_IDS),
+                "knowledge/index.yaml",
+                *(f"knowledge/sections/{section_id}.md" for section_id in SECTION_IDS),
             },
         )
 
@@ -1421,7 +1421,7 @@ class PackManagerTests(unittest.TestCase):
             manager.paths.store
             / PACK_ID
             / "1.0.0"
-            / "llmwiki"
+            / "knowledge"
             / "sections"
             / "start-here.md"
         )

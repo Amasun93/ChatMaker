@@ -55,7 +55,7 @@ def _invalid(request: Any, message: str) -> dict[str, Any]:
 
 
 def _load_index(root: Path, board_id: str) -> dict[str, Any]:
-    path = root / "packs" / "knowledge" / "boards" / f"{board_id}.yaml"
+    path = root / "knowledge" / "boards" / f"{board_id}.yaml"
     try:
         return validate_index_bytes(
             path.read_bytes(),
