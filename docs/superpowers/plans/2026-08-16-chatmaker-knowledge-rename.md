@@ -133,9 +133,8 @@
 **Interfaces:**
 - Produces: a current tree with no old knowledge-layer string in tracked text or tracked paths.
 
-- [ ] **Step 1: Add a repository naming test** that scans tracked text, paths, Skills, and archive manifests.
+- [ ] **Step 1: Add a release validation command** that scans tracked text, paths, Skills, and archive manifests; keep it outside the behavioral unittest suite.
 - [ ] **Step 2: Update current documentation** without rewriting old hashes or claims as though the new identity existed previously.
 - [ ] **Step 3: Run** `git grep -n -I -i -E 'llmwiki|llm wiki'` and `git ls-files | rg -i 'llmwiki'`; both must return no matches.
-- [ ] **Step 4: Run the complete Python and browser suites**.
-- [ ] **Step 5: Commit** `docs: complete ChatMaker Knowledge naming migration`.
-
+- [ ] **Step 4: Convert this migration plan into a concise completion record using generic legacy-layer wording**, so the plan itself also passes the final naming scan while its original detail remains available in Git history.
+- [ ] **Step 5: Run the complete Python and browser suites**, then commit `docs: complete ChatMaker Knowledge naming migration`.
