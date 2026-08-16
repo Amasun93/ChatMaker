@@ -89,12 +89,98 @@ def _mindplus_roots(home: Path, environ: Mapping[str, str], family: str) -> tupl
     )
 
 
-def _first_command(commands: tuple[str, ...]) -> tuple[str | None, str | None]:
+def _first_command(
+    commands: tuple[str, ...], *, search_path: str | None, family: str
+) -> tuple[str | None, str | None]:
     for command in commands:
-        found = shutil.which(command)
-        if found:
-            return command, found
+        names = (command,)
+        if family == "windows" and not Path(command).suffix:
+            names = tuple(f"{command}{suffix}" for suffix in (".exe", ".cmd", ".bat"))
+        for name in names:
+            found = shutil.which(name, path=search_path)
+            if found:
+                return command, found
     return None, None
+
+
+def _macos_resource_roots(root: Path) -> list[Path]:
+    if root.suffix.casefold() != ".app":
+        return [root]
+    return [root / "Contents" / "Resources" / "app", root / "Contents" / "Resources"]
+
+
+def _macos_mindplus_installations(
+    v1_roots: list[Path], v2_roots: list[Path], config_candidates: list[Path]
+) -> list[dict[str, Any]]:
+    installations: list[dict[str, Any]] = []
+    for root in v1_roots:
+        for resources in _macos_resource_roots(root):
+            arduino = resources / "Arduino"
+            builder = arduino / "arduino-builder" / "arduino-builder"
+            avrdude = arduino / "hardware" / "tools" / "avr" / "bin" / "avrdude"
+            boards = arduino / "hardware" / "arduino" / "avr" / "boards.txt"
+            if all(_safe_is_file(path) for path in (builder, avrdude, boards)):
+                installations.append(
+                    {
+                        "backend": "mindplus-1-builder",
+                        "root": str(root),
+                        "builder": str(builder),
+                        "avrdude": str(avrdude),
+                        "boards": str(boards),
+                        "version_family": "1.x",
+                        "toolchain_present": True,
+                    }
+                )
+                break
+    configs = [path for path in config_candidates if _safe_is_file(path)]
+    for root in v2_roots:
+        for resources in _macos_resource_roots(root):
+            cli = resources / "applications" / "deps" / "mind-link" / "tool" / "arduino-cli"
+            if _safe_is_file(cli) and configs:
+                installations.append(
+                    {
+                        "backend": "mindplus-2-cli",
+                        "root": str(root),
+                        "cli": str(cli),
+                        "config": str(configs[0]),
+                        "version_family": "2.x",
+                        "toolchain_present": True,
+                    }
+                )
+                break
+    return installations
+
+
+def _macos_serial_ports() -> list[dict[str, Any]]:
+    try:
+        from serial.tools import list_ports
+    except ImportError:
+        return []
+    ports: list[dict[str, Any]] = []
+    for port in list_ports.comports():
+        address = str(getattr(port, "device", ""))
+        label = str(getattr(port, "description", "") or address)
+        pnp_device_id = str(getattr(port, "hwid", "") or "")
+        combined = " ".join(
+            (address, label, pnp_device_id, str(getattr(port, "manufacturer", "") or ""))
+        ).casefold()
+        bluetooth = "bluetooth" in combined or "bth" in combined
+        nano_likely = any(
+            marker in combined
+            for marker in ("ch340", "ch341", "ftdi", "cp210", "usb serial", "arduino")
+        )
+        ports.append(
+            {
+                "address": address,
+                "device_name": address,
+                "label": label,
+                "pnp_device_id": pnp_device_id,
+                "is_bluetooth": bluetooth,
+                "nano_likely": nano_likely,
+                "eligible_for_upload": bool(address) and not bluetooth,
+            }
+        )
+    return sorted(ports, key=lambda item: item["address"])
 
 
 def _candidate_skill_roots(home: Path, environ: Mapping[str, str], family: str) -> list[dict[str, Any]]:
@@ -159,28 +245,38 @@ def probe_environment(
     selected_home = Path(home).expanduser() if home is not None else Path.home()
     system_name = platform.system()
     family = _family(system_name)
+    search_path = environment.get("PATH", "") if environ is not None else environment.get("PATH")
     terminal_env = environment.get("COMSPEC") if family == "windows" else environment.get("SHELL")
     terminal_command, terminal_path = _first_command(
-        ("pwsh", "powershell", "cmd") if family == "windows" else ("zsh", "bash", "sh")
+        ("pwsh", "powershell", "cmd") if family == "windows" else ("zsh", "bash", "sh"),
+        search_path=search_path,
+        family=family,
     )
     browser_command, browser_path = _first_command(
         ("chrome", "msedge", "firefox")
         if family == "windows"
-        else ("google-chrome", "chrome", "firefox", "safari")
+        else ("google-chrome", "chrome", "firefox", "safari"),
+        search_path=search_path,
+        family=family,
     )
     explicit_cli = _path_from_environ(environment, "ARDUINO_CLI")
-    cli_path = str(explicit_cli) if explicit_cli and _safe_is_file(explicit_cli) else shutil.which("arduino-cli")
+    _, cli_path = _first_command(("arduino-cli",), search_path=search_path, family=family)
+    if explicit_cli and _safe_is_file(explicit_cli):
+        cli_path = str(explicit_cli)
     v1_roots, v2_roots, configs = _mindplus_roots(selected_home, environment, family)
     try:
-        installations = nano_mindplus.discover_installations(
-            v1_roots=v1_roots,
-            v2_roots=v2_roots,
-            v2_config_candidates=configs,
-        )
+        if family == "macos":
+            installations = _macos_mindplus_installations(v1_roots, v2_roots, configs)
+        else:
+            installations = nano_mindplus.discover_installations(
+                v1_roots=v1_roots,
+                v2_roots=v2_roots,
+                v2_config_candidates=configs,
+            )
     except OSError:
         installations = []
     try:
-        ports = nano_mindplus.scan_ports()
+        ports = _macos_serial_ports() if family == "macos" else nano_mindplus.scan_ports()
     except OSError:
         ports = []
     skill_roots = _candidate_skill_roots(selected_home, environment, family)

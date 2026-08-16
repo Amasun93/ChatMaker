@@ -4,6 +4,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from types import SimpleNamespace
 from unittest import mock
 
 
@@ -29,8 +30,8 @@ class CapabilityProbeTests(unittest.TestCase):
                     "COMSPEC": "C:/Windows/System32/cmd.exe",
                 },
                 "which": {
-                    "arduino-cli": "C:/Tools/arduino-cli.exe",
-                    "chrome": "C:/Program Files/Chrome/chrome.exe",
+                    "arduino-cli.exe": "C:/Tools/arduino-cli.exe",
+                    "chrome.exe": "C:/Program Files/Chrome/chrome.exe",
                 },
                 "ports": [{"address": "COM7", "eligible_for_upload": True}],
                 "installations": [{"backend": "mindplus-1-builder", "toolchain_present": True}],
@@ -79,8 +80,13 @@ class CapabilityProbeTests(unittest.TestCase):
                     with (
                         mock.patch.object(capabilities.platform, "system", return_value=case["system"]),
                         mock.patch.object(capabilities.platform, "machine", return_value=case["machine"]),
-                        mock.patch.object(capabilities.shutil, "which", side_effect=case["which"].get),
+                        mock.patch.object(
+                            capabilities.shutil,
+                            "which",
+                            side_effect=lambda command, path=None: case["which"].get(command),
+                        ),
                         mock.patch.object(capabilities.nano_mindplus, "scan_ports", return_value=case["ports"]),
+                        mock.patch("serial.tools.list_ports.comports", return_value=case["ports"]),
                         mock.patch.object(
                             capabilities.nano_mindplus,
                             "discover_installations",
@@ -148,6 +154,94 @@ class CapabilityProbeTests(unittest.TestCase):
             self.assertTrue(report["success"])
             self.assertFalse(workbuddy["available"])
             self.assertEqual(workbuddy["path"], str(blocked))
+
+    def test_macos_probe_enumerates_serial_and_mindplus_app_without_windows_helpers(self):
+        """Catches macOS capability detection silently delegating to Windows-only helpers."""
+        with tempfile.TemporaryDirectory() as temporary:
+            home = Path(temporary)
+            app = home / "Mind+2.app"
+            cli = app / "Contents" / "Resources" / "app" / "applications" / "deps" / "mind-link" / "tool" / "arduino-cli"
+            config = home / "mindplus-arduino-cli.yaml"
+            cli.parent.mkdir(parents=True)
+            cli.write_text("#!/bin/sh\n", encoding="utf-8")
+            config.write_text("directories: {}\n", encoding="utf-8")
+            usb_port = SimpleNamespace(
+                device="/dev/cu.usbserial-1410",
+                description="USB Serial",
+                hwid="USB VID:PID=2341:0043",
+                manufacturer="Arduino",
+            )
+            bluetooth_port = SimpleNamespace(
+                device="/dev/cu.Bluetooth-Incoming-Port",
+                description="Bluetooth-Incoming-Port",
+                hwid="",
+                manufacturer="",
+            )
+
+            with (
+                mock.patch.object(capabilities.platform, "system", return_value="Darwin"),
+                mock.patch("serial.tools.list_ports.comports", return_value=[usb_port, bluetooth_port]),
+            ):
+                report = probe_environment(
+                    home=home,
+                    environ={
+                        "PATH": "",
+                        "MINDPLUS2_ROOT": str(app),
+                        "MINDPLUS2_CONFIG": str(config),
+                    },
+                ).to_dict()
+
+            self.assertTrue(report["success"])
+            self.assertTrue(report["serial"]["available"])
+            ports = {item["address"]: item for item in report["serial"]["ports"]}
+            self.assertIn("/dev/cu.usbserial-1410", ports)
+            self.assertFalse(ports["/dev/cu.Bluetooth-Incoming-Port"]["eligible_for_upload"])
+            self.assertTrue(report["mindplus"]["available"])
+            self.assertEqual(report["mindplus"]["installations"][0]["backend"], "mindplus-2-cli")
+            self.assertEqual(report["mindplus"]["installations"][0]["cli"], str(cli))
+
+    def test_macos_probe_reports_missing_devices_and_app_without_failure(self):
+        """Catches absent macOS hardware being treated as an installer error."""
+        with tempfile.TemporaryDirectory() as temporary:
+            with (
+                mock.patch.object(capabilities.platform, "system", return_value="Darwin"),
+                mock.patch("serial.tools.list_ports.comports", return_value=[]),
+            ):
+                report = probe_environment(
+                    home=Path(temporary),
+                    environ={"PATH": ""},
+                ).to_dict()
+
+            self.assertTrue(report["success"])
+            self.assertFalse(report["serial"]["available"])
+            self.assertFalse(report["mindplus"]["available"])
+
+    def test_supplied_path_controls_windows_command_discovery(self):
+        """Catches a supplied PATH being ignored in favor of the process-global PATH."""
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            supplied = root / "supplied bin"
+            process_global = root / "process global bin"
+            supplied.mkdir()
+            process_global.mkdir()
+            for directory in (supplied, process_global):
+                for executable in ("cmd.exe", "chrome.exe", "arduino-cli.exe"):
+                    (directory / executable).write_text("", encoding="utf-8")
+
+            with (
+                mock.patch.object(capabilities.platform, "system", return_value="Windows"),
+                mock.patch.dict("os.environ", {"PATH": str(process_global)}, clear=False),
+                mock.patch.object(capabilities.nano_mindplus, "scan_ports", return_value=[]),
+                mock.patch.object(capabilities.nano_mindplus, "discover_installations", return_value=[]),
+            ):
+                report = probe_environment(
+                    home=root,
+                    environ={"PATH": str(supplied)},
+                ).to_dict()
+
+            self.assertEqual(report["terminal"]["path"], str(supplied / "cmd.exe"))
+            self.assertEqual(report["browser"]["path"], str(supplied / "chrome.exe"))
+            self.assertEqual(report["arduino_cli"]["path"], str(supplied / "arduino-cli.exe"))
 
 
 if __name__ == "__main__":
