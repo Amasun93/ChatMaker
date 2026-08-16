@@ -24,7 +24,6 @@ from chatmaker.installers.skill_bundle import (
 SERVER_KEY = "arduino-nano-mindplus"
 PACKAGE_ROOT = Path(__file__).resolve().parents[1]
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
-SERVER = PACKAGE_ROOT / "integrations" / "workbuddy_mcp.py"
 SKILL_MANIFEST_NAME = "chatmaker-workbuddy-skills.json"
 OPERATION_MANIFEST_NAME = "chatmaker-workbuddy-install.json"
 CONTENT_MANAGER = "chatmaker-pack"
@@ -52,8 +51,9 @@ def install(
         raise FileExistsError(
             f"existing ChatMaker install manifest must be uninstalled first: {operation_manifest}"
         )
-    if not SERVER.is_file():
-        raise FileNotFoundError("workbuddy_mcp_server.py is missing")
+    server_module = PACKAGE_ROOT / "integrations" / "mcp.py"
+    if not server_module.is_file():
+        raise FileNotFoundError("generic_mcp_server.py is missing")
     data = json.loads(config_path.read_text(encoding="utf-8")) if config_path.is_file() else {}
     servers = data.setdefault("mcpServers", {})
     if not isinstance(servers, dict):
@@ -62,8 +62,8 @@ def install(
     servers[SERVER_KEY] = {
         "type": "stdio",
         "command": str(Path(python_executable).resolve()) if Path(python_executable).exists() else python_executable,
-        "args": [str(SERVER.resolve())],
-        "cwd": str(PACKAGE_ROOT.resolve()),
+        "args": ["-m", "chatmaker.integrations.mcp"],
+        "cwd": str(PACKAGE_ROOT.parent.resolve()),
         "env": {"PYTHONUTF8": "1", "PYTHONUNBUFFERED": "1"},
         "defer_loading": False,
         "disabled": False,
