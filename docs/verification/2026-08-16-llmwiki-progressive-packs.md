@@ -5,8 +5,8 @@
 ## 本次交付
 
 - 最小 Core：`ChatMaker-Core-0.1.0-rc5.zip`
-- 字节数：`215201`
-- SHA-256：`71c705c7a6eacbba864f45ba372d4211285ecfb533b0fa3afbced6dee797ade5`
+- 字节数：`216863`
+- SHA-256：`56f714354cd92b83582b3b72d4d284c83be7111c80968de46641b413fd6059f5`
 - 文件数：115
 - 注册表：sequence `1`，生成时间 `2026-08-16T00:00:00Z`，过期时间 `2026-09-15T00:00:00Z`
 - 签名 key ID：`chatmaker-official-2026-01`
@@ -46,17 +46,26 @@ python -m unittest discover -s tests/release -p "test_clean_core_integration.py"
 
 ## 自动测试
 
-- `python -m unittest discover -s tests`：共 367 项，366 项通过，1 项跳过，耗时 241.604 秒。跳过项是当前 Windows 账户没有创建目录符号链接权限的安全测试；同组真实 junction、路径/重解析点与硬链接安全测试通过。
-- release package 聚焦测试：10 项通过；上述 clean-Core 集成验收另有 1 项通过，耗时 80.383 秒。
-- installer 子树共 102 项，其结果包含在上述整库运行中：101 项通过，1 项按上面原因跳过。另单独重跑 PackManager 50 项、PackArtifact 20 项、Registry 24 项和真实 loopback transport 4 项，除同一符号链接权限跳过外均通过。
-- WorkBuddy integration：15 项通过。
-- LLMWiki 文档与 schema 合同：17 项通过。
-- 生产 registry 签名、三个 commit-pinned URL 字符串、当前本地 artifact 长度和 SHA-256 均由自动测试核对。
+- bootstrap 提交 A `b46aad2e8ec5f956a2f73cf974851e209f556c89` 上运行 `python -m unittest discover -s tests`：共 371 项，370 项通过，1 项跳过，耗时 153.445 秒。跳过项是当前 Windows 账户没有创建目录符号链接权限的安全测试；同组真实 junction、重解析点、祖先目录替换、路径与硬链接安全测试通过。
+- Playwright Chromium：4 项通过，覆盖课堂页、模拟硬件页、ESP32 AP 模拟页和高级游乐场。
+- release package 聚焦测试：10 项通过；上述 clean-Core 集成验收另有 1 项通过，耗时 40.596 秒。
+- canonical pack validation：18 项通过；LLMWiki 内容与确定性构建聚焦验证：5 项通过。
+- 项目内 ChatMaker、ChatDuino、ChatWeb Skill 校验全部通过，三个 Skill 又分别通过 Codex 系统 `quick_validate.py`。
+- doctor 报告 3 块板卡、12 类元器件、14 个案例、3 个 LLMWiki 索引和 29 个 verification snapshot，错误为 0；知识发布治理报告 3 个 manifests、24 个 pages、错误为 0。
+- WorkBuddy stdio `initialize` / `tools/list` 实际返回版本 `1.8.0`、24 个唯一工具，并包含 `llmwiki_get`。
+- 同一源码独立构建两次 Core，两份均为 216863 字节、115 个文件且 SHA-256 都是 `56f714354cd92b83582b3b72d4d284c83be7111c80968de46641b413fd6059f5`。
+- 生产 registry 签名、三个 commit-pinned URL、当前 artifact 长度和 SHA-256 均由自动测试与公网只读验证共同核对。
 
 Codex/WorkBuddy 既有备份、重复安装拒绝、失败回滚、卸载恢复和无关 MCP/host settings 保留测试继续通过。内容管理只由 `chatmaker-pack` 提供，没有在 host installer 中增加重复动作。
 
 ## 公开可用性与证据边界
 
-Task 7 没有 push，也没有创建 GitHub Release。2026-08-16 在推送前对三个不可变 Raw URL 做只读 GET，GitHub 均返回 404；原因是包含 artifact 的本地提交 `25ad1df…` 尚未进入公开仓库。Task 8 必须在安全合并并推送 `main` 后重新核对三个 URL 的 HTTP 200、长度和 SHA-256，再用生产 registry 做全新用户目录的公开自动下载证明。
+2026-08-16 将经过本地完整验证的 bootstrap 提交 A `b46aad2e8ec5f956a2f73cf974851e209f556c89` 推送到 `main` 后，`git ls-remote origin refs/heads/main` 返回完全相同的提交。随后完成以下公网只读证明：
 
-本记录只证明软件、分发格式、签名、隔离安装和本地 fixture。它不证明公开 GitHub 下载已可用，也不证明任何板卡烧录、串口、SoftAP、HTTP、断电重启或物理效果。
+- 正式 registry URL 返回 HTTP 200、2147 字节、SHA-256 `c9eba3650ceb0c1bfe9dc364b36c1c2671796b2ba81c9150914baceab947dfdb`。
+- detached signature URL 返回 HTTP 200、165 字节、SHA-256 `7d760766bdcf5fa0911cf645b45776648671269b9370c2233f6fdac1b28d31f5`；运行时使用固定公钥 `chatmaker-official-2026-01` 验证通过，registry sequence 为 `1`。
+- 三个 commit-pinned `.cmpack` URL 全部返回 HTTP 200，实际长度和 SHA-256 与上表及已签名 registry 完全一致。
+- 在全新临时用户目录中，用实际 `UrlTransport`、`PackManager`、正式 trust anchor 和 GitHub registry 请求 Nano 的 `identify-and-safety`。第一次成功并恰好产生 3 次网络调用（registry、signature、Nano pack），返回 `official_pack` provenance、版本 `1.0.0`、正文 429 字节。
+- 同一请求第二次成功，累计网络调用仍为 3，即新增下载 0 次。随后换成任何 `fetch` / `fetch_to` 都会失败的新离线 transport 和新 `PackManager`，继续从同一用户目录读取成功，离线网络调用为 0；active generation 为 1，激活与缓存归档哈希均为 Nano 包哈希 `f436a6c…`。
+
+本任务没有创建 GitHub Release；公开分发通过仓库 `main` 上的签名 registry 和不可变 commit URL 完成。本记录证明软件、分发格式、签名、自动按需安装、缓存与离线读取；它不证明任何板卡烧录、串口、SoftAP、HTTP、断电重启、机械尺寸或物理效果。当前也没有实现 ChatCAD、DXF、STL 或 3D 生成。
