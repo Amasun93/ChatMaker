@@ -83,6 +83,72 @@ class HostAdapterTests(unittest.TestCase):
         self.assertEqual(result["status"], "ready")
         self.assertEqual([plan["host"] for plan in result["hosts"]], ["codex", "workbuddy"])
 
+    def test_codex_config_only_derives_a_creatable_skill_directory(self):
+        report = self.report(
+            skill_roots=[
+                {"host": "codex", "path": "C:/Users/teacher/.codex/skills", "available": False, "explicit": False},
+            ],
+            mcp_configs=[
+                {"host": "codex", "path": "C:/Users/teacher/.codex/config.toml", "available": True, "explicit": False},
+            ],
+        )
+
+        plan = self.CodexHostAdapter().plan({"report": report})
+
+        self.assertEqual(plan["status"], "ready")
+        self.assertEqual(plan["skill_dir"], "C:/Users/teacher/.codex/skills")
+        self.assertEqual(plan["writes"], [{"kind": "skill_bundle", "path": "C:/Users/teacher/.codex/skills"}])
+
+    def test_codex_skill_root_only_has_a_non_null_write_path(self):
+        report = self.report(
+            skill_roots=[
+                {"host": "codex", "path": "C:/Users/teacher/.codex/skills", "available": True, "explicit": False},
+            ],
+            mcp_configs=[
+                {"host": "codex", "path": "C:/Users/teacher/.codex/config.toml", "available": False, "explicit": False},
+            ],
+        )
+
+        plan = self.CodexHostAdapter().plan({"report": report})
+
+        self.assertEqual(plan["status"], "ready")
+        self.assertEqual(plan["skill_dir"], "C:/Users/teacher/.codex/skills")
+        self.assertNotIn(None, [write["path"] for write in plan["writes"]])
+
+    def test_workbuddy_config_only_derives_a_creatable_skill_directory(self):
+        report = self.report(
+            skill_roots=[
+                {"host": "workbuddy", "path": "C:/Users/teacher/.workbuddy/skills", "available": False, "explicit": False},
+            ],
+            mcp_configs=[
+                {"host": "workbuddy", "path": "C:/Users/teacher/.workbuddy/mcp.json", "available": True, "explicit": False},
+            ],
+        )
+
+        plan = self.WorkBuddyHostAdapter().plan({"report": report})
+
+        self.assertEqual(plan["status"], "ready")
+        self.assertEqual(plan["skill_dir"], "C:/Users/teacher/.workbuddy/skills")
+        self.assertEqual(plan["mcp_config"], "C:/Users/teacher/.workbuddy/mcp.json")
+        self.assertNotIn(None, [write["path"] for write in plan["writes"]])
+
+    def test_workbuddy_skill_root_only_derives_a_creatable_mcp_config(self):
+        report = self.report(
+            skill_roots=[
+                {"host": "workbuddy", "path": "C:/Users/teacher/.workbuddy/skills", "available": True, "explicit": False},
+            ],
+            mcp_configs=[
+                {"host": "workbuddy", "path": "C:/Users/teacher/.workbuddy/mcp.json", "available": False, "explicit": False},
+            ],
+        )
+
+        plan = self.WorkBuddyHostAdapter().plan({"report": report})
+
+        self.assertEqual(plan["status"], "ready")
+        self.assertEqual(plan["skill_dir"], "C:/Users/teacher/.workbuddy/skills")
+        self.assertEqual(plan["mcp_config"], "C:/Users/teacher/.workbuddy/mcp.json")
+        self.assertNotIn(None, [write["path"] for write in plan["writes"]])
+
     def test_no_recognized_host_is_ready_with_limits_and_has_no_guessed_writes(self):
         report = self.report(
             skill_roots=[
@@ -99,6 +165,20 @@ class HostAdapterTests(unittest.TestCase):
         self.assertEqual(result["writes"], [])
         self.assertNotIn("skill_dir", result)
         self.assertNotIn("mcp_config", result)
+
+    def test_uncreatable_detected_host_returns_a_bounded_limit_without_null_writes(self):
+        report = self.report(
+            skill_roots=[],
+            mcp_configs=[
+                {"host": "codex", "path": "config.toml", "available": True, "explicit": False},
+            ],
+        )
+
+        result = self.plan_installation({"report": report})
+
+        self.assertEqual(result["status"], "ready_with_limits")
+        self.assertEqual(result["writes"], [])
+        self.assertEqual(result["hosts"][0]["limits"], ["creatable_skill_dir_unavailable"])
 
     def test_workbuddy_plan_uses_generic_module_entry_and_preserves_other_servers(self):
         report = self.report(

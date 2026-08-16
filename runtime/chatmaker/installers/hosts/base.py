@@ -43,7 +43,37 @@ def selected_path(report: Mapping[str, Any] | Any, key: str, host: str) -> str |
     """Prefer an explicitly configured target, then proven host evidence."""
     candidate = first_explicit(report, key) or first_available(report, key, host)
     path = candidate.get("path") if candidate else None
-    return str(path) if path else None
+    if path:
+        return str(path)
+
+    if key == "skill_roots":
+        config = first_available(report, "mcp_configs", host)
+        config_path = str(config.get("path")) if config and config.get("path") else None
+        return _join_path(_parent_path(config_path), "skills")
+    if key == "mcp_configs":
+        skill_root = first_available(report, "skill_roots", host)
+        skill_path = str(skill_root.get("path")) if skill_root and skill_root.get("path") else None
+        config_name = "config.toml" if host == "codex" else "mcp.json"
+        return _join_path(_parent_path(skill_path), config_name)
+    return None
+
+
+def _parent_path(path: str | None) -> str | None:
+    if not path:
+        return None
+    trimmed = path.rstrip("/\\")
+    separator = "\\" if "\\" in trimmed else "/"
+    if separator not in trimmed:
+        return None
+    parent, _, _ = trimmed.rpartition(separator)
+    return parent or None
+
+
+def _join_path(parent: str | None, child: str) -> str | None:
+    if not parent:
+        return None
+    separator = "\\" if "\\" in parent else "/"
+    return f"{parent}{separator}{child}"
 
 
 class HostAdapter(ABC):

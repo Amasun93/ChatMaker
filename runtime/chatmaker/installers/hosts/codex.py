@@ -27,12 +27,14 @@ class CodexHostAdapter(HostAdapter):
         if self.detect(report) is None:
             return {"host": self.name, "status": "unavailable", "writes": []}
         skill_dir = selected_path(report, "skill_roots", self.name)
+        writes = [{"kind": "skill_bundle", "path": skill_dir}] if skill_dir else []
         return {
             "host": self.name,
-            "status": "ready",
+            "status": "ready" if skill_dir else "ready_with_limits",
             "skill_dir": skill_dir,
             "installer": "chatmaker.installers.codex",
-            "writes": [{"kind": "skill_bundle", "path": skill_dir}],
+            "writes": writes,
+            "limits": [] if skill_dir else ["creatable_skill_dir_unavailable"],
         }
 
     def verify(self, context: Mapping[str, Any]) -> dict[str, Any]:

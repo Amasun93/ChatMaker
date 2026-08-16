@@ -30,10 +30,16 @@ def plan_installation(context: Mapping[str, Any]) -> dict[str, Any]:
             "writes": [],
             "limits": ["no_supported_host_detected"],
         }
+    limited = any(plan["status"] == "ready_with_limits" for plan in plans)
     return {
-        "status": "ready",
+        "status": "ready_with_limits" if limited else "ready",
         "hosts": plans,
         "writes": [write for plan in plans for write in plan["writes"]],
+        "limits": [
+            limit
+            for plan in plans
+            for limit in plan.get("limits", [])
+        ],
     }
 
 

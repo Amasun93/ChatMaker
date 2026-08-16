@@ -30,6 +30,11 @@ class WorkBuddyHostAdapter(HostAdapter):
             return {"host": self.name, "status": "unavailable", "writes": []}
         skill_dir = selected_path(report, "skill_roots", self.name)
         mcp_config = selected_path(report, "mcp_configs", self.name)
+        writes = []
+        if skill_dir:
+            writes.append({"kind": "skill_bundle", "path": skill_dir})
+        if mcp_config:
+            writes.append({"kind": "mcp_server", "path": mcp_config})
         command = str(context.get("python_executable") or sys.executable)
         mcp_server = {
             "type": "stdio",
@@ -42,16 +47,14 @@ class WorkBuddyHostAdapter(HostAdapter):
         }
         return {
             "host": self.name,
-            "status": "ready",
+            "status": "ready" if skill_dir and mcp_config else "ready_with_limits",
             "skill_dir": skill_dir,
             "mcp_config": mcp_config,
             "mcp_server": mcp_server,
             "preserves_unrelated_mcp_servers": True,
             "installer": "chatmaker.installers.workbuddy",
-            "writes": [
-                {"kind": "skill_bundle", "path": skill_dir},
-                {"kind": "mcp_server", "path": mcp_config},
-            ],
+            "writes": writes,
+            "limits": [] if skill_dir and mcp_config else ["creatable_host_paths_unavailable"],
         }
 
     def verify(self, context: Mapping[str, Any]) -> dict[str, Any]:
