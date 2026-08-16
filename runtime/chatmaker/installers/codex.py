@@ -11,6 +11,13 @@ from .skill_bundle import doctor_bundle, install_bundle, uninstall_bundle
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 MANIFEST_NAME = "chatmaker-codex-install.json"
+CONTENT_MANAGER = "chatmaker-pack"
+
+
+def _with_content_boundary(result: dict[str, Any]) -> dict[str, Any]:
+    result["content_manager"] = CONTENT_MANAGER
+    result["knowledge_packs_installed"] = []
+    return result
 
 
 def default_codex_home() -> Path:
@@ -19,7 +26,9 @@ def default_codex_home() -> Path:
 
 
 def install(codex_home: Path, source_skills: Path = PROJECT_ROOT / "skills") -> dict[str, Any]:
-    result = install_bundle(codex_home, source_skills, MANIFEST_NAME)
+    result = _with_content_boundary(
+        install_bundle(codex_home, source_skills, MANIFEST_NAME)
+    )
     result["restart_codex"] = True
     return result
 
@@ -31,7 +40,7 @@ def uninstall(codex_home: Path) -> dict[str, Any]:
 
 
 def doctor(codex_home: Path) -> dict[str, Any]:
-    return doctor_bundle(codex_home)
+    return _with_content_boundary(doctor_bundle(codex_home))
 
 
 def main() -> int:

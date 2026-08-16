@@ -14,6 +14,8 @@ ChatMaker 是面向老师、学生和黑客松参与者的 AI 创作伙伴。用
 
 > 当前处于早期开发阶段。[`v0.1.0-rc5`](https://github.com/Amasun93/ChatMaker/releases/tag/v0.1.0-rc5) 已作为 GitHub 预发布版公开。它包含 Nano/Uno Mind+ 编译、ESP32 官方 Core 准备与精确 FQBN 编译、手机 AP 页面嵌入、可执行路由和创意规划、显式高级游乐场、WorkBuddy 1.7.0 的 23 个工具，以及真实 Chromium 自动化。没有匹配实板证据，因此仍不能声称完成烧录或实物闭环。
 
+rc5 之后的当前源码正在准备新的 `ChatMaker-Core-<version>.zip` 和三个按板卡下载的 LLMWiki 知识包；本阶段没有创建新的 GitHub Release。rc5 仍是当前公开预发布版。
+
 ## 它补上的能力
 
 普通代码生成器通常从一条技术指令开始。小白用户更常见的起点是“我想让课堂有趣一点”“我有一块板子，不知道能做什么”。
@@ -94,7 +96,22 @@ Skill 负责告诉 AI 应该怎样判断、哪些技术事实不能猜、什么�
 
 这套结构让 AI 保留判断能力，同时在接线安全、端口选择、编译烧录和完成状态上受到明确约束。
 
-完整设计见 [ChatMaker 创作伙伴设计](docs/plans/2026-08-14-chatmaker-creative-partner-design.md)。
+完整设计见 [ChatMaker 创作伙伴设计](https://github.com/Amasun93/ChatMaker/blob/main/docs/plans/2026-08-14-chatmaker-creative-partner-design.md)。
+
+## 板卡知识怎样按需出现
+
+Core 首次安装只带运行层、ChatMaker / ChatDuino / ChatWeb 三个 Skill、3 块板卡、12 种元器件、14 个配方、紧凑索引、schema 和当前案例，不带详细 Wiki 正文。这样基础安装更小，也不会把知识工作区、测试或构建缓存交给普通用户。
+
+当 AI 第一次读取某块板卡的详细章节时，`chatmaker-llmwiki` 默认执行一次自动安装：它从官方签名注册表找到精确版本，核对签名、下载地址、长度、SHA-256 和包内文件后才激活。再次读取直接复用；已安装版本可以离线重校验后继续读取，但缓存只有在签名 receipt 未过期时才能授权新的离线安装。这个自动动作只安装被动知识页，不会安装驱动、Mind+、Arduino Core、Node、Chromium，不会修改 PATH，也不会改 Codex / WorkBuddy 配置或请求管理员权限。
+
+```powershell
+chatmaker-llmwiki --request-json '{"action":"section","board_id":"arduino-nano-classic","consumer":"chatduino","section_id":"identify-and-safety"}'
+chatmaker-pack status chatmaker-board-arduino-nano-classic-wiki
+chatmaker-pack update chatmaker-board-arduino-nano-classic-wiki
+chatmaker-pack rollback chatmaker-board-arduino-nano-classic-wiki --version 1.0.0
+```
+
+本地实验资料可以放入独立 override 目录，并会明确显示 `provenance=local_override`；它不会伪装成官方内容。完整的缓存、离线、更新和回滚说明见 [安装说明](docs/installation.md)。
 
 ## 当前开发状态
 
@@ -103,6 +120,7 @@ Skill 负责告诉 AI 应该怎样判断、哪些技术事实不能猜、什么�
 | ChatMaker、ChatDuino、ChatWeb 结构 | 已验证 | 项目校验和 Skill 格式校验通过 |
 | 创作伙伴对话规则 | 已写入 | 尚需独立前向测试 |
 | 数据包和证据状态 | 已验证 | 自动测试与项目 doctor 通过 |
+| LLMWiki 渐进知识包 | 本地软件门已验证 | 三个只读包、签名注册表、首次自动获取、缓存复用、更新/回滚和本地 override 已覆盖；公开 GitHub 下载留到合并推送后验证 |
 | Nano Mind+ 编译和烧录迁移 | 部分验证 | 原 33 项行为测试已迁移；10 个示例从 ChatMaker 路径真实编译；烧录等待有线 Nano |
 | Uno Mind+ 独立适配器 | 部分验证 | 独立 1.x/2.x FQBN、固定 115200 上传规则、Codex/WorkBuddy 入口和 Blink 真实编译已验证；烧录等待有线 Uno |
 | DOIT ESP32 DevKit V1 | 部分验证 | 官方 `esp32:esp32@3.3.11` 已安装；`prepare-environment` 真实 no-op 成功；`esp32:esp32:esp32doit-devkit-v1` 已通过 Blink 和 AP 案例真实编译；烧录、启动、串口、SoftAP、HTTP 和实体效果仍待实板 |
@@ -112,7 +130,7 @@ Skill 负责告诉 AI 应该怎样判断、哪些技术事实不能猜、什么�
 | 可执行路由与创意规划 | 已验证 | `chatmaker-route` 返回硬件、网页、组合或澄清路线；`chatmaker-web-plan` 在信息不足时只提问，在信息充分时给出 2–3 条精选方向 |
 | 高级方向游乐场 | 显式启用 | 额外方向和 `chatmaker-web-playground` 仅在布尔 `advanced=true` / CLI `--advanced` 时开放 |
 | 浏览器自动化 | 已验证 | Chromium 覆盖课堂页、模拟硬件页、ESP32 AP 模拟页和高级游乐场；检查主要交互、390 px 手机布局、至少 44 px 触控目标和零控制台错误 |
-| Codex / WorkBuddy 安装 | 开发版已刷新 | 三个 Skill 在 Codex/WorkBuddy 中与仓库哈希一致；WorkBuddy 1.7.0 真实 stdio 服务列出 23 个工具，并保留原有 5 个非 ChatMaker MCP；应用重启后的界面发现仍需单独确认 |
+| Codex / WorkBuddy 安装 | 开发版已刷新 | 三个 Skill 可逆安装；WorkBuddy 1.8.0 列出 24 个工具（新增 `llmwiki_get`），无关 MCP 与主机设置保持不变；知识包由独立的 `chatmaker-pack` 管理 |
 | 串口运行诊断 | 已实现待硬件 | WorkBuddy 6 个串口工具与 Codex JSONL 会话通过自动测试；当前无有线 Nano/Uno，真实日志待现场读取 |
 | v0.1.0-rc1 发布候选 | 历史发布 | [GitHub 预发布](https://github.com/Amasun93/ChatMaker/releases/tag/v0.1.0-rc1)；保留其原始产物与当时验证记录 |
 | v0.1.0-rc2 发布候选 | 已发布 | [GitHub 预发布](https://github.com/Amasun93/ChatMaker/releases/tag/v0.1.0-rc2)；rc1 继续保留，rc2 新增串口运行层 |
@@ -163,6 +181,8 @@ tests/        自动测试和行为契约
 docs/         设计、路线和贡献说明
 ```
 
+`ChatMaker-Core-<version>.zip` 只包含运行所需部分，不包含上面源码树中的 `tests/`、`knowledge_sources/`、`distribution/` 可选成品或开发缓存。
+
 ## 路线
 
 1. 继续扩充常用模块、可靠程序库和真实编译示例。
@@ -172,7 +192,7 @@ docs/         设计、路线和贡献说明
 5. 开发不依赖 Mind+ 的独立工具链和驱动诊断。
 6. 完成 Codex、WorkBuddy 安装器和公开发布包。
 
-详细路线见 [中文说明版](docs/plans/2026-08-14-chatmaker-v0.1-中文说明版.md) 和 [技术实施计划](docs/plans/2026-08-14-chatmaker-v0.1-implementation.md)。
+详细路线见 [中文说明版](https://github.com/Amasun93/ChatMaker/blob/main/docs/plans/2026-08-14-chatmaker-v0.1-%E4%B8%AD%E6%96%87%E8%AF%B4%E6%98%8E%E7%89%88.md) 和 [技术实施计划](https://github.com/Amasun93/ChatMaker/blob/main/docs/plans/2026-08-14-chatmaker-v0.1-implementation.md)。
 
 ## License
 

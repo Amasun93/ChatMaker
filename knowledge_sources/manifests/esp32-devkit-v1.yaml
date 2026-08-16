@@ -1,0 +1,46 @@
+schema_version: "1.0"
+id: source-esp32-devkit-v1-doit-board-definition
+title: Arduino-ESP32 3.3.11 DOIT board definition
+board_id: esp32-devkit-v1
+source_type: canonical-board-documentation
+canonical_url: https://github.com/espressif/arduino-esp32/blob/3.3.11/boards.txt#L19873-L19901
+license_use_boundary: >-
+  This repository has not independently verified the source license. Use it only
+  for attributed source review and governed derivative-page preparation; do not
+  copy or redistribute the source body through ChatMaker packs.
+cleaning_version: unprocessed-v1
+review_date: "2026-08-15"
+cleaning_verified:
+  status: unverified
+  date: null
+  evidence: null
+source_reviewed:
+  status: verified
+  date: "2026-08-15"
+  evidence: >-
+    Reviewed the official Arduino-ESP32 3.3.11 DOIT board definition; see the
+    canonical packs/boards/esp32-devkit-v1.yaml source_reviewed record.
+publication_approved:
+  status: verified
+  date: "2026-08-16"
+  evidence: >-
+    Approved only these governed derivative navigation pages. They route readers
+    to canonical board, component, and recipe records and preserve every
+    unverified runtime gate; this approval does not promote runtime evidence.
+page_declarations:
+  - stable_id: esp32-devkit-v1-start-here
+    path: published/boards/esp32-devkit-v1/start-here.md
+  - stable_id: esp32-devkit-v1-identify-and-safety
+    path: published/boards/esp32-devkit-v1/identify-and-safety.md
+  - stable_id: esp32-devkit-v1-pins-and-electrical
+    path: published/boards/esp32-devkit-v1/pins-and-electrical.md
+  - stable_id: esp32-devkit-v1-toolchains-and-upload
+    path: published/boards/esp32-devkit-v1/toolchains-and-upload.md
+  - stable_id: esp32-devkit-v1-components-and-wiring
+    path: published/boards/esp32-devkit-v1/components-and-wiring.md
+  - stable_id: esp32-devkit-v1-libraries-and-examples
+    path: published/boards/esp32-devkit-v1/libraries-and-examples.md
+  - stable_id: esp32-devkit-v1-web-and-protocol
+    path: published/boards/esp32-devkit-v1/web-and-protocol.md
+  - stable_id: esp32-devkit-v1-troubleshooting
+    path: published/boards/esp32-devkit-v1/troubleshooting.md

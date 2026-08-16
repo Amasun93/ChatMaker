@@ -27,6 +27,13 @@ PROJECT_ROOT = Path(__file__).resolve().parents[3]
 SERVER = PACKAGE_ROOT / "integrations" / "workbuddy_mcp.py"
 SKILL_MANIFEST_NAME = "chatmaker-workbuddy-skills.json"
 OPERATION_MANIFEST_NAME = "chatmaker-workbuddy-install.json"
+CONTENT_MANAGER = "chatmaker-pack"
+
+
+def _with_content_boundary(result: dict[str, Any]) -> dict[str, Any]:
+    result["content_manager"] = CONTENT_MANAGER
+    result["knowledge_packs_installed"] = []
+    return result
 
 
 def default_config_path() -> Path:
@@ -90,17 +97,19 @@ def install(
     except Exception:
         uninstall_bundle(workbuddy_home, SKILL_MANIFEST_NAME)
         raise
-    return {
-        "success": True,
-        "config": str(config_path),
-        "backup": str(backup) if backup else None,
-        "manifest": str(operation_manifest),
-        "server": SERVER_KEY,
-        "installed_skills": skill_result["installed_skills"],
-        "replaced_existing_entry": previous is not None,
-        "preserved_other_servers": len(servers) - 1,
-        "restart_workbuddy": True,
-    }
+    return _with_content_boundary(
+        {
+            "success": True,
+            "config": str(config_path),
+            "backup": str(backup) if backup else None,
+            "manifest": str(operation_manifest),
+            "server": SERVER_KEY,
+            "installed_skills": skill_result["installed_skills"],
+            "replaced_existing_entry": previous is not None,
+            "preserved_other_servers": len(servers) - 1,
+            "restart_workbuddy": True,
+        }
+    )
 
 
 def uninstall(config_path: Path) -> dict[str, Any]:
@@ -146,12 +155,14 @@ def doctor(config_path: Path) -> dict[str, Any]:
         server = config.get("mcpServers", {}).get(SERVER_KEY)
     except (OSError, json.JSONDecodeError, AttributeError):
         server = None
-    return {
-        "success": skills["success"] and isinstance(server, dict),
-        "config": str(config_path),
-        "mcp_server_ready": isinstance(server, dict),
-        "skills": skills["skills"],
-    }
+    return _with_content_boundary(
+        {
+            "success": skills["success"] and isinstance(server, dict),
+            "config": str(config_path),
+            "mcp_server_ready": isinstance(server, dict),
+            "skills": skills["skills"],
+        }
+    )
 
 
 def main() -> int:

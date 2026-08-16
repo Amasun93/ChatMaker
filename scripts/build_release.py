@@ -7,25 +7,22 @@ from pathlib import Path
 import zipfile
 
 
-RELEASE_PATHS = (
-    ".github/pull_request_template.md",
-    ".github/workflows/ci.yml",
-    "CONTRIBUTING.md",
+CORE_PATHS = (
     "LICENSE",
-    "package-lock.json",
-    "package.json",
-    "playwright.config.mjs",
     "README.md",
     "README_EN.md",
-    "RELEASE_NOTES.md",
     "pyproject.toml",
-    "docs",
+    "docs/installation.md",
     "examples",
-    "packs",
+    "packs/boards",
+    "packs/components",
+    "packs/llmwiki/boards",
+    "packs/recipes",
+    "packs/schemas",
     "runtime",
-    "scripts",
-    "skills",
-    "tests",
+    "skills/chatduino",
+    "skills/chatmaker",
+    "skills/chatweb",
 )
 EXCLUDED_PARTS = {
     "__pycache__",
@@ -34,20 +31,29 @@ EXCLUDED_PARTS = {
     ".chatmaker-esp32-builds",
     ".chatmaker-esp32-cache",
 }
+EXCLUDED_PATH_PREFIXES = {
+    ("knowledge_sources",),
+}
 
 
-def _release_files(root: Path) -> list[Path]:
+def _core_files(root: Path) -> list[Path]:
     files: list[Path] = []
-    for relative in RELEASE_PATHS:
+    for relative in CORE_PATHS:
         path = root / relative
         if path.is_file():
             files.append(path)
         elif path.is_dir():
             files.extend(candidate for candidate in path.rglob("*") if candidate.is_file())
+        else:
+            raise FileNotFoundError(f"required core path is missing: {relative}")
     return sorted(
         path
         for path in files
         if not EXCLUDED_PARTS.intersection(path.relative_to(root).parts)
+        and not any(
+            path.relative_to(root).parts[: len(prefix)] == prefix
+            for prefix in EXCLUDED_PATH_PREFIXES
+        )
         and not any(part.endswith(".egg-info") for part in path.relative_to(root).parts)
         and path.suffix.casefold() not in {".pyc", ".pyo"}
     )
@@ -57,9 +63,9 @@ def build_release(root: Path, output_dir: Path, version: str) -> dict[str, objec
     root = Path(root).resolve()
     output_dir = Path(output_dir).resolve()
     output_dir.mkdir(parents=True, exist_ok=True)
-    package_name = f"ChatMaker-{version}"
+    package_name = f"ChatMaker-Core-{version}"
     archive = output_dir / f"{package_name}.zip"
-    files = _release_files(root)
+    files = _core_files(root)
     with zipfile.ZipFile(archive, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=9) as bundle:
         for path in files:
             relative = path.relative_to(root).as_posix()
@@ -76,12 +82,13 @@ def build_release(root: Path, output_dir: Path, version: str) -> dict[str, objec
         "archive": str(archive),
         "checksum_file": str(checksum),
         "sha256": digest,
+        "size_bytes": archive.stat().st_size,
         "file_count": len(files),
     }
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Build a deterministic ChatMaker release ZIP.")
+    parser = argparse.ArgumentParser(description="Build a deterministic minimal ChatMaker Core ZIP.")
     parser.add_argument("--root", type=Path, default=Path(__file__).resolve().parents[1])
     parser.add_argument("--output", type=Path, default=Path("dist"))
     parser.add_argument("--version", default="0.1.0-rc5")

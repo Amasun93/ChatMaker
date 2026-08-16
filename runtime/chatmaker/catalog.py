@@ -211,6 +211,68 @@ def get_catalog_record(
     }
 
 
+def _llmwiki_sections(board_id: str, project_root: Path | None = None) -> list[dict[str, Any]]:
+    root = _root(project_root)
+    path = root / "packs" / "llmwiki" / "boards" / f"{board_id}.yaml"
+    value = yaml.safe_load(path.read_text(encoding="utf-8"))
+    if not isinstance(value, dict):
+        raise ValueError("llmwiki index root must be a mapping")
+    sections = value.get("sections", [])
+    if not isinstance(sections, list):
+        raise ValueError("llmwiki index sections must be a list")
+    return [
+        {
+            "section_id": item.get("section_id"),
+            "title": item.get("title"),
+            "summary": item.get("summary"),
+            "topics": list(item.get("topics", [])),
+            "consumers": list(item.get("consumers", [])),
+            "pack_id": item.get("pack_id"),
+        }
+        for item in sections
+        if isinstance(item, dict)
+    ]
+
+
+def open_board(
+    board_id: str,
+    *,
+    project_root: Path | None = None,
+) -> dict[str, Any]:
+    board = get_catalog_record(board_id, project_root=project_root)
+    if not board.get("success") or board.get("record", {}).get("kind") != "board":
+        return {
+            "success": False,
+            "action": "open_board",
+            "error": "catalog_board_not_found",
+            "board_id": board_id,
+        }
+
+    components: list[dict[str, Any]] = []
+    recipes: list[dict[str, Any]] = []
+    for _, record in _records(project_root):
+        kind = record.get("kind")
+        if kind == "component" and board_id in record.get("supported_boards", []):
+            components.append(_summary(record))
+        if kind == "recipe" and board_id in record.get("boards", []):
+            recipes.append(_summary(record))
+
+    components.sort(key=lambda item: str(item.get("id", "")))
+    recipes.sort(key=lambda item: str(item.get("id", "")))
+    return {
+        "success": True,
+        "action": "open_board",
+        "board": board["record"],
+        "source_path": board["source_path"],
+        "components": components,
+        "recipes": recipes,
+        "llmwiki": {
+            "board_id": board_id,
+            "sections": _llmwiki_sections(board_id, project_root=project_root),
+        },
+    }
+
+
 def execute_request(
     request: dict[str, Any],
     *,
@@ -226,6 +288,8 @@ def execute_request(
         )
     if action == "get":
         return get_catalog_record(str(request.get("id", "")), project_root=project_root)
+    if action == "open_board":
+        return open_board(str(request.get("board_id", "")), project_root=project_root)
     return {"success": False, "error": "unknown_catalog_action", "action": action}
 
 
