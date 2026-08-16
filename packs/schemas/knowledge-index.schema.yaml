@@ -1,12 +1,12 @@
 $schema: https://json-schema.org/draft/2020-12/schema
-$id: https://chatmaker.dev/schemas/llmwiki-index.schema.yaml
-title: ChatMaker compact LLMWiki board index
+$id: https://chatmaker.dev/schemas/knowledge-index.schema.yaml
+title: ChatMaker compact Knowledge board index
 type: object
 required: [schema_version, kind, board_id, max_section_bytes, sections]
 additionalProperties: false
 properties:
   schema_version: {const: "1.0"}
-  kind: {const: llmwiki-index}
+  kind: {const: knowledge-index}
   board_id:
     enum: [arduino-nano-classic, arduino-uno-r3, esp32-devkit-v1]
   max_section_bytes: {const: 65536}
@@ -43,9 +43,9 @@ properties:
           items: {type: string, pattern: "^[a-z0-9][a-z0-9-]*$"}
         pack_id:
           enum:
-            - chatmaker-board-arduino-nano-classic-wiki
-            - chatmaker-board-arduino-uno-r3-wiki
-            - chatmaker-board-esp32-devkit-v1-wiki
+            - chatmaker-board-arduino-nano-classic-knowledge
+            - chatmaker-board-arduino-uno-r3-knowledge
+            - chatmaker-board-esp32-devkit-v1-knowledge
     allOf:
       - contains: {type: object, properties: {section_id: {const: start-here}}, required: [section_id]}
         minContains: 1
@@ -77,16 +77,16 @@ allOf:
       properties:
         sections:
           items:
-            properties: {pack_id: {const: chatmaker-board-arduino-nano-classic-wiki}}
+            properties: {pack_id: {const: chatmaker-board-arduino-nano-classic-knowledge}}
   - if: {properties: {board_id: {const: arduino-uno-r3}}}
     then:
       properties:
         sections:
           items:
-            properties: {pack_id: {const: chatmaker-board-arduino-uno-r3-wiki}}
+            properties: {pack_id: {const: chatmaker-board-arduino-uno-r3-knowledge}}
   - if: {properties: {board_id: {const: esp32-devkit-v1}}}
     then:
       properties:
         sections:
           items:
-            properties: {pack_id: {const: chatmaker-board-esp32-devkit-v1-wiki}}
+            properties: {pack_id: {const: chatmaker-board-esp32-devkit-v1-knowledge}}
