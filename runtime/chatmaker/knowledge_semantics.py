@@ -189,9 +189,9 @@ def _split_page(raw: bytes, *, path: str) -> tuple[bytes, bytes]:
         raw.decode("utf-8")
     except UnicodeDecodeError as exc:
         raise KnowledgeSemanticError("knowledge_page_utf8_invalid", path=path) from exc
-    if raw.startswith(b"---\r\n"):
-        opening, closing = len(b"---\r\n"), b"\r\n---\r\n"
-    elif raw.startswith(b"---\n"):
+    if b"\r" in raw:
+        raise KnowledgeSemanticError("knowledge_page_frontmatter_invalid", path=path)
+    if raw.startswith(b"---\n"):
         opening, closing = len(b"---\n"), b"\n---\n"
     else:
         raise KnowledgeSemanticError("knowledge_page_frontmatter_invalid", path=path)

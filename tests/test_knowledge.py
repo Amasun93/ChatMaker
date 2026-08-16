@@ -20,6 +20,7 @@ from chatmaker.knowledge_semantics import (
     validate_pack_payload,
     validate_page_bytes,
 )
+from chatmaker.resources import ResourceIntegrityError, ResourceResolver
 
 
 BOARD_ID = "arduino-nano-classic"
@@ -79,10 +80,18 @@ class RecordingResolver:
         self.resolves: list[tuple[str, str]] = []
         self.reads: list[tuple[str, str]] = []
 
-    def put(self, pack_id: str, path: str, data: bytes) -> None:
+    def put(
+        self,
+        pack_id: str,
+        path: str,
+        data: bytes,
+        *,
+        provenance: dict | None = None,
+    ) -> None:
         self.values[(pack_id, path)] = (
             data,
-            {"kind": "official_pack", "pack_id": pack_id, "version": "1.0.0"},
+            provenance
+            or {"kind": "official_pack", "pack_id": pack_id, "version": "1.0.0"},
         )
 
     def resolve(self, path: str, *, pack_id: str | None = None) -> FakeResolved:
@@ -107,6 +116,54 @@ class InstallingManager:
             "knowledge/sections/start-here.md",
             page("start-here", "Load the canonical board record.\n"),
         )
+
+
+class DriftResolver(RecordingResolver):
+    def __init__(self) -> None:
+        super().__init__()
+        self.drifting: set[tuple[str, str]] = set()
+
+    def put_drifting(self, pack_id: str, path: str) -> None:
+        self.put(pack_id, path, b"drift")
+        self.drifting.add((pack_id, path))
+
+    def resolve(self, path: str, *, pack_id: str | None = None) -> FakeResolved:
+        resolved = super().resolve(path, pack_id=pack_id)
+        assert pack_id is not None
+        if (pack_id, path) not in self.drifting:
+            return resolved
+
+        resolver = self
+
+        class DriftingResource(FakeResolved):
+            def read_bytes(self) -> bytes:
+                resolver.reads.append(self.key)
+                raise ResourceIntegrityError(
+                    "sha256_mismatch",
+                    path=Path("drifted-resource"),
+                    provenance=self.provenance,
+                )
+
+        return DriftingResource(self, resolved.key, resolved.data, resolved.provenance)
+
+
+class RepairingManager:
+    def __init__(self, resolver: DriftResolver) -> None:
+        self.resolver = resolver
+        self.ensure_calls: list[str] = []
+        self.quarantine_calls: list[tuple[str, str]] = []
+
+    def ensure(self, pack_id: str) -> None:
+        self.ensure_calls.append(pack_id)
+        self.resolver.drifting.discard((pack_id, "knowledge/sections/start-here.md"))
+        self.resolver.put(
+            pack_id,
+            "knowledge/sections/start-here.md",
+            page("start-here", "Repaired official guidance.\n"),
+        )
+
+    def quarantine_active_drift(self, pack_id: str, *, version: str) -> None:
+        self.quarantine_calls.append((pack_id, version))
 
 
 class KnowledgeReaderTests(unittest.TestCase):
@@ -265,6 +322,219 @@ class KnowledgeReaderTests(unittest.TestCase):
         with self.assertRaises(Exception) as rejected:
             validate_index_bytes(index.replace(b"knowledge-index", b"llmwiki-index"))
         self.assertEqual(rejected.exception.reason, "knowledge_index_invalid")
+
+    def test_reader_rejects_wrong_board_and_duplicate_frontmatter_identity(self):
+        malformed = page("start-here", "Wrong board.\n").replace(
+            f"board_id: {BOARD_ID}\n".encode("utf-8"),
+            b"board_id: arduino-uno-r3\n",
+            1,
+        )
+        duplicate = page("start-here", "Ambiguous identity.\n").replace(
+            f"stable_id: {BOARD_ID}-start-here\n".encode("utf-8"),
+            b"stable_id: attacker-controlled\nstable_id: arduino-nano-classic-start-here\n",
+            1,
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self.write_index(root)
+            for raw in (malformed, duplicate):
+                with self.subTest(raw=raw[:32]):
+                    resolver = RecordingResolver()
+                    resolver.put(PACK_ID, "knowledge/sections/start-here.md", raw)
+                    result = self.request(
+                        {
+                            "action": "section",
+                            "board_id": BOARD_ID,
+                            "consumer": "chatduino",
+                            "section_id": "start-here",
+                        },
+                        root=root,
+                        resolver=resolver,
+                    )
+                    self.assertFalse(result["success"])
+                    self.assertEqual(result["error"]["code"], "pack_content_invalid")
+
+    def test_reader_enforces_body_limit_after_frontmatter(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self.write_index(root)
+            boundary = RecordingResolver()
+            boundary.put(
+                PACK_ID,
+                "knowledge/sections/start-here.md",
+                page("start-here", "a" * 65_536),
+            )
+            accepted = self.request(
+                {
+                    "action": "section",
+                    "board_id": BOARD_ID,
+                    "consumer": "chatduino",
+                    "section_id": "start-here",
+                },
+                root=root,
+                resolver=boundary,
+            )
+            oversized = RecordingResolver()
+            oversized.put(
+                PACK_ID,
+                "knowledge/sections/start-here.md",
+                page("start-here", "a" * 65_537),
+            )
+            rejected = self.request(
+                {
+                    "action": "section",
+                    "board_id": BOARD_ID,
+                    "consumer": "chatduino",
+                    "section_id": "start-here",
+                },
+                root=root,
+                resolver=oversized,
+            )
+
+        self.assertTrue(accepted["success"], accepted)
+        self.assertEqual(accepted["body_bytes"], 65_536)
+        self.assertEqual(accepted["body"], "a" * 65_536)
+        self.assertFalse(rejected["success"])
+        self.assertEqual(rejected["error"]["code"], "pack_content_invalid")
+
+    def test_official_drift_is_quarantined_and_repaired_once(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self.write_index(root)
+            resolver = DriftResolver()
+            resolver.put_drifting(PACK_ID, "knowledge/sections/start-here.md")
+            manager = RepairingManager(resolver)
+
+            result = self.request(
+                {
+                    "action": "section",
+                    "board_id": BOARD_ID,
+                    "consumer": "chatduino",
+                    "section_id": "start-here",
+                },
+                root=root,
+                manager=manager,
+                resolver=resolver,
+            )
+
+        self.assertTrue(result["success"], result)
+        self.assertEqual(result["body"], "Repaired official guidance.\n")
+        self.assertEqual(manager.quarantine_calls, [(PACK_ID, "1.0.0")])
+        self.assertEqual(manager.ensure_calls, [PACK_ID])
+        self.assertEqual(len(resolver.reads), 2)
+
+    def test_invalid_local_override_is_not_repaired_or_quarantined(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self.write_index(root)
+            resolver = DriftResolver()
+            resolver.put(
+                PACK_ID,
+                "knowledge/sections/start-here.md",
+                b"local experiment without frontmatter",
+                provenance={"kind": "local_override", "path": "experiment/start-here.md"},
+            )
+            manager = RepairingManager(resolver)
+
+            result = self.request(
+                {
+                    "action": "section",
+                    "board_id": BOARD_ID,
+                    "consumer": "chatduino",
+                    "section_id": "start-here",
+                },
+                root=root,
+                manager=manager,
+                resolver=resolver,
+            )
+
+        self.assertFalse(result["success"])
+        self.assertEqual(result["error"]["code"], "pack_content_invalid")
+        self.assertEqual(manager.quarantine_calls, [])
+        self.assertEqual(manager.ensure_calls, [])
+
+    def test_cached_official_body_reads_without_reinstalling(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self.write_index(root)
+            resolver = DriftResolver()
+            resolver.put(
+                PACK_ID,
+                "knowledge/sections/start-here.md",
+                page("start-here", "Cached official guidance.\n"),
+            )
+            manager = RepairingManager(resolver)
+            request = {
+                "action": "section",
+                "board_id": BOARD_ID,
+                "consumer": "chatduino",
+                "section_id": "start-here",
+            }
+
+            first = self.request(request, root=root, manager=manager, resolver=resolver)
+            second = self.request(request, root=root, manager=manager, resolver=resolver)
+
+        self.assertTrue(first["success"], first)
+        self.assertTrue(second["success"], second)
+        self.assertEqual(manager.ensure_calls, [])
+        self.assertEqual(first["body"], "Cached official guidance.\n")
+
+    def test_real_resource_resolver_reads_only_the_selected_section(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self.write_index(root)
+            builtin = root / "builtin"
+            section_root = builtin / PACK_ID / "knowledge" / "sections"
+            section_root.mkdir(parents=True)
+            (section_root / "start-here.md").write_bytes(
+                page("start-here", "Selected body.\n")
+            )
+            (section_root / "troubleshooting.md").write_bytes(b"invalid unused body")
+            resolver = ResourceResolver(
+                user_root=root / "user",
+                builtin_root=builtin,
+                environ={},
+            )
+
+            result = self.request(
+                {
+                    "action": "section",
+                    "board_id": BOARD_ID,
+                    "consumer": "chatduino",
+                    "section_id": "start-here",
+                },
+                root=root,
+                resolver=resolver,
+            )
+
+        self.assertTrue(result["success"], result)
+        self.assertEqual(result["body"], "Selected body.\n")
+        self.assertEqual(result["provenance"]["kind"], "builtin_core")
+
+    def test_reader_rejects_crlf_knowledge_page(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self.write_index(root)
+            resolver = RecordingResolver()
+            resolver.put(
+                PACK_ID,
+                "knowledge/sections/start-here.md",
+                page("start-here", "LF-only is part of the format.\n").replace(b"\n", b"\r\n"),
+            )
+
+            result = self.request(
+                {
+                    "action": "section",
+                    "board_id": BOARD_ID,
+                    "consumer": "chatduino",
+                    "section_id": "start-here",
+                },
+                root=root,
+                resolver=resolver,
+            )
+
+        self.assertFalse(result["success"])
+        self.assertEqual(result["error"]["code"], "pack_content_invalid")
 
 
 if __name__ == "__main__":
