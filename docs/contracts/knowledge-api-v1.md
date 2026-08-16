@@ -6,6 +6,21 @@ fail without fuzzy matching. `index` never reads an optional section body.
 UTF-8 body of at most 65,536 bytes. Version 1 has no pagination and the key
 `cursor` is invalid at every level.
 
+## Stable entrypoints
+
+These Version 1 names are the stable entrypoints for ChatMaker Knowledge.
+
+<!-- contract:stable.entrypoints -->
+```json
+{
+  "cli": "chatmaker-knowledge",
+  "mcp_tool": "knowledge_get",
+  "python": "chatmaker.knowledge",
+  "payload_path": "knowledge/boards",
+  "schema_identifier": "knowledge_index_schema"
+}
+```
+
 ## Index request
 
 Required string fields are `action=index`, `board_id`, and `consumer`.

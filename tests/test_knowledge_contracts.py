@@ -36,7 +36,32 @@ def contract_example(name: str) -> Any:
     return json.loads(match.group(1))
 
 
+def document_heading(path: str) -> str:
+    for line in (ROOT / path).read_text(encoding="utf-8").splitlines():
+        if line.startswith("# "):
+            return line.removeprefix("# ")
+    raise AssertionError(f"missing document heading: {path}")
+
+
 class KnowledgeApiContractTests(unittest.TestCase):
+    def test_stable_entrypoints_are_frozen_in_the_api_contract(self):
+        self.assertEqual(
+            contract_example("stable.entrypoints"),
+            {
+                "cli": "chatmaker-knowledge",
+                "mcp_tool": "knowledge_get",
+                "python": "chatmaker.knowledge",
+                "payload_path": "knowledge/boards",
+                "schema_identifier": "knowledge_index_schema",
+            },
+        )
+
+    def test_format_document_uses_the_frozen_bilingual_user_visible_name(self):
+        self.assertEqual(
+            document_heading("docs/contributing/knowledge-format.md"),
+            "ChatMaker 知识库 章节格式 / ChatMaker Knowledge page format",
+        )
+
     def test_section_request_identifies_one_exact_board_section_and_auto_installs(self):
         self.assertEqual(
             contract_example("section.request"),

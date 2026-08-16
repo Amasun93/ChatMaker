@@ -1,8 +1,8 @@
-# ChatMaker Knowledge 章节格式 / ChatMaker Knowledge page format
+# ChatMaker 知识库 章节格式 / ChatMaker Knowledge page format
 
-ChatMaker Knowledge is a passive page layer for people and AI. It may explain a
-board, safety, toolchains, examples, and protocols, but must not duplicate or
-replace canonical facts in `packs/boards`, `packs/components`, or
+ChatMaker 知识库 (ChatMaker Knowledge) is a passive page layer for people and AI.
+It may explain a board, safety, toolchains, examples, and protocols, but must
+not duplicate or replace canonical facts in `packs/boards`, `packs/components`, or
 `packs/recipes`.
 
 ## 一页一个章节 / One section per page
