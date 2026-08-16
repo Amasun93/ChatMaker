@@ -12,7 +12,12 @@ from chatmaker.installers.pack_artifact import PackArtifactError, build_pack  # 
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Build a deterministic ChatMaker knowledge pack.")
+    parser = argparse.ArgumentParser(
+        description=(
+            "Build a deterministic ChatMaker Knowledge pack whose payload is "
+            "knowledge/index.yaml plus knowledge/sections/*.md."
+        )
+    )
     parser.add_argument("--source", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--pack-id", required=True)

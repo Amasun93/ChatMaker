@@ -920,6 +920,18 @@ class PackArtifactTests(unittest.TestCase):
 
 
 class BuildPackScriptTests(unittest.TestCase):
+    def test_cli_help_names_the_frozen_knowledge_payload_layout(self):
+        result = subprocess.run(
+            [sys.executable, str(ROOT / "scripts" / "build_pack.py"), "--help"],
+            cwd=ROOT,
+            text=True,
+            capture_output=True,
+        )
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("knowledge/index.yaml", result.stdout)
+        self.assertIn("knowledge/sections/*.md", result.stdout)
+
     def prepare_documented_source(self, root: Path, board_id: str = "arduino-nano-classic") -> Path:
         source = root / "prepared-source-root" / "knowledge"
         (source / "sections").mkdir(parents=True)
