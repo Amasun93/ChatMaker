@@ -6,6 +6,7 @@ import json
 import os
 import re
 import stat
+import struct
 import subprocess
 import sys
 import tempfile
@@ -49,6 +50,83 @@ def create_junction(link: Path, target: Path) -> None:
 def remove_junction(path: Path) -> None:
     if os.path.lexists(path):
         os.rmdir(path)
+
+
+def set_junction_in_place(link: Path, target: Path) -> None:
+    """Turn an existing empty directory into a junction without replacing it."""
+
+    if os.name != "nt":
+        raise OSError("Windows junction semantics only")
+    import ctypes
+    from ctypes import wintypes
+
+    kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+    kernel32.CreateFileW.argtypes = [
+        wintypes.LPCWSTR,
+        wintypes.DWORD,
+        wintypes.DWORD,
+        wintypes.LPVOID,
+        wintypes.DWORD,
+        wintypes.DWORD,
+        wintypes.HANDLE,
+    ]
+    kernel32.CreateFileW.restype = wintypes.HANDLE
+    kernel32.DeviceIoControl.argtypes = [
+        wintypes.HANDLE,
+        wintypes.DWORD,
+        wintypes.LPVOID,
+        wintypes.DWORD,
+        wintypes.LPVOID,
+        wintypes.DWORD,
+        ctypes.POINTER(wintypes.DWORD),
+        wintypes.LPVOID,
+    ]
+    kernel32.DeviceIoControl.restype = wintypes.BOOL
+    kernel32.CloseHandle.argtypes = [wintypes.HANDLE]
+    kernel32.CloseHandle.restype = wintypes.BOOL
+
+    handle = kernel32.CreateFileW(
+        str(link),
+        0x40000000,  # GENERIC_WRITE
+        0x00000001 | 0x00000002 | 0x00000004,  # SHARE_READ | WRITE | DELETE
+        None,
+        3,  # OPEN_EXISTING
+        0x02000000 | 0x00200000,  # BACKUP_SEMANTICS | OPEN_REPARSE_POINT
+        None,
+    )
+    if handle == wintypes.HANDLE(-1).value:
+        raise ctypes.WinError(ctypes.get_last_error())
+    try:
+        print_name = str(target.resolve()).encode("utf-16-le")
+        substitute_name = ("\\??\\" + str(target.resolve())).encode("utf-16-le")
+        path_buffer = substitute_name + b"\x00\x00" + print_name + b"\x00\x00"
+        reparse_data_length = 8 + len(path_buffer)
+        payload = struct.pack(
+            "<IHHHHHH",
+            0xA0000003,  # IO_REPARSE_TAG_MOUNT_POINT
+            reparse_data_length,
+            0,
+            0,
+            len(substitute_name),
+            len(substitute_name) + 2,
+            len(print_name),
+        ) + path_buffer
+        buffer = ctypes.create_string_buffer(payload)
+        returned = wintypes.DWORD()
+        if not kernel32.DeviceIoControl(
+            handle,
+            0x000900A4,  # FSCTL_SET_REPARSE_POINT
+            buffer,
+            len(payload),
+            None,
+            0,
+            ctypes.byref(returned),
+            None,
+        ):
+            raise ctypes.WinError(ctypes.get_last_error())
+    finally:
+        kernel32.CloseHandle(handle)
+
 
 try:
     from chatmaker.installers import pack_artifact
@@ -592,6 +670,218 @@ class PackArtifactTests(unittest.TestCase):
             self.assertEqual(list(outside.iterdir()), [])
         finally:
             remove_junction(staging)
+
+    @unittest.skipUnless(os.name == "nt", "Windows junction semantics only")
+    def test_extraction_swap_of_random_scratch_never_writes_outside_destination(self):
+        archive = self.build()
+        staging = self.root / "random-scratch-staging"
+        outside = self.root / "outside-random-scratch"
+        outside.mkdir()
+        real_read = zipfile.ZipFile.read
+        attempted = False
+        swapped = False
+        blocked_error: OSError | None = None
+        scratch: Path | None = None
+        first_entry: str | None = None
+
+        def swap_random_scratch_before_first_write(
+            archive_object, name, *args, **kwargs
+        ):
+            nonlocal attempted, blocked_error, first_entry, scratch, swapped
+            data = real_read(archive_object, name, *args, **kwargs)
+            candidates = sorted(staging.parent.glob("chatmaker-pack-extract-*"))
+            if not attempted and candidates:
+                self.assertEqual(len(candidates), 1)
+                attempted = True
+                scratch = candidates[0]
+                first_entry = name.filename if isinstance(name, zipfile.ZipInfo) else name
+                self.assertEqual(list(scratch.iterdir()), [])
+                try:
+                    os.rmdir(scratch)
+                    create_junction(scratch, outside)
+                except OSError as exc:
+                    blocked_error = exc
+                else:
+                    swapped = True
+            return data
+
+        extraction_error: pack_artifact.PackArtifactError | None = None
+        try:
+            with mock.patch.object(
+                zipfile.ZipFile,
+                "read",
+                swap_random_scratch_before_first_write,
+            ):
+                try:
+                    pack_artifact.extract_validated_pack(
+                        archive,
+                        staging,
+                        core_version="0.1.0",
+                    )
+                except pack_artifact.PackArtifactError as exc:
+                    extraction_error = exc
+
+            self.assertTrue(attempted)
+            self.assertEqual(first_entry, "pack-manifest.json")
+            self.assertTrue(swapped or blocked_error is not None)
+            outside_files = sorted(
+                path.relative_to(outside).as_posix()
+                for path in outside.rglob("*")
+                if path.is_file()
+            )
+            outside_bytes = sum((outside / path).stat().st_size for path in outside_files)
+            self.assertEqual((outside_files, outside_bytes), ([], 0))
+            self.assertEqual(list(outside.iterdir()), [])
+            if swapped:
+                self.assertIsNotNone(extraction_error)
+                self.assertEqual(extraction_error.code, "pack_archive_unsafe")
+                self.assertEqual(extraction_error.reason, "staging_link_or_reparse")
+            else:
+                self.assertIsNone(extraction_error)
+                self.assertTrue(
+                    (staging / "llmwiki" / "sections" / "start-here.md").is_file()
+                )
+        finally:
+            if swapped and scratch is not None:
+                remove_junction(scratch)
+
+    @unittest.skipUnless(os.name == "nt", "Windows reparse semantics only")
+    def test_extraction_blocks_in_place_reparse_of_guarded_scratch(self):
+        archive = self.build()
+        staging = self.root / "in-place-reparse-staging"
+        outside = self.root / "outside-in-place-reparse"
+        outside.mkdir()
+        real_read = zipfile.ZipFile.read
+        attempted = False
+        applied = False
+        blocked_error: OSError | None = None
+        scratch: Path | None = None
+
+        def set_reparse_before_first_write(archive_object, name, *args, **kwargs):
+            nonlocal applied, attempted, blocked_error, scratch
+            data = real_read(archive_object, name, *args, **kwargs)
+            candidates = sorted(staging.parent.glob("chatmaker-pack-extract-*"))
+            if not attempted and candidates:
+                self.assertEqual(len(candidates), 1)
+                attempted = True
+                scratch = candidates[0]
+                self.assertEqual(list(scratch.iterdir()), [])
+                try:
+                    set_junction_in_place(scratch, outside)
+                except OSError as exc:
+                    blocked_error = exc
+                else:
+                    applied = True
+            return data
+
+        extraction_error: pack_artifact.PackArtifactError | None = None
+        try:
+            with mock.patch.object(
+                zipfile.ZipFile,
+                "read",
+                set_reparse_before_first_write,
+            ):
+                try:
+                    pack_artifact.extract_validated_pack(
+                        archive,
+                        staging,
+                        core_version="0.1.0",
+                    )
+                except pack_artifact.PackArtifactError as exc:
+                    extraction_error = exc
+
+            outside_files = sorted(
+                path.relative_to(outside).as_posix()
+                for path in outside.rglob("*")
+                if path.is_file()
+            )
+            outside_bytes = sum((outside / path).stat().st_size for path in outside_files)
+            self.assertTrue(attempted)
+            self.assertIsNotNone(blocked_error)
+            self.assertEqual(getattr(blocked_error, "winerror", None), 32)
+            self.assertFalse(applied)
+            self.assertIsNone(extraction_error)
+            self.assertEqual((outside_files, outside_bytes), ([], 0))
+            self.assertTrue(
+                (staging / "llmwiki" / "sections" / "start-here.md").is_file()
+            )
+        finally:
+            if applied and scratch is not None:
+                remove_junction(scratch)
+
+    @unittest.skipUnless(os.name == "nt", "Windows replacement semantics only")
+    def test_extraction_guards_existing_ancestor_through_every_payload_write(self):
+        archive = self.build()
+        ancestor = self.root / "replaceable-ancestor"
+        destination_parent = ancestor / "managed"
+        destination_parent.mkdir(parents=True)
+        staging = destination_parent / "staging"
+        displaced = self.root / "displaced-ancestor"
+        real_read = zipfile.ZipFile.read
+        attempts = 0
+        blocked_attempts = 0
+        replaced = False
+
+        def replace_ancestor_before_write(archive_object, name, *args, **kwargs):
+            nonlocal attempts, blocked_attempts, replaced
+            data = real_read(archive_object, name, *args, **kwargs)
+            candidates = sorted(
+                destination_parent.glob("chatmaker-pack-extract-*")
+            )
+            if not candidates:
+                return data
+            self.assertEqual(len(candidates), 1)
+            attempts += 1
+            try:
+                os.replace(ancestor, displaced)
+            except OSError:
+                blocked_attempts += 1
+            else:
+                replaced = True
+            return data
+
+        extraction_error: pack_artifact.PackArtifactError | None = None
+        try:
+            with mock.patch.object(
+                zipfile.ZipFile,
+                "read",
+                replace_ancestor_before_write,
+            ):
+                try:
+                    pack_artifact.extract_validated_pack(
+                        archive,
+                        staging,
+                        core_version="0.1.0",
+                    )
+                except pack_artifact.PackArtifactError as exc:
+                    extraction_error = exc
+        finally:
+            if replaced and displaced.exists() and not ancestor.exists():
+                os.replace(displaced, ancestor)
+
+        self.assertEqual(attempts, 10)
+        self.assertEqual(blocked_attempts, 10)
+        self.assertFalse(replaced)
+        self.assertIsNone(extraction_error)
+        self.assertTrue(
+            (staging / "llmwiki" / "sections" / "start-here.md").is_file()
+        )
+
+    @unittest.skipUnless(os.name == "nt", "Windows file identity semantics only")
+    def test_extraction_accepts_legitimate_windows_directory_identity(self):
+        archive = self.build()
+        staging = self.root / "legitimate-identity" / "nested" / "staging"
+
+        manifest = pack_artifact.extract_validated_pack(
+            archive,
+            staging,
+            core_version="0.1.0",
+        )
+
+        self.assertEqual(manifest["pack_id"], PACK_ID)
+        self.assertTrue(
+            (staging / "llmwiki" / "sections" / "start-here.md").is_file()
+        )
 
     @unittest.skipUnless(os.name == "nt", "Windows junction semantics only")
     def test_extraction_rejects_nested_junction_before_creating_descendants(self):

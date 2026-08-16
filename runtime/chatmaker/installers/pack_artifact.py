@@ -45,6 +45,52 @@ _ZIP_TIMESTAMP = (1980, 1, 1, 0, 0, 0)
 _ZIP_MODE = stat.S_IFREG | 0o644
 _WINDOWS_REPARSE_POINT = 0x400
 
+if os.name == "nt":
+    import ctypes
+    from ctypes import wintypes
+
+    class _WindowsFileInformation(ctypes.Structure):
+        _fields_ = [
+            ("dwFileAttributes", wintypes.DWORD),
+            ("ftCreationTime", wintypes.FILETIME),
+            ("ftLastAccessTime", wintypes.FILETIME),
+            ("ftLastWriteTime", wintypes.FILETIME),
+            ("dwVolumeSerialNumber", wintypes.DWORD),
+            ("nFileSizeHigh", wintypes.DWORD),
+            ("nFileSizeLow", wintypes.DWORD),
+            ("nNumberOfLinks", wintypes.DWORD),
+            ("nFileIndexHigh", wintypes.DWORD),
+            ("nFileIndexLow", wintypes.DWORD),
+        ]
+
+    _WINDOWS_KERNEL32 = ctypes.WinDLL("kernel32", use_last_error=True)
+    _WINDOWS_KERNEL32.CreateFileW.argtypes = [
+        wintypes.LPCWSTR,
+        wintypes.DWORD,
+        wintypes.DWORD,
+        wintypes.LPVOID,
+        wintypes.DWORD,
+        wintypes.DWORD,
+        wintypes.HANDLE,
+    ]
+    _WINDOWS_KERNEL32.CreateFileW.restype = wintypes.HANDLE
+    _WINDOWS_KERNEL32.GetFileInformationByHandle.argtypes = [
+        wintypes.HANDLE,
+        ctypes.POINTER(_WindowsFileInformation),
+    ]
+    _WINDOWS_KERNEL32.GetFileInformationByHandle.restype = wintypes.BOOL
+    _WINDOWS_KERNEL32.WriteFile.argtypes = [
+        wintypes.HANDLE,
+        wintypes.LPCVOID,
+        wintypes.DWORD,
+        ctypes.POINTER(wintypes.DWORD),
+        wintypes.LPVOID,
+    ]
+    _WINDOWS_KERNEL32.WriteFile.restype = wintypes.BOOL
+    _WINDOWS_KERNEL32.CloseHandle.argtypes = [wintypes.HANDLE]
+    _WINDOWS_KERNEL32.CloseHandle.restype = wintypes.BOOL
+    _WINDOWS_INVALID_HANDLE = wintypes.HANDLE(-1).value
+
 
 class PackArtifactError(Exception):
     """Stable pack validation failure."""
@@ -63,6 +109,134 @@ class PackArtifactError(Exception):
         if self.path is not None:
             result["path"] = self.path
         return result
+
+
+def _assert_windows_handle_kind(handle: int, *, directory: bool) -> None:
+    """Reject reparse handles and unexpected object types without stat IDs."""
+
+    information = _WindowsFileInformation()
+    if not _WINDOWS_KERNEL32.GetFileInformationByHandle(
+        handle, ctypes.byref(information)
+    ):
+        raise ctypes.WinError(ctypes.get_last_error())
+    attributes = int(information.dwFileAttributes)
+    if (
+        attributes & _WINDOWS_REPARSE_POINT
+        or bool(attributes & 0x10) != directory
+    ):
+        raise PackArtifactError(
+            "pack_archive_unsafe", reason="staging_link_or_reparse"
+        )
+
+
+def _open_directory_guard(path: Path) -> int | None:
+    if os.name != "nt":
+        return None
+    handle = _WINDOWS_KERNEL32.CreateFileW(
+        str(path),
+        0x00000001 | 0x00000080,  # FILE_LIST_DIRECTORY | FILE_READ_ATTRIBUTES
+        0x00000001,  # FILE_SHARE_READ; deny write and delete sharing
+        None,
+        3,  # OPEN_EXISTING
+        0x02000000 | 0x00200000,  # BACKUP_SEMANTICS | OPEN_REPARSE_POINT
+        None,
+    )
+    if handle == _WINDOWS_INVALID_HANDLE:
+        raise ctypes.WinError(ctypes.get_last_error())
+    try:
+        _assert_windows_handle_kind(handle, directory=True)
+    except Exception:
+        _WINDOWS_KERNEL32.CloseHandle(handle)
+        raise
+    return handle
+
+
+def _close_directory_guards(handles: list[int]) -> None:
+    if os.name != "nt":
+        return
+    for handle in reversed(handles):
+        _WINDOWS_KERNEL32.CloseHandle(handle)
+    handles.clear()
+
+
+def _guard_directory_chain(
+    path: Path,
+    handles: list[int],
+    guarded_paths: set[str],
+) -> None:
+    """Create missing directories one at a time and guard root through path."""
+
+    if os.name != "nt":
+        path.mkdir(parents=True, exist_ok=True)
+        return
+    absolute = Path(os.path.abspath(path))
+    if not absolute.anchor:
+        raise OSError("staging path has no filesystem anchor")
+    current = Path(absolute.anchor)
+    chain = [current]
+    for part in absolute.parts[1:]:
+        current = current / part
+        chain.append(current)
+    for current in chain:
+        key = os.path.normcase(os.path.abspath(current))
+        if key in guarded_paths:
+            continue
+        if not os.path.lexists(current):
+            current.mkdir()
+        handle = _open_directory_guard(current)
+        if handle is not None:
+            handles.append(handle)
+            guarded_paths.add(key)
+
+
+def _write_new_file(path: Path, data: bytes) -> None:
+    if os.name == "nt":
+        handle = _WINDOWS_KERNEL32.CreateFileW(
+            str(path),
+            0x40000000,  # GENERIC_WRITE
+            0,
+            None,
+            1,  # CREATE_NEW
+            0x00000080 | 0x00200000,  # FILE_ATTRIBUTE_NORMAL | OPEN_REPARSE_POINT
+            None,
+        )
+        if handle == _WINDOWS_INVALID_HANDLE:
+            raise ctypes.WinError(ctypes.get_last_error())
+        try:
+            _assert_windows_handle_kind(handle, directory=False)
+            offset = 0
+            while offset < len(data):
+                chunk = data[offset : offset + 0xFFFFFFFF]
+                buffer = ctypes.create_string_buffer(chunk)
+                written = wintypes.DWORD()
+                if not _WINDOWS_KERNEL32.WriteFile(
+                    handle,
+                    buffer,
+                    len(chunk),
+                    ctypes.byref(written),
+                    None,
+                ):
+                    raise ctypes.WinError(ctypes.get_last_error())
+                if written.value == 0:
+                    raise OSError("short write while extracting pack")
+                offset += written.value
+        finally:
+            _WINDOWS_KERNEL32.CloseHandle(handle)
+        return
+
+    flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL
+    if hasattr(os, "O_NOFOLLOW"):
+        flags |= os.O_NOFOLLOW
+    descriptor = os.open(path, flags, 0o666)
+    try:
+        offset = 0
+        while offset < len(data):
+            written = os.write(descriptor, data[offset:])
+            if written == 0:
+                raise OSError("short write while extracting pack")
+            offset += written
+    finally:
+        os.close(descriptor)
 
 
 def _canonical_json(value: Mapping[str, Any]) -> bytes:
@@ -559,51 +733,85 @@ def extract_validated_pack(
         max_single_file_bytes=max_single_file_bytes,
         max_total_bytes=max_total_bytes,
     )
-    destination = Path(staging_dir)
+    destination = Path(os.path.abspath(staging_dir))
     scratch: Path | None = None
-    try:
-        _assert_safe_staging_root(destination.parent)
-        destination.parent.mkdir(parents=True, exist_ok=True)
-        _assert_safe_staging_root(destination.parent)
-        _assert_safe_staging_root(destination)
-        if os.path.lexists(destination):
-            _assert_safe_staging_root(destination)
-            if not destination.is_dir():
-                raise PackArtifactError(
-                    "pack_content_invalid", reason="staging_not_directory"
-                )
-            if any(destination.iterdir()):
-                raise PackArtifactError("pack_content_invalid", reason="staging_not_empty")
-            destination.rmdir()
-        scratch = Path(
-            tempfile.mkdtemp(
-                prefix="chatmaker-pack-extract-",
-                dir=destination.parent,
-            )
-        )
-        _assert_safe_staging_root(scratch)
-    except PackArtifactError:
-        raise
-    except OSError as exc:
-        raise PackArtifactError("pack_content_invalid", reason="staging_preflight_failed") from exc
+    directory_guards: list[int] = []
+    guarded_paths: set[str] = set()
     archive: zipfile.ZipFile | None = None
     buffer: BinaryIO | None = None
     try:
-        archive, buffer = _open_archive(archive_bytes)
-        for info in archive.infolist():
-            target = scratch.joinpath(*PurePosixPath(info.filename).parts)
-            target.parent.mkdir(parents=True, exist_ok=True)
-            target.write_bytes(archive.read(info))
-    except (OSError, zipfile.BadZipFile) as exc:
-        if scratch is not None and scratch.exists():
-            shutil.rmtree(scratch, ignore_errors=True)
-        raise PackArtifactError("pack_content_invalid", reason="staging_extract_failed") from exc
-    finally:
-        if archive is not None:
-            archive.close()
-        if buffer is not None:
-            buffer.close()
-    try:
+        try:
+            if os.name == "nt":
+                _guard_directory_chain(
+                    destination.parent,
+                    directory_guards,
+                    guarded_paths,
+                )
+            else:
+                _assert_safe_staging_root(destination.parent)
+                destination.parent.mkdir(parents=True, exist_ok=True)
+            _assert_safe_staging_root(destination.parent)
+            _assert_safe_staging_root(destination)
+            if os.path.lexists(destination):
+                _assert_safe_staging_root(destination)
+                if not destination.is_dir():
+                    raise PackArtifactError(
+                        "pack_content_invalid", reason="staging_not_directory"
+                    )
+                destination_guard = _open_directory_guard(destination)
+                try:
+                    if any(destination.iterdir()):
+                        raise PackArtifactError(
+                            "pack_content_invalid", reason="staging_not_empty"
+                        )
+                finally:
+                    if destination_guard is not None:
+                        _WINDOWS_KERNEL32.CloseHandle(destination_guard)
+                destination.rmdir()
+            scratch = Path(
+                tempfile.mkdtemp(
+                    prefix="chatmaker-pack-extract-",
+                    dir=destination.parent,
+                )
+            )
+            _assert_safe_staging_root(scratch)
+            _guard_directory_chain(scratch, directory_guards, guarded_paths)
+        except PackArtifactError:
+            raise
+        except OSError as exc:
+            raise PackArtifactError(
+                "pack_content_invalid", reason="staging_preflight_failed"
+            ) from exc
+
+        try:
+            archive, buffer = _open_archive(archive_bytes)
+            for info in archive.infolist():
+                relative = PurePosixPath(info.filename)
+                target = scratch.joinpath(*relative.parts)
+                _guard_directory_chain(
+                    target.parent,
+                    directory_guards,
+                    guarded_paths,
+                )
+                _assert_safe_staging_root(target.parent)
+                _write_new_file(target, archive.read(info))
+        except PackArtifactError:
+            raise
+        except (OSError, zipfile.BadZipFile) as exc:
+            raise PackArtifactError(
+                "pack_content_invalid", reason="staging_extract_failed"
+            ) from exc
+        finally:
+            if archive is not None:
+                archive.close()
+                archive = None
+            if buffer is not None:
+                buffer.close()
+                buffer = None
+
+        validate_staging(scratch, manifest)
+        _close_directory_guards(directory_guards)
+        _assert_safe_staging_root(scratch)
         validate_staging(scratch, manifest)
         _assert_safe_staging_root(destination.parent)
         if os.path.lexists(destination):
@@ -621,6 +829,11 @@ def extract_validated_pack(
             "pack_content_invalid", reason="staging_extract_failed"
         ) from exc
     finally:
+        if archive is not None:
+            archive.close()
+        if buffer is not None:
+            buffer.close()
+        _close_directory_guards(directory_guards)
         if scratch is not None and scratch.exists():
             shutil.rmtree(scratch, ignore_errors=True)
 
