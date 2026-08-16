@@ -40,6 +40,36 @@ _THREAD_LOCKS_GUARD = threading.Lock()
 if os.name == "nt":
     from ctypes import wintypes
 
+    class _UnicodeString(ctypes.Structure):
+        _fields_ = [
+            ("Length", wintypes.USHORT),
+            ("MaximumLength", wintypes.USHORT),
+            ("Buffer", wintypes.LPWSTR),
+        ]
+
+    class _ObjectAttributes(ctypes.Structure):
+        _fields_ = [
+            ("Length", wintypes.ULONG),
+            ("RootDirectory", wintypes.HANDLE),
+            ("ObjectName", ctypes.POINTER(_UnicodeString)),
+            ("Attributes", wintypes.ULONG),
+            ("SecurityDescriptor", wintypes.LPVOID),
+            ("SecurityQualityOfService", wintypes.LPVOID),
+        ]
+
+    class _IoStatusValue(ctypes.Union):
+        _fields_ = [
+            ("Status", wintypes.LONG),
+            ("Pointer", wintypes.LPVOID),
+        ]
+
+    class _IoStatusBlock(ctypes.Structure):
+        _anonymous_ = ("Value",)
+        _fields_ = [
+            ("Value", _IoStatusValue),
+            ("Information", ctypes.c_size_t),
+        ]
+
     class _WindowsFileInformation(ctypes.Structure):
         _fields_ = [
             ("dwFileAttributes", wintypes.DWORD),
@@ -70,6 +100,14 @@ if os.name == "nt":
         ctypes.POINTER(_WindowsFileInformation),
     ]
     _WINDOWS_KERNEL32.GetFileInformationByHandle.restype = wintypes.BOOL
+    _WINDOWS_KERNEL32.ReadFile.argtypes = [
+        wintypes.HANDLE,
+        wintypes.LPVOID,
+        wintypes.DWORD,
+        ctypes.POINTER(wintypes.DWORD),
+        wintypes.LPVOID,
+    ]
+    _WINDOWS_KERNEL32.ReadFile.restype = wintypes.BOOL
     _WINDOWS_KERNEL32.WriteFile.argtypes = [
         wintypes.HANDLE,
         wintypes.LPCVOID,
@@ -90,6 +128,31 @@ if os.name == "nt":
     _WINDOWS_KERNEL32.CloseHandle.argtypes = [wintypes.HANDLE]
     _WINDOWS_KERNEL32.CloseHandle.restype = wintypes.BOOL
     _WINDOWS_INVALID_HANDLE = wintypes.HANDLE(-1).value
+    _WINDOWS_NTDLL = ctypes.WinDLL("ntdll")
+    _WINDOWS_NTDLL.NtCreateFile.argtypes = [
+        ctypes.POINTER(wintypes.HANDLE),
+        wintypes.DWORD,
+        ctypes.POINTER(_ObjectAttributes),
+        ctypes.POINTER(_IoStatusBlock),
+        wintypes.LPVOID,
+        wintypes.DWORD,
+        wintypes.DWORD,
+        wintypes.DWORD,
+        wintypes.DWORD,
+        wintypes.LPVOID,
+        wintypes.DWORD,
+    ]
+    _WINDOWS_NTDLL.NtCreateFile.restype = wintypes.LONG
+    _WINDOWS_NTDLL.NtSetInformationFile.argtypes = [
+        wintypes.HANDLE,
+        ctypes.POINTER(_IoStatusBlock),
+        wintypes.LPVOID,
+        wintypes.DWORD,
+        wintypes.DWORD,
+    ]
+    _WINDOWS_NTDLL.NtSetInformationFile.restype = wintypes.LONG
+    _WINDOWS_NTDLL.RtlNtStatusToDosError.argtypes = [wintypes.LONG]
+    _WINDOWS_NTDLL.RtlNtStatusToDosError.restype = wintypes.ULONG
 
 
 class KnowledgeStateMigrationError(OSError):
@@ -168,6 +231,70 @@ def _ensure_safe_directory(path: Path, *, root: Path) -> None:
         _assert_safe_directory(current)
 
 
+def _windows_nt_path(path: Path) -> str:
+    value = str(Path(os.path.abspath(path)))
+    if value.startswith("\\\\?\\UNC\\"):
+        return "\\??\\UNC\\" + value[8:]
+    if value.startswith("\\\\?\\"):
+        return "\\??\\" + value[4:]
+    if value.startswith("\\\\"):
+        return "\\??\\UNC\\" + value[2:]
+    return "\\??\\" + value
+
+
+def _raise_nt_status(status: int, name: str) -> None:
+    code = int(_WINDOWS_NTDLL.RtlNtStatusToDosError(status))
+    message = ctypes.FormatError(code)
+    if code in {2, 3}:
+        raise FileNotFoundError(code, message, name)
+    raise OSError(code, message, name)
+
+
+def _nt_create_file(
+    root_handle: int | None,
+    name: str,
+    *,
+    desired_access: int,
+    disposition: int,
+    options: int,
+    file_attributes: int = 0x00000080,
+    share_access: int = 0x00000001 | 0x00000002 | 0x00000004,
+) -> int:
+    name_buffer = ctypes.create_unicode_buffer(name)
+    encoded_length = len(name.encode("utf-16-le"))
+    unicode_name = _UnicodeString(
+        encoded_length,
+        encoded_length + 2,
+        ctypes.cast(name_buffer, wintypes.LPWSTR),
+    )
+    attributes = _ObjectAttributes(
+        ctypes.sizeof(_ObjectAttributes),
+        root_handle,
+        ctypes.pointer(unicode_name),
+        0x00000040 | 0x00001000,
+        None,
+        None,
+    )
+    io_status = _IoStatusBlock()
+    handle = wintypes.HANDLE()
+    status = _WINDOWS_NTDLL.NtCreateFile(
+        ctypes.byref(handle),
+        desired_access,
+        ctypes.byref(attributes),
+        ctypes.byref(io_status),
+        None,
+        file_attributes,
+        share_access,
+        disposition,
+        options,
+        None,
+        0,
+    )
+    if status < 0:
+        _raise_nt_status(status, name)
+    return int(handle.value)
+
+
 def _assert_windows_directory_handle(handle: int) -> None:
     information = _WindowsFileInformation()
     if not _WINDOWS_KERNEL32.GetFileInformationByHandle(
@@ -177,6 +304,109 @@ def _assert_windows_directory_handle(handle: int) -> None:
     attributes = int(information.dwFileAttributes)
     if attributes & _WINDOWS_REPARSE_POINT or not attributes & 0x10:
         raise KnowledgeStateMigrationError("managed_path_unsafe")
+
+
+def _assert_windows_file_handle(handle: int) -> None:
+    information = _WindowsFileInformation()
+    if not _WINDOWS_KERNEL32.GetFileInformationByHandle(
+        handle, ctypes.byref(information)
+    ):
+        raise ctypes.WinError(ctypes.get_last_error())
+    attributes = int(information.dwFileAttributes)
+    if (
+        attributes & _WINDOWS_REPARSE_POINT
+        or attributes & 0x10
+        or int(information.nNumberOfLinks) != 1
+    ):
+        raise KnowledgeStateMigrationError("managed_path_unsafe")
+
+
+def _windows_read_relative(directory_handle: int, name: str) -> bytes:
+    handle = _nt_create_file(
+        directory_handle,
+        name,
+        desired_access=0x80000000 | 0x00100000,
+        disposition=1,
+        options=0x00000040 | 0x00000020 | 0x00200000,
+    )
+    try:
+        _assert_windows_file_handle(handle)
+        chunks: list[bytes] = []
+        while True:
+            buffer = ctypes.create_string_buffer(64 * 1024)
+            read = wintypes.DWORD()
+            if not _WINDOWS_KERNEL32.ReadFile(
+                handle,
+                buffer,
+                len(buffer),
+                ctypes.byref(read),
+                None,
+            ):
+                raise ctypes.WinError(ctypes.get_last_error())
+            if read.value == 0:
+                return b"".join(chunks)
+            chunks.append(buffer.raw[: read.value])
+    finally:
+        _WINDOWS_KERNEL32.CloseHandle(handle)
+
+
+def _windows_rename_relative(
+    handle: int,
+    directory_handle: int,
+    name: str,
+) -> None:
+    class _FileRenameInformation(ctypes.Structure):
+        _fields_ = [
+            ("ReplaceIfExists", ctypes.c_ubyte),
+            ("RootDirectory", wintypes.HANDLE),
+            ("FileNameLength", wintypes.ULONG),
+            ("FileName", ctypes.c_wchar * (len(name) + 1)),
+        ]
+
+    rename = _FileRenameInformation()
+    rename.ReplaceIfExists = 1
+    rename.RootDirectory = directory_handle
+    rename.FileNameLength = len(name.encode("utf-16-le"))
+    rename.FileName = name
+    io_status = _IoStatusBlock()
+    status = _WINDOWS_NTDLL.NtSetInformationFile(
+        handle,
+        ctypes.byref(io_status),
+        ctypes.byref(rename),
+        _FileRenameInformation.FileName.offset + rename.FileNameLength + 2,
+        10,
+    )
+    if status < 0:
+        _raise_nt_status(status, name)
+
+
+def _windows_unlink_relative(directory_handle: int, name: str) -> None:
+    try:
+        handle = _nt_create_file(
+            directory_handle,
+            name,
+            desired_access=0x00000080 | 0x00010000 | 0x00100000,
+            disposition=1,
+            options=0x00000040 | 0x00000020 | 0x00200000,
+        )
+    except FileNotFoundError:
+        return
+    try:
+        _assert_windows_file_handle(handle)
+
+        class _FileDispositionInformation(ctypes.Structure):
+            _fields_ = [("DeleteFile", ctypes.c_ubyte)]
+
+        disposition = _FileDispositionInformation(1)
+        if not _WINDOWS_KERNEL32.SetFileInformationByHandle(
+            handle,
+            4,
+            ctypes.byref(disposition),
+            ctypes.sizeof(disposition),
+        ):
+            raise ctypes.WinError(ctypes.get_last_error())
+    finally:
+        _WINDOWS_KERNEL32.CloseHandle(handle)
 
 
 def _guard_windows_directory_chain(
@@ -190,26 +420,40 @@ def _guard_windows_directory_chain(
         return
     absolute = Path(os.path.abspath(path))
     current = Path(absolute.anchor)
+    anchor_key = _normalized_path(current)
+    if anchor_key not in guarded_paths:
+        anchor_handle = _nt_create_file(
+            None,
+            _windows_nt_path(current),
+            desired_access=0x80000000 | 0x00100000,
+            disposition=1,
+            options=0x00000001 | 0x00000020 | 0x00200000,
+        )
+        try:
+            _assert_windows_directory_handle(anchor_handle)
+        except Exception:
+            _WINDOWS_KERNEL32.CloseHandle(anchor_handle)
+            raise
+        handles.append(anchor_handle)
+        guarded_paths[anchor_key] = anchor_handle
+    parent_handle = guarded_paths[anchor_key]
     for part in absolute.parts[1:]:
         current /= part
         key = _normalized_path(current)
         if key in guarded_paths:
+            parent_handle = guarded_paths[key]
             continue
-        if not os.path.lexists(current):
-            if not create:
-                raise KnowledgeStateMigrationError("managed_path_unsafe")
-            current.mkdir()
-        handle = _WINDOWS_KERNEL32.CreateFileW(
-            str(current),
-            0x00000001 | 0x00000020 | 0x00000080,
-            0x00000001 | 0x00000002 | 0x00000004,
-            None,
-            3,
-            0x02000000 | 0x00200000,
-            None,
+        desired_access = 0x80000000 | 0x00100000
+        if current == absolute:
+            desired_access |= 0x40000000
+        handle = _nt_create_file(
+            parent_handle,
+            part,
+            desired_access=desired_access,
+            disposition=3 if create else 1,
+            options=0x00000001 | 0x00000020 | 0x00200000,
+            file_attributes=0x10,
         )
-        if handle == _WINDOWS_INVALID_HANDLE:
-            raise KnowledgeStateMigrationError("managed_path_unsafe")
         try:
             _assert_windows_directory_handle(handle)
         except Exception:
@@ -217,6 +461,7 @@ def _guard_windows_directory_chain(
             raise
         handles.append(handle)
         guarded_paths[key] = handle
+        parent_handle = handle
 
 
 def _close_windows_directory_guards(handles: list[int]) -> None:
@@ -267,10 +512,16 @@ def _open_posix_directory(path: Path, *, root: Path, create: bool) -> int:
         raise
 
 
-def _read_safe_bytes(path: Path, *, root: Path) -> bytes:
+def _read_safe_bytes(
+    path: Path,
+    *,
+    root: Path,
+    windows_directory_handle: int | None = None,
+) -> bytes:
     if os.name == "nt":
-        _assert_safe_file(path)
-        return path.read_bytes()
+        if windows_directory_handle is None:
+            raise KnowledgeStateMigrationError("managed_path_unsafe")
+        return _windows_read_relative(windows_directory_handle, path.name)
     directory = _open_posix_directory(path.parent, root=root, create=False)
     descriptor: int | None = None
     try:
@@ -293,9 +544,17 @@ def _read_safe_bytes(path: Path, *, root: Path) -> bytes:
         os.close(directory)
 
 
-def _safe_unlink(path: Path, *, root: Path) -> None:
+def _safe_unlink(
+    path: Path,
+    *,
+    root: Path,
+    windows_directory_handle: int | None = None,
+) -> None:
     if os.name == "nt":
-        path.unlink(missing_ok=True)
+        if windows_directory_handle is None:
+            raise KnowledgeStateMigrationError("managed_path_unsafe")
+        _windows_unlink_relative(windows_directory_handle, path.name)
+        _fsync_directory(path.parent, windows_handle=windows_directory_handle)
         return
     directory = _open_posix_directory(path.parent, root=root, create=False)
     try:
@@ -308,9 +567,14 @@ def _safe_unlink(path: Path, *, root: Path) -> None:
         os.close(directory)
 
 
-def _sync_safe_directory(path: Path, *, root: Path) -> None:
+def _sync_safe_directory(
+    path: Path,
+    *,
+    root: Path,
+    windows_handle: int | None = None,
+) -> None:
     if os.name == "nt":
-        _fsync_directory(path)
+        _fsync_directory(path, windows_handle=windows_handle)
         return
     descriptor = _open_posix_directory(path, root=root, create=False)
     try:
@@ -338,13 +602,24 @@ def _flush_windows_directory(path: Path) -> None:
         _WINDOWS_KERNEL32.CloseHandle(handle)
 
 
+def _flush_windows_handle(handle: int) -> None:
+    if not _WINDOWS_KERNEL32.FlushFileBuffers(handle):
+        raise ctypes.WinError(ctypes.get_last_error())
+
+
 def _fsync_directory(
     path: Path,
     *,
     windows_flusher: Callable[[Path], None] | None = None,
+    windows_handle: int | None = None,
 ) -> None:
     if os.name == "nt":
-        (windows_flusher or _flush_windows_directory)(path)
+        if windows_flusher is not None:
+            windows_flusher(path)
+        elif windows_handle is not None:
+            _flush_windows_handle(windows_handle)
+        else:
+            _flush_windows_directory(path)
         return
     descriptor = os.open(path, os.O_RDONLY)
     try:
@@ -361,16 +636,18 @@ def _atomic_write(
     after_replace: Callable[[], None] | None = None,
     windows_directory_handle: int | None = None,
     before_write: Callable[[], None] | None = None,
+    before_temp_create: Callable[[], None] | None = None,
+    before_rename: Callable[[], None] | None = None,
 ) -> None:
     if os.name == "nt":
-        _ensure_safe_directory(path.parent, root=root)
-        _assert_safe_file(path)
         _atomic_write_windows(
             path,
             data,
             after_replace=after_replace,
             directory_handle=windows_directory_handle,
             before_write=before_write,
+            before_temp_create=before_temp_create,
+            before_rename=before_rename,
         )
         return
     directory = _open_posix_directory(path.parent, root=root, create=True)
@@ -423,21 +700,22 @@ def _atomic_write_windows(
     after_replace: Callable[[], None] | None,
     directory_handle: int | None,
     before_write: Callable[[], None] | None,
+    before_temp_create: Callable[[], None] | None,
+    before_rename: Callable[[], None] | None,
 ) -> None:
     if directory_handle is None:
         raise KnowledgeStateMigrationError("managed_path_unsafe")
-    temporary = path.parent / f".{path.name}.{uuid.uuid4().hex}.tmp"
-    handle = _WINDOWS_KERNEL32.CreateFileW(
-        str(temporary),
-        0x40000000 | 0x00010000,
-        0x00000004,
-        None,
-        1,
-        0x00000080 | 0x00200000,
-        None,
+    temporary = f".{path.name}.{uuid.uuid4().hex}.tmp"
+    if before_temp_create is not None:
+        before_temp_create()
+    handle = _nt_create_file(
+        directory_handle,
+        temporary,
+        desired_access=0x40000000 | 0x00010000 | 0x00100000,
+        disposition=2,
+        options=0x00000040 | 0x00000020 | 0x00200000,
+        share_access=0x00000004,
     )
-    if handle == _WINDOWS_INVALID_HANDLE:
-        raise ctypes.WinError(ctypes.get_last_error())
     renamed = False
     try:
         if before_write is not None:
@@ -460,37 +738,18 @@ def _atomic_write_windows(
             offset += written.value
         if not _WINDOWS_KERNEL32.FlushFileBuffers(handle):
             raise ctypes.WinError(ctypes.get_last_error())
-        destination = "\\??\\" + str(path)
-
-        class _WindowsRenameInfo(ctypes.Structure):
-            _fields_ = [
-                ("ReplaceIfExists", wintypes.DWORD),
-                ("RootDirectory", wintypes.HANDLE),
-                ("FileNameLength", wintypes.DWORD),
-                ("FileName", ctypes.c_wchar * (len(destination) + 1)),
-            ]
-
-        rename = _WindowsRenameInfo()
-        rename.ReplaceIfExists = 1
-        rename.RootDirectory = None
-        rename.FileNameLength = len(destination.encode("utf-16-le"))
-        rename.FileName = destination
-        if not _WINDOWS_KERNEL32.SetFileInformationByHandle(
-            handle,
-            3,
-            ctypes.byref(rename),
-            _WindowsRenameInfo.FileName.offset + rename.FileNameLength + 2,
-        ):
-            raise ctypes.WinError(ctypes.get_last_error())
+        if before_rename is not None:
+            before_rename()
+        _windows_rename_relative(handle, directory_handle, path.name)
         renamed = True
         if after_replace is not None:
             after_replace()
-        _fsync_directory(path.parent)
+        _fsync_directory(path.parent, windows_handle=directory_handle)
     finally:
         _WINDOWS_KERNEL32.CloseHandle(handle)
         if not renamed:
             try:
-                temporary.unlink(missing_ok=True)
+                _windows_unlink_relative(directory_handle, temporary)
             except OSError:
                 pass
 
@@ -503,10 +762,18 @@ def _canonical_json(value: dict[str, Any]) -> bytes:
 
 
 def _load_state_file(
-    path: Path, *, active: bool, root: Path
+    path: Path,
+    *,
+    active: bool,
+    root: Path,
+    windows_directory_handle: int | None = None,
 ) -> tuple[bytes | None, dict[str, Any] | None]:
     try:
-        raw = _read_safe_bytes(path, root=root)
+        raw = _read_safe_bytes(
+            path,
+            root=root,
+            windows_directory_handle=windows_directory_handle,
+        )
         value = json.loads(raw.decode("utf-8"))
     except FileNotFoundError:
         return None, None
@@ -560,9 +827,20 @@ def _path_from_marker(value: object, root: Path) -> Path:
     return canonical
 
 
-def _load_marker(marker: Path, root: Path) -> MigrationResult | None:
+def _load_marker(
+    marker: Path,
+    root: Path,
+    *,
+    windows_directory_handle: int | None = None,
+) -> MigrationResult | None:
     try:
-        value = json.loads(_read_safe_bytes(marker, root=root).decode("utf-8"))
+        value = json.loads(
+            _read_safe_bytes(
+                marker,
+                root=root,
+                windows_directory_handle=windows_directory_handle,
+            ).decode("utf-8")
+        )
         if (
             not isinstance(value, dict)
             or value.get("schema_version") != "1.0"
@@ -598,12 +876,23 @@ def _load_marker(marker: Path, root: Path) -> MigrationResult | None:
     return MigrationResult(False, backup_dir, deactivated, preserved)
 
 
-def _marker_backup_is_valid(result: MigrationResult, *, root: Path) -> bool:
+def _marker_backup_is_valid(
+    result: MigrationResult,
+    *,
+    root: Path,
+    windows_directory_handle: int | None = None,
+) -> bool:
     backup_dir = result.backup_dir
-    if backup_dir is None or not backup_dir.is_dir():
+    if backup_dir is None:
+        return False
+    if os.name == "nt":
+        if windows_directory_handle is None:
+            return False
+    elif not backup_dir.is_dir():
         return False
     try:
-        _assert_safe_directory(backup_dir)
+        if os.name != "nt":
+            _assert_safe_directory(backup_dir)
         backed_up_ids: set[str] = set()
         for name, active in (
             ("active.json", True),
@@ -613,6 +902,7 @@ def _marker_backup_is_valid(result: MigrationResult, *, root: Path) -> bool:
                 backup_dir / name,
                 active=active,
                 root=root,
+                windows_directory_handle=windows_directory_handle,
             )
             if value is not None:
                 backed_up_ids.update(
@@ -644,7 +934,11 @@ def _restore_state(
     windows_directory_handle: int | None = None,
 ) -> None:
     if raw is None:
-        _safe_unlink(path, root=root)
+        _safe_unlink(
+            path,
+            root=root,
+            windows_directory_handle=windows_directory_handle,
+        )
     else:
         _atomic_write(
             path,
@@ -668,28 +962,46 @@ def migrate_legacy_knowledge_state(
         guarded_paths: dict[str, int] = {}
         try:
             with exclusive_file_lock(paths.manager_lock):
-                _assert_safe_directory(paths.root)
-                _assert_safe_directory(paths.state)
-                if not paths.state.exists():
-                    return MigrationResult(False, None, (), ())
-                _guard_windows_directory_chain(
-                    paths.state,
-                    directory_guards,
-                    guarded_paths,
-                    create=False,
-                )
+                def inject(point: str) -> None:
+                    if failure_injector is None:
+                        return
+                    try:
+                        failure_injector(point)
+                    except Exception as exc:
+                        raise KnowledgeStateMigrationError(
+                            "failure_injected"
+                        ) from exc
+
+                if os.name == "nt":
+                    try:
+                        _guard_windows_directory_chain(
+                            paths.state,
+                            directory_guards,
+                            guarded_paths,
+                            create=False,
+                        )
+                    except FileNotFoundError:
+                        return MigrationResult(False, None, (), ())
+                else:
+                    _assert_safe_directory(paths.root)
+                    _assert_safe_directory(paths.state)
+                    if not paths.state.exists():
+                        return MigrationResult(False, None, (), ())
                 state_directory_handle = guarded_paths.get(
                     _normalized_path(paths.state)
                 )
+                inject("knowledge_migration.before_state_read")
                 active_raw, active = _load_state_file(
                     paths.active,
                     active=True,
                     root=paths.root,
+                    windows_directory_handle=state_directory_handle,
                 )
                 installed_raw, installed = _load_state_file(
                     paths.installed_metadata,
                     active=False,
                     root=paths.root,
+                    windows_directory_handle=state_directory_handle,
                 )
                 active_ids = (
                     set(active["packs"]).intersection(LEGACY_KNOWLEDGE_PACK_IDS)
@@ -704,7 +1016,11 @@ def migrate_legacy_knowledge_state(
                 legacy_ids = active_ids | installed_ids
                 marker = paths.state / _MARKER_NAME
                 try:
-                    existing = _load_marker(marker, paths.root)
+                    existing = _load_marker(
+                        marker,
+                        paths.root,
+                        windows_directory_handle=state_directory_handle,
+                    )
                 except KnowledgeStateMigrationError as exc:
                     if exc.reason != "marker_invalid":
                         raise
@@ -719,9 +1035,13 @@ def migrate_legacy_knowledge_state(
                                 guarded_paths,
                                 create=False,
                             )
+                        existing_backup_handle = guarded_paths.get(
+                            _normalized_path(existing.backup_dir)
+                        )
                         existing_backup_valid = _marker_backup_is_valid(
                             existing,
                             root=paths.root,
+                            windows_directory_handle=existing_backup_handle,
                         )
                     except KnowledgeStateMigrationError:
                         existing_backup_valid = False
@@ -774,16 +1094,7 @@ def migrate_legacy_knowledge_state(
                     _normalized_path(backup_dir)
                 )
                 def before_first_backup_write() -> None:
-                    if failure_injector is None:
-                        return
-                    try:
-                        failure_injector(
-                            "knowledge_migration.before_first_backup_write"
-                        )
-                    except Exception as exc:
-                        raise KnowledgeStateMigrationError(
-                            "failure_injected"
-                        ) from exc
+                    inject("knowledge_migration.before_first_backup_write")
 
                 first_backup = True
                 for source, raw in (
@@ -799,9 +1110,20 @@ def migrate_legacy_knowledge_state(
                             before_write=(
                                 before_first_backup_write if first_backup else None
                             ),
+                            before_temp_create=(
+                                lambda: inject(
+                                    "knowledge_migration.before_backup_temp_create"
+                                )
+                                if first_backup
+                                else None
+                            ),
                         )
                         first_backup = False
-                _sync_safe_directory(backup_dir, root=paths.state)
+                _sync_safe_directory(
+                    backup_dir,
+                    root=paths.state,
+                    windows_handle=backup_directory_handle,
+                )
 
                 preserved = _preserved_paths(paths, legacy_ids)
                 marker_value = {
@@ -838,6 +1160,9 @@ def migrate_legacy_knowledge_state(
                             root=paths.root,
                             after_replace=lambda path=path: replaced.append(path),
                             windows_directory_handle=state_directory_handle,
+                            before_rename=lambda: inject(
+                                "knowledge_migration.before_state_rename"
+                            ),
                         )
                     _atomic_write(
                         marker,
@@ -850,7 +1175,11 @@ def migrate_legacy_knowledge_state(
                     compensation_errors: list[OSError] = []
                     if marker_replaced:
                         try:
-                            _safe_unlink(marker, root=paths.root)
+                            _safe_unlink(
+                                marker,
+                                root=paths.root,
+                                windows_directory_handle=state_directory_handle,
+                            )
                         except OSError as exc:
                             compensation_errors.append(exc)
                     for path in reversed(replaced):

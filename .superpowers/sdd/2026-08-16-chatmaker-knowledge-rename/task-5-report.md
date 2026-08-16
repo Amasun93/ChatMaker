@@ -121,3 +121,47 @@
   5. junction/rename TOCTOU：`test_backup_directory_is_guarded_against_in_place_junction_swap`；Windows 使用 guarded handles + handle rename，POSIX 使用 `dir_fd` + `O_NOFOLLOW`。
   6. Windows directory durability：`test_windows_directory_sync_invokes_flush_file_buffers_adapter`，production 默认进入 `FlushFileBuffers` adapter。
 - 关注点：唯一 skip 是 PackManager 原有普通 symlink 权限测试；本轮新增的 Windows junction、TOCTOU 和 FlushFileBuffers adapter 测试均实际执行。失败尝试和成功迁移的 backup 仍按“不无提示删除”要求保留。
+
+## Fix round 2：Windows 句柄相对 I/O 审查修复（2026-08-16）
+
+本轮处理 2 项审查 finding：Windows 迁移 I/O 仍可能在中间 junction 交换后重解析路径，以及相对 `user_root` / UNC 根路径无法形成正确 NT 路径。范围仍只涉及 Task 5 的迁移模块、迁移测试和本报告。
+
+### RED 证据
+
+- 命令：`python -m unittest tests.installers.test_knowledge_state_migration.KnowledgeStateMigrationTests.test_windows_state_read_survives_intermediate_junction_swap tests.installers.test_knowledge_state_migration.KnowledgeStateMigrationTests.test_windows_backup_temp_create_survives_intermediate_junction_swap tests.installers.test_knowledge_state_migration.KnowledgeStateMigrationTests.test_windows_state_rename_survives_intermediate_junction_swap tests.installers.test_knowledge_state_migration.KnowledgeStateMigrationTests.test_pack_manager_migrates_relative_user_root_from_current_directory tests.installers.test_knowledge_state_migration.KnowledgeStateMigrationTests.test_windows_nt_path_conversion_supports_dos_and_unc_roots -v`
+- 初始输出：`Ran 5 tests`；`FAILED (failures=3, errors=2)`。
+  - state read、backup temp create、state rename 三个 swap 用例均因新边界 hook 尚不存在而以 `attempted=False` 失败。
+  - 相对 `user_root` 用例以 `FileNotFoundError: [WinError 3]` 出错，证明原实现把相对路径直接拼成了无效 `\\??\\...` 路径。
+  - DOS/UNC 转换契约用例因 `_windows_nt_path` 尚不存在而出错。
+
+### 修复结果与 finding 覆盖
+
+1. Windows 路径交换窗口：
+   - 从 DOS/UNC filesystem anchor 开始，仅首个 anchor 使用绝对 NT 路径打开；后续目录逐级以已验证父目录句柄和 `NtCreateFile(RootDirectory=...)` 打开或创建，并使用 `OBJ_DONT_REPARSE` 与 `FILE_OPEN_REPARSE_POINT`。
+   - state/marker read、backup/state temp create、unlink 均改为目录句柄相对 `NtCreateFile`；rename 使用 `NtSetInformationFile(FileRenameInformation)` 且目标 `RootDirectory` 为已验证目录句柄；unlink 对已相对打开并验证身份的句柄调用 `SetFileInformationByHandle(FileDispositionInfo)`。
+   - 目录持久化直接复用已持有的目录句柄。路径式 `CreateFileW` 仅保留在独立目录 flush fallback，不参与本迁移的 read/create/rename/unlink。
+   - 覆盖测试：`test_windows_state_read_survives_intermediate_junction_swap`、`test_windows_backup_temp_create_survives_intermediate_junction_swap`、`test_windows_state_rename_survives_intermediate_junction_swap`。其中 state-read 用例要求 junction 交换实际成功，并验证原句柄指向的 state 被迁移、外部 state 及目录内容不变。
+2. 相对根路径与 UNC：
+   - 入口先将 `user_root` 归一为绝对路径；新增纯转换契约：`C:\\Users\\maker\\state` → `\\??\\C:\\Users\\maker\\state`，`\\\\server\\share\\state` → `\\??\\UNC\\server\\share\\state`。
+   - 覆盖测试：`test_pack_manager_migrates_relative_user_root_from_current_directory`、`test_windows_nt_path_conversion_supports_dos_and_unc_roots`。
+
+修复中同时发现 marker 补偿 unlink 的相对打开缺少 `FILE_READ_ATTRIBUTES`，导致句柄身份校验失败；补足权限后，`test_marker_sync_failure_removes_marker_and_restores_original_state` 恢复通过。
+
+### GREEN 与最终回归
+
+- 聚焦迁移测试：`python -m unittest tests.installers.test_knowledge_state_migration -v`
+  - `Ran 21 tests in 3.793s`
+  - `OK`
+- PackManager 回归：`python -m unittest tests.installers.test_pack_manager -v`
+  - `Ran 50 tests in 113.696s`
+  - `OK (skipped=1)`
+- 最终组合命令：`python -m unittest tests.installers.test_knowledge_state_migration tests.installers.test_pack_manager -v`
+  - `Ran 71 tests in 118.759s`
+  - `OK (skipped=1)`
+- 语法与差异检查：`python -m py_compile runtime/chatmaker/installers/knowledge_state_migration.py tests/installers/test_knowledge_state_migration.py` 与 `git diff --check` 均退出 0。
+
+### Fix round 2 提交与关注点
+
+- 提交主题：`fix: make Windows knowledge migration handle-relative`
+- 唯一 skip 仍是 PackManager 原有普通 symlink 用例，原因是当前 Windows 账户没有创建符号链接权限；本轮三个真实 junction swap 用例均实际执行并通过。
+- 备份目录继续按既定恢复证据策略保留，不做自动删除。

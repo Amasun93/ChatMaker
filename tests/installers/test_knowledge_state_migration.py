@@ -301,12 +301,12 @@ class KnowledgeStateMigrationTests(unittest.TestCase):
         real_sync = migration._fsync_directory
         failed = False
 
-        def fail_first_state_sync(path: Path) -> None:
+        def fail_first_state_sync(path: Path, **kwargs: object) -> None:
             nonlocal failed
             if path == self.paths.state and not failed:
                 failed = True
                 raise OSError("injected state directory sync failure")
-            real_sync(path)
+            real_sync(path, **kwargs)
 
         with mock.patch.object(
             migration, "_fsync_directory", side_effect=fail_first_state_sync
@@ -329,13 +329,13 @@ class KnowledgeStateMigrationTests(unittest.TestCase):
         real_sync = migration._fsync_directory
         state_syncs = 0
 
-        def fail_second_state_sync(path: Path) -> None:
+        def fail_second_state_sync(path: Path, **kwargs: object) -> None:
             nonlocal state_syncs
             if path == self.paths.state:
                 state_syncs += 1
                 if state_syncs == 2:
                     raise OSError("injected marker directory sync failure")
-            real_sync(path)
+            real_sync(path, **kwargs)
 
         with mock.patch.object(
             migration, "_fsync_directory", side_effect=fail_second_state_sync
@@ -434,6 +434,132 @@ class KnowledgeStateMigrationTests(unittest.TestCase):
         self.assertIsNotNone(blocked_error)
         self.assertEqual(list(outside.iterdir()), [])
         self.assertTrue((result.backup_dir / "active.json").is_file())
+
+    def _assert_windows_intermediate_swap_is_handle_relative(
+        self,
+        point: str,
+        *,
+        require_swap: bool = False,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temp_name:
+            base = Path(temp_name) / "base"
+            paths = PackPaths.from_root(base / "user")
+            paths.state.mkdir(parents=True)
+            active_before = _active_bytes(
+                packs={
+                    LEGACY_NANO: {
+                        "version": "1.0.0",
+                        "archive_sha256": SHA_A,
+                    }
+                }
+            )
+            paths.active.write_bytes(active_before)
+            outside = Path(temp_name) / "outside-state"
+            outside.mkdir()
+            outside_active = _active_bytes(packs={}, generation=99)
+            (outside / "active.json").write_bytes(outside_active)
+            displaced = Path(temp_name) / "displaced-state"
+            attempted = False
+            swapped = False
+            blocked_error: OSError | None = None
+
+            def swap_state(observed: str) -> None:
+                nonlocal attempted, blocked_error, swapped
+                if observed != point:
+                    return
+                attempted = True
+                try:
+                    os.replace(paths.state, displaced)
+                    _create_junction(paths.state, outside)
+                    swapped = True
+                except OSError as exc:
+                    blocked_error = exc
+
+            try:
+                result = migrate_legacy_knowledge_state(
+                    paths,
+                    failure_injector=swap_state,
+                )
+            finally:
+                if swapped and migration.is_reparse(paths.state):
+                    _remove_junction(paths.state)
+                if displaced.exists() and not paths.state.exists():
+                    os.replace(displaced, paths.state)
+
+            self.assertTrue(attempted)
+            self.assertTrue(swapped or blocked_error is not None)
+            if require_swap:
+                self.assertTrue(swapped)
+            self.assertTrue(result.changed)
+            migrated = json.loads(paths.active.read_text(encoding="utf-8"))
+            self.assertNotIn(LEGACY_NANO, migrated["packs"])
+            self.assertEqual((outside / "active.json").read_bytes(), outside_active)
+            self.assertEqual(sorted(path.name for path in outside.iterdir()), ["active.json"])
+
+    @unittest.skipUnless(os.name == "nt", "Windows junction semantics only")
+    def test_windows_state_read_survives_intermediate_junction_swap(self):
+        self._assert_windows_intermediate_swap_is_handle_relative(
+            "knowledge_migration.before_state_read",
+            require_swap=True,
+        )
+
+    @unittest.skipUnless(os.name == "nt", "Windows junction semantics only")
+    def test_windows_backup_temp_create_survives_intermediate_junction_swap(self):
+        self._assert_windows_intermediate_swap_is_handle_relative(
+            "knowledge_migration.before_backup_temp_create"
+        )
+
+    @unittest.skipUnless(os.name == "nt", "Windows junction semantics only")
+    def test_windows_state_rename_survives_intermediate_junction_swap(self):
+        self._assert_windows_intermediate_swap_is_handle_relative(
+            "knowledge_migration.before_state_rename"
+        )
+
+    def test_pack_manager_migrates_relative_user_root_from_current_directory(self):
+        with tempfile.TemporaryDirectory() as temp_name:
+            previous = Path.cwd()
+            os.chdir(temp_name)
+            try:
+                paths = PackPaths.from_root(Path("relative-user"))
+                paths.state.mkdir(parents=True)
+                paths.active.write_bytes(
+                    _active_bytes(
+                        packs={
+                            LEGACY_NANO: {
+                                "version": "1.0.0",
+                                "archive_sha256": SHA_A,
+                            }
+                        }
+                    )
+                )
+
+                manager = PackManager(
+                    user_root=Path("relative-user"),
+                    trust_store={
+                        "registry_url": "https://registry.example.invalid/registry.json",
+                        "signature_url": "https://registry.example.invalid/registry.sig.json",
+                        "keys": {},
+                    },
+                )
+
+                token = manager.generation_token()
+
+                self.assertTrue(token.startswith("8:"), token)
+                active = json.loads(paths.active.read_text(encoding="utf-8"))
+                self.assertNotIn(LEGACY_NANO, active["packs"])
+            finally:
+                os.chdir(previous)
+
+    @unittest.skipUnless(os.name == "nt", "Windows NT path contract only")
+    def test_windows_nt_path_conversion_supports_dos_and_unc_roots(self):
+        self.assertEqual(
+            migration._windows_nt_path(Path(r"C:\Users\maker\state")),
+            r"\??\C:\Users\maker\state",
+        )
+        self.assertEqual(
+            migration._windows_nt_path(Path(r"\\server\share\state")),
+            r"\??\UNC\server\share\state",
+        )
 
     def test_migration_removes_only_exact_legacy_ids(self):
         self.paths.active.write_bytes(
