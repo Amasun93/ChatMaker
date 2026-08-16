@@ -35,8 +35,7 @@ EXPECTED_COMMANDS = {
     "chatmaker-nano-examples",
     "chatmaker-serial",
     "chatmaker-workbuddy-mcp",
-    "chatmaker-install-workbuddy",
-    "chatmaker-install-codex",
+    "chatmaker-install",
     "chatmaker-web",
     "chatmaker-web-plan",
     "chatmaker-web-playground",
@@ -261,30 +260,7 @@ class CleanCoreIntegrationTests(unittest.TestCase):
             self.assertTrue(all(not item["available"] for item in index["sections"]))
 
             codex_home = home / "host-codex"
-            codex_installer = self._command(venv, "chatmaker-install-codex")
-            installed = json.loads(
-                self._run(
-                    [str(codex_installer), "install", "--home", str(codex_home)],
-                    cwd=core,
-                    env=env,
-                ).stdout
-            )
-            self.assertEqual(
-                set(installed["installed_skills"]),
-                {"chatmaker", "chatduino", "chatweb"},
-            )
-            self.assertTrue(json.loads(self._run(
-                [str(codex_installer), "doctor", "--home", str(codex_home)],
-                cwd=core,
-                env=env,
-            ).stdout)["success"])
-            self.assertTrue(json.loads(self._run(
-                [str(codex_installer), "uninstall", "--home", str(codex_home)],
-                cwd=core,
-                env=env,
-            ).stdout)["success"])
-            self.assertFalse(any((codex_home / "skills").glob("*")))
-
+            (codex_home / "skills").mkdir(parents=True)
             workbuddy_config = home / "host-workbuddy" / "mcp.json"
             workbuddy_config.parent.mkdir(parents=True)
             original_config = {
@@ -294,30 +270,34 @@ class CleanCoreIntegrationTests(unittest.TestCase):
             workbuddy_config.write_text(
                 json.dumps(original_config, indent=2) + "\n", encoding="utf-8"
             )
-            workbuddy_installer = self._command(venv, "chatmaker-install-workbuddy")
-            workbuddy_install = json.loads(self._run(
-                [
-                    str(workbuddy_installer),
-                    "install",
-                    "--config",
-                    str(workbuddy_config),
-                    "--python",
-                    str(python),
-                ],
-                cwd=core,
-                env=env,
-            ).stdout)
-            self.assertEqual(workbuddy_install["preserved_other_servers"], 1)
+            env.update(
+                {
+                    "CODEX_HOME": str(codex_home),
+                    "WORKBUDDY_HOME": str(workbuddy_config.parent),
+                    "WORKBUDDY_CONFIG": str(workbuddy_config),
+                }
+            )
+            installer = self._command(venv, "chatmaker-install")
+            installed = json.loads(
+                self._run(
+                    [str(installer), "auto"],
+                    cwd=core,
+                    env=env,
+                ).stdout
+            )
+            self.assertTrue(installed["success"])
+            self.assertEqual([host["host"] for host in installed["hosts"]], ["codex", "workbuddy"])
             self.assertTrue(json.loads(self._run(
-                [str(workbuddy_installer), "doctor", "--config", str(workbuddy_config)],
+                [str(installer), "doctor"],
                 cwd=core,
                 env=env,
             ).stdout)["success"])
             self.assertTrue(json.loads(self._run(
-                [str(workbuddy_installer), "uninstall", "--config", str(workbuddy_config)],
+                [str(installer), "uninstall"],
                 cwd=core,
                 env=env,
             ).stdout)["success"])
+            self.assertFalse(any((codex_home / "skills").glob("*")))
             self.assertEqual(
                 json.loads(workbuddy_config.read_text(encoding="utf-8")),
                 original_config,
