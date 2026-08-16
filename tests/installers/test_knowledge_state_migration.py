@@ -4,13 +4,16 @@ from concurrent.futures import (
     ThreadPoolExecutor,
     TimeoutError as FutureTimeoutError,
 )
+from dataclasses import replace
 import json
 import os
 from pathlib import Path
 import subprocess
 import tempfile
 import unittest
+from unittest import mock
 
+from runtime.chatmaker.installers import knowledge_state_migration as migration
 from runtime.chatmaker.installers.knowledge_state_migration import (
     KnowledgeStateMigrationError,
     migrate_legacy_knowledge_state,
@@ -25,6 +28,22 @@ CURRENT_NANO = "chatmaker-board-arduino-nano-classic-knowledge"
 UNKNOWN_PACK = "third-party-board-knowledge"
 SHA_A = "a" * 64
 SHA_B = "b" * 64
+
+
+def _create_junction(link: Path, target: Path) -> None:
+    completed = subprocess.run(
+        ["cmd.exe", "/d", "/c", "mklink", "/J", str(link), str(target)],
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    if completed.returncode != 0:
+        raise OSError(completed.stderr or completed.stdout)
+
+
+def _remove_junction(path: Path) -> None:
+    if os.path.lexists(path):
+        os.rmdir(path)
 
 
 def _active_bytes(*, packs: dict[str, object], generation: int = 7) -> bytes:
@@ -147,6 +166,86 @@ class KnowledgeStateMigrationTests(unittest.TestCase):
         self.assertEqual(second.deactivated_pack_ids, first.deactivated_pack_ids)
         self.assertEqual(self.paths.active.read_bytes(), migrated_bytes)
 
+    def test_stale_marker_with_restored_legacy_state_is_not_trusted(self):
+        active_before = _active_bytes(
+            packs={LEGACY_NANO: {"version": "1.0.0", "archive_sha256": SHA_A}}
+        )
+        self.paths.active.write_bytes(active_before)
+        first = migrate_legacy_knowledge_state(self.paths)
+        self.paths.active.write_bytes(active_before)
+
+        second = migrate_legacy_knowledge_state(self.paths)
+
+        self.assertTrue(second.changed)
+        self.assertNotEqual(second.backup_dir, first.backup_dir)
+        active = json.loads(self.paths.active.read_text(encoding="utf-8"))
+        self.assertNotIn(LEGACY_NANO, active["packs"])
+
+    def test_preseeded_marker_with_missing_backup_cannot_skip_migration(self):
+        self.paths.active.write_bytes(
+            _active_bytes(
+                packs={LEGACY_NANO: {"version": "1.0.0", "archive_sha256": SHA_A}}
+            )
+        )
+        marker = {
+            "schema_version": "1.0",
+            "migration": "knowledge-pack-identity-v1",
+            "backup_dir": "state/backups/knowledge-state-migration-v1/missing",
+            "deactivated_pack_ids": [LEGACY_NANO],
+            "preserved_paths": [],
+        }
+        (self.paths.state / "knowledge-state-migration-v1.json").write_text(
+            json.dumps(marker), encoding="utf-8"
+        )
+
+        result = migrate_legacy_knowledge_state(self.paths)
+
+        self.assertTrue(result.changed)
+        self.assertTrue(result.backup_dir.is_dir())
+        active = json.loads(self.paths.active.read_text(encoding="utf-8"))
+        self.assertNotIn(LEGACY_NANO, active["packs"])
+
+    def test_marker_paths_reject_windows_separators_drives_and_unc(self):
+        for value in (
+            r"state\..\outside",
+            r"C:\outside",
+            r"\\server\share\backup",
+        ):
+            with self.subTest(value=value):
+                with self.assertRaises(KnowledgeStateMigrationError):
+                    migration._path_from_marker(value, self.paths.root)
+
+    @unittest.skipUnless(os.name == "nt", "Windows junction semantics only")
+    def test_marker_backup_cannot_escape_root_through_intermediate_junction(self):
+        self.paths.active.write_bytes(_active_bytes(packs={}))
+        outside = Path(self.temp.name) / "outside-marker"
+        run_id = "d" * 32
+        external_backup = outside / "knowledge-state-migration-v1" / run_id
+        external_backup.mkdir(parents=True)
+        (external_backup / "active.json").write_bytes(
+            _active_bytes(
+                packs={LEGACY_NANO: {"version": "1.0.0", "archive_sha256": SHA_A}}
+            )
+        )
+        backup_link = self.paths.state / "backups"
+        _create_junction(backup_link, outside)
+        self.addCleanup(_remove_junction, backup_link)
+        marker = {
+            "schema_version": "1.0",
+            "migration": "knowledge-pack-identity-v1",
+            "backup_dir": f"state/backups/knowledge-state-migration-v1/{run_id}",
+            "deactivated_pack_ids": [LEGACY_NANO],
+            "preserved_paths": [],
+        }
+        (self.paths.state / "knowledge-state-migration-v1.json").write_text(
+            json.dumps(marker), encoding="utf-8"
+        )
+
+        result = migrate_legacy_knowledge_state(self.paths)
+
+        self.assertIsNone(result.backup_dir)
+        self.assertEqual(result.deactivated_pack_ids, ())
+
     def test_migration_waits_for_the_pack_manager_lock(self):
         self.paths.active.write_bytes(
             _active_bytes(
@@ -190,6 +289,77 @@ class KnowledgeStateMigrationTests(unittest.TestCase):
             (self.paths.state / "knowledge-state-migration-v1.json").exists()
         )
 
+    def test_directory_sync_failure_after_state_replace_restores_original_bytes(self):
+        active_before = _active_bytes(
+            packs={LEGACY_NANO: {"version": "1.0.0", "archive_sha256": SHA_A}}
+        )
+        installed_before = _installed_bytes(
+            packs={LEGACY_UNO: _installed_record(SHA_B)}
+        )
+        self.paths.active.write_bytes(active_before)
+        self.paths.installed_metadata.write_bytes(installed_before)
+        real_sync = migration._fsync_directory
+        failed = False
+
+        def fail_first_state_sync(path: Path) -> None:
+            nonlocal failed
+            if path == self.paths.state and not failed:
+                failed = True
+                raise OSError("injected state directory sync failure")
+            real_sync(path)
+
+        with mock.patch.object(
+            migration, "_fsync_directory", side_effect=fail_first_state_sync
+        ):
+            with self.assertRaises(KnowledgeStateMigrationError):
+                migrate_legacy_knowledge_state(self.paths)
+
+        self.assertTrue(failed)
+        self.assertEqual(self.paths.active.read_bytes(), active_before)
+        self.assertEqual(self.paths.installed_metadata.read_bytes(), installed_before)
+        self.assertFalse(
+            (self.paths.state / "knowledge-state-migration-v1.json").exists()
+        )
+
+    def test_marker_sync_failure_removes_marker_and_restores_original_state(self):
+        active_before = _active_bytes(
+            packs={LEGACY_NANO: {"version": "1.0.0", "archive_sha256": SHA_A}}
+        )
+        self.paths.active.write_bytes(active_before)
+        real_sync = migration._fsync_directory
+        state_syncs = 0
+
+        def fail_second_state_sync(path: Path) -> None:
+            nonlocal state_syncs
+            if path == self.paths.state:
+                state_syncs += 1
+                if state_syncs == 2:
+                    raise OSError("injected marker directory sync failure")
+            real_sync(path)
+
+        with mock.patch.object(
+            migration, "_fsync_directory", side_effect=fail_second_state_sync
+        ):
+            with self.assertRaises(KnowledgeStateMigrationError):
+                migrate_legacy_knowledge_state(self.paths)
+
+        self.assertGreaterEqual(state_syncs, 2)
+        self.assertEqual(self.paths.active.read_bytes(), active_before)
+        self.assertFalse(
+            (self.paths.state / "knowledge-state-migration-v1.json").exists()
+        )
+
+    @unittest.skipUnless(os.name == "nt", "Windows directory flush semantics only")
+    def test_windows_directory_sync_invokes_flush_file_buffers_adapter(self):
+        calls: list[Path] = []
+
+        migration._fsync_directory(
+            self.paths.state,
+            windows_flusher=calls.append,
+        )
+
+        self.assertEqual(calls, [self.paths.state])
+
     def test_unsafe_backup_parent_is_rejected_without_changing_state(self):
         active_before = _active_bytes(
             packs={LEGACY_NANO: {"version": "1.0.0", "archive_sha256": SHA_A}}
@@ -203,13 +373,8 @@ class KnowledgeStateMigrationTests(unittest.TestCase):
         except (OSError, NotImplementedError) as exc:
             if os.name != "nt":
                 self.skipTest(f"directory symlinks unavailable: {exc}")
-            subprocess.run(
-                ["cmd.exe", "/d", "/c", "mklink", "/J", str(backup_link), str(outside)],
-                check=True,
-                capture_output=True,
-                text=True,
-            )
-            self.addCleanup(os.rmdir, backup_link)
+            _create_junction(backup_link, outside)
+            self.addCleanup(_remove_junction, backup_link)
 
         with self.assertRaises(KnowledgeStateMigrationError):
             migrate_legacy_knowledge_state(self.paths)
@@ -219,6 +384,56 @@ class KnowledgeStateMigrationTests(unittest.TestCase):
         self.assertFalse(
             (self.paths.state / "knowledge-state-migration-v1.json").exists()
         )
+
+    @unittest.skipUnless(os.name == "nt", "Windows junction semantics only")
+    def test_backup_directory_is_guarded_against_in_place_junction_swap(self):
+        self.paths.active.write_bytes(
+            _active_bytes(
+                packs={LEGACY_NANO: {"version": "1.0.0", "archive_sha256": SHA_A}}
+            )
+        )
+        outside = Path(self.temp.name) / "outside-swap"
+        outside.mkdir()
+        displaced = Path(self.temp.name) / "displaced-backup"
+        attempted = False
+        blocked_error: OSError | None = None
+        swapped: Path | None = None
+
+        def attempt_swap(point: str) -> None:
+            nonlocal attempted, blocked_error, swapped
+            if point != "knowledge_migration.before_first_backup_write":
+                return
+            candidates = list(
+                (
+                    self.paths.state
+                    / "backups"
+                    / "knowledge-state-migration-v1"
+                ).iterdir()
+            )
+            self.assertEqual(len(candidates), 1)
+            swapped = candidates[0]
+            attempted = True
+            try:
+                os.replace(swapped, displaced)
+                _create_junction(swapped, outside)
+            except OSError as exc:
+                blocked_error = exc
+
+        try:
+            result = migrate_legacy_knowledge_state(
+                self.paths, failure_injector=attempt_swap
+            )
+        finally:
+            if swapped is not None and migration.is_reparse(swapped):
+                _remove_junction(swapped)
+            if displaced.exists() and swapped is not None and not swapped.exists():
+                os.replace(displaced, swapped)
+
+        self.assertTrue(result.changed)
+        self.assertTrue(attempted)
+        self.assertIsNotNone(blocked_error)
+        self.assertEqual(list(outside.iterdir()), [])
+        self.assertTrue((result.backup_dir / "active.json").is_file())
 
     def test_migration_removes_only_exact_legacy_ids(self):
         self.paths.active.write_bytes(
@@ -235,6 +450,28 @@ class KnowledgeStateMigrationTests(unittest.TestCase):
         active = json.loads(self.paths.active.read_text(encoding="utf-8"))
         self.assertNotIn(LEGACY_NANO, active["packs"])
         self.assertIn(UNKNOWN_PACK, active["packs"])
+
+    def test_malicious_pack_paths_are_rejected_before_lock_or_backup_write(self):
+        outside_state = Path(self.temp.name) / "outside-state"
+        outside_state.mkdir()
+        outside_active = outside_state / "active.json"
+        active_before = _active_bytes(
+            packs={LEGACY_NANO: {"version": "1.0.0", "archive_sha256": SHA_A}}
+        )
+        outside_active.write_bytes(active_before)
+        malicious = replace(
+            self.paths,
+            state=outside_state,
+            active=outside_active,
+            installed_metadata=outside_state / "installed-packs.json",
+        )
+
+        with self.assertRaises(KnowledgeStateMigrationError):
+            migrate_legacy_knowledge_state(malicious)
+
+        self.assertFalse(self.paths.manager_lock.exists())
+        self.assertEqual(outside_active.read_bytes(), active_before)
+        self.assertFalse((outside_state / "backups").exists())
 
     def test_pack_manager_migrates_before_current_allowlist_validation(self):
         self.paths.active.write_bytes(
