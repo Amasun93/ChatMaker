@@ -3,9 +3,13 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
+import json
+from pathlib import Path
 from typing import Any
 
 from .base import HostAdapter, entries, first_explicit
+from ..skill_bundle import doctor_bundle
+from ..workbuddy import SERVER_KEY
 
 
 class ExplicitHostAdapter(HostAdapter):
@@ -44,8 +48,32 @@ class ExplicitHostAdapter(HostAdapter):
         return {"host": self.name, "status": "ready", "limits": [], **detection}
 
     def verify(self, context: Mapping[str, Any]) -> dict[str, Any]:
-        detection = self.detect(context["report"])
-        return {"success": detection is not None, "host": self.name, "detection": detection}
+        plan = context.get("plan")
+        if not isinstance(plan, Mapping):
+            plan = self.plan(context)
+        skill_dir = plan.get("skill_dir")
+        mcp_config = plan.get("mcp_config")
+        checks: list[bool] = []
+        details: dict[str, Any] = {}
+        if skill_dir:
+            bundle = doctor_bundle(Path(str(skill_dir)).parent)
+            checks.append(bool(bundle["success"]))
+            details["skills"] = bundle["skills"]
+        if mcp_config:
+            try:
+                config = json.loads(Path(str(mcp_config)).read_text(encoding="utf-8"))
+                ready = isinstance(config.get("mcpServers", {}).get(SERVER_KEY), dict)
+            except (OSError, json.JSONDecodeError, AttributeError):
+                ready = False
+            checks.append(ready)
+            details["mcp_server_ready"] = ready
+        success = bool(checks) and all(checks)
+        return {
+            "success": success,
+            "status": "healthy" if success else "needs_install",
+            "host": self.name,
+            **details,
+        }
 
 
 __all__ = ["ExplicitHostAdapter"]

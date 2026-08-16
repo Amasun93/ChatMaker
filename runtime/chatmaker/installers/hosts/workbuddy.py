@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from .base import HostAdapter, first_available, selected_path
+from .. import workbuddy as workbuddy_installer
 
 
 class WorkBuddyHostAdapter(HostAdapter):
@@ -58,8 +59,23 @@ class WorkBuddyHostAdapter(HostAdapter):
         }
 
     def verify(self, context: Mapping[str, Any]) -> dict[str, Any]:
-        detection = self.detect(context["report"])
-        return {"success": detection is not None, "host": self.name, "detection": detection}
+        plan = context.get("plan")
+        if not isinstance(plan, Mapping):
+            plan = self.plan(context)
+        mcp_config = plan.get("mcp_config")
+        if not mcp_config:
+            return {
+                "success": False,
+                "status": "ready_with_limits",
+                "host": self.name,
+                "reason": "mcp_configuration_unavailable",
+            }
+        result = workbuddy_installer.doctor(Path(str(mcp_config)))
+        return {
+            **result,
+            "host": self.name,
+            "status": "healthy" if result["success"] else "needs_install",
+        }
 
 
 __all__ = ["WorkBuddyHostAdapter"]

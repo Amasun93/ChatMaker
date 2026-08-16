@@ -30,7 +30,9 @@ def first_explicit(report: Mapping[str, Any] | Any, key: str) -> dict[str, Any] 
         (
             item
             for item in entries(report, key)
-            if item.get("explicit") and absolute_target(item.get("path"))
+            if item.get("host") == "explicit"
+            and item.get("explicit")
+            and absolute_target(item.get("path"))
         ),
         None,
     )

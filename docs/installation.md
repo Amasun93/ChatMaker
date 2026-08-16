@@ -26,9 +26,8 @@ Set-Location .\core-check\ChatMaker-Core-0.1.0-rc5
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install -e .
-chatmaker-doctor
-chatmaker-install-codex install
-# 或 / or: chatmaker-install-workbuddy install
+chatmaker-install auto
+chatmaker-install doctor
 ```
 
 Core 内有运行层、三个 Skill、schema、3/12/14 条规范记录、三个紧凑索引和当前案例。它没有详细 Wiki 正文、`knowledge_sources/`、`tests/`、开发缓存或已构建的可选 `.cmpack`。`chatmaker-doctor` 通过只证明这些内置内容可读，不证明任何硬件效果。
@@ -70,13 +69,13 @@ chatmaker-pack rollback chatmaker-board-arduino-nano-classic-wiki --version 1.0.
 - `update` 只接受注册表中的更高版本；失败时旧版本继续工作。`rollback` 只切换到本机已经完整验证的旧版本。
 - 默认用户数据在 `~/.chatmaker/` 的 cache、store、state 等分区。不要手动修改官方 store；漂移内容会被隔离。
 - 实验知识放在 `~/.chatmaker/overrides/`，或用 `CHATMAKER_PACKS_PATH` 指向独立目录。返回值会显示 `provenance=local_override`，避免把个人内容当成官方事实。
-- 运行这些内容命令不会写 Codex 或 WorkBuddy 配置。主机配置只有显式 host install/uninstall 才会改动，并继续使用备份恢复。
+- 运行这些内容命令不会写 Codex 或 WorkBuddy 配置。只有 `chatmaker-install auto` 会在探测到真实宿主后改动对应的三个 Skill 和 MCP 条目，并继续使用事务备份恢复。
 
 - An already installed version remains readable offline after full local revalidation. An exact cache can authorize a new offline install only while its signed registry receipt is still unexpired; an expired receipt cannot authorize a new install. Never-downloaded or expired missing content fails clearly instead of guessing.
 - `update` accepts only a newer registry version and preserves the old active version on failure. `rollback` selects only a previously verified local version.
 - User content lives under separated cache/store/state folders in `~/.chatmaker/`. Do not edit the official store by hand; drift is quarantined.
 - Put experiments under `~/.chatmaker/overrides/`, or point `CHATMAKER_PACKS_PATH` at a separate directory. Results remain labelled `provenance=local_override`.
-- Content commands never write Codex or WorkBuddy configuration. Only explicit host install/uninstall changes host configuration, with the existing backup and restore behavior.
+- Content commands never write Codex or WorkBuddy configuration. Only `chatmaker-install auto` changes detected host configuration, with the existing transactional backup and restore behavior.
 
 ## 1. 共同前置条件 / Common prerequisites
 
@@ -156,26 +155,43 @@ chatmaker-web-embed examples/chatweb/esp32-ap-control.html examples/chatduino/es
 
 `chatmaker-web-preview` binds to `127.0.0.1` by default; stop it with Ctrl+C. Advanced directions require explicit `--advanced`. Edit the HTML source, not the generated header.
 
-## 5. 串口、WorkBuddy 和 Codex / Serial, WorkBuddy, and Codex
+## 5. 一条安装命令与能力结果 / One installer command and capability results
 
 ```powershell
-chatmaker-serial --request-json '{"action":"list"}'
-'{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05"}}' | chatmaker-workbuddy-mcp
+chatmaker-install auto --dry-run
+chatmaker-install auto
+chatmaker-install doctor
+```
+
+安装器先只读探测操作系统、Python、终端、浏览器、串口、Mind+、已存在的 Codex / WorkBuddy 线索，以及高级入口提供的显式路径。它不会要求你选择宿主；发现的宿主会一起安装三个 Skill，WorkBuddy 还会登记共享 MCP：`python -m chatmaker.integrations.mcp`。无关 MCP 条目会保留。
+
+每个命令输出一份 JSON，至少包含 `success`、`status`、`environment`、`hosts`、`changes`、`unchanged`、`next_actions` 与 `transaction_id`。先运行 `auto --dry-run` 查看计划；`auto` 执行可逆的用户目录改动；随后重启检测到的宿主应用。
+
+没有板卡、合格有线串口或 Mind+ 是受限能力状态，不是安装失败。此时仍可使用 Core、Skill 和可用的宿主集成；只有需要 Nano / Uno 编译或上传时，按 JSON 的 `next_actions` 安装并启动 Mind+。本阶段不会安装驱动、Mind+、Arduino Core、浏览器，也不会预装所有板卡知识包。
+
+对其他宿主，才使用绝对路径的高级入口，例如：
+
+```powershell
+chatmaker-install auto --skill-root D:\OtherHost\skills
+chatmaker-install auto --skill-root D:\OtherHost\skills --mcp-config D:\OtherHost\mcp.json
+```
+
+恢复与卸载由同一个事务管理。`restore` 必须使用 `auto` 输出的 `transaction_id`：
+
+```powershell
+chatmaker-install restore <transaction_id>
+chatmaker-install uninstall
+```
+
+`restore` 回到该交易开始前的完整状态；`uninstall` 只移除 ChatMaker 当前受管内容，并保留之后新增的无关 MCP 项。
+
+如需排查 WorkBuddy 所登记的共享 MCP（这不是另一个安装流程），可向它发送一次 JSON-RPC `tools/list` 烟测；该 stdio 服务不接受 `--help`：
+
+```powershell
 '{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}' | chatmaker-workbuddy-mcp
-chatmaker-install-codex install
-chatmaker-install-codex doctor
-chatmaker-install-workbuddy install
-chatmaker-install-workbuddy doctor
 ```
 
-当前源码的 WorkBuddy stdio 应报告服务版本 `1.8.0` 和 24 个工具，包括 `llmwiki_get`。安装器会备份同名 Skill 或 WorkBuddy 配置，并保留无关 MCP。知识包更新不会触碰该配置。安装后重启对应应用。恢复原状：
-
-Current source should report WorkBuddy stdio server `1.8.0` with 24 tools, including `llmwiki_get`. The installers back up replaced Skills/configuration and preserve unrelated MCP entries. Knowledge updates do not touch that configuration. Restart the host application after installation. To restore:
-
-```powershell
-chatmaker-install-codex uninstall
-chatmaker-install-workbuddy uninstall
-```
+For a direct smoke test of the shared MCP registered for WorkBuddy (not a separate installation flow), send it one JSON-RPC `tools/list` request. This stdio service does not accept `--help`.
 
 ## 6. 开发与浏览器验证 / Development and browser verification
 
@@ -191,9 +207,9 @@ npx playwright install chromium
 npm run test:browser
 ```
 
-需要查看普通 CLI 参数时，可对这些命令分别传入 `--help`：`chatmaker-doctor`、`chatmaker-catalog`、`chatmaker-route`、`chatmaker-nano`、`chatmaker-uno`、`chatmaker-esp32`、`chatmaker-nano-examples`、`chatmaker-serial`、`chatmaker-install-workbuddy`、`chatmaker-install-codex`、`chatmaker-web`、`chatmaker-web-plan`、`chatmaker-web-playground`、`chatmaker-web-preview`、`chatmaker-web-embed`。
+需要查看普通 CLI 参数时，可对这些命令分别传入 `--help`：`chatmaker-doctor`、`chatmaker-catalog`、`chatmaker-route`、`chatmaker-nano`、`chatmaker-uno`、`chatmaker-esp32`、`chatmaker-nano-examples`、`chatmaker-serial`、`chatmaker-install`、`chatmaker-web`、`chatmaker-web-plan`、`chatmaker-web-playground`、`chatmaker-web-preview`、`chatmaker-web-embed`。
 
-For ordinary CLI usage, pass `--help` to the commands listed above. `chatmaker-workbuddy-mcp` is different: it is a JSON-RPC stdio service that waits for input and must not be invoked with `--help`. Use the `initialize` / `tools/list` pipe shown in section 5 for a direct smoke test, or run `chatmaker-install-workbuddy doctor` to inspect the installed WorkBuddy integration safely.
+For ordinary CLI usage, pass `--help` to the commands listed above. `chatmaker-workbuddy-mcp` is different: it is a JSON-RPC stdio service that waits for input and must not be invoked with `--help`. Run `chatmaker-install doctor` to inspect detected integrations safely.
 
 ## 7. 证据边界 / Evidence boundary
 

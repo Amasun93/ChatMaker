@@ -54,6 +54,26 @@ class HostAdapterTests(unittest.TestCase):
         self.assertEqual(workbuddy_plan["skill_dir"], "D:/chosen/skills")
         self.assertEqual(workbuddy_plan["mcp_config"], "D:/chosen/mcp.json")
 
+    def test_host_specific_environment_paths_do_not_cross_select_another_host(self):
+        """Catches CODEX_HOME evidence being reused as the WorkBuddy destination."""
+        report = self.report(
+            skill_roots=[
+                {"host": "codex", "path": "C:/Users/teacher/Codex/skills", "available": True, "explicit": True},
+                {"host": "workbuddy", "path": "C:/Users/teacher/WorkBuddy/skills", "available": True, "explicit": True},
+            ],
+            mcp_configs=[
+                {"host": "codex", "path": "C:/Users/teacher/Codex/config.toml", "available": False, "explicit": True},
+                {"host": "workbuddy", "path": "C:/Users/teacher/WorkBuddy/mcp.json", "available": True, "explicit": True},
+            ],
+        )
+
+        codex_plan = self.CodexHostAdapter().plan({"report": report})
+        workbuddy_plan = self.WorkBuddyHostAdapter().plan({"report": report})
+
+        self.assertEqual(codex_plan["skill_dir"], "C:/Users/teacher/Codex/skills")
+        self.assertEqual(workbuddy_plan["skill_dir"], "C:/Users/teacher/WorkBuddy/skills")
+        self.assertEqual(workbuddy_plan["mcp_config"], "C:/Users/teacher/WorkBuddy/mcp.json")
+
     def test_relative_explicit_targets_are_never_returned_as_installable_paths(self):
         report = self.report(
             skill_roots=[
