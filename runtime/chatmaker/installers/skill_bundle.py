@@ -11,11 +11,12 @@ SKILL_NAMES = ("chatmaker", "chatduino", "chatweb")
 
 def _bundle_transaction(
     manifest_name: str,
+    host_home: Path,
     transaction_root: Path | None,
 ) -> InstallTransaction:
     return InstallTransaction(
         root=transaction_root,
-        installation_id=f"skill-bundle:{manifest_name}",
+        installation_id=f"skill-bundle:{manifest_name}:{host_home}",
     )
 
 
@@ -27,7 +28,7 @@ def install_bundle(
 ) -> dict[str, Any]:
     host_home = canonical_install_path(host_home)
     source_skills = canonical_install_path(source_skills)
-    result = _bundle_transaction(manifest_name, transaction_root).apply(
+    result = _bundle_transaction(manifest_name, host_home, transaction_root).apply(
         [
             {
                 "kind": "skill_bundle",
@@ -57,8 +58,12 @@ def uninstall_bundle(
     manifest_name: str,
     transaction_root: Path | None = None,
 ) -> dict[str, Any]:
-    canonical_install_path(host_home)
-    return _bundle_transaction(manifest_name, transaction_root).uninstall().to_dict()
+    host_home = canonical_install_path(host_home)
+    return _bundle_transaction(
+        manifest_name,
+        host_home,
+        transaction_root,
+    ).uninstall().to_dict()
 
 
 def doctor_bundle(host_home: Path) -> dict[str, Any]:

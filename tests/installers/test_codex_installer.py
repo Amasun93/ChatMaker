@@ -15,6 +15,57 @@ from chatmaker.installers import transaction  # noqa: E402
 
 
 class CodexInstallerTests(unittest.TestCase):
+    def test_uninstall_for_another_home_cannot_remove_the_installed_home(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            home_a = root / "codex-a"
+            home_b = root / "codex-b"
+            transaction_root = root / ".chatmaker"
+            installed = install(
+                home_a,
+                source_skills=ROOT / "skills",
+                transaction_root=transaction_root,
+            )
+
+            wrong_home = uninstall(home_b, transaction_root=transaction_root)
+
+            self.assertEqual(wrong_home["status"], "already_absent")
+            self.assertTrue((home_a / "skills" / "chatmaker" / "SKILL.md").is_file())
+            self.assertTrue(Path(installed["manifest"]).is_file())
+            removed = uninstall(home_a, transaction_root=transaction_root)
+            self.assertEqual(removed["status"], "uninstalled")
+
+    def test_two_codex_homes_have_independent_transactions_and_uninstalls(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            home_a = root / "codex-a"
+            home_b = root / "codex-b"
+            transaction_root = root / ".chatmaker"
+
+            installed_a = install(
+                home_a,
+                source_skills=ROOT / "skills",
+                transaction_root=transaction_root,
+            )
+            installed_b = install(
+                home_b,
+                source_skills=ROOT / "skills",
+                transaction_root=transaction_root,
+            )
+
+            self.assertEqual(installed_a["status"], "installed")
+            self.assertEqual(installed_b["status"], "installed")
+            self.assertNotEqual(installed_a["transaction_id"], installed_b["transaction_id"])
+            self.assertEqual(len(list((transaction_root / "state").glob("*.json"))), 2)
+
+            removed_a = uninstall(home_a, transaction_root=transaction_root)
+
+            self.assertEqual(removed_a["status"], "uninstalled")
+            self.assertFalse((home_a / "skills" / "chatmaker").exists())
+            self.assertTrue((home_b / "skills" / "chatmaker" / "SKILL.md").is_file())
+            removed_b = uninstall(home_b, transaction_root=transaction_root)
+            self.assertEqual(removed_b["status"], "uninstalled")
+
     def test_install_and_uninstall_restore_existing_skill(self):
         with tempfile.TemporaryDirectory() as directory:
             codex_home = Path(directory) / ".codex"

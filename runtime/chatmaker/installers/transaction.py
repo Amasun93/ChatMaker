@@ -203,6 +203,14 @@ def _assert_safe_tree(path: Path) -> None:
 
 def _ensure_safe_directory(path: Path) -> None:
     path = _absolute(path)
+    if os.name != "nt":
+        descriptor = _safe_fs._open_posix_directory(
+            path,
+            root=Path(path.anchor),
+            create=True,
+        )
+        os.close(descriptor)
+        return
     for directory in reversed((path, *path.parents)):
         if _lexists(directory):
             _assert_safe_ancestors(directory)
@@ -218,7 +226,150 @@ def _ensure_safe_directory(path: Path) -> None:
             raise UnsafeInstallPath(f"install parent is not a directory: {directory}")
 
 
+def _posix_directory_flags() -> int:
+    flags = os.O_RDONLY | os.O_DIRECTORY
+    if hasattr(os, "O_NOFOLLOW"):
+        flags |= os.O_NOFOLLOW
+    return flags
+
+
+def _posix_remove_entry(directory: int, name: str) -> None:
+    try:
+        value = os.stat(name, dir_fd=directory, follow_symlinks=False)
+    except FileNotFoundError:
+        return
+    if stat.S_ISREG(value.st_mode):
+        if value.st_nlink != 1:
+            raise UnsafeInstallPath(f"refusing to remove hard-linked file: {name}")
+        os.unlink(name, dir_fd=directory)
+        return
+    if not stat.S_ISDIR(value.st_mode):
+        raise UnsafeInstallPath(f"refusing to remove linked or special path: {name}")
+    child = os.open(name, _posix_directory_flags(), dir_fd=directory)
+    try:
+        opened = os.fstat(child)
+        if (value.st_dev, value.st_ino) != (opened.st_dev, opened.st_ino):
+            raise UnsafeInstallPath(f"directory identity changed before removal: {name}")
+        with os.scandir(child) as entries:
+            names = sorted(entry.name for entry in entries)
+        for entry_name in names:
+            _posix_remove_entry(child, entry_name)
+        os.fsync(child)
+    finally:
+        os.close(child)
+    os.rmdir(name, dir_fd=directory)
+
+
+def _posix_copy_entry(
+    source_directory: int,
+    source_name: str,
+    target_directory: int,
+    target_name: str,
+) -> None:
+    source_value = os.stat(
+        source_name,
+        dir_fd=source_directory,
+        follow_symlinks=False,
+    )
+    if stat.S_ISDIR(source_value.st_mode):
+        os.mkdir(target_name, 0o700, dir_fd=target_directory)
+        source_child = os.open(
+            source_name,
+            _posix_directory_flags(),
+            dir_fd=source_directory,
+        )
+        target_child = os.open(
+            target_name,
+            _posix_directory_flags(),
+            dir_fd=target_directory,
+        )
+        try:
+            opened = os.fstat(source_child)
+            if (source_value.st_dev, source_value.st_ino) != (
+                opened.st_dev,
+                opened.st_ino,
+            ):
+                raise UnsafeInstallPath(
+                    f"source directory identity changed during copy: {source_name}"
+                )
+            with os.scandir(source_child) as entries:
+                names = sorted(entry.name for entry in entries)
+            for entry_name in names:
+                _posix_copy_entry(
+                    source_child,
+                    entry_name,
+                    target_child,
+                    entry_name,
+                )
+            os.fchmod(target_child, stat.S_IMODE(source_value.st_mode))
+            os.fsync(target_child)
+        finally:
+            os.close(target_child)
+            os.close(source_child)
+        return
+    if not stat.S_ISREG(source_value.st_mode) or source_value.st_nlink != 1:
+        raise UnsafeInstallPath(f"linked or special source path is not allowed: {source_name}")
+    source_file = os.open(
+        source_name,
+        os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0),
+        dir_fd=source_directory,
+    )
+    target_file: int | None = None
+    try:
+        opened = os.fstat(source_file)
+        if (
+            not stat.S_ISREG(opened.st_mode)
+            or opened.st_nlink != 1
+            or (source_value.st_dev, source_value.st_ino)
+            != (opened.st_dev, opened.st_ino)
+        ):
+            raise UnsafeInstallPath(
+                f"source file identity changed during copy: {source_name}"
+            )
+        target_file = os.open(
+            target_name,
+            os.O_WRONLY
+            | os.O_CREAT
+            | os.O_EXCL
+            | getattr(os, "O_NOFOLLOW", 0),
+            0o600,
+            dir_fd=target_directory,
+        )
+        while True:
+            chunk = os.read(source_file, 1024 * 1024)
+            if not chunk:
+                break
+            offset = 0
+            while offset < len(chunk):
+                written = os.write(target_file, chunk[offset:])
+                if written == 0:
+                    raise OSError("short install copy write")
+                offset += written
+        os.fchmod(target_file, stat.S_IMODE(source_value.st_mode))
+        os.fsync(target_file)
+    finally:
+        if target_file is not None:
+            os.close(target_file)
+        os.close(source_file)
+
+
 def _remove_path(path: Path) -> None:
+    path = _absolute(path)
+    if os.name != "nt":
+        try:
+            directory = _safe_fs._open_posix_directory(
+                path.parent,
+                root=Path(path.anchor),
+                create=False,
+            )
+        except FileNotFoundError:
+            return
+        try:
+            _posix_remove_entry(directory, path.name)
+            os.fsync(directory)
+        finally:
+            os.close(directory)
+        return
     if not _lexists(path):
         return
     if _unsafe_link(path):
@@ -285,6 +436,13 @@ def _full_path_hash(path: Path) -> str:
 
 def _fsync_directory(path: Path) -> None:
     """Durably publish a directory mutation using the reviewed adapter."""
+    path = _absolute(path)
+    if os.name != "nt":
+        _safe_fs._sync_safe_directory(
+            path,
+            root=Path(path.anchor),
+        )
+        return
     _reviewed_fsync_directory(path)
 
 
@@ -297,7 +455,14 @@ def _read_json_object(path: Path, *, missing_ok: bool = False) -> dict[str, Any]
     if not path.is_file():
         raise UnsafeInstallPath(f"JSON target is not a regular file: {path}")
     try:
-        value = json.loads(path.read_text(encoding="utf-8"))
+        if os.name == "nt":
+            content = path.read_bytes()
+        else:
+            content = _safe_fs._read_safe_bytes(
+                path,
+                root=Path(path.anchor),
+            )
+        value = json.loads(content.decode("utf-8"))
     except json.JSONDecodeError as exc:
         raise ValueError(f"invalid JSON object: {path}") from exc
     if not isinstance(value, dict):
@@ -319,6 +484,14 @@ def _mcp_hash(path: Path, key: str) -> str:
 
 
 def _write_bytes_atomic(path: Path, content: bytes) -> None:
+    path = _absolute(path)
+    if os.name != "nt":
+        _safe_fs._atomic_write(
+            path,
+            content,
+            root=Path(path.anchor),
+        )
+        return
     _ensure_safe_directory(path.parent)
     temporary_name: str | None = None
     try:
@@ -347,12 +520,28 @@ def _write_json_atomic(path: Path, value: Mapping[str, Any]) -> None:
     _write_bytes_atomic(path, _canonical_json(dict(value)))
 
 
-def _atomic_backup(source: Path, destination: Path) -> None:
+def _atomic_backup(
+    source: Path,
+    destination: Path,
+    source_guards: _TargetDirectoryGuards | None = None,
+) -> None:
     _assert_safe_ancestors(source)
     _ensure_safe_directory(destination.parent)
     temporary = destination.with_name(f".{destination.name}-{uuid.uuid4().hex}.tmp")
     if _lexists(temporary):
         raise UnsafeInstallPath(f"backup staging collision: {temporary}")
+    if os.name != "nt":
+        with _TargetDirectoryGuards([destination.parent]) as destination_guards:
+            try:
+                destination_guards.copy_path(
+                    source,
+                    temporary,
+                    source_guards=source_guards,
+                )
+                destination_guards.replace(temporary, destination)
+            finally:
+                destination_guards.remove(temporary)
+        return
     try:
         if source.is_dir():
             _assert_safe_tree(source)
@@ -419,17 +608,132 @@ class _TargetDirectoryGuards(AbstractContextManager):
 
     def _handle(self, parent: Path) -> int:
         parent = _absolute(parent)
-        handle = self.handles[os.path.normcase(str(parent))]
-        if os.name != "nt":
-            named = parent.lstat()
+        return self.handles[os.path.normcase(str(parent))]
+
+    def verify_all(self) -> None:
+        if os.name == "nt":
+            return
+        for parent in self.parents:
+            handle = self._handle(parent)
+            try:
+                named = parent.lstat()
+            except OSError as exc:
+                raise UnsafeInstallPath(
+                    "target parent identity changed during transaction"
+                ) from exc
             opened = os.fstat(handle)
             if (
                 parent.is_symlink()
                 or is_reparse(parent)
                 or (named.st_dev, named.st_ino) != (opened.st_dev, opened.st_ino)
             ):
-                raise UnsafeInstallPath("target parent identity changed during transaction")
-        return handle
+                raise UnsafeInstallPath(
+                    "target parent identity changed during transaction"
+                )
+
+    def exists(self, path: Path) -> bool:
+        path = _absolute(path)
+        handle = self._handle(path.parent)
+        if os.name == "nt":
+            return _lexists(path)
+        try:
+            os.stat(path.name, dir_fd=handle, follow_symlinks=False)
+        except FileNotFoundError:
+            return False
+        return True
+
+    def fsync(self, parent: Path) -> None:
+        parent = _absolute(parent)
+        handle = self._handle(parent)
+        if os.name == "nt":
+            _reviewed_fsync_directory(parent)
+        else:
+            os.fsync(handle)
+
+    def copy_path(
+        self,
+        source: Path,
+        target: Path,
+        *,
+        source_guards: _TargetDirectoryGuards | None = None,
+    ) -> None:
+        source = _absolute(source)
+        target = _absolute(target)
+        target_handle = self._handle(target.parent)
+        if self.exists(target):
+            raise UnsafeInstallPath(f"copy target already exists: {target}")
+        if os.name == "nt":
+            if source.is_dir():
+                _assert_safe_tree(source)
+                shutil.copytree(source, target)
+            elif source.is_file():
+                shutil.copy2(source, target)
+            else:
+                raise UnsafeInstallPath(f"cannot copy special path: {source}")
+            self.fsync(target.parent)
+            return
+        close_source = source_guards is None
+        if source_guards is None:
+            source_handle = _safe_fs._open_posix_directory(
+                source.parent,
+                root=Path(source.anchor),
+                create=False,
+            )
+        else:
+            source_handle = source_guards._handle(source.parent)
+        try:
+            try:
+                _posix_copy_entry(
+                    source_handle,
+                    source.name,
+                    target_handle,
+                    target.name,
+                )
+            except Exception:
+                _posix_remove_entry(target_handle, target.name)
+                raise
+            os.fsync(target_handle)
+        finally:
+            if close_source:
+                os.close(source_handle)
+
+    def write_bytes(self, path: Path, content: bytes) -> None:
+        path = _absolute(path)
+        handle = self._handle(path.parent)
+        if self.exists(path):
+            raise UnsafeInstallPath(f"write target already exists: {path}")
+        if os.name == "nt":
+            _write_bytes_atomic(path, content)
+            return
+        descriptor = os.open(
+            path.name,
+            os.O_WRONLY
+            | os.O_CREAT
+            | os.O_EXCL
+            | getattr(os, "O_NOFOLLOW", 0),
+            0o600,
+            dir_fd=handle,
+        )
+        try:
+            offset = 0
+            while offset < len(content):
+                written = os.write(descriptor, content[offset:])
+                if written == 0:
+                    raise OSError("short install stage write")
+                offset += written
+            os.fsync(descriptor)
+        finally:
+            os.close(descriptor)
+        os.fsync(handle)
+
+    def remove(self, path: Path) -> None:
+        path = _absolute(path)
+        handle = self._handle(path.parent)
+        if os.name == "nt":
+            _remove_path(path)
+            return
+        _posix_remove_entry(handle, path.name)
+        os.fsync(handle)
 
     def replace(self, source: Path, target: Path) -> None:
         if _absolute(source.parent) != _absolute(target.parent):
@@ -444,7 +748,7 @@ class _TargetDirectoryGuards(AbstractContextManager):
                 src_dir_fd=handle,
                 dst_dir_fd=handle,
             )
-        _fsync_directory(target.parent)
+        self.fsync(target.parent)
 
 
 def _activate_staging(
@@ -460,40 +764,30 @@ def _activate_staging(
         else:
             guards.replace(staging, target)
     except PermissionError:
+        if os.name != "nt":
+            raise
         if _lexists(target):
             raise
-        if guards is not None:
-            guards._handle(target.parent)
+        if guards is not None and guards.exists(target):
+            raise
         try:
-            shutil.copytree(staging, target)
+            if guards is None:
+                shutil.copytree(staging, target)
+            else:
+                guards.copy_path(staging, target, source_guards=guards)
         except Exception:
-            if _lexists(target):
-                _remove_path(target)
+            if guards is None:
+                if _lexists(target):
+                    _remove_path(target)
+            elif guards.exists(target):
+                guards.remove(target)
             raise
         else:
-            _remove_path(staging)
-            _fsync_directory(target.parent)
-
-
-def _restore_full(target: Path, *, before_exists: bool, backup: str | None) -> None:
-    _assert_safe_ancestors(target, include_final=False)
-    if _lexists(target):
-        _assert_safe_ancestors(target)
-        _remove_path(target)
-    if not before_exists:
-        return
-    if not backup:
-        raise FileNotFoundError(f"missing before-image for {target}")
-    source = _absolute(backup)
-    _assert_safe_ancestors(source)
-    if source.is_dir():
-        _assert_safe_tree(source)
-        shutil.copytree(source, target)
-    elif source.is_file():
-        _ensure_safe_directory(target.parent)
-        shutil.copy2(source, target)
-    else:
-        raise FileNotFoundError(f"before-image is missing: {source}")
+            if guards is None:
+                _remove_path(staging)
+                _fsync_directory(target.parent)
+            else:
+                guards.remove(staging)
 
 
 def _aggregate_hash(records: Sequence[Mapping[str, Any]]) -> str:
@@ -537,6 +831,18 @@ def _journal_binding(journal: Mapping[str, Any]) -> str:
         "next_state",
     )
     return _json_hash({key: journal.get(key) for key in keys})
+
+
+def _active_state_binding(state: Mapping[str, Any]) -> str:
+    keys = (
+        "schema_version",
+        "installation_id",
+        "active_transaction_id",
+        "active_record_set_hash",
+        "managed_hash",
+        "managed",
+    )
+    return _json_hash({key: state.get(key) for key in keys})
 
 
 class InstallTransaction:
@@ -609,8 +915,7 @@ class InstallTransaction:
     def _restore_state_value(self, value: Mapping[str, Any] | None) -> None:
         if value is None:
             if _lexists(self.state_path):
-                self.state_path.unlink()
-                _fsync_directory(self.state_path.parent)
+                _remove_path(self.state_path)
             return
         restored = json.loads(_canonical_json(dict(value)).decode("utf-8"))
         restored["phase"] = "active"
@@ -652,8 +957,7 @@ class InstallTransaction:
             target["restored_at_ns"] = time.time_ns()
             _write_json_atomic(target_path, target)
         if journal.get("next_state") is None and _lexists(self.state_path):
-            self.state_path.unlink()
-            _fsync_directory(self.state_path.parent)
+            _remove_path(self.state_path)
 
     def _validate_record_shape(
         self,
@@ -740,9 +1044,22 @@ class InstallTransaction:
                 or active_state.get("active_record_set_hash") != calculated
             ):
                 raise InstallConflict("active state does not bind this journal")
+            active_records = active_state.get("managed")
+            if not isinstance(active_records, list):
+                raise InstallConflict("active state managed set is malformed")
+            if _aggregate_hash(active_records) != active_state.get("managed_hash"):
+                raise InstallConflict("active state managed hash mismatch")
+            next_state = journal.get("next_state")
+            if (
+                journal.get("kind") != "apply"
+                or not isinstance(next_state, Mapping)
+                or _active_state_binding(active_state)
+                != _active_state_binding(next_state)
+            ):
+                raise InstallConflict("active state managed set does not match journal")
             managed = {
                 str(record["identity"]): record
-                for record in active_state.get("managed", [])
+                for record in active_records
             }
             for record in records:
                 installed = managed.get(str(record["identity"]))
@@ -786,6 +1103,8 @@ class InstallTransaction:
         operation_id: str,
         *,
         inject_point: str | None = None,
+        target_guards: _TargetDirectoryGuards | None = None,
+        verify_targets: bool = True,
     ) -> None:
         stages: dict[str, Path] = {}
         displaced: dict[str, Path] = {}
@@ -793,8 +1112,13 @@ class InstallTransaction:
         parents = [_absolute(record["target"]).parent for record in records]
         for parent in parents:
             _ensure_safe_directory(parent)
-        target_guards = _TargetDirectoryGuards(parents)
-        target_guards.__enter__()
+        owns_guards = target_guards is None
+        if target_guards is None:
+            target_guards = _TargetDirectoryGuards(parents)
+            target_guards.__enter__()
+        else:
+            for parent in parents:
+                target_guards._handle(parent)
         try:
             for record in records:
                 self._validate_record_shape(
@@ -807,13 +1131,10 @@ class InstallTransaction:
                     continue
                 target = _absolute(record["target"])
                 stage = self._restore_stage_path(target, operation_id, identity)
-                if _lexists(stage):
+                if target_guards.exists(stage):
                     raise UnsafeInstallPath(f"restore staging collision: {stage}")
                 backup = _absolute(record["backup"])
-                if backup.is_dir():
-                    shutil.copytree(backup, stage)
-                else:
-                    shutil.copy2(backup, stage)
+                target_guards.copy_path(backup, stage)
                 if _full_path_hash(stage) != record["before_hash"]:
                     raise InstallConflict("staged before-image hash mismatch")
                 stages[identity] = stage
@@ -822,9 +1143,9 @@ class InstallTransaction:
                 identity = str(record["identity"])
                 target = _absolute(record["target"])
                 moved = self._restore_displaced_path(target, operation_id, identity)
-                if _lexists(moved):
+                if target_guards.exists(moved):
                     raise UnsafeInstallPath(f"restore displacement collision: {moved}")
-                if _lexists(target):
+                if target_guards.exists(target):
                     target_guards.replace(target, moved)
                     displaced[identity] = moved
                 if record["before_exists"]:
@@ -840,57 +1161,78 @@ class InstallTransaction:
                         {"identity": identity, "target": str(target)},
                     )
 
-            for record in records:
-                target = _absolute(record["target"])
-                if _full_path_hash(target) != record["before_hash"]:
-                    raise InstallConflict("restored target hash mismatch")
+            if verify_targets:
+                for record in records:
+                    target = _absolute(record["target"])
+                    if _full_path_hash(target) != record["before_hash"]:
+                        raise InstallConflict("restored target hash mismatch")
             for identity, moved in tuple(displaced.items()):
-                _remove_path(moved)
+                target_guards.remove(moved)
                 displaced.pop(identity, None)
         except Exception:
             for record in reversed(applied):
                 identity = str(record["identity"])
                 target = _absolute(record["target"])
                 moved = displaced.get(identity)
-                if _lexists(target):
-                    _remove_path(target)
-                if moved is not None and _lexists(moved):
+                if target_guards.exists(target):
+                    target_guards.remove(target)
+                if moved is not None and target_guards.exists(moved):
                     target_guards.replace(moved, target)
                     displaced.pop(identity, None)
             raise
         finally:
             for stage in stages.values():
-                if _lexists(stage):
-                    _remove_path(stage)
-            target_guards.__exit__(None, None, None)
+                if target_guards.exists(stage):
+                    target_guards.remove(stage)
+            if owns_guards:
+                target_guards.__exit__(None, None, None)
 
     def _cleanup_operation_displaced(
         self,
         records: Sequence[Mapping[str, Any]],
         operation_id: str,
+        target_guards: _TargetDirectoryGuards | None = None,
     ) -> None:
-        for record in records:
-            target = _absolute(record["target"])
-            path = self._restore_displaced_path(
-                target, operation_id, str(record["identity"])
-            )
-            if _lexists(path):
-                _remove_path(path)
+        parents = [_absolute(record["target"]).parent for record in records]
+        owns_guards = target_guards is None
+        if target_guards is None:
+            target_guards = _TargetDirectoryGuards(parents)
+            target_guards.__enter__()
+        try:
+            for record in records:
+                target = _absolute(record["target"])
+                path = self._restore_displaced_path(
+                    target, operation_id, str(record["identity"])
+                )
+                if target_guards.exists(path):
+                    target_guards.remove(path)
+        finally:
+            if owns_guards:
+                target_guards.__exit__(None, None, None)
 
     def _cleanup_apply_displaced(
         self,
         records: Sequence[Mapping[str, Any]],
         operation_id: str,
+        target_guards: _TargetDirectoryGuards | None = None,
     ) -> None:
-        for record in records:
-            if record["kind"] != "skill":
-                continue
-            target = _absolute(record["target"])
-            path = target.parent / (
-                f".chatmaker-{operation_id}-{record['name']}.displaced"
-            )
-            if _lexists(path):
-                _remove_path(path)
+        skill_records = [record for record in records if record["kind"] == "skill"]
+        parents = [_absolute(record["target"]).parent for record in skill_records]
+        owns_guards = target_guards is None
+        if target_guards is None:
+            target_guards = _TargetDirectoryGuards(parents)
+            target_guards.__enter__()
+        try:
+            for record in skill_records:
+                target = _absolute(record["target"])
+                path = target.parent / (
+                    f".chatmaker-{operation_id}-{record['name']}.displaced"
+                )
+                if target_guards.exists(path):
+                    target_guards.remove(path)
+        finally:
+            if owns_guards:
+                target_guards.__exit__(None, None, None)
 
     def _roll_forward_journal(self, path: Path, journal: dict[str, Any]) -> None:
         kind = str(journal["kind"])
@@ -1257,31 +1599,35 @@ class InstallTransaction:
                 stage = item.target.parent / (
                     f".chatmaker-{transaction_id}-{index:03d}-{_path_token(item.identity)}.staging"
                 )
-                if _lexists(stage):
+                if target_guards.exists(stage):
                     raise UnsafeInstallPath(f"install staging path already exists: {stage}")
                 if item.kind == "skill":
                     assert item.source is not None
                     _assert_safe_tree(item.source)
-                    shutil.copytree(item.source, stage)
+                    target_guards.copy_path(item.source, stage)
                 else:
                     current = _read_json_object(item.target, missing_ok=True)
                     servers = current.setdefault("mcpServers", {})
                     if not isinstance(servers, dict):
                         raise ValueError("mcpServers must be an object")
                     servers[str(item.server_key)] = dict(item.server or {})
-                    _write_bytes_atomic(stage, _canonical_json(current))
+                    target_guards.write_bytes(stage, _canonical_json(current))
                 stages[item.identity] = stage
 
             _ensure_safe_directory(backup_root)
             for index, item in enumerate(changed):
-                before_exists = _lexists(item.target)
+                before_exists = target_guards.exists(item.target)
                 backup: str | None = None
                 if before_exists:
                     _assert_safe_ancestors(item.target)
                     backup_path = backup_root / (
                         f"{index:03d}-{item.kind}-{_path_token(item.identity)}"
                     )
-                    _atomic_backup(item.target, backup_path)
+                    _atomic_backup(
+                        item.target,
+                        backup_path,
+                        source_guards=target_guards,
+                    )
                     backup = str(backup_path)
                 record: dict[str, Any] = {
                     "kind": item.kind,
@@ -1400,17 +1746,17 @@ class InstallTransaction:
                     displaced_path = target.parent / (
                         f".chatmaker-{transaction_id}-{record['name']}.displaced"
                     )
-                    if _lexists(displaced_path):
+                    if target_guards.exists(displaced_path):
                         raise UnsafeInstallPath(
                             f"install displacement path already exists: {displaced_path}"
                         )
-                    if _lexists(target):
+                    if target_guards.exists(target):
                         target_guards.replace(target, displaced_path)
                         displaced[identity] = displaced_path
                     try:
                         _activate_staging(stages[identity], target, target_guards)
                     except Exception:
-                        if _lexists(displaced_path) and not _lexists(target):
+                        if target_guards.exists(displaced_path) and not target_guards.exists(target):
                             target_guards.replace(displaced_path, target)
                             displaced.pop(identity, None)
                         raise
@@ -1430,8 +1776,13 @@ class InstallTransaction:
                     raise RuntimeError(f"installation verification failed: {item.identity}")
 
             for identity, path in tuple(displaced.items()):
-                _remove_path(path)
+                self._inject(
+                    "displaced_cleanup",
+                    {"identity": identity, "path": str(path)},
+                )
+                target_guards.remove(path)
                 displaced.pop(identity, None)
+            target_guards.verify_all()
 
             journal["status"] = "committed"
             journal["committed_at_ns"] = time.time_ns()
@@ -1462,8 +1813,17 @@ class InstallTransaction:
             )
         except Exception:
             if records:
-                self._restore_records_atomically(records, uuid.uuid4().hex)
-                self._cleanup_apply_displaced(records, transaction_id)
+                self._restore_records_atomically(
+                    records,
+                    uuid.uuid4().hex,
+                    target_guards=target_guards,
+                    verify_targets=False,
+                )
+                self._cleanup_apply_displaced(
+                    records,
+                    transaction_id,
+                    target_guards=target_guards,
+                )
             self._restore_state_value(previous_state)
             if journal_written and journal_path.is_file():
                 try:
@@ -1476,8 +1836,8 @@ class InstallTransaction:
             raise
         finally:
             for path in stages.values():
-                if _lexists(path):
-                    _remove_path(path)
+                if target_guards is not None and target_guards.exists(path):
+                    target_guards.remove(path)
             if target_guards is not None:
                 target_guards.__exit__(None, None, None)
 
@@ -1485,19 +1845,28 @@ class InstallTransaction:
         self,
         managed: Sequence[Mapping[str, Any]],
         transaction_id: str,
+        target_guards: _TargetDirectoryGuards | None = None,
     ) -> list[dict[str, Any]]:
         backup_root = self.backups_root / transaction_id
         _ensure_safe_directory(backup_root)
         records: list[dict[str, Any]] = []
         for index, item in enumerate(managed):
             target = _absolute(item["target"])
-            exists = _lexists(target)
+            exists = (
+                target_guards.exists(target)
+                if target_guards is not None
+                else _lexists(target)
+            )
             backup: str | None = None
             if exists:
                 backup_path = backup_root / (
                     f"{index:03d}-{item['kind']}-{_path_token(str(item['identity']))}"
                 )
-                _atomic_backup(target, backup_path)
+                _atomic_backup(
+                    target,
+                    backup_path,
+                    source_guards=target_guards,
+                )
                 backup = str(backup_path)
             records.append(
                 {
@@ -1525,6 +1894,7 @@ class InstallTransaction:
         next_state: Mapping[str, Any] | None,
         target_transaction_id: str | None = None,
         inject_point: str,
+        target_guards: _TargetDirectoryGuards | None = None,
     ) -> tuple[str, dict[str, Any]]:
         transaction_id = str(current_records[0]["backup_transaction_id"]) if current_records else uuid.uuid4().hex
         journal_path = self._journal_path(transaction_id)
@@ -1551,7 +1921,10 @@ class InstallTransaction:
                 after_records,
                 transaction_id,
                 inject_point=inject_point,
+                target_guards=target_guards,
             )
+            if target_guards is not None:
+                target_guards.verify_all()
             journal["status"] = "committed"
             journal["committed_at_ns"] = time.time_ns()
             _write_json_atomic(journal_path, journal)
@@ -1566,8 +1939,17 @@ class InstallTransaction:
             )
             self._finalize_journal(journal_path, journal)
         except Exception:
-            self._restore_records_atomically(current_records, uuid.uuid4().hex)
-            self._cleanup_operation_displaced(after_records, transaction_id)
+            self._restore_records_atomically(
+                current_records,
+                uuid.uuid4().hex,
+                target_guards=target_guards,
+                verify_targets=False,
+            )
+            self._cleanup_operation_displaced(
+                after_records,
+                transaction_id,
+                target_guards=target_guards,
+            )
             journal["status"] = "rolled_back"
             journal["rolled_back_at_ns"] = time.time_ns()
             _write_json_atomic(journal_path, journal)
@@ -1612,26 +1994,36 @@ class InstallTransaction:
                     conflicts=tuple(conflicts),
                 )
             operation_id = uuid.uuid4().hex
-            current_records = self._snapshot_current_records(
-                active["managed"], operation_id
+            target_guards = _TargetDirectoryGuards(
+                [_absolute(record["target"]).parent for record in active["managed"]]
             )
-            after_records = []
-            for record in journal["records"]:
-                desired = dict(record)
-                desired["backup_transaction_id"] = transaction_id
-                after_records.append(desired)
-            previous = journal.get("previous_state")
-            if previous is not None and not isinstance(previous, Mapping):
-                raise InstallConflict("transaction previous state is malformed")
-            self._run_restore_operation(
-                kind="restore",
-                current_state=active,
-                current_records=current_records,
-                after_records=after_records,
-                next_state=previous,
-                target_transaction_id=transaction_id,
-                inject_point="restore_after_target",
-            )
+            target_guards.__enter__()
+            try:
+                current_records = self._snapshot_current_records(
+                    active["managed"],
+                    operation_id,
+                    target_guards=target_guards,
+                )
+                after_records = []
+                for record in journal["records"]:
+                    desired = dict(record)
+                    desired["backup_transaction_id"] = transaction_id
+                    after_records.append(desired)
+                previous = journal.get("previous_state")
+                if previous is not None and not isinstance(previous, Mapping):
+                    raise InstallConflict("transaction previous state is malformed")
+                self._run_restore_operation(
+                    kind="restore",
+                    current_state=active,
+                    current_records=current_records,
+                    after_records=after_records,
+                    next_state=previous,
+                    target_transaction_id=transaction_id,
+                    inject_point="restore_after_target",
+                    target_guards=target_guards,
+                )
+            finally:
+                target_guards.__exit__(None, None, None)
             return TransactionResult(
                 True,
                 "restored",
@@ -1725,18 +2117,28 @@ class InstallTransaction:
                     conflicts=tuple(conflicts),
                 )
             transaction_id = uuid.uuid4().hex
-            current_records = self._snapshot_current_records(
-                active["managed"], transaction_id
+            target_guards = _TargetDirectoryGuards(
+                [_absolute(record["target"]).parent for record in active["managed"]]
             )
-            after_records = self._uninstall_after_records(active, transaction_id)
-            self._run_restore_operation(
-                kind="uninstall",
-                current_state=active,
-                current_records=current_records,
-                after_records=after_records,
-                next_state=None,
-                inject_point="uninstall_after_target",
-            )
+            target_guards.__enter__()
+            try:
+                current_records = self._snapshot_current_records(
+                    active["managed"],
+                    transaction_id,
+                    target_guards=target_guards,
+                )
+                after_records = self._uninstall_after_records(active, transaction_id)
+                self._run_restore_operation(
+                    kind="uninstall",
+                    current_state=active,
+                    current_records=current_records,
+                    after_records=after_records,
+                    next_state=None,
+                    inject_point="uninstall_after_target",
+                    target_guards=target_guards,
+                )
+            finally:
+                target_guards.__exit__(None, None, None)
             restored = [
                 str(item["name"])
                 for item in active["managed"]

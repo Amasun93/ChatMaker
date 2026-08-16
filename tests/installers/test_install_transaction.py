@@ -302,6 +302,41 @@ class InstallTransactionTests(unittest.TestCase):
 
         self.assertTrue((self.skills_root / "chatmaker" / "SKILL.md").is_file())
 
+    def test_active_state_rejects_an_extra_managed_record_before_uninstall_mutation(self):
+        installed = self._transaction().apply(self._changes())
+        outside = transaction_module.canonical_install_path(
+            self.root / "outside-extra-skill"
+        )
+        outside.mkdir()
+        marker = outside / "SKILL.md"
+        marker.write_text("user owned", encoding="utf-8")
+        state_path = next((self.management_root / "state").glob("*.json"))
+        state = json.loads(state_path.read_text(encoding="utf-8"))
+        state["managed"].append(
+            {
+                "kind": "skill",
+                "identity": f"skill:{outside}",
+                "target": str(outside),
+                "name": outside.name,
+                "installed_hash": _path_hash(outside),
+                "baseline": {
+                    "before_exists": False,
+                    "backup": None,
+                    "before_hash": transaction_module._MISSING_HASH,
+                    "transaction_id": installed.transaction_id,
+                },
+            }
+        )
+        state["managed"] = sorted(state["managed"], key=lambda item: item["identity"])
+        state["managed_hash"] = transaction_module._aggregate_hash(state["managed"])
+        state_path.write_text(json.dumps(state), encoding="utf-8")
+
+        with self.assertRaises(InstallConflict):
+            self._transaction().uninstall()
+
+        self.assertEqual(marker.read_text(encoding="utf-8"), "user owned")
+        self.assertTrue((self.skills_root / "chatmaker" / "SKILL.md").is_file())
+
     def test_partial_windows_copy_fallback_restores_displaced_original(self):
         self._seed_existing_state()
         real_replace = transaction_module.os.replace
@@ -565,6 +600,90 @@ class InstallTransactionTests(unittest.TestCase):
                 os.rmdir(self.skills_root)
             if displaced.exists() and not self.skills_root.exists():
                 os.replace(displaced, self.skills_root)
+
+    @unittest.skipUnless(
+        os.name == "posix" and hasattr(os, "O_NOFOLLOW"),
+        "POSIX no-follow directory semantics only",
+    )
+    def test_posix_parent_swap_during_staging_never_writes_outside_target(self):
+        self._seed_existing_state()
+        outside = self.root / "outside-posix-staging"
+        outside.mkdir()
+        displaced = self.root / "displaced-posix-staging"
+        swapped = False
+        observed_outside_entries: list[str] = []
+
+        def swap_then_observe(point, _context):
+            nonlocal swapped
+            if point != "staging":
+                return
+            if not swapped:
+                os.rename(self.skills_root, displaced)
+                os.symlink(outside, self.skills_root, target_is_directory=True)
+                swapped = True
+                return
+            observed_outside_entries.extend(path.name for path in outside.iterdir())
+            raise RuntimeError("stop after observing the staging destination")
+
+        transaction = InstallTransaction(
+            root=self.management_root,
+            installation_id="test-install",
+            failure_injector=swap_then_observe,
+        )
+        try:
+            with self.assertRaises((UnsafeInstallPath, InstallConflict, RuntimeError, OSError)):
+                transaction.apply(self._changes())
+            self.assertTrue(swapped, "the POSIX parent swap did not run")
+            self.assertEqual(observed_outside_entries, [])
+        finally:
+            if self.skills_root.is_symlink():
+                self.skills_root.unlink()
+            if displaced.exists() and not self.skills_root.exists():
+                os.rename(displaced, self.skills_root)
+
+    @unittest.skipUnless(
+        os.name == "posix" and hasattr(os, "O_NOFOLLOW"),
+        "POSIX no-follow directory semantics only",
+    )
+    def test_posix_parent_swap_during_cleanup_never_removes_outside_target(self):
+        self._seed_existing_state()
+        outside = self.root / "outside-posix-cleanup"
+        outside.mkdir()
+        displaced = self.root / "displaced-posix-cleanup"
+        marker: Path | None = None
+        swapped = False
+
+        def swap_before_cleanup(point, context):
+            nonlocal marker, swapped
+            if point != "displaced_cleanup" or swapped:
+                return
+            outside_displaced = outside / Path(str(context["path"])).name
+            outside_displaced.mkdir()
+            marker = outside_displaced / "keep.txt"
+            marker.write_text("outside user data", encoding="utf-8")
+            os.rename(self.skills_root, displaced)
+            os.symlink(outside, self.skills_root, target_is_directory=True)
+            swapped = True
+
+        transaction = InstallTransaction(
+            root=self.management_root,
+            installation_id="test-install",
+            failure_injector=swap_before_cleanup,
+        )
+        try:
+            with self.assertRaises(UnsafeInstallPath):
+                transaction.apply(self._changes())
+            self.assertTrue(swapped, "the POSIX cleanup swap did not run")
+            self.assertIsNotNone(marker)
+            assert marker is not None
+            self.assertEqual(marker.read_text(encoding="utf-8"), "outside user data")
+            self.assertEqual(list((self.management_root / "state").glob("*.json")), [])
+        finally:
+            if self.skills_root.is_symlink():
+                self.skills_root.unlink()
+            if displaced.exists() and not self.skills_root.exists():
+                os.rename(displaced, self.skills_root)
+        self._assert_original_state()
 
     def test_atomic_replacements_sync_their_parent_directories(self):
         self._seed_existing_state()
