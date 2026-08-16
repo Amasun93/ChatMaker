@@ -112,4 +112,3 @@ https://raw.githubusercontent.com/Amasun93/ChatMaker/main/distribution/registry/
 ## 兼容与发布
 
 现有 3/12/14 规范记录数、稳定 ID、catalog search/get 返回结构和三个 Skill 安装语义保持不变。旧 rc1-rc5 文档是历史证据，不倒写。本任务合并并推送 main，但不自动创建公开 Release；核心与知识包构建、干净安装和公共 GitHub 下载均要留下验证记录。
-
