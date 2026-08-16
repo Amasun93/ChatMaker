@@ -1,0 +1,6 @@
+# Canonical repository text bytes. Signed registries and deterministic pack
+# inputs are read as bytes, so every text checkout must retain LF line endings.
+* text=auto eol=lf
+
+# Published pack archives are byte-exact binary artifacts.
+*.cmpack -text
