@@ -165,3 +165,36 @@
 - 提交主题：`fix: make Windows knowledge migration handle-relative`
 - 唯一 skip 仍是 PackManager 原有普通 symlink 用例，原因是当前 Windows 账户没有创建符号链接权限；本轮三个真实 junction swap 用例均实际执行并通过。
 - 备份目录继续按既定恢复证据策略保留，不做自动删除。
+
+## Fix round 3：缺失 marker backup 不阻塞 clean state（2026-08-16）
+
+本轮只修复复审提出的 1 项 Important：Windows 已完成迁移且当前 state 不含旧 ID 时，如果有效 marker 指向的 UUID backup 后来被删除，PackManager 不应永久失败。
+
+### RED 证据
+
+- 命令：`python -m unittest tests.installers.test_knowledge_state_migration.KnowledgeStateMigrationTests.test_pack_manager_accepts_clean_state_when_marker_backup_was_deleted -v`
+- 初始输出：`Ran 1 test in 0.200s`；`FAILED (errors=1)`。
+- 实际失败：测试先成功迁移、删除 marker 对应 backup，再新建 `PackManager` 调用 `generation_token()`；Windows 句柄遍历从 `_guard_windows_directory_chain(create=False)` 抛出 `FileNotFoundError`，最终被翻译为 `PackManagerError: pack_activation_failed: knowledge_state_migration_filesystem_operation_failed`。
+
+### 最小修复
+
+- marker backup 验证阶段同时捕获 `FileNotFoundError` 与 `KnowledgeStateMigrationError`，统一视为 backup 证据无效。
+- 当前 state 已无旧 ID 时返回 clean/no-change 结果；不信任 marker、不重建 backup、不制造恢复证据。
+- 其余 Windows 句柄相对 I/O、junction 防护、marker 结构校验和有旧 ID 时必须重新迁移的行为不变。
+
+### GREEN 与回归
+
+- 聚焦用例：同一命令，`Ran 1 test in 0.184s`，`OK`。
+- 迁移套件：`python -m unittest tests.installers.test_knowledge_state_migration -v`
+  - `Ran 22 tests in 3.802s`
+  - `OK`
+- PackManager 回归：`python -m unittest tests.installers.test_pack_manager -v`
+  - `Ran 50 tests in 110.556s`
+  - `OK (skipped=1)`
+- 语法与差异检查：`python -m py_compile runtime/chatmaker/installers/knowledge_state_migration.py tests/installers/test_knowledge_state_migration.py` 与 `git diff --check` 均退出 0。
+
+### Fix round 3 提交与关注点
+
+- 提交主题：`fix: accept clean state without migration backup`
+- 唯一 skip 仍是 PackManager 原有普通 symlink 权限测试；本轮 Windows PackManager 行为测试实际执行并通过。
+- 已删除的 backup 不会重建；marker 保留但不再被信任，clean state 继续可用。

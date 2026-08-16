@@ -1043,7 +1043,7 @@ def migrate_legacy_knowledge_state(
                             root=paths.root,
                             windows_directory_handle=existing_backup_handle,
                         )
-                    except KnowledgeStateMigrationError:
+                    except (FileNotFoundError, KnowledgeStateMigrationError):
                         existing_backup_valid = False
                 if (
                     not legacy_ids

@@ -8,6 +8,7 @@ from dataclasses import replace
 import json
 import os
 from pathlib import Path
+import shutil
 import subprocess
 import tempfile
 import unittest
@@ -204,6 +205,30 @@ class KnowledgeStateMigrationTests(unittest.TestCase):
         self.assertTrue(result.backup_dir.is_dir())
         active = json.loads(self.paths.active.read_text(encoding="utf-8"))
         self.assertNotIn(LEGACY_NANO, active["packs"])
+
+    @unittest.skipUnless(os.name == "nt", "Windows handle traversal only")
+    def test_pack_manager_accepts_clean_state_when_marker_backup_was_deleted(self):
+        self.paths.active.write_bytes(
+            _active_bytes(
+                packs={LEGACY_NANO: {"version": "1.0.0", "archive_sha256": SHA_A}}
+            )
+        )
+        first = migrate_legacy_knowledge_state(self.paths)
+        shutil.rmtree(first.backup_dir)
+        active_before = self.paths.active.read_bytes()
+        manager = PackManager(
+            user_root=self.paths.root,
+            trust_store={
+                "registry_url": "https://registry.example.invalid/registry.json",
+                "signature_url": "https://registry.example.invalid/registry.sig.json",
+                "keys": {},
+            },
+        )
+
+        token = manager.generation_token()
+
+        self.assertTrue(token.startswith("8:"), token)
+        self.assertEqual(self.paths.active.read_bytes(), active_before)
 
     def test_marker_paths_reject_windows_separators_drives_and_unc(self):
         for value in (
