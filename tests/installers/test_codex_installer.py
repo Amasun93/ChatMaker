@@ -18,11 +18,16 @@ class CodexInstallerTests(unittest.TestCase):
     def test_install_and_uninstall_restore_existing_skill(self):
         with tempfile.TemporaryDirectory() as directory:
             codex_home = Path(directory) / ".codex"
+            transaction_root = Path(directory) / ".chatmaker"
             old_chatduino = codex_home / "skills" / "chatduino"
             old_chatduino.mkdir(parents=True)
             (old_chatduino / "old-marker.txt").write_text("keep me", encoding="utf-8")
 
-            installed = install(codex_home, source_skills=ROOT / "skills")
+            installed = install(
+                codex_home,
+                source_skills=ROOT / "skills",
+                transaction_root=transaction_root,
+            )
             health = doctor(codex_home)
 
             self.assertTrue(installed["success"])
@@ -36,7 +41,7 @@ class CodexInstallerTests(unittest.TestCase):
             self.assertTrue((codex_home / "skills" / "chatmaker" / "SKILL.md").is_file())
             self.assertTrue(Path(installed["manifest"]).is_file())
 
-            removed = uninstall(codex_home)
+            removed = uninstall(codex_home, transaction_root=transaction_root)
 
             self.assertTrue(removed["success"])
             self.assertEqual((old_chatduino / "old-marker.txt").read_text(encoding="utf-8"), "keep me")
@@ -44,30 +49,39 @@ class CodexInstallerTests(unittest.TestCase):
             self.assertFalse((codex_home / "skills" / "chatweb").exists())
             self.assertTrue(Path(installed["manifest"]).exists(), "audit journal was removed")
             self.assertEqual(
-                list((codex_home / ".chatmaker" / "state").glob("*.json")),
+                list((transaction_root / "state").glob("*.json")),
                 [],
             )
 
     def test_second_install_preserves_the_original_restore_point(self):
         with tempfile.TemporaryDirectory() as directory:
             codex_home = Path(directory) / ".codex"
+            transaction_root = Path(directory) / ".chatmaker"
             old_chatmaker = codex_home / "skills" / "chatmaker"
             old_chatmaker.mkdir(parents=True)
             (old_chatmaker / "old-marker.txt").write_text("original", encoding="utf-8")
-            first = install(codex_home, source_skills=ROOT / "skills")
-            backups_before = sorted((codex_home / ".chatmaker" / "backups").glob("**/*"))
+            first = install(
+                codex_home,
+                source_skills=ROOT / "skills",
+                transaction_root=transaction_root,
+            )
+            backups_before = sorted((transaction_root / "backups").glob("**/*"))
 
-            second = install(codex_home, source_skills=ROOT / "skills")
+            second = install(
+                codex_home,
+                source_skills=ROOT / "skills",
+                transaction_root=transaction_root,
+            )
 
             self.assertEqual(first["status"], "installed")
             self.assertEqual(second["status"], "already_current")
             self.assertEqual(second["transaction_id"], first["transaction_id"])
             self.assertEqual(
-                sorted((codex_home / ".chatmaker" / "backups").glob("**/*")),
+                sorted((transaction_root / "backups").glob("**/*")),
                 backups_before,
             )
 
-            uninstall(codex_home)
+            uninstall(codex_home, transaction_root=transaction_root)
             marker = old_chatmaker / "old-marker.txt"
             self.assertTrue(marker.is_file(), "original Skill was not restored")
             self.assertEqual(marker.read_text(encoding="utf-8"), "original")
@@ -75,15 +89,16 @@ class CodexInstallerTests(unittest.TestCase):
     def test_mid_install_failure_rolls_back_activated_skills(self):
         with tempfile.TemporaryDirectory() as directory:
             codex_home = Path(directory) / ".codex"
+            transaction_root = Path(directory) / ".chatmaker"
             old_chatmaker = codex_home / "skills" / "chatmaker"
             old_chatmaker.mkdir(parents=True)
             (old_chatmaker / "old-marker.txt").write_text("original", encoding="utf-8")
             real_activate = transaction._activate_staging
 
-            def fail_when_activating_chatduino(source, target):
+            def fail_when_activating_chatduino(source, target, *args):
                 if Path(target).name == "chatduino":
                     raise PermissionError("simulated Windows directory activation failure")
-                return real_activate(source, target)
+                return real_activate(source, target, *args)
 
             with mock.patch.object(
                 transaction,
@@ -91,7 +106,11 @@ class CodexInstallerTests(unittest.TestCase):
                 side_effect=fail_when_activating_chatduino,
             ):
                 with self.assertRaises(PermissionError):
-                    install(codex_home, source_skills=ROOT / "skills")
+                    install(
+                        codex_home,
+                        source_skills=ROOT / "skills",
+                        transaction_root=transaction_root,
+                    )
 
             marker = old_chatmaker / "old-marker.txt"
             self.assertTrue(marker.is_file(), "original Skill was not restored after failure")
@@ -103,6 +122,7 @@ class CodexInstallerTests(unittest.TestCase):
     def test_windows_directory_activation_permission_error_falls_back_to_copy(self):
         with tempfile.TemporaryDirectory() as directory:
             codex_home = Path(directory) / ".codex"
+            transaction_root = Path(directory) / ".chatmaker"
             real_replace = transaction.os.replace
 
             def reject_chatduino_rename(source, target):
@@ -112,13 +132,17 @@ class CodexInstallerTests(unittest.TestCase):
 
             with mock.patch.object(transaction.os, "replace", side_effect=reject_chatduino_rename):
                 try:
-                    installed = install(codex_home, source_skills=ROOT / "skills")
+                    installed = install(
+                        codex_home,
+                        source_skills=ROOT / "skills",
+                        transaction_root=transaction_root,
+                    )
                 except PermissionError as exc:
                     self.fail(f"directory activation did not fall back to copy: {exc}")
 
             self.assertTrue(installed["success"])
             self.assertTrue((codex_home / "skills" / "chatduino" / "SKILL.md").is_file())
-            uninstall(codex_home)
+            uninstall(codex_home, transaction_root=transaction_root)
 
 
 if __name__ == "__main__":

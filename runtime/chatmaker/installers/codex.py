@@ -25,16 +25,29 @@ def default_codex_home() -> Path:
     return Path(configured).expanduser() if configured else Path.home() / ".codex"
 
 
-def install(codex_home: Path, source_skills: Path = PROJECT_ROOT / "skills") -> dict[str, Any]:
+def install(
+    codex_home: Path,
+    source_skills: Path = PROJECT_ROOT / "skills",
+    transaction_root: Path | None = None,
+) -> dict[str, Any]:
     result = _with_content_boundary(
-        install_bundle(codex_home, source_skills, MANIFEST_NAME)
+        install_bundle(
+            codex_home,
+            source_skills,
+            MANIFEST_NAME,
+            transaction_root=transaction_root,
+        )
     )
     result["restart_codex"] = True
     return result
 
 
-def uninstall(codex_home: Path) -> dict[str, Any]:
-    result = uninstall_bundle(codex_home, MANIFEST_NAME)
+def uninstall(codex_home: Path, transaction_root: Path | None = None) -> dict[str, Any]:
+    result = uninstall_bundle(
+        codex_home,
+        MANIFEST_NAME,
+        transaction_root=transaction_root,
+    )
     result["restart_codex"] = True
     return result
 

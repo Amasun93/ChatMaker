@@ -3,15 +3,18 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-from .transaction import InstallTransaction
+from .transaction import InstallTransaction, canonical_install_path
 
 
 SKILL_NAMES = ("chatmaker", "chatduino", "chatweb")
 
 
-def _bundle_transaction(host_home: Path, manifest_name: str) -> InstallTransaction:
+def _bundle_transaction(
+    manifest_name: str,
+    transaction_root: Path | None,
+) -> InstallTransaction:
     return InstallTransaction(
-        root=host_home / ".chatmaker",
+        root=transaction_root,
         installation_id=f"skill-bundle:{manifest_name}",
     )
 
@@ -20,10 +23,11 @@ def install_bundle(
     host_home: Path,
     source_skills: Path,
     manifest_name: str,
+    transaction_root: Path | None = None,
 ) -> dict[str, Any]:
-    host_home = Path(host_home).expanduser().absolute()
-    source_skills = Path(source_skills).expanduser().absolute()
-    result = _bundle_transaction(host_home, manifest_name).apply(
+    host_home = canonical_install_path(host_home)
+    source_skills = canonical_install_path(source_skills)
+    result = _bundle_transaction(manifest_name, transaction_root).apply(
         [
             {
                 "kind": "skill_bundle",
@@ -48,13 +52,17 @@ def install_bundle(
     return value
 
 
-def uninstall_bundle(host_home: Path, manifest_name: str) -> dict[str, Any]:
-    host_home = Path(host_home).expanduser().absolute()
-    return _bundle_transaction(host_home, manifest_name).uninstall().to_dict()
+def uninstall_bundle(
+    host_home: Path,
+    manifest_name: str,
+    transaction_root: Path | None = None,
+) -> dict[str, Any]:
+    canonical_install_path(host_home)
+    return _bundle_transaction(manifest_name, transaction_root).uninstall().to_dict()
 
 
 def doctor_bundle(host_home: Path) -> dict[str, Any]:
-    host_home = Path(host_home).expanduser().resolve()
+    host_home = canonical_install_path(host_home)
     skills = {
         name: {
             "path": str(host_home / "skills" / name),

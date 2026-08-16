@@ -12,7 +12,7 @@ from typing import Any
 from chatmaker.installers.skill_bundle import (
     doctor_bundle,
 )
-from chatmaker.installers.transaction import InstallTransaction
+from chatmaker.installers.transaction import InstallTransaction, canonical_install_path
 
 
 SERVER_KEY = "arduino-nano-mindplus"
@@ -37,8 +37,9 @@ def install(
     config_path: Path,
     python_executable: str = sys.executable,
     source_skills: Path = PROJECT_ROOT / "skills",
+    transaction_root: Path | None = None,
 ) -> dict[str, Any]:
-    config_path = config_path.expanduser().absolute()
+    config_path = canonical_install_path(config_path)
     workbuddy_home = config_path.parent
     server_module = PACKAGE_ROOT / "integrations" / "mcp.py"
     if not server_module.is_file():
@@ -58,14 +59,14 @@ def install(
         "disabled": False,
     }
     transaction = InstallTransaction(
-        root=workbuddy_home / ".chatmaker",
+        root=transaction_root,
         installation_id=f"workbuddy:{config_path}",
     )
     result = transaction.apply(
         [
             {
                 "kind": "skill_bundle",
-                "source": Path(source_skills).expanduser().absolute(),
+                "source": canonical_install_path(source_skills),
                 "path": workbuddy_home / "skills",
                 "names": ["chatmaker", "chatduino", "chatweb"],
             },
@@ -100,11 +101,11 @@ def install(
     )
 
 
-def uninstall(config_path: Path) -> dict[str, Any]:
-    config_path = config_path.expanduser().absolute()
+def uninstall(config_path: Path, transaction_root: Path | None = None) -> dict[str, Any]:
+    config_path = canonical_install_path(config_path)
     workbuddy_home = config_path.parent
     result = InstallTransaction(
-        root=workbuddy_home / ".chatmaker",
+        root=transaction_root,
         installation_id=f"workbuddy:{config_path}",
     ).uninstall()
     return {
@@ -115,7 +116,7 @@ def uninstall(config_path: Path) -> dict[str, Any]:
 
 
 def doctor(config_path: Path) -> dict[str, Any]:
-    config_path = config_path.expanduser().resolve()
+    config_path = canonical_install_path(config_path)
     skills = doctor_bundle(config_path.parent)
     try:
         config = json.loads(config_path.read_text(encoding="utf-8"))

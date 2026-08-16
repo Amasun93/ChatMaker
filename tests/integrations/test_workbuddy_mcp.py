@@ -278,7 +278,11 @@ class WorkBuddyBridgeTests(unittest.TestCase):
                 encoding="utf-8",
             )
 
-            result = self.installer.install(config, python_executable="python")
+            result = self.installer.install(
+                config,
+                python_executable="python",
+                transaction_root=Path(temporary) / "global-chatmaker-state",
+            )
             saved = json.loads(config.read_text(encoding="utf-8"))
 
             self.assertTrue(result["success"])
@@ -382,6 +386,7 @@ class WorkBuddyBridgeTests(unittest.TestCase):
                     config,
                     python_executable="python",
                     source_skills=ROOT / "skills",
+                    transaction_root=Path(temporary) / "global-chatmaker-state",
                 )
             except TypeError as exc:
                 self.fail(f"WorkBuddy installer does not support Skill installation: {exc}")
@@ -414,7 +419,10 @@ class WorkBuddyBridgeTests(unittest.TestCase):
             self.assertEqual(health["content_manager"], "chatmaker-pack")
             self.assertEqual(health["knowledge_packs_installed"], [])
 
-            removed = self.installer.uninstall(config)
+            removed = self.installer.uninstall(
+                config,
+                transaction_root=Path(temporary) / "global-chatmaker-state",
+            )
             restored_config = json.loads(config.read_text(encoding="utf-8"))
 
             self.assertTrue(removed["success"])

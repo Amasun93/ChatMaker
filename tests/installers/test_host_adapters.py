@@ -15,12 +15,14 @@ class HostAdapterTests(unittest.TestCase):
     def setUp(self) -> None:
         from chatmaker.installers.hosts import (  # noqa: PLC0415
             CodexHostAdapter,
+            ExplicitHostAdapter,
             WorkBuddyHostAdapter,
             detect_hosts,
             plan_installation,
         )
 
         self.CodexHostAdapter = CodexHostAdapter
+        self.ExplicitHostAdapter = ExplicitHostAdapter
         self.WorkBuddyHostAdapter = WorkBuddyHostAdapter
         self.detect_hosts = detect_hosts
         self.plan_installation = plan_installation
@@ -51,6 +53,25 @@ class HostAdapterTests(unittest.TestCase):
         self.assertEqual(codex_plan["skill_dir"], "D:/chosen/skills")
         self.assertEqual(workbuddy_plan["skill_dir"], "D:/chosen/skills")
         self.assertEqual(workbuddy_plan["mcp_config"], "D:/chosen/mcp.json")
+
+    def test_relative_explicit_targets_are_never_returned_as_installable_paths(self):
+        report = self.report(
+            skill_roots=[
+                {"host": "explicit", "path": "relative/skills", "available": True, "explicit": True},
+                {"host": "codex", "path": "C:/Users/teacher/.codex/skills", "available": True, "explicit": False},
+            ],
+            mcp_configs=[
+                {"host": "explicit", "path": "relative/mcp.json", "available": True, "explicit": True},
+            ],
+        )
+
+        codex_plan = self.CodexHostAdapter().plan({"report": report})
+        explicit_plan = self.ExplicitHostAdapter().plan({"report": report})
+
+        self.assertEqual(codex_plan["skill_dir"], "C:/Users/teacher/.codex/skills")
+        self.assertEqual(explicit_plan["status"], "ready_with_limits")
+        self.assertEqual(explicit_plan["limits"], ["absolute_target_required"])
+        self.assertNotIn("relative/skills", explicit_plan.values())
 
     def test_detects_only_existing_codex_and_workbuddy_evidence(self):
         report = self.report(
@@ -202,7 +223,13 @@ class HostAdapterTests(unittest.TestCase):
             config = Path(temporary) / "mcp.json"
             config.write_text(json.dumps({"mcpServers": {"keep": {"command": "other"}}}), encoding="utf-8")
 
-            installed = workbuddy.install(config, python_executable="python", source_skills=ROOT / "skills")
+            transaction_root = Path(temporary) / "global-chatmaker-state"
+            installed = workbuddy.install(
+                config,
+                python_executable="python",
+                source_skills=ROOT / "skills",
+                transaction_root=transaction_root,
+            )
             saved = json.loads(config.read_text(encoding="utf-8"))
 
             self.assertTrue(installed["success"])
@@ -215,7 +242,7 @@ class HostAdapterTests(unittest.TestCase):
                 saved["mcpServers"][workbuddy.SERVER_KEY]["cwd"],
                 str((ROOT / "runtime").resolve()),
             )
-            workbuddy.uninstall(config)
+            workbuddy.uninstall(config, transaction_root=transaction_root)
 
 
 if __name__ == "__main__":

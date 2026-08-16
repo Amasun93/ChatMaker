@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from collections.abc import Mapping
+from pathlib import Path, PureWindowsPath
 from typing import Any
 
 
@@ -25,7 +26,20 @@ def entries(report: Mapping[str, Any] | Any, key: str) -> list[dict[str, Any]]:
 
 
 def first_explicit(report: Mapping[str, Any] | Any, key: str) -> dict[str, Any] | None:
-    return next((item for item in entries(report, key) if item.get("explicit")), None)
+    return next(
+        (
+            item
+            for item in entries(report, key)
+            if item.get("explicit") and absolute_target(item.get("path"))
+        ),
+        None,
+    )
+
+
+def absolute_target(value: Any) -> bool:
+    if not isinstance(value, str) or not value:
+        return False
+    return Path(value).is_absolute() or PureWindowsPath(value).is_absolute()
 
 
 def first_available(report: Mapping[str, Any] | Any, key: str, host: str) -> dict[str, Any] | None:
@@ -96,6 +110,7 @@ class HostAdapter(ABC):
 
 __all__ = [
     "HostAdapter",
+    "absolute_target",
     "capability_value",
     "entries",
     "first_available",
