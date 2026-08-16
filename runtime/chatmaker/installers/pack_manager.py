@@ -26,6 +26,10 @@ from urllib.parse import urljoin, urlsplit
 from urllib.request import HTTPRedirectHandler, Request, build_opener
 
 from .file_lock import FileLockFailure, UnsafeLockPath, exclusive_file_lock
+from .knowledge_state_migration import (
+    KnowledgeStateMigrationError,
+    migrate_legacy_knowledge_state,
+)
 from .pack_artifact import (
     PackArtifactError,
     extract_validated_pack,
@@ -461,6 +465,7 @@ class PackManager:
         self.now = now
         self.failure_injector = failure_injector
         self.phase_callback = phase_callback
+        self._knowledge_state_migration_checked = False
 
     @staticmethod
     def _unsafe_existing_path(path: Path, *, directory: bool) -> bool:
@@ -540,6 +545,22 @@ class PackManager:
             raise PackManagerError(
                 "pack_activation_failed", reason="managed_path_unsafe"
             )
+
+    def _prepare_managed_layout(self) -> None:
+        self._assert_managed_layout()
+        if self._knowledge_state_migration_checked:
+            return
+        try:
+            migrate_legacy_knowledge_state(
+                self.paths,
+                failure_injector=self.failure_injector,
+            )
+        except KnowledgeStateMigrationError as exc:
+            raise PackManagerError(
+                "pack_activation_failed",
+                reason=f"knowledge_state_migration_{exc.reason}",
+            ) from exc
+        self._knowledge_state_migration_checked = True
 
     def _assert_managed_path(
         self, path: Path, *, final_directory: bool | None = None
@@ -790,7 +811,7 @@ class PackManager:
 
     def generation_token(self) -> str:
         try:
-            self._assert_managed_layout()
+            self._prepare_managed_layout()
             state, raw = self._load_active()
             payload = raw or b""
             return f"{state['generation']}:{hashlib.sha256(payload).hexdigest()}"
@@ -905,7 +926,7 @@ class PackManager:
         self, pack_id: str
     ) -> tuple[tuple[Path, str] | None, str]:
         try:
-            self._assert_managed_layout()
+            self._prepare_managed_layout()
             self._validate_pack_id(pack_id)
             with _interprocess_lock(self.paths.manager_lock):
                 state, raw = self._load_active()
@@ -931,7 +952,7 @@ class PackManager:
         self, pack_id: str, relative_path: str
     ) -> tuple[dict[str, Any] | None, str]:
         try:
-            self._assert_managed_layout()
+            self._prepare_managed_layout()
             self._validate_pack_id(pack_id)
             validate_archive_path(relative_path)
             with _interprocess_lock(self.paths.manager_lock):
@@ -1010,7 +1031,7 @@ class PackManager:
 
     def status(self, pack_id: str | None = None) -> dict[str, Any]:
         try:
-            self._assert_managed_layout()
+            self._prepare_managed_layout()
             if pack_id is not None:
                 self._validate_pack_id(pack_id)
             state, _ = self._load_active()
@@ -1051,7 +1072,7 @@ class PackManager:
 
     def list(self) -> dict[str, Any]:
         try:
-            self._assert_managed_layout()
+            self._prepare_managed_layout()
             installed = [
                 {
                     "pack_id": pack_id,
@@ -1071,7 +1092,7 @@ class PackManager:
 
     def inspect_cache(self) -> dict[str, Any]:
         try:
-            self._assert_managed_layout()
+            self._prepare_managed_layout()
             objects: list[dict[str, Any]] = []
             if self.paths.cache.is_dir():
                 for path in sorted(self.paths.cache.glob("*.cmpack")):
@@ -2150,7 +2171,7 @@ class PackManager:
             self._validate_pack_id(pack_id)
             if version is not None:
                 _version_key(version)
-            self._assert_managed_layout()
+            self._prepare_managed_layout()
             with _interprocess_lock(self.paths.manager_lock):
                 return self._ensure_locked(pack_id, version=version, offline=offline)
         except Exception as exc:
@@ -2165,7 +2186,7 @@ class PackManager:
         try:
             self._validate_pack_id(pack_id)
             _version_key(version)
-            self._assert_managed_layout()
+            self._prepare_managed_layout()
             with _interprocess_lock(self.paths.manager_lock):
                 state, old_raw = self._load_active()
                 active = state["packs"].get(pack_id)
@@ -2206,7 +2227,7 @@ class PackManager:
     def update(self, pack_id: str) -> dict[str, Any]:
         try:
             self._validate_pack_id(pack_id)
-            self._assert_managed_layout()
+            self._prepare_managed_layout()
             with _interprocess_lock(self.paths.manager_lock):
                 self._recover()
                 state, _ = self._load_active()
@@ -2291,7 +2312,7 @@ class PackManager:
             self._validate_pack_id(pack_id)
             if version is not None:
                 _version_key(version)
-            self._assert_managed_layout()
+            self._prepare_managed_layout()
             with _interprocess_lock(self.paths.manager_lock):
                 self._recover()
                 state, _ = self._load_active()
