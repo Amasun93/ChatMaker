@@ -192,7 +192,7 @@ class UniversalInstallerTests(unittest.TestCase):
 
         self.assertTrue(installed["success"])
         self.assertEqual([host["host"] for host in installed["hosts"]], ["codex", "explicit"])
-        self.assertEqual(len(installed["changes"]), 3)
+        self.assertEqual(len(installed["changes"]), 4)
         self.assertTrue((target / "chatmaker" / "SKILL.md").is_file())
 
     def test_doctor_reports_partial_multi_host_installation_without_writing(self):

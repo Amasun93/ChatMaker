@@ -133,6 +133,7 @@ Nano and Uno reuse an existing Mind+ 1.x or 2.x installation. Install and launch
 ```powershell
 chatmaker-nano --request-json '{"action":"doctor"}'
 chatmaker-uno --request-json '{"action":"doctor"}'
+chatmaker-avr-project --request-json '{"board_id":"arduino-uno-r3","code":"void setup(){} void loop(){}"}'
 chatmaker-nano --request-json '{"action":"compile","sketch":"examples/chatduino/nano/blink"}'
 chatmaker-uno --request-json '{"action":"compile","sketch":"examples/chatduino/uno/blink"}'
 chatmaker-nano-examples --root examples/chatduino/nano
@@ -141,6 +142,19 @@ chatmaker-nano-examples --root examples/chatduino/nano
 这些命令只编译，不上传。只有在明确要求 `compile-upload`、检测到唯一合格有线端口并通过安全检查时，运行层才可能进入上传阶段。
 
 These examples compile only. Upload is a separate gate and is considered only for an explicit `compile-upload` request with one safe wired port.
+
+`chatmaker-avr-project` 是 Nano/Uno 的连续入口：它先检查环境，再编译；只有串口唯一且安全时才烧录。没有接板时会返回 `compiled-awaiting-hardware`，不会把编译完成写成烧录成功。
+
+### 星核板 v4.2.2 / Starcore v4.2.2
+
+星核板使用已经安装的 Mind+ 1.8 当前目标。Mind+ 2.0 目标只作为历史资料保留：
+
+```powershell
+chatmaker-starcore --request-json '{"action":"doctor"}'
+chatmaker-starcore --request-json '{"action":"compile","sketch":"examples/chatduino/starcore/blink"}'
+```
+
+烧录前必须确认实体板为星核板 v4.2.2，并且只剩一个合格的非蓝牙有线串口。没有实体板时上传、重启、串口和实物效果保持 `unverified`。
 
 ## 3. ESP32：官方 Arduino CLI 前置条件 / ESP32: official Arduino CLI prerequisite
 
@@ -172,6 +186,9 @@ chatmaker-web-plan --brief-json '{"kind":"classroom-tool","idea":"收集课堂�
 chatmaker-web-playground --kind classroom-tool --title "课堂方向游乐场" --brief "比较更多课堂反馈方向" --output advanced-playground.html --advanced
 chatmaker-web-preview classroom-pulse.html
 chatmaker-web-embed examples/chatweb/esp32-ap-control.html examples/chatduino/esp32/ap-led-sensor/page_html.h --symbol CHATMAKER_AP_PAGE
+chatmaker-web-preview examples/chatweb/serial-device-console.html
+chatmaker-cad --request-json '{"action":"generate","mode":"chat2d","board_id":"arduino-uno-r3","project_name":"uno-box","output_dir":"uno-box"}'
+chatmaker-cad --request-json '{"action":"generate","mode":"chat3d","board_id":"idmc-0001-starcore-v4-2-2","project_name":"starcore-case","output_dir":"starcore-case"}'
 ```
 
 `chatmaker-web-preview` 默认只监听 `127.0.0.1`，按 Ctrl+C 结束。高级方向和游乐场必须显式传入 `--advanced`。`page_html.h` 是生成物；只编辑 `examples/chatweb/esp32-ap-control.html`。
@@ -230,7 +247,7 @@ npx playwright install chromium
 npm run test:browser
 ```
 
-需要查看普通 CLI 参数时，可对这些命令分别传入 `--help`：`chatmaker-doctor`、`chatmaker-catalog`、`chatmaker-route`、`chatmaker-nano`、`chatmaker-uno`、`chatmaker-esp32`、`chatmaker-nano-examples`、`chatmaker-serial`、`chatmaker-install`、`chatmaker-web`、`chatmaker-web-plan`、`chatmaker-web-playground`、`chatmaker-web-preview`、`chatmaker-web-embed`。
+需要查看普通 CLI 参数时，可对这些命令分别传入 `--help`：`chatmaker-doctor`、`chatmaker-catalog`、`chatmaker-route`、`chatmaker-nano`、`chatmaker-uno`、`chatmaker-avr-project`、`chatmaker-starcore`、`chatmaker-esp32`、`chatmaker-nano-examples`、`chatmaker-serial`、`chatmaker-cad`、`chatmaker-install`、`chatmaker-web`、`chatmaker-web-plan`、`chatmaker-web-playground`、`chatmaker-web-preview`、`chatmaker-web-embed`。
 
 For ordinary CLI usage, pass `--help` to the commands listed above. `chatmaker-workbuddy-mcp` is different: it is a JSON-RPC stdio service that waits for input and must not be invoked with `--help`. Run `chatmaker-install doctor` to inspect detected integrations safely.
 
