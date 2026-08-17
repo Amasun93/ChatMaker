@@ -27,6 +27,7 @@ class ChatMakerEntryAndIndependenceTests(unittest.TestCase):
         self.assertIn("only user entry", router)
         for name in ("chatduino", "chatweb", "chatcad"):
             self.assertIn(f"${name}", router)
+            self.assertIn(f"internal_skills/{name}/SKILL.md", router)
             specialist = (ROOT / "skills" / name / "SKILL.md").read_text(encoding="utf-8")
             self.assertIn("internal specialist", specialist)
             self.assertIn("ChatMaker", specialist)

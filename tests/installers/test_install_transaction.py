@@ -88,6 +88,58 @@ class InstallTransactionTests(unittest.TestCase):
             encoding="utf-8",
         )
 
+    def _migration_changes(self):
+        return [
+            {
+                "kind": "skill_bundle",
+                "source": self.source,
+                "path": self.skills_root,
+                "names": ["chatmaker"],
+                "internal_names": ["chatduino", "chatweb"],
+                "retire_names": ["chatduino", "chatweb"],
+            },
+            {
+                "kind": "mcp_server",
+                "path": self.config,
+                "server_key": "chatmaker",
+                "server": {
+                    "type": "stdio",
+                    "command": "python",
+                    "args": ["-m", "chatmaker.integrations.mcp"],
+                },
+                "migrate_from_key": "arduino-nano-mindplus",
+                "migrate_from_args": ["-m", "chatmaker.integrations.mcp"],
+            },
+        ]
+
+    def _seed_migration_state(self) -> dict[str, object]:
+        for name in ("chatduino", "chatweb"):
+            skill = self.skills_root / name
+            skill.mkdir(parents=True, exist_ok=True)
+            (skill / "owner.txt").write_text(f"historical {name}", encoding="utf-8")
+        original = {
+            "theme": "dark",
+            "mcpServers": {
+                "arduino-nano-mindplus": {
+                    "command": "python",
+                    "args": ["-m", "chatmaker.integrations.mcp"],
+                },
+                "keep": {"command": "other"},
+            },
+        }
+        self.config.parent.mkdir(parents=True, exist_ok=True)
+        self.config.write_text(json.dumps(original), encoding="utf-8")
+        return original
+
+    def _assert_migration_original(self, original: dict[str, object]) -> None:
+        self.assertFalse((self.skills_root / "chatmaker").exists())
+        for name in ("chatduino", "chatweb"):
+            self.assertEqual(
+                (self.skills_root / name / "owner.txt").read_text(encoding="utf-8"),
+                f"historical {name}",
+            )
+        self.assertEqual(json.loads(self.config.read_text(encoding="utf-8")), original)
+
     def _assert_original_state(self) -> None:
         self.assertEqual(
             (self.skills_root / "chatmaker" / "old.txt").read_text(encoding="utf-8"),
@@ -132,6 +184,230 @@ class InstallTransactionTests(unittest.TestCase):
             for path in (self.management_root / "transactions").glob("*.json")
         ]
         self.assertEqual([item["status"] for item in journals], ["rolled_back"])
+
+    def test_migration_verification_crash_recovers_every_before_image(self):
+        original = self._seed_migration_state()
+        crash, inject = self._crash_at("verification")
+        transaction = InstallTransaction(
+            root=self.management_root,
+            installation_id="test-install",
+            failure_injector=inject,
+        )
+
+        with self.assertRaises(crash):
+            transaction.apply(self._migration_changes())
+
+        self.assertEqual(self._transaction().uninstall().status, "already_absent")
+        self._assert_migration_original(original)
+
+    def test_migration_journal_replacement_crash_recovers_every_before_image(self):
+        original = self._seed_migration_state()
+        crash, inject = self._crash_at("journal_replacement")
+        transaction = InstallTransaction(
+            root=self.management_root,
+            installation_id="test-install",
+            failure_injector=inject,
+        )
+
+        with self.assertRaises(crash):
+            transaction.apply(self._migration_changes())
+
+        self.assertEqual(self._transaction().uninstall().status, "already_absent")
+        self._assert_migration_original(original)
+
+    def test_migration_state_replacement_crash_rolls_forward_without_repeating_migration(self):
+        self._seed_migration_state()
+        crash, inject = self._crash_at("state_replacement")
+        transaction = InstallTransaction(
+            root=self.management_root,
+            installation_id="test-install",
+            failure_injector=inject,
+        )
+
+        with self.assertRaises(crash):
+            transaction.apply(self._migration_changes())
+
+        recovered = self._transaction().apply(self._migration_changes())
+
+        self.assertEqual(recovered.status, "already_current")
+        self.assertEqual(
+            {path.name for path in self.skills_root.iterdir() if path.is_dir()},
+            {"chatmaker"},
+        )
+        saved = json.loads(self.config.read_text(encoding="utf-8"))["mcpServers"]
+        self.assertNotIn("arduino-nano-mindplus", saved)
+        self.assertIn("chatmaker", saved)
+
+    def test_upgrade_from_legacy_four_entry_state_converges_to_one_managed_entry(self):
+        chatcad_source = self.source / "chatcad"
+        chatcad_source.mkdir(parents=True)
+        (chatcad_source / "SKILL.md").write_text(
+            "---\nname: chatcad\n---\nv1\n", encoding="utf-8"
+        )
+        legacy_names = ("chatmaker", "chatduino", "chatweb", "chatcad")
+        for name in legacy_names:
+            target = self.skills_root / name
+            target.mkdir(parents=True, exist_ok=True)
+            (target / "owner.txt").write_text(f"original {name}", encoding="utf-8")
+        transaction = self._transaction()
+        legacy = transaction.apply(
+            [
+                {
+                    "kind": "skill_bundle",
+                    "source": self.source,
+                    "path": self.skills_root,
+                    "names": list(legacy_names),
+                }
+            ]
+        )
+        self.assertTrue(legacy.success)
+
+        migration = dict(self._migration_changes()[0])
+        migration["internal_names"] = ["chatduino", "chatweb", "chatcad"]
+        migration["retire_names"] = ["chatduino", "chatweb", "chatcad"]
+        upgraded = transaction.apply([migration])
+
+        self.assertTrue(upgraded.success)
+        self.assertEqual(
+            {path.name for path in self.skills_root.iterdir() if path.is_dir()},
+            {"chatmaker"},
+        )
+        active = json.loads(
+            next((self.management_root / "state").glob("*.json")).read_text(
+                encoding="utf-8"
+            )
+        )
+        self.assertEqual(
+            {item["name"] for item in active["managed"]},
+            {"chatmaker"},
+        )
+
+        restored = transaction.restore(upgraded.transaction_id)
+
+        self.assertEqual(restored.status, "restored")
+        self.assertEqual(
+            {path.name for path in self.skills_root.iterdir() if path.is_dir()},
+            set(legacy_names),
+        )
+        self.assertTrue(
+            all(
+                "v1" in (self.skills_root / name / "SKILL.md").read_text(encoding="utf-8")
+                for name in legacy_names
+            )
+        )
+
+        upgraded_again = transaction.apply([migration])
+        self.assertTrue(upgraded_again.success)
+        removed = transaction.uninstall()
+
+        self.assertEqual(removed.status, "uninstalled")
+        for name in legacy_names:
+            self.assertEqual(
+                (self.skills_root / name / "owner.txt").read_text(encoding="utf-8"),
+                f"original {name}",
+            )
+
+    def test_retired_skill_change_after_backup_aborts_without_installing_chatmaker(self):
+        original = self._seed_migration_state()
+        real_backup = transaction_module._atomic_backup
+        raced = False
+
+        def mutate_chatduino_after_backup(source, destination, source_guards=None):
+            nonlocal raced
+            real_backup(source, destination, source_guards=source_guards)
+            if Path(source) == self.skills_root / "chatduino" and not raced:
+                raced = True
+                (Path(source) / "owner.txt").write_text(
+                    "teacher concurrent edit", encoding="utf-8"
+                )
+
+        with mock.patch.object(
+            transaction_module,
+            "_atomic_backup",
+            side_effect=mutate_chatduino_after_backup,
+        ):
+            with self.assertRaises(InstallConflict):
+                self._transaction().apply([self._migration_changes()[0]])
+
+        self.assertFalse((self.skills_root / "chatmaker").exists())
+        self.assertEqual(
+            (self.skills_root / "chatduino" / "owner.txt").read_text(encoding="utf-8"),
+            "teacher concurrent edit",
+        )
+        self.assertEqual(
+            (self.skills_root / "chatweb" / "owner.txt").read_text(encoding="utf-8"),
+            "historical chatweb",
+        )
+        self.assertEqual(json.loads(self.config.read_text(encoding="utf-8")), original)
+        self.assertEqual(list((self.management_root / "state").glob("*.json")), [])
+        self.assertEqual(list((self.management_root / "backups").glob("*")), [])
+
+    def test_partial_retired_skill_backup_aborts_before_any_host_target_changes(self):
+        original = self._seed_migration_state()
+        real_backup = transaction_module._atomic_backup
+        corrupted = False
+
+        def corrupt_chatweb_backup(source, destination, source_guards=None):
+            nonlocal corrupted
+            real_backup(source, destination, source_guards=source_guards)
+            if Path(source) == self.skills_root / "chatweb" and not corrupted:
+                corrupted = True
+                (Path(destination) / "owner.txt").write_text(
+                    "partial copy", encoding="utf-8"
+                )
+
+        with mock.patch.object(
+            transaction_module,
+            "_atomic_backup",
+            side_effect=corrupt_chatweb_backup,
+        ):
+            with self.assertRaises(InstallConflict):
+                self._transaction().apply([self._migration_changes()[0]])
+
+        self.assertFalse((self.skills_root / "chatmaker").exists())
+        for name in ("chatduino", "chatweb"):
+            self.assertEqual(
+                (self.skills_root / name / "owner.txt").read_text(encoding="utf-8"),
+                f"historical {name}",
+            )
+        self.assertEqual(json.loads(self.config.read_text(encoding="utf-8")), original)
+        self.assertEqual(list((self.management_root / "state").glob("*.json")), [])
+        self.assertEqual(list((self.management_root / "backups").glob("*")), [])
+
+    def test_retired_skill_change_at_activation_is_preserved_while_other_writes_roll_back(self):
+        original = self._seed_migration_state()
+        raced = False
+
+        def edit_when_migration_starts(point, context):
+            nonlocal raced
+            if (
+                point == "skill_migration"
+                and str(context["identity"]).endswith("chatduino")
+                and not raced
+            ):
+                raced = True
+                (self.skills_root / "chatduino" / "owner.txt").write_text(
+                    "teacher last-moment edit", encoding="utf-8"
+                )
+
+        transaction = InstallTransaction(
+            root=self.management_root,
+            installation_id="test-install",
+            failure_injector=edit_when_migration_starts,
+        )
+        with self.assertRaises(InstallConflict):
+            transaction.apply([self._migration_changes()[0]])
+
+        self.assertFalse((self.skills_root / "chatmaker").exists())
+        self.assertEqual(
+            (self.skills_root / "chatduino" / "owner.txt").read_text(encoding="utf-8"),
+            "teacher last-moment edit",
+        )
+        self.assertEqual(
+            (self.skills_root / "chatweb" / "owner.txt").read_text(encoding="utf-8"),
+            "historical chatweb",
+        )
+        self.assertEqual(json.loads(self.config.read_text(encoding="utf-8")), original)
 
     def test_committed_apply_is_rolled_forward_before_repeat_install(self):
         crash, inject = self._crash_at("state_replacement")
@@ -213,6 +489,44 @@ class InstallTransactionTests(unittest.TestCase):
         self.assertEqual(recovered.status, "already_restored")
         self._assert_original_state()
 
+    def test_migration_restore_crash_preserves_new_plugin_and_skill_replacement(self):
+        self._seed_migration_state()
+        installed = self._transaction().apply(self._migration_changes())
+        plugin = {"command": "teacher-nano", "args": ["--stdio"]}
+        saved = json.loads(self.config.read_text(encoding="utf-8"))
+        saved["mcpServers"]["arduino-nano-mindplus"] = plugin
+        self.config.write_text(json.dumps(saved), encoding="utf-8")
+        replacement = self.skills_root / "chatduino"
+        replacement.mkdir()
+        (replacement / "owner.txt").write_text("teacher replacement", encoding="utf-8")
+        crash, inject = self._crash_at("restore_after_target")
+        crashing = InstallTransaction(
+            root=self.management_root,
+            installation_id="test-install",
+            failure_injector=inject,
+        )
+
+        with self.assertRaises(crash):
+            crashing.restore(installed.transaction_id)
+
+        recovered = self._transaction().restore(installed.transaction_id)
+
+        self.assertEqual(recovered.status, "restored")
+        self.assertEqual(
+            json.loads(self.config.read_text(encoding="utf-8"))["mcpServers"][
+                "arduino-nano-mindplus"
+            ],
+            plugin,
+        )
+        self.assertEqual(
+            (replacement / "owner.txt").read_text(encoding="utf-8"),
+            "teacher replacement",
+        )
+        self.assertEqual(
+            (self.skills_root / "chatweb" / "owner.txt").read_text(encoding="utf-8"),
+            "historical chatweb",
+        )
+
     def test_uninstall_crash_is_resumed_idempotently_by_next_uninstall(self):
         self._seed_existing_state()
         self._transaction().apply(self._changes())
@@ -231,6 +545,44 @@ class InstallTransactionTests(unittest.TestCase):
         self.assertEqual(recovered.status, "uninstalled")
         self._assert_original_state()
         self.assertEqual(self._transaction().uninstall().status, "already_absent")
+
+    def test_migration_uninstall_crash_preserves_new_plugin_and_skill_replacement(self):
+        self._seed_migration_state()
+        self._transaction().apply(self._migration_changes())
+        plugin = {"command": "teacher-nano", "args": ["--stdio"]}
+        saved = json.loads(self.config.read_text(encoding="utf-8"))
+        saved["mcpServers"]["arduino-nano-mindplus"] = plugin
+        self.config.write_text(json.dumps(saved), encoding="utf-8")
+        replacement = self.skills_root / "chatduino"
+        replacement.mkdir()
+        (replacement / "owner.txt").write_text("teacher replacement", encoding="utf-8")
+        crash, inject = self._crash_at("uninstall_after_target")
+        crashing = InstallTransaction(
+            root=self.management_root,
+            installation_id="test-install",
+            failure_injector=inject,
+        )
+
+        with self.assertRaises(crash):
+            crashing.uninstall()
+
+        recovered = self._transaction().uninstall()
+
+        self.assertEqual(recovered.status, "uninstalled")
+        self.assertEqual(
+            json.loads(self.config.read_text(encoding="utf-8"))["mcpServers"][
+                "arduino-nano-mindplus"
+            ],
+            plugin,
+        )
+        self.assertEqual(
+            (replacement / "owner.txt").read_text(encoding="utf-8"),
+            "teacher replacement",
+        )
+        self.assertEqual(
+            (self.skills_root / "chatweb" / "owner.txt").read_text(encoding="utf-8"),
+            "historical chatweb",
+        )
 
     def test_finalized_uninstall_removes_recovery_tombstone_on_next_entrypoint(self):
         self._seed_existing_state()

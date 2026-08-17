@@ -6,7 +6,8 @@ from typing import Any
 from .transaction import InstallTransaction, canonical_install_path
 
 
-SKILL_NAMES = ("chatmaker", "chatduino", "chatweb", "chatcad")
+SKILL_NAMES = ("chatmaker",)
+INTERNAL_SKILL_NAMES = ("chatduino", "chatweb", "chatcad")
 
 
 def _bundle_transaction(
@@ -35,6 +36,8 @@ def install_bundle(
                 "source": source_skills,
                 "path": host_home / "skills",
                 "names": list(SKILL_NAMES),
+                "internal_names": list(INTERNAL_SKILL_NAMES),
+                "retire_names": list(INTERNAL_SKILL_NAMES),
             }
         ]
     )
@@ -43,6 +46,7 @@ def install_bundle(
         {
             "host_home": str(host_home),
             "installed_skills": list(SKILL_NAMES),
+            "internal_skills": list(INTERNAL_SKILL_NAMES),
             "backed_up_skills": [
                 str(entry["name"])
                 for entry in result.details.get("entries", [])
@@ -75,8 +79,23 @@ def doctor_bundle(host_home: Path) -> dict[str, Any]:
         }
         for name in SKILL_NAMES
     }
+    internal_skills = {
+        name: {
+            "path": str(host_home / "skills" / "chatmaker" / "internal_skills" / name),
+            "ready": (
+                host_home
+                / "skills"
+                / "chatmaker"
+                / "internal_skills"
+                / name
+                / "SKILL.md"
+            ).is_file(),
+        }
+        for name in INTERNAL_SKILL_NAMES
+    }
     return {
-        "success": all(item["ready"] for item in skills.values()),
+        "success": all(item["ready"] for item in (*skills.values(), *internal_skills.values())),
         "host_home": str(host_home),
         "skills": skills,
+        "internal_skills": internal_skills,
     }

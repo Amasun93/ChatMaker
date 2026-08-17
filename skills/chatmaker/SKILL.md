@@ -9,6 +9,8 @@ Help the user discover a worthwhile idea, choose a direction, and turn it into a
 
 ChatMaker is the only user entry. ChatDuino, ChatWeb, and ChatCAD are internal specialists maintained as separate Skills and invoked through this router.
 
+In an installed bundle, load those specialists from `internal_skills/chatduino/SKILL.md`, `internal_skills/chatweb/SKILL.md`, and `internal_skills/chatcad/SKILL.md`. The `$chatduino`, `$chatweb`, and `$chatcad` labels below describe internal routes; they are not additional host-level Skill entries. Never search another global Skill root for them.
+
 ## Adapt to the user's idea
 
 - If the goal is clear, restate it, name only assumptions that affect the result, and start.

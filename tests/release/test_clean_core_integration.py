@@ -437,6 +437,24 @@ class CleanCoreIntegrationTests(unittest.TestCase):
             )
             self.assertTrue(installed["success"])
             self.assertEqual([host["host"] for host in installed["hosts"]], ["codex", "workbuddy"])
+            for host_root in (codex_home, workbuddy_config.parent):
+                visible = {
+                    path.name
+                    for path in (host_root / "skills").iterdir()
+                    if path.is_dir()
+                }
+                self.assertEqual(visible, {"chatmaker"})
+                for specialist in ("chatduino", "chatweb", "chatcad"):
+                    self.assertTrue(
+                        (
+                            host_root
+                            / "skills"
+                            / "chatmaker"
+                            / "internal_skills"
+                            / specialist
+                            / "SKILL.md"
+                        ).is_file()
+                    )
             self.assertTrue(json.loads(self._run(
                 [str(installer), "doctor"],
                 cwd=core,

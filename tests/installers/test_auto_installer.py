@@ -87,12 +87,39 @@ class UniversalInstallerTests(unittest.TestCase):
         self.assertEqual([host["host"] for host in result["hosts"]], ["codex", "workbuddy"])
         self.assertIsInstance(result["transaction_id"], str)
         for root in (self.codex_home, self.workbuddy_home):
+            self.assertEqual(
+                {path.name for path in (root / "skills").iterdir() if path.is_dir()},
+                {"chatmaker"},
+            )
             self.assertTrue((root / "skills" / "chatmaker" / "SKILL.md").is_file())
+            for specialist in ("chatduino", "chatweb", "chatcad"):
+                self.assertTrue(
+                    (
+                        root
+                        / "skills"
+                        / "chatmaker"
+                        / "internal_skills"
+                        / specialist
+                        / "SKILL.md"
+                    ).is_file()
+                )
         saved = json.loads((self.workbuddy_home / "mcp.json").read_text(encoding="utf-8"))
         self.assertEqual(saved["mcpServers"]["keep"], {"command": "other"})
         self.assertEqual(
             saved["mcpServers"]["chatmaker"]["args"],
             ["-m", "chatmaker.integrations.mcp"],
+        )
+        active = json.loads(next((self.state_root / "state").glob("*.json")).read_text(encoding="utf-8"))
+        self.assertEqual(
+            {item["name"] for item in active["managed"] if item["kind"] == "skill"},
+            {"chatmaker"},
+        )
+        self.assertEqual(
+            {item["server_key"] for item in active["managed"] if item["kind"] == "mcp"},
+            {"chatmaker"},
+        )
+        self.assertTrue(
+            all("migrated_server_key" not in item for item in active["managed"])
         )
 
     def test_auto_migrates_only_the_historical_chatmaker_mcp_key(self):
@@ -142,6 +169,111 @@ class UniversalInstallerTests(unittest.TestCase):
         self.assertEqual(saved["mcpServers"]["arduino-nano-mindplus"], legacy)
         self.assertIn("chatmaker", saved["mcpServers"])
         self.assertEqual(len(saved["mcpServers"]), 2)
+
+    def test_real_legacy_plugin_added_after_migration_survives_repeat_and_uninstall(self):
+        environment = self._environment(workbuddy=True)
+        config = self.workbuddy_home / "mcp.json"
+        historical = {
+            "command": "python",
+            "args": ["-m", "chatmaker.integrations.mcp"],
+        }
+        config.write_text(
+            json.dumps({"mcpServers": {"arduino-nano-mindplus": historical}}),
+            encoding="utf-8",
+        )
+        first = self._run("auto", environment=environment)
+        self.assertTrue(first["success"])
+        real_plugin = {
+            "command": "nano-classroom-plugin",
+            "args": ["--stdio"],
+            "env": {"OWNER": "teacher"},
+        }
+        saved = json.loads(config.read_text(encoding="utf-8"))
+        saved["mcpServers"]["arduino-nano-mindplus"] = real_plugin
+        config.write_text(json.dumps(saved, indent=2) + "\n", encoding="utf-8")
+
+        repeated = self._run("auto", environment=environment)
+
+        self.assertTrue(repeated["success"])
+        self.assertEqual(repeated["status"], "already_current")
+        self.assertEqual(
+            json.loads(config.read_text(encoding="utf-8"))["mcpServers"][
+                "arduino-nano-mindplus"
+            ],
+            real_plugin,
+        )
+
+        removed = self._run("uninstall", environment=environment)
+
+        self.assertTrue(removed["success"])
+        after = json.loads(config.read_text(encoding="utf-8"))["mcpServers"]
+        self.assertNotIn("chatmaker", after)
+        self.assertEqual(after["arduino-nano-mindplus"], real_plugin)
+
+    def test_specialist_skill_replacements_added_after_migration_survive_repeat_and_uninstall(self):
+        environment = self._environment(codex=True)
+        skills = self.codex_home / "skills"
+        for specialist in ("chatduino", "chatweb", "chatcad"):
+            legacy = skills / specialist
+            legacy.mkdir()
+            (legacy / "legacy.txt").write_text(
+                f"historical {specialist}", encoding="utf-8"
+            )
+
+        installed = self._run("auto", environment=environment)
+
+        self.assertTrue(installed["success"])
+        self.assertEqual(
+            {path.name for path in skills.iterdir() if path.is_dir()},
+            {"chatmaker"},
+        )
+        for specialist in ("chatduino", "chatweb", "chatcad"):
+            replacement = skills / specialist
+            replacement.mkdir()
+            (replacement / "owner.txt").write_text(
+                f"teacher {specialist}", encoding="utf-8"
+            )
+
+        repeated = self._run("auto", environment=environment)
+
+        self.assertTrue(repeated["success"])
+        self.assertEqual(repeated["status"], "already_current")
+        for specialist in ("chatduino", "chatweb", "chatcad"):
+            self.assertEqual(
+                (skills / specialist / "owner.txt").read_text(encoding="utf-8"),
+                f"teacher {specialist}",
+            )
+
+        removed = self._run("uninstall", environment=environment)
+
+        self.assertTrue(removed["success"])
+        self.assertFalse((skills / "chatmaker").exists())
+        for specialist in ("chatduino", "chatweb", "chatcad"):
+            self.assertEqual(
+                (skills / specialist / "owner.txt").read_text(encoding="utf-8"),
+                f"teacher {specialist}",
+            )
+
+    def test_uninstall_restores_pre_migration_specialist_skills_when_slots_remain_empty(self):
+        environment = self._environment(codex=True)
+        skills = self.codex_home / "skills"
+        for specialist in ("chatduino", "chatweb", "chatcad"):
+            legacy = skills / specialist
+            legacy.mkdir()
+            (legacy / "legacy.txt").write_text(
+                f"historical {specialist}", encoding="utf-8"
+            )
+
+        installed = self._run("auto", environment=environment)
+        self.assertTrue(installed["success"])
+        removed = self._run("uninstall", environment=environment)
+
+        self.assertTrue(removed["success"])
+        for specialist in ("chatduino", "chatweb", "chatcad"):
+            self.assertEqual(
+                (skills / specialist / "legacy.txt").read_text(encoding="utf-8"),
+                f"historical {specialist}",
+            )
 
     def test_restore_and_uninstall_recover_the_pre_migration_mcp_before_image(self):
         environment = self._environment(workbuddy=True)
@@ -307,7 +439,8 @@ class UniversalInstallerTests(unittest.TestCase):
 
         self.assertTrue(installed["success"])
         self.assertEqual([host["host"] for host in installed["hosts"]], ["codex", "explicit"])
-        self.assertEqual(len(installed["changes"]), 4)
+        self.assertEqual(len(installed["changes"]), 1)
+        self.assertEqual(Path(installed["changes"][0].removeprefix("skill:")).name, "chatmaker")
         self.assertTrue((target / "chatmaker" / "SKILL.md").is_file())
 
     def test_doctor_reports_partial_multi_host_installation_without_writing(self):

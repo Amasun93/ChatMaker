@@ -10,7 +10,7 @@ from typing import Any, Mapping, Sequence
 
 from .capabilities import probe_environment
 from .hosts import ADAPTERS, ExplicitHostAdapter, WorkBuddyHostAdapter, plan_installation
-from .skill_bundle import SKILL_NAMES
+from .skill_bundle import INTERNAL_SKILL_NAMES, SKILL_NAMES
 from .transaction import InstallTransaction, TransactionResult, canonical_install_path
 from . import workbuddy
 
@@ -86,6 +86,8 @@ def _changes(plan: Mapping[str, Any]) -> list[dict[str, Any]]:
                         "source": SOURCE_SKILLS,
                         "path": root,
                         "names": names,
+                        "internal_names": list(INTERNAL_SKILL_NAMES),
+                        "retire_names": list(INTERNAL_SKILL_NAMES),
                     }
                 )
         mcp_config = host.get("mcp_config")

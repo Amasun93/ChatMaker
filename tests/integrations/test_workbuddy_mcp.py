@@ -429,24 +429,46 @@ class WorkBuddyBridgeTests(unittest.TestCase):
                 self.fail(f"WorkBuddy installer does not support Skill installation: {exc}")
 
             self.assertTrue(installed["success"])
-            self.assertEqual(installed["installed_skills"], ["chatmaker", "chatduino", "chatweb", "chatcad"])
+            self.assertEqual(installed["installed_skills"], ["chatmaker"])
+            self.assertEqual(installed["internal_skills"], ["chatduino", "chatweb", "chatcad"])
             self.assertEqual(installed["content_manager"], "chatmaker-pack")
             self.assertEqual(installed["knowledge_packs_installed"], [])
             self.assertTrue((workbuddy_home / "skills" / "chatmaker" / "SKILL.md").is_file())
             operation_manifest = json.loads(
                 Path(installed["manifest"]).read_text(encoding="utf-8")
             )
+            skill_manifest = json.loads(
+                Path(operation_manifest["skill_manifest"]).read_text(encoding="utf-8")
+            )
             installed_skill_names = {
-                entry["name"]
-                for entry in json.loads(
-                    Path(operation_manifest["skill_manifest"]).read_text(encoding="utf-8")
-                )["entries"]
+                entry["name"] for entry in skill_manifest["entries"]
             }
-            self.assertEqual(installed_skill_names, {"chatmaker", "chatduino", "chatweb", "chatcad"})
+            self.assertEqual(installed_skill_names, {"chatmaker"})
+            chatmaker_record = next(
+                record
+                for record in skill_manifest["records"]
+                if record["identity"].endswith("skills\\chatmaker")
+                or record["identity"].endswith("skills/chatmaker")
+            )
+            self.assertEqual(
+                {item["name"] for item in chatmaker_record["migrated_skills"]},
+                {"chatduino", "chatweb", "chatcad"},
+            )
             self.assertEqual(
                 {path.name for path in (workbuddy_home / "skills").iterdir()},
-                {"chatmaker", "chatduino", "chatweb", "chatcad", "teacher-helper"},
+                {"chatmaker", "teacher-helper"},
             )
+            for specialist in installed["internal_skills"]:
+                self.assertTrue(
+                    (
+                        workbuddy_home
+                        / "skills"
+                        / "chatmaker"
+                        / "internal_skills"
+                        / specialist
+                        / "SKILL.md"
+                    ).is_file()
+                )
             self.assertTrue(Path(installed["manifest"]).is_file())
             self.assertEqual(
                 json.loads((workbuddy_home / "host-settings.json").read_text(encoding="utf-8")),

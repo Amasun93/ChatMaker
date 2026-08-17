@@ -10,6 +10,7 @@ import sys
 from typing import Any
 
 from chatmaker.installers.skill_bundle import (
+    INTERNAL_SKILL_NAMES,
     SKILL_NAMES,
     doctor_bundle,
 )
@@ -72,6 +73,8 @@ def install(
                 "source": canonical_install_path(source_skills),
                 "path": workbuddy_home / "skills",
                 "names": list(SKILL_NAMES),
+                "internal_names": list(INTERNAL_SKILL_NAMES),
+                "retire_names": list(INTERNAL_SKILL_NAMES),
             },
             {
                 "kind": "mcp_server",
@@ -99,6 +102,7 @@ def install(
             "backup": str(backup) if backup else None,
             "server": SERVER_KEY,
             "installed_skills": list(SKILL_NAMES),
+            "internal_skills": list(INTERNAL_SKILL_NAMES),
             "replaced_existing_entry": previous is not None,
             "preserved_other_servers": len(servers) - (1 if SERVER_KEY in servers else 0),
             "restart_workbuddy": True,
@@ -134,6 +138,7 @@ def doctor(config_path: Path) -> dict[str, Any]:
             "config": str(config_path),
             "mcp_server_ready": isinstance(server, dict),
             "skills": skills["skills"],
+            "internal_skills": skills["internal_skills"],
         }
     )
 

@@ -91,6 +91,8 @@ class _Change:
     server: Mapping[str, Any] | None = None
     migrate_from_key: str | None = None
     migrate_from_args: tuple[str, ...] | None = None
+    internal_sources: tuple[tuple[str, Path], ...] = ()
+    retire_skills: tuple[tuple[str, Path], ...] = ()
 
 
 def _canonical_json(value: Any) -> bytes:
@@ -385,35 +387,81 @@ def _remove_path(path: Path) -> None:
     _fsync_directory(path.parent)
 
 
+def _file_hash_entry(path: Path, relative: str) -> dict[str, Any]:
+    digest = hashlib.sha256()
+    size = 0
+    with path.open("rb") as stream:
+        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+            digest.update(chunk)
+            size += len(chunk)
+    return {
+        "path": relative,
+        "type": "file",
+        "size": size,
+        "sha256": digest.hexdigest(),
+    }
+
+
+def _append_tree_entries(
+    root: Path,
+    prefix: str,
+    entries: list[dict[str, Any]],
+) -> None:
+    directories = sorted(item for item in root.iterdir() if item.is_dir())
+    files = sorted(item for item in root.iterdir() if item.is_file())
+    for directory in directories:
+        relative = f"{prefix}/{directory.name}" if prefix else directory.name
+        entries.append({"path": relative, "type": "directory"})
+    for item in files:
+        relative = f"{prefix}/{item.name}" if prefix else item.name
+        entries.append(_file_hash_entry(item, relative))
+    for directory in directories:
+        relative = f"{prefix}/{directory.name}" if prefix else directory.name
+        _append_tree_entries(directory, relative, entries)
+
+
 def _path_hash(path: Path) -> str:
     if not _lexists(path):
         return _MISSING_HASH
     _assert_safe_tree(path)
     entries: list[dict[str, Any]] = []
-    for current, directories, files in os.walk(path, followlinks=False):
-        root = Path(current)
-        directories.sort()
-        files.sort()
-        for directory in directories:
-            relative = (root / directory).relative_to(path).as_posix()
-            entries.append({"path": relative, "type": "directory"})
-        for filename in files:
-            item = root / filename
-            relative = item.relative_to(path).as_posix()
-            digest = hashlib.sha256()
-            size = 0
-            with item.open("rb") as stream:
-                for chunk in iter(lambda: stream.read(1024 * 1024), b""):
-                    digest.update(chunk)
-                    size += len(chunk)
+    _append_tree_entries(path, "", entries)
+    return _json_hash({"type": "directory", "entries": entries})
+
+
+def _composite_skill_hash(
+    source: Path,
+    internal_sources: Sequence[tuple[str, Path]],
+) -> str:
+    if not internal_sources:
+        return _path_hash(source)
+    _assert_safe_tree(source)
+    if _lexists(source / "internal_skills"):
+        raise InstallConflict("ChatMaker source already contains internal_skills")
+    entries: list[dict[str, Any]] = []
+    directories = sorted(
+        [item for item in source.iterdir() if item.is_dir()]
+        + [source / "internal_skills"],
+        key=lambda item: item.name,
+    )
+    files = sorted(item for item in source.iterdir() if item.is_file())
+    for directory in directories:
+        entries.append({"path": directory.name, "type": "directory"})
+    for item in files:
+        entries.append(_file_hash_entry(item, item.name))
+    internal_by_name = dict(internal_sources)
+    for directory in directories:
+        if directory.name != "internal_skills":
+            _append_tree_entries(directory, directory.name, entries)
+            continue
+        for name in sorted(internal_by_name):
             entries.append(
-                {
-                    "path": relative,
-                    "type": "file",
-                    "size": size,
-                    "sha256": digest.hexdigest(),
-                }
+                {"path": f"internal_skills/{name}", "type": "directory"}
             )
+        for name in sorted(internal_by_name):
+            internal = internal_by_name[name]
+            _assert_safe_tree(internal)
+            _append_tree_entries(internal, f"internal_skills/{name}", entries)
     return _json_hash({"type": "directory", "entries": entries})
 
 
@@ -998,6 +1046,27 @@ class InstallTransaction:
         if kind == "skill":
             if target.name != name or record.get("identity") != f"skill:{target}":
                 raise InstallConflict("journal Skill identity is malformed")
+            migrated_skills = record.get("migrated_skills", [])
+            if not isinstance(migrated_skills, list):
+                raise InstallConflict("journal migrated Skills are malformed")
+            migrated_targets: set[str] = set()
+            for migrated in migrated_skills:
+                if not isinstance(migrated, Mapping):
+                    raise InstallConflict("journal migrated Skill is malformed")
+                self._validate_record_shape(
+                    migrated,
+                    str(migrated.get("backup_transaction_id") or transaction_id),
+                    validate_backup_hash=validate_backup_hash,
+                )
+                migrated_target = _absolute(migrated["target"])
+                if (
+                    migrated_target.parent != target.parent
+                    or migrated_target == target
+                    or migrated.get("installed_hash") != _MISSING_HASH
+                    or str(migrated_target) in migrated_targets
+                ):
+                    raise InstallConflict("journal migrated Skill target is malformed")
+                migrated_targets.add(str(migrated_target))
         elif kind == "mcp":
             key = record.get("server_key")
             if key != name or record.get("identity") != f"mcp:{target}#{key}":
@@ -1015,9 +1084,12 @@ class InstallTransaction:
                     raise InstallConflict(
                         "journal migrated MCP before-image is malformed"
                     )
+            migration_hash = record.get("migration_hash")
+            if migration_hash is not None and migrated_key is None:
+                raise InstallConflict("journal MCP migration hash has no migrated key")
         else:
             raise InstallConflict("journal record kind is malformed")
-        for key in ("before_hash", "installed_hash"):
+        for key in ("before_hash", "installed_hash", "migration_hash"):
             value = record.get(key)
             if value is not None and (
                 not isinstance(value, str)
@@ -1271,12 +1343,18 @@ class InstallTransaction:
         for record in verification:
             if kind == "apply":
                 actual = self._current_hash(record)
-                expected = record["installed_hash"]
+                expected = record.get("migration_hash", record["installed_hash"])
             else:
                 actual = _full_path_hash(_absolute(record["target"]))
                 expected = record["before_hash"]
             if actual != expected:
                 raise InstallConflict("committed journal targets do not verify")
+            if kind == "apply":
+                for migrated in record.get("migrated_skills", []):
+                    if _full_path_hash(_absolute(migrated["target"])) != _MISSING_HASH:
+                        raise InstallConflict(
+                            "committed Skill migration targets do not verify"
+                        )
         self._transition_state(journal)
         self._finalize_journal(path, journal)
 
@@ -1329,11 +1407,14 @@ class InstallTransaction:
         status = journal.get("status")
         if status == "prepared":
             self._restore_records_atomically(
-                journal["records"],
+                self._apply_before_image_records(journal["records"]),
                 uuid.uuid4().hex,
             )
             if journal["kind"] == "apply":
-                self._cleanup_apply_displaced(journal["records"], transaction_id)
+                self._cleanup_apply_displaced(
+                    self._apply_before_image_records(journal["records"]),
+                    transaction_id,
+                )
             else:
                 self._cleanup_operation_displaced(journal["records"], transaction_id)
             journal["status"] = "rolled_back"
@@ -1388,12 +1469,56 @@ class InstallTransaction:
                 names = raw.get("names") or ("chatmaker", "chatduino", "chatweb")
                 if isinstance(names, (str, bytes)):
                     raise ValueError("Skill names must be a sequence")
+                raw_internal_names = raw.get("internal_names") or ()
+                raw_retire_names = raw.get("retire_names") or ()
+                if isinstance(raw_internal_names, (str, bytes)) or isinstance(
+                    raw_retire_names, (str, bytes)
+                ):
+                    raise ValueError("Skill names must be a sequence")
+
+                def validated_names(values: Sequence[Any]) -> tuple[str, ...]:
+                    checked: list[str] = []
+                    for value in values:
+                        candidate = str(value)
+                        if (
+                            not candidate
+                            or candidate in {".", ".."}
+                            or Path(candidate).name != candidate
+                            or any(separator in candidate for separator in ("/", "\\"))
+                        ):
+                            raise UnsafeInstallPath(f"unsafe Skill name: {candidate}")
+                        checked.append(candidate)
+                    if len(set(checked)) != len(checked):
+                        raise ValueError("duplicate Skill name")
+                    return tuple(checked)
+
+                internal_names = validated_names(tuple(raw_internal_names))
+                retire_names = validated_names(tuple(raw_retire_names))
+                if (internal_names or retire_names) and "chatmaker" not in {
+                    str(name) for name in names
+                }:
+                    raise ValueError("internal Skills require the chatmaker entry")
+                internal_sources: list[tuple[str, Path]] = []
+                for internal_name in internal_names:
+                    internal_source = source_root / internal_name
+                    _assert_safe_tree(internal_source)
+                    if not (internal_source / "SKILL.md").is_file():
+                        raise FileNotFoundError(
+                            f"missing internal source Skill: {internal_source}"
+                        )
+                    internal_sources.append((internal_name, internal_source))
+                retire_skills = tuple(
+                    (retire_name, target_root / retire_name)
+                    for retire_name in retire_names
+                )
+                for _retire_name, retire_target in retire_skills:
+                    _assert_safe_ancestors(retire_target, include_final=True)
+                    if _lexists(retire_target) and not retire_target.is_dir():
+                        raise UnsafeInstallPath(
+                            f"Skill target is not a directory: {retire_target}"
+                        )
                 for raw_name in names:
-                    name = str(raw_name)
-                    if not name or name in {".", ".."} or Path(name).name != name or any(
-                        separator in name for separator in ("/", "\\")
-                    ):
-                        raise UnsafeInstallPath(f"unsafe Skill name: {name}")
+                    name = validated_names((raw_name,))[0]
                     source = source_root / name
                     target = target_root / name
                     _assert_safe_tree(source)
@@ -1406,7 +1531,19 @@ class InstallTransaction:
                         )
                     identity = f"skill:{target}"
                     normalized.append(
-                        _Change("skill", identity, target, name=name, source=source)
+                        _Change(
+                            "skill",
+                            identity,
+                            target,
+                            name=name,
+                            source=source,
+                            internal_sources=(
+                                tuple(internal_sources) if name == "chatmaker" else ()
+                            ),
+                            retire_skills=(
+                                retire_skills if name == "chatmaker" else ()
+                            ),
+                        )
                     )
             elif kind == "mcp_server":
                 target = _absolute(raw["path"])
@@ -1491,19 +1628,36 @@ class InstallTransaction:
             if not name or target.name != name:
                 raise UnsafeInstallPath("managed Skill target does not match its name")
             expected_identity = f"skill:{target}"
+            retired_skills = record.get("retired_skills", [])
+            if not isinstance(retired_skills, list):
+                raise InstallConflict("managed retired Skills are malformed")
+            for retired in retired_skills:
+                if not isinstance(retired, Mapping):
+                    raise InstallConflict("managed retired Skill is malformed")
+                self._validate_record_shape(
+                    retired,
+                    str(retired.get("backup_transaction_id") or ""),
+                    validate_backup_hash=True,
+                )
+                retired_target = _absolute(retired["target"])
+                if retired_target.parent != target.parent or retired_target == target:
+                    raise InstallConflict("managed retired Skill target is malformed")
         elif kind == "mcp":
             key = str(record.get("server_key") or "")
             if not key or key != name:
                 raise UnsafeInstallPath("managed MCP key is malformed")
             expected_identity = f"mcp:{target}#{key}"
-            migrated_key = record.get("migrated_server_key")
-            if migrated_key is not None and (
-                not isinstance(migrated_key, str)
-                or not migrated_key
-                or migrated_key == key
-                or "\x00" in migrated_key
-            ):
-                raise UnsafeInstallPath("managed migrated MCP key is malformed")
+            restore_key = record.get("restore_server_key")
+            if restore_key is not None:
+                if (
+                    not isinstance(restore_key, str)
+                    or not restore_key
+                    or restore_key == key
+                    or "\x00" in restore_key
+                ):
+                    raise UnsafeInstallPath("managed restored MCP key is malformed")
+                if not isinstance(record.get("baseline"), Mapping):
+                    raise InstallConflict("managed MCP migration baseline is malformed")
         else:
             raise InstallConflict(f"unknown managed content kind: {kind}")
         if record.get("identity") != expected_identity:
@@ -1546,7 +1700,7 @@ class InstallTransaction:
     def _desired_hash(change: _Change, migrated_key: str | None = None) -> str:
         if change.kind == "skill":
             assert change.source is not None
-            return _path_hash(change.source)
+            return _composite_skill_hash(change.source, change.internal_sources)
         state: dict[str, Any] = {"exists": True, "value": dict(change.server or {})}
         if migrated_key is not None:
             state["migrated"] = {
@@ -1587,6 +1741,20 @@ class InstallTransaction:
                     }
                 )
         return conflicts
+
+    @staticmethod
+    def _apply_before_image_records(
+        records: Sequence[Mapping[str, Any]],
+    ) -> list[Mapping[str, Any]]:
+        expanded: list[Mapping[str, Any]] = []
+        for record in records:
+            expanded.append(record)
+            migrated = record.get("migrated_skills", [])
+            if isinstance(migrated, list):
+                expanded.extend(
+                    item for item in migrated if isinstance(item, Mapping)
+                )
+        return expanded
 
     def _journal_path(self, transaction_id: str) -> Path:
         if (
@@ -1649,16 +1817,30 @@ class InstallTransaction:
         active_by_id = {
             str(item["identity"]): dict(item) for item in (active or {}).get("managed", [])
         }
+        superseded_skills: dict[str, dict[str, Any]] = {}
+        skill_migrations: dict[str, dict[str, dict[str, Any]]] = {}
+        for item in normalized:
+            if item.kind != "skill" or not item.retire_skills:
+                continue
+            migrated: dict[str, dict[str, Any]] = {}
+            for _name, target in item.retire_skills:
+                identity = f"skill:{target}"
+                legacy_record = active_by_id.get(identity)
+                if legacy_record is None:
+                    continue
+                if legacy_record.get("kind") != "skill":
+                    raise InstallConflict("legacy Skill state is malformed")
+                migrated[identity] = active_by_id.pop(identity)
+                superseded_skills[identity] = legacy_record
+            if migrated:
+                skill_migrations[item.identity] = migrated
         migrated_keys: dict[str, str] = {}
         superseded_legacy: dict[str, dict[str, Any]] = {}
         for item in normalized:
             if item.kind != "mcp" or item.migrate_from_key is None:
                 continue
             current_record = active_by_id.get(item.identity)
-            if current_record is not None and current_record.get(
-                "migrated_server_key"
-            ) == item.migrate_from_key:
-                migrated_keys[item.identity] = item.migrate_from_key
+            if current_record is not None:
                 continue
             legacy_identity = f"mcp:{item.target}#{item.migrate_from_key}"
             legacy_record = active_by_id.get(legacy_identity)
@@ -1674,15 +1856,13 @@ class InstallTransaction:
                 superseded_legacy[item.identity] = active_by_id.pop(legacy_identity)
             elif self._migration_matches(item):
                 migrated_keys[item.identity] = item.migrate_from_key
-        desired = {
-            item.identity: self._desired_hash(item, migrated_keys.get(item.identity))
-            for item in normalized
-        }
+        desired = {item.identity: self._desired_hash(item) for item in normalized}
         changed = [
             item
             for item in normalized
             if item.identity not in active_by_id
             or desired[item.identity] != active_by_id[item.identity]["installed_hash"]
+            or item.identity in skill_migrations
         ]
         unchanged = [item.identity for item in normalized if item not in changed]
         if not changed:
@@ -1701,6 +1881,8 @@ class InstallTransaction:
         displaced: dict[str, Path] = {}
         target_guards: _TargetDirectoryGuards | None = None
         journal_written = False
+        mutation_started = False
+        preserve_identities: set[str] = set()
         previous_state = dict(active) if active is not None else None
         try:
             for item in changed:
@@ -1720,6 +1902,19 @@ class InstallTransaction:
                     assert item.source is not None
                     _assert_safe_tree(item.source)
                     target_guards.copy_path(item.source, stage)
+                    if item.internal_sources:
+                        internal_root = stage / "internal_skills"
+                        _ensure_safe_directory(internal_root)
+                        for internal_name, internal_source in item.internal_sources:
+                            _atomic_backup(
+                                internal_source,
+                                internal_root / internal_name,
+                            )
+                        _assert_safe_tree(stage)
+                        if _path_hash(stage) != desired[item.identity]:
+                            raise InstallConflict(
+                                "composed ChatMaker Skill does not match its source hash"
+                            )
                 else:
                     current = _read_json_object(item.target, missing_ok=True)
                     servers = current.setdefault("mcpServers", {})
@@ -1745,8 +1940,10 @@ class InstallTransaction:
             for index, item in enumerate(changed):
                 before_exists = target_guards.exists(item.target)
                 backup: str | None = None
+                before_hash = _MISSING_HASH
                 if before_exists:
                     _assert_safe_ancestors(item.target)
+                    source_hash = _full_path_hash(item.target)
                     backup_path = backup_root / (
                         f"{index:03d}-{item.kind}-{_path_token(item.identity)}"
                     )
@@ -1756,6 +1953,11 @@ class InstallTransaction:
                         source_guards=target_guards,
                     )
                     backup = str(backup_path)
+                    before_hash = _full_path_hash(backup_path)
+                    if before_hash != source_hash:
+                        raise InstallConflict(
+                            f"managed target changed while being backed up: {item.identity}"
+                        )
                 record: dict[str, Any] = {
                     "kind": item.kind,
                     "identity": item.identity,
@@ -1764,9 +1966,57 @@ class InstallTransaction:
                     "before_exists": before_exists,
                     "backup": backup,
                     "backup_transaction_id": transaction_id,
-                    "before_hash": _full_path_hash(item.target),
+                    "before_hash": before_hash,
                     "installed_hash": desired[item.identity],
                 }
+                if (
+                    item.kind == "skill"
+                    and item.retire_skills
+                    and (
+                        item.identity not in active_by_id
+                        or item.identity in skill_migrations
+                    )
+                ):
+                    migrated_skills: list[dict[str, Any]] = []
+                    for migrated_index, (retired_name, retired_target) in enumerate(
+                        item.retire_skills
+                    ):
+                        retired_exists = target_guards.exists(retired_target)
+                        retired_backup: str | None = None
+                        retired_hash = _MISSING_HASH
+                        if retired_exists:
+                            _assert_safe_ancestors(retired_target)
+                            retired_source_hash = _full_path_hash(retired_target)
+                            retired_backup_path = backup_root / (
+                                f"{index:03d}-retired-{migrated_index:03d}-"
+                                f"{_path_token(f'skill:{retired_target}')}"
+                            )
+                            _atomic_backup(
+                                retired_target,
+                                retired_backup_path,
+                                source_guards=target_guards,
+                            )
+                            retired_backup = str(retired_backup_path)
+                            retired_hash = _full_path_hash(retired_backup_path)
+                            if retired_hash != retired_source_hash:
+                                raise InstallConflict(
+                                    "migrated Skill changed while being backed up: "
+                                    f"skill:{retired_target}"
+                                )
+                        migrated_skills.append(
+                            {
+                                "kind": "skill",
+                                "identity": f"skill:{retired_target}",
+                                "target": str(retired_target),
+                                "name": retired_name,
+                                "before_exists": retired_exists,
+                                "backup": retired_backup,
+                                "backup_transaction_id": transaction_id,
+                                "before_hash": retired_hash,
+                                "installed_hash": _MISSING_HASH,
+                            }
+                        )
+                    record["migrated_skills"] = migrated_skills
                 if item.kind == "mcp":
                     before_key_exists, before_value = _mcp_value(
                         item.target, str(item.server_key)
@@ -1791,9 +2041,22 @@ class InstallTransaction:
                                 "before_migrated_value": (
                                     migrated_value if migrated_exists else None
                                 ),
+                                "migration_hash": self._desired_hash(
+                                    item, migrated_key
+                                ),
                             }
                         )
                 records.append(record)
+
+            for record in records:
+                for migrated in record.get("migrated_skills", []):
+                    if _full_path_hash(_absolute(migrated["target"])) != migrated[
+                        "before_hash"
+                    ]:
+                        raise InstallConflict(
+                            "migrated Skill changed after its before-image was captured: "
+                            f"{migrated['identity']}"
+                        )
 
             managed_by_id = dict(active_by_id)
             for item, record in zip(changed, records):
@@ -1852,9 +2115,49 @@ class InstallTransaction:
                         }
                     )
                     if record.get("migrated_server_key") is not None:
-                        managed["migrated_server_key"] = record[
+                        managed["restore_server_key"] = record[
                             "migrated_server_key"
                         ]
+                    elif active_by_id.get(item.identity, {}).get(
+                        "restore_server_key"
+                    ) is not None:
+                        managed["restore_server_key"] = active_by_id[item.identity][
+                            "restore_server_key"
+                        ]
+                elif record.get("migrated_skills"):
+                    retired_skills: list[dict[str, Any]] = []
+                    for migrated in record["migrated_skills"]:
+                        legacy_record = superseded_skills.get(migrated["identity"])
+                        if legacy_record is None:
+                            retired_skills.append(dict(migrated))
+                            continue
+                        legacy_baseline = legacy_record.get("baseline")
+                        if not isinstance(legacy_baseline, Mapping):
+                            raise InstallConflict(
+                                "legacy Skill baseline is malformed"
+                            )
+                        retired_skills.append(
+                            {
+                                "kind": "skill",
+                                "identity": migrated["identity"],
+                                "target": migrated["target"],
+                                "name": migrated["name"],
+                                "before_exists": bool(
+                                    legacy_baseline.get("before_exists")
+                                ),
+                                "backup": legacy_baseline.get("backup"),
+                                "backup_transaction_id": legacy_baseline.get(
+                                    "transaction_id"
+                                ),
+                                "before_hash": legacy_baseline.get("before_hash"),
+                                "installed_hash": _MISSING_HASH,
+                            }
+                        )
+                    managed["retired_skills"] = retired_skills
+                elif active_by_id.get(item.identity, {}).get("retired_skills"):
+                    managed["retired_skills"] = active_by_id[item.identity][
+                        "retired_skills"
+                    ]
                 managed_by_id[item.identity] = managed
             managed_records = sorted(managed_by_id.values(), key=lambda item: item["identity"])
             managed_hash = _aggregate_hash(managed_records)
@@ -1904,6 +2207,7 @@ class InstallTransaction:
             )
             self._write_pending_state(previous_state, journal)
 
+            mutation_started = True
             for record in records:
                 identity = str(record["identity"])
                 target = _absolute(record["target"])
@@ -1922,6 +2226,13 @@ class InstallTransaction:
                     if target_guards.exists(target):
                         target_guards.replace(target, displaced_path)
                         displaced[identity] = displaced_path
+                        if _full_path_hash(displaced_path) != record["before_hash"]:
+                            target_guards.replace(displaced_path, target)
+                            displaced.pop(identity, None)
+                            preserve_identities.add(identity)
+                            raise InstallConflict(
+                                f"managed Skill changed before activation: {identity}"
+                            )
                     try:
                         _activate_staging(stages[identity], target, target_guards)
                     except Exception:
@@ -1929,6 +2240,42 @@ class InstallTransaction:
                             target_guards.replace(displaced_path, target)
                             displaced.pop(identity, None)
                         raise
+                    for migrated in record.get("migrated_skills", []):
+                        migrated_identity = str(migrated["identity"])
+                        migrated_target = _absolute(migrated["target"])
+                        self._inject(
+                            "skill_migration",
+                            {
+                                "identity": migrated_identity,
+                                "target": str(migrated_target),
+                            },
+                        )
+                        migrated_displaced = migrated_target.parent / (
+                            f".chatmaker-{transaction_id}-{migrated['name']}.displaced"
+                        )
+                        if target_guards.exists(migrated_displaced):
+                            raise UnsafeInstallPath(
+                                "Skill migration displacement path already exists: "
+                                f"{migrated_displaced}"
+                            )
+                        if target_guards.exists(migrated_target):
+                            target_guards.replace(
+                                migrated_target, migrated_displaced
+                            )
+                            displaced[migrated_identity] = migrated_displaced
+                            if (
+                                _full_path_hash(migrated_displaced)
+                                != migrated["before_hash"]
+                            ):
+                                target_guards.replace(
+                                    migrated_displaced, migrated_target
+                                )
+                                displaced.pop(migrated_identity, None)
+                                preserve_identities.add(migrated_identity)
+                                raise InstallConflict(
+                                    "migrated Skill changed before activation: "
+                                    f"{migrated_identity}"
+                                )
                 else:
                     self._inject(
                         "mcp_replacement", {"identity": identity, "target": str(target)}
@@ -1942,8 +2289,15 @@ class InstallTransaction:
             for record in records:
                 actual = self._current_hash(record)
                 identity = str(record["identity"])
-                if actual != desired[identity]:
+                expected = record.get("migration_hash", desired[identity])
+                if actual != expected:
                     raise RuntimeError(f"installation verification failed: {identity}")
+                for migrated in record.get("migrated_skills", []):
+                    if _full_path_hash(_absolute(migrated["target"])) != _MISSING_HASH:
+                        raise RuntimeError(
+                            "installation migration verification failed: "
+                            f"{migrated['identity']}"
+                        )
 
             for identity, path in tuple(displaced.items()):
                 self._inject(
@@ -1982,19 +2336,26 @@ class InstallTransaction:
                 details=details,
             )
         except Exception:
-            if records:
+            if records and mutation_started:
+                rollback_records = [
+                    record
+                    for record in self._apply_before_image_records(records)
+                    if str(record["identity"]) not in preserve_identities
+                ]
                 self._restore_records_atomically(
-                    records,
+                    rollback_records,
                     uuid.uuid4().hex,
                     target_guards=target_guards,
                     verify_targets=False,
                 )
                 self._cleanup_apply_displaced(
-                    records,
+                    self._apply_before_image_records(records),
                     transaction_id,
                     target_guards=target_guards,
                 )
             self._restore_state_value(previous_state)
+            if not journal_written and _lexists(backup_root):
+                _remove_path(backup_root)
             if journal_written and journal_path.is_file():
                 try:
                     failed = _read_json_object(journal_path)
@@ -2053,6 +2414,74 @@ class InstallTransaction:
                 }
             )
         return records
+
+    @staticmethod
+    def _retired_skill_records(
+        managed: Sequence[Mapping[str, Any]],
+    ) -> list[Mapping[str, Any]]:
+        retired: list[Mapping[str, Any]] = []
+        for item in managed:
+            values = item.get("retired_skills", [])
+            if isinstance(values, list):
+                retired.extend(value for value in values if isinstance(value, Mapping))
+        return retired
+
+    def _retired_skill_after_records(
+        self,
+        managed: Sequence[Mapping[str, Any]],
+        transaction_id: str,
+        *,
+        target_guards: _TargetDirectoryGuards | None = None,
+    ) -> list[dict[str, Any]]:
+        """Restore a migrated slot only while it remains unclaimed by the user."""
+        return self._migrated_skill_after_records(
+            self._retired_skill_records(managed),
+            transaction_id,
+            target_guards=target_guards,
+        )
+
+    def _migrated_skill_after_records(
+        self,
+        retired_records: Sequence[Mapping[str, Any]],
+        transaction_id: str,
+        *,
+        target_guards: _TargetDirectoryGuards | None = None,
+    ) -> list[dict[str, Any]]:
+        backup_root = self.backups_root / transaction_id
+        _ensure_safe_directory(backup_root)
+        desired: list[dict[str, Any]] = []
+        for index, retired in enumerate(retired_records):
+            target = _absolute(retired["target"])
+            exists = (
+                target_guards.exists(target)
+                if target_guards is not None
+                else _lexists(target)
+            )
+            if not exists:
+                restored = dict(retired)
+                restored["backup_transaction_id"] = str(
+                    retired.get("backup_transaction_id") or ""
+                )
+                desired.append(restored)
+                continue
+            backup_path = backup_root / (
+                f"after-retired-{index:03d}-{_path_token(str(retired['identity']))}"
+            )
+            _atomic_backup(target, backup_path, source_guards=target_guards)
+            desired.append(
+                {
+                    "kind": "skill",
+                    "identity": retired["identity"],
+                    "target": str(target),
+                    "name": retired["name"],
+                    "before_exists": True,
+                    "backup": str(backup_path),
+                    "backup_transaction_id": transaction_id,
+                    "before_hash": _full_path_hash(backup_path),
+                    "installed_hash": _full_path_hash(target),
+                }
+            )
+        return desired
 
     def _run_restore_operation(
         self,
@@ -2165,23 +2594,48 @@ class InstallTransaction:
                 )
             operation_id = uuid.uuid4().hex
             target_guards = _TargetDirectoryGuards(
-                [_absolute(record["target"]).parent for record in active["managed"]]
+                [
+                    _absolute(record["target"]).parent
+                    for record in (
+                        list(active["managed"])
+                        + self._retired_skill_records(active["managed"])
+                    )
+                ]
             )
             target_guards.__enter__()
             try:
                 current_records = self._snapshot_current_records(
-                    active["managed"],
+                    list(active["managed"])
+                    + self._retired_skill_records(active["managed"]),
                     operation_id,
                     target_guards=target_guards,
                 )
-                after_records = []
-                for record in journal["records"]:
-                    desired = dict(record)
-                    desired["backup_transaction_id"] = transaction_id
-                    after_records.append(desired)
                 previous = journal.get("previous_state")
                 if previous is not None and not isinstance(previous, Mapping):
                     raise InstallConflict("transaction previous state is malformed")
+                if previous is None:
+                    after_records = self._uninstall_after_records(
+                        active,
+                        operation_id,
+                        target_guards=target_guards,
+                    )
+                else:
+                    after_records = []
+                    for record in journal["records"]:
+                        desired = dict(record)
+                        desired["backup_transaction_id"] = transaction_id
+                        after_records.append(desired)
+                    after_records.extend(
+                        self._migrated_skill_after_records(
+                            [
+                                migrated
+                                for record in journal["records"]
+                                for migrated in record.get("migrated_skills", [])
+                            ],
+                            operation_id,
+                            target_guards=target_guards,
+                        )
+                    )
                 self._run_restore_operation(
                     kind="restore",
                     current_state=active,
@@ -2208,6 +2662,8 @@ class InstallTransaction:
         self,
         active: Mapping[str, Any],
         transaction_id: str,
+        *,
+        target_guards: _TargetDirectoryGuards | None = None,
     ) -> list[dict[str, Any]]:
         backup_root = self.backups_root / transaction_id
         _ensure_safe_directory(backup_root)
@@ -2243,13 +2699,11 @@ class InstallTransaction:
                 servers[key] = baseline.get("before_value")
             else:
                 servers.pop(key, None)
-            migrated_key = managed.get("migrated_server_key")
-            if migrated_key is not None:
-                migrated_key = str(migrated_key)
+            restore_key = managed.get("restore_server_key")
+            if restore_key is not None and str(restore_key) not in servers:
+                restore_key = str(restore_key)
                 if baseline.get("before_migrated_key_exists"):
-                    servers[migrated_key] = baseline.get("before_migrated_value")
-                else:
-                    servers.pop(migrated_key, None)
+                    servers[restore_key] = baseline.get("before_migrated_value")
             config_existed = bool(baseline.get("before_exists"))
             desired_exists = config_existed or bool(servers) or set(data) != {"mcpServers"}
             backup: str | None = None
@@ -2275,6 +2729,13 @@ class InstallTransaction:
                     "installed_hash": managed.get("installed_hash"),
                 }
             )
+        desired.extend(
+            self._retired_skill_after_records(
+                active["managed"],
+                transaction_id,
+                target_guards=target_guards,
+            )
+        )
         return desired
 
     def uninstall(self) -> TransactionResult:
@@ -2295,16 +2756,27 @@ class InstallTransaction:
                 )
             transaction_id = uuid.uuid4().hex
             target_guards = _TargetDirectoryGuards(
-                [_absolute(record["target"]).parent for record in active["managed"]]
+                [
+                    _absolute(record["target"]).parent
+                    for record in (
+                        list(active["managed"])
+                        + self._retired_skill_records(active["managed"])
+                    )
+                ]
             )
             target_guards.__enter__()
             try:
                 current_records = self._snapshot_current_records(
-                    active["managed"],
+                    list(active["managed"])
+                    + self._retired_skill_records(active["managed"]),
                     transaction_id,
                     target_guards=target_guards,
                 )
-                after_records = self._uninstall_after_records(active, transaction_id)
+                after_records = self._uninstall_after_records(
+                    active,
+                    transaction_id,
+                    target_guards=target_guards,
+                )
                 self._run_restore_operation(
                     kind="uninstall",
                     current_state=active,

@@ -82,7 +82,8 @@ class CodexInstallerTests(unittest.TestCase):
             health = doctor(codex_home)
 
             self.assertTrue(installed["success"])
-            self.assertEqual(installed["installed_skills"], ["chatmaker", "chatduino", "chatweb", "chatcad"])
+            self.assertEqual(installed["installed_skills"], ["chatmaker"])
+            self.assertEqual(installed["internal_skills"], ["chatduino", "chatweb", "chatcad"])
             self.assertEqual(installed["content_manager"], "chatmaker-pack")
             self.assertEqual(installed["knowledge_packs_installed"], [])
             self.assertTrue(health["success"], health)
@@ -90,6 +91,21 @@ class CodexInstallerTests(unittest.TestCase):
             self.assertEqual(health["knowledge_packs_installed"], [])
             self.assertFalse((old_chatduino / "old-marker.txt").exists())
             self.assertTrue((codex_home / "skills" / "chatmaker" / "SKILL.md").is_file())
+            self.assertEqual(
+                {path.name for path in (codex_home / "skills").iterdir() if path.is_dir()},
+                {"chatmaker"},
+            )
+            for specialist in installed["internal_skills"]:
+                self.assertTrue(
+                    (
+                        codex_home
+                        / "skills"
+                        / "chatmaker"
+                        / "internal_skills"
+                        / specialist
+                        / "SKILL.md"
+                    ).is_file()
+                )
             self.assertTrue(Path(installed["manifest"]).is_file())
 
             removed = uninstall(codex_home, transaction_root=transaction_root)
@@ -145,16 +161,19 @@ class CodexInstallerTests(unittest.TestCase):
             old_chatmaker.mkdir(parents=True)
             (old_chatmaker / "old-marker.txt").write_text("original", encoding="utf-8")
             real_activate = transaction._activate_staging
+            failed = False
 
-            def fail_when_activating_chatduino(source, target, *args):
-                if Path(target).name == "chatduino":
+            def fail_when_activating_chatmaker(source, target, *args):
+                nonlocal failed
+                if Path(target).name == "chatmaker" and not failed:
+                    failed = True
                     raise PermissionError("simulated Windows directory activation failure")
                 return real_activate(source, target, *args)
 
             with mock.patch.object(
                 transaction,
                 "_activate_staging",
-                side_effect=fail_when_activating_chatduino,
+                side_effect=fail_when_activating_chatmaker,
             ):
                 with self.assertRaises(PermissionError):
                     install(
@@ -176,12 +195,12 @@ class CodexInstallerTests(unittest.TestCase):
             transaction_root = Path(directory) / ".chatmaker"
             real_replace = transaction.os.replace
 
-            def reject_chatduino_rename(source, target):
-                if Path(target).name == "chatduino":
+            def reject_chatmaker_rename(source, target):
+                if Path(target).name == "chatmaker":
                     raise PermissionError("simulated watcher lock")
                 return real_replace(source, target)
 
-            with mock.patch.object(transaction.os, "replace", side_effect=reject_chatduino_rename):
+            with mock.patch.object(transaction.os, "replace", side_effect=reject_chatmaker_rename):
                 try:
                     installed = install(
                         codex_home,
@@ -192,7 +211,16 @@ class CodexInstallerTests(unittest.TestCase):
                     self.fail(f"directory activation did not fall back to copy: {exc}")
 
             self.assertTrue(installed["success"])
-            self.assertTrue((codex_home / "skills" / "chatduino" / "SKILL.md").is_file())
+            self.assertTrue(
+                (
+                    codex_home
+                    / "skills"
+                    / "chatmaker"
+                    / "internal_skills"
+                    / "chatduino"
+                    / "SKILL.md"
+                ).is_file()
+            )
             uninstall(codex_home, transaction_root=transaction_root)
 
 
