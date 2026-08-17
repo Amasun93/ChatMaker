@@ -73,33 +73,38 @@ class ReleasePackageTests(unittest.TestCase):
         signature_path = ROOT / "distribution" / "registry" / "registry.sig.json"
         registry = json.loads(registry_path.read_text(encoding="utf-8"))
         expected = {
-            "chatmaker-board-arduino-nano-classic-wiki": (
-                "chatmaker-board-arduino-nano-classic-wiki-1.0.0.cmpack",
-                10463,
-                "f436a6c149b9d9627f34257400854be138143d34cf928e6547a33c4366bde30a",
+            "chatmaker-board-arduino-nano-classic-knowledge": (
+                "chatmaker-board-arduino-nano-classic-knowledge-1.1.0.cmpack",
+                10908,
+                "520c7a3fd097380b3424832beae60af3b6a3ca7286c8c0f2c15f83e114bea8de",
             ),
-            "chatmaker-board-arduino-uno-r3-wiki": (
-                "chatmaker-board-arduino-uno-r3-wiki-1.0.0.cmpack",
-                10291,
-                "67110bf2e13d5ba7a9cc00235897c135ed3ee80208991d303b19330d2250a2c6",
+            "chatmaker-board-arduino-uno-r3-knowledge": (
+                "chatmaker-board-arduino-uno-r3-knowledge-1.1.0.cmpack",
+                10712,
+                "13ccaaeddae9ea834a8b2d05d0fb767474343c36c05f7bce5295b5dc320fd914",
             ),
-            "chatmaker-board-esp32-devkit-v1-wiki": (
-                "chatmaker-board-esp32-devkit-v1-wiki-1.0.0.cmpack",
-                10471,
-                "9cbf789ecf0598c24c9a5a238e7842366d2834c01f53887be338c8224579b34d",
+            "chatmaker-board-esp32-devkit-v1-knowledge": (
+                "chatmaker-board-esp32-devkit-v1-knowledge-1.1.0.cmpack",
+                10902,
+                "2c1ec4d80c43db90547683c8fd3a7ec754acd1dd02389d4bfa1655bcf4b8311e",
+            ),
+            "chatmaker-board-idmc-0001-starcore-v4-2-2-knowledge": (
+                "chatmaker-board-idmc-0001-starcore-v4-2-2-knowledge-1.0.0.cmpack",
+                14752,
+                "ef8c4635db058cf25399fa1840e43386a8e0ca3850199076e6b5986010e534b7",
             ),
         }
-        self.assertEqual(registry["sequence"], 1)
+        self.assertEqual(registry["sequence"], 2)
         generated_at = datetime.fromisoformat(registry["generated_at"].replace("Z", "+00:00"))
         expires_at = datetime.fromisoformat(registry["expires_at"].replace("Z", "+00:00"))
         self.assertLessEqual((expires_at - generated_at).days, 31)
-        self.assertEqual(len(registry["packs"]), 3)
+        self.assertEqual(len(registry["packs"]), 4)
         for item in registry["packs"]:
             filename, length, digest = expected[item["pack_id"]]
             artifact = ROOT / "distribution" / "packs" / filename
             self.assertEqual(item["url"], (
                 "https://raw.githubusercontent.com/Amasun93/ChatMaker/"
-                "25ad1df2376872e81b3fe1025420cf3f76376719/distribution/packs/"
+                "d59f52648e832cd732c279b874c22c7b9a051aa2/distribution/packs/"
                 + filename
             ))
             self.assertEqual(item["length"], artifact.stat().st_size)

@@ -1,58 +1,63 @@
 {
   "schema_version": "1.0",
-  "sequence": 1,
-  "generated_at": "2026-08-16T00:00:00Z",
-  "expires_at": "2026-09-15T00:00:00Z",
+  "sequence": 2,
+  "generated_at": "2026-08-17T00:00:00Z",
+  "expires_at": "2026-09-16T00:00:00Z",
   "packs": [
     {
-      "pack_id": "chatmaker-board-arduino-nano-classic-wiki",
+      "pack_id": "chatmaker-board-arduino-nano-classic-knowledge",
       "pack_type": "knowledge",
-      "version": "1.0.0",
+      "version": "1.1.0",
       "board_id": "arduino-nano-classic",
-      "url": "https://raw.githubusercontent.com/Amasun93/ChatMaker/25ad1df2376872e81b3fe1025420cf3f76376719/distribution/packs/chatmaker-board-arduino-nano-classic-wiki-1.0.0.cmpack",
-      "length": 10463,
-      "sha256": "f436a6c149b9d9627f34257400854be138143d34cf928e6547a33c4366bde30a",
+      "url": "https://raw.githubusercontent.com/Amasun93/ChatMaker/d59f52648e832cd732c279b874c22c7b9a051aa2/distribution/packs/chatmaker-board-arduino-nano-classic-knowledge-1.1.0.cmpack",
+      "length": 10908,
+      "sha256": "520c7a3fd097380b3424832beae60af3b6a3ca7286c8c0f2c15f83e114bea8de",
       "compatibility": {
-        "core": {
-          "minimum": "0.1.0",
-          "maximum_exclusive": "0.2.0"
-        },
+        "core": {"minimum": "0.1.0", "maximum_exclusive": "0.2.0"},
         "pack_manifest_schema": ["1.0"],
-        "llmwiki_index_schema": ["1.0"]
+        "knowledge_index_schema": ["1.0"]
       }
     },
     {
-      "pack_id": "chatmaker-board-arduino-uno-r3-wiki",
+      "pack_id": "chatmaker-board-arduino-uno-r3-knowledge",
       "pack_type": "knowledge",
-      "version": "1.0.0",
+      "version": "1.1.0",
       "board_id": "arduino-uno-r3",
-      "url": "https://raw.githubusercontent.com/Amasun93/ChatMaker/25ad1df2376872e81b3fe1025420cf3f76376719/distribution/packs/chatmaker-board-arduino-uno-r3-wiki-1.0.0.cmpack",
-      "length": 10291,
-      "sha256": "67110bf2e13d5ba7a9cc00235897c135ed3ee80208991d303b19330d2250a2c6",
+      "url": "https://raw.githubusercontent.com/Amasun93/ChatMaker/d59f52648e832cd732c279b874c22c7b9a051aa2/distribution/packs/chatmaker-board-arduino-uno-r3-knowledge-1.1.0.cmpack",
+      "length": 10712,
+      "sha256": "13ccaaeddae9ea834a8b2d05d0fb767474343c36c05f7bce5295b5dc320fd914",
       "compatibility": {
-        "core": {
-          "minimum": "0.1.0",
-          "maximum_exclusive": "0.2.0"
-        },
+        "core": {"minimum": "0.1.0", "maximum_exclusive": "0.2.0"},
         "pack_manifest_schema": ["1.0"],
-        "llmwiki_index_schema": ["1.0"]
+        "knowledge_index_schema": ["1.0"]
       }
     },
     {
-      "pack_id": "chatmaker-board-esp32-devkit-v1-wiki",
+      "pack_id": "chatmaker-board-esp32-devkit-v1-knowledge",
+      "pack_type": "knowledge",
+      "version": "1.1.0",
+      "board_id": "esp32-devkit-v1",
+      "url": "https://raw.githubusercontent.com/Amasun93/ChatMaker/d59f52648e832cd732c279b874c22c7b9a051aa2/distribution/packs/chatmaker-board-esp32-devkit-v1-knowledge-1.1.0.cmpack",
+      "length": 10902,
+      "sha256": "2c1ec4d80c43db90547683c8fd3a7ec754acd1dd02389d4bfa1655bcf4b8311e",
+      "compatibility": {
+        "core": {"minimum": "0.1.0", "maximum_exclusive": "0.2.0"},
+        "pack_manifest_schema": ["1.0"],
+        "knowledge_index_schema": ["1.0"]
+      }
+    },
+    {
+      "pack_id": "chatmaker-board-idmc-0001-starcore-v4-2-2-knowledge",
       "pack_type": "knowledge",
       "version": "1.0.0",
-      "board_id": "esp32-devkit-v1",
-      "url": "https://raw.githubusercontent.com/Amasun93/ChatMaker/25ad1df2376872e81b3fe1025420cf3f76376719/distribution/packs/chatmaker-board-esp32-devkit-v1-wiki-1.0.0.cmpack",
-      "length": 10471,
-      "sha256": "9cbf789ecf0598c24c9a5a238e7842366d2834c01f53887be338c8224579b34d",
+      "board_id": "idmc-0001-starcore-v4-2-2",
+      "url": "https://raw.githubusercontent.com/Amasun93/ChatMaker/d59f52648e832cd732c279b874c22c7b9a051aa2/distribution/packs/chatmaker-board-idmc-0001-starcore-v4-2-2-knowledge-1.0.0.cmpack",
+      "length": 14752,
+      "sha256": "ef8c4635db058cf25399fa1840e43386a8e0ca3850199076e6b5986010e534b7",
       "compatibility": {
-        "core": {
-          "minimum": "0.1.0",
-          "maximum_exclusive": "0.2.0"
-        },
+        "core": {"minimum": "0.1.0", "maximum_exclusive": "0.2.0"},
         "pack_manifest_schema": ["1.0"],
-        "llmwiki_index_schema": ["1.0"]
+        "knowledge_index_schema": ["1.0"]
       }
     }
   ]
