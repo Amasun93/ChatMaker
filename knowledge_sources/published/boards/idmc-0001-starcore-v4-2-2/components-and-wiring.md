@@ -9,33 +9,49 @@ source_refs:
 ---
 # 模块、接线和机械接口
 
-模块必须按自研编号和实物丝印识别，不能只按“一个 OLED”或“一个超声波”匹配通用资料。已清洗的课堂模式包括：IDMD-0002 串口 MP3、IDMD-0021 OLED、IDMS-0008 DHT11、IDMS-0009 超声波，以及普通 WS2812 灯带和舵机。
-
-常用起点：DHT11 使用 3.3V、GND、SIG→P0；IDMD-0021 OLED 整体插入匹配电压的空闲 I2C 接口；串口 MP3 的模块 TXD→主控 P15、模块 RXD→主控 P16；超声波资料使用 TRIG→H、ECHO→O，代码中写 `P_H`、`P_O`。这些起点仍要按当前模块批次复核供电和信号电平。
-
-五类常用显示与交互模块的简单接法：
+先断电，再按模块编号和实物丝印接线。IDMD-0001 不是 WS2812，IDMS-0001 不是 I2C 彩灯按钮，IDMS-0009 也不是 I2C 超声波。下面是七个自研模块的课堂起点；更完整的电气限制以同名 Component 卡和 Recipe 为准。
 
 ```text
-IDMD-0021 OLED
-整体插入匹配电压的 I2C 接口；总线使用共享的 P19/P20
+IDMD-0001 共阳 RGB 灯（低电平点亮）
+VCC   -> 3V3
+RED   -> P13
+GREEN -> P14
+BLUE  -> P15
 
-LCD1602 + PCF8574
-接匹配电压的 I2C 接口；普通 5V 背包需双向电平转换
-先扫描地址，示例中的 0x27 不是固定值
+IDMD-0002 串口 MP3
+VCC -> 星核板明确标出的 5V 接口
+GND -> GND
+TXD -> P15（主控接收）
+RXD -> P16（主控发送）
 
-WS2812 灯带
-DIN -> P8
-5V  -> 外部 5V 电源；灯带、电源和星核板 GND 共地
-课堂可靠接法增加 3.3V→5V 数据电平转换
+IDMD-0021 1.3 寸 OLED
+VCC -> 3V3
+GND -> GND
+SCL -> P19
+SDA -> P20
 
-SG90 舵机
-信号 -> P9
-正极/GND -> 外部 5V 电源，并与星核板共地
+IDMS-0001 三线按钮（按下为 HIGH）
+VCC -> 3V3
+GND -> GND
+SIG -> P8
 
-IDMS-0009 超声波（普通 HC-SR04 需另按实物确认引脚与电平）
-TRIG -> 丝印 H（代码 P_H）
-ECHO -> 丝印 O（代码 P_O）
-ECHO 电平不明确时先做 3.3V 保护
+IDMS-0003 电位器
+VCC -> 3V3
+GND -> GND
+SIG -> P0
+
+IDMS-0008 DHT11
+VCC -> 3V3
+GND -> GND
+SIG -> P0
+
+IDMS-0009 超声波（GPIO 路线）
+VCC  -> 3V3
+GND  -> GND
+TRIG -> H（代码 P_H）
+ECHO -> O（代码 P_O）
 ```
+
+P0、P15 等引脚不能同时被两个模块占用。IDMD-0002 的 TXD/RXD 必须交叉连接；IDMS-0009 的 ECHO 实际电平尚未测量，接实体板前要先确认保护方式。普通 OLED、LCD1602、WS2812、SG90 和 HC-SR04 仍有通用 Component 卡，但不能代替上述自研编号卡。
 
 机械设计读取稳定机械资料，而不是从接线图量尺寸。星核板外框、四个定位中心、定位件和 USB-C 开口资料位于 `knowledge/mechanical/boards/idmc-0001-starcore-v4-2-2.json`。原始制造资料不公开；加工前需要真实板卡试装。

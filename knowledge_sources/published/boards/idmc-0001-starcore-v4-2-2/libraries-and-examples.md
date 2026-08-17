@@ -9,16 +9,26 @@ source_refs:
 ---
 # 扩展、库和示例模式
 
-掌控板兼容目标先使用 `MPython.h`。它已经提供常用的 `display`、NeoPixel 类型和 Wire；OLED 或 WS2812 项目不要重复包含显示与灯带底层头文件，也不要默认换用 U8g2。DHT11、超声波、舵机和串口 MP3 分别需要对应 Mind+ 扩展提供的 `DFRobot_DHT.h`、`DFRobot_URM10.h`、`DFRobot_Servo.h`、`DFRobot_SerialMp3.h`。
+七个自研模块都先包含 `MPython.h`。在 Mind+ 中按下面的模块编号准备扩展，不要因为外形相似就换成另一套库：
 
-可靠示例先做一个输入或一个输出：串口心跳、模拟原始值、按钮状态、OLED 英文、单色灯带。确认单模块结果后再组合。DHT11 每次读取间隔至少约 2.5 秒，并避免同一节拍连续调用两个 getter；超声波无效或超时返回值不能当作真实零距离；舵机和灯带使用外部电源并共地。
+- IDMD-0001 RGB：内置 `ledcSetup`、`ledcAttachPin`、`ledcWrite`；共阳模块需要反相 PWM。
+- IDMD-0002 MP3：扩展 `serialMp3`，头文件 `DFRobot_SerialMp3.h`；使用 `serialMp3.begin(&Serial1, P15, P16)`、`volume()`、`playList()`。
+- IDMD-0021 OLED：使用 `MPython.h` 自带的全局 `display`；使用 `begin()`、`setCursorLine()`、`printLine()`、`fillInLine()`，不要擅自换成 U8g2。
+- IDMS-0001 按钮：内置 `pinMode(P8, INPUT)` 和 `digitalRead(P8)`；按下为 `HIGH`。
+- IDMS-0003 电位器：内置 `analogRead(P0)`；先看原始值，不预设旋转方向和满量程。
+- IDMS-0008 DHT11：扩展 `dhtTHSensor`，头文件 `DFRobot_DHT.h`；使用 `begin(P0, DHT11)`，温度和湿度交替读取，每次间隔 2500 ms。
+- IDMS-0009 超声波：扩展 `sen0001`，头文件 `DFRobot_URM10.h`；使用 `getDistanceCM(P_H, P_O)`，零值按超时或失败处理。
 
-当前仓库已提供五个最小示例，并已使用当前 Mind+ 1.8 mPython 目标完成编译：
+对应的七个完整示例都位于 `examples/chatduino/starcore/` 下，以 Recipe ID 命名：
 
-- OLED：只包含 `MPython.h`，使用内置 `display`，示例 `examples/chatduino/starcore/oled-i2c-hello/oled-i2c-hello.ino`
-- LCD1602 I2C：`DFRobot_LiquidCrystal_I2C.h`，示例 `examples/chatduino/starcore/lcd1602-i2c-hello/lcd1602-i2c-hello.ino`
-- WS2812：只包含 `MPython.h`，使用内置 `DFRobot_NeoPixel`，示例 `examples/chatduino/starcore/ws2812-strip/ws2812-strip.ino`
-- SG90：`DFRobot_Servo.h`，示例 `examples/chatduino/starcore/servo-position/servo-position.ino`
-- 超声波：`DFRobot_URM10.h`，示例 `examples/chatduino/starcore/ultrasonic-distance/ultrasonic-distance.ino`
+```text
+starcore-idmd-0001-rgb-pwm
+starcore-idmd-0002-serial-mp3
+starcore-idmd-0021-oled-message
+starcore-idms-0001-button-input
+starcore-idms-0003-potentiometer-read
+starcore-idms-0008-dht11-serial
+starcore-idms-0009-ultrasonic-distance
+```
 
-代码能编译只代表语法、板型和库组合可用；由于目前没有实体板，烧录、串口结果和物理效果仍保持 `unverified`。
+这七个示例已在当前 Mind+ 1.8 目标下真实编译通过（7/7）。编译通过只证明源码、板型和库组合能够生成固件；由于目前没有实体板，烧录、串口、重启和物理效果仍为 `unverified`。

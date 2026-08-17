@@ -23,19 +23,19 @@ sections:
     pack_id: chatmaker-board-idmc-0001-starcore-v4-2-2-knowledge
   - section_id: toolchains-and-upload
     title: Mind+、编译与上传
-    summary: 区分 Mind+ 1.8 当前路线和 2.0 历史路线，分开记录验证状态。
+    summary: 使用 Mind+ 1.8 当前目标；七个自研模块示例已编译，上传和实物效果待验证。
     consumers: [chatmaker, chatduino]
     topics: [mindplus, compile, upload]
     pack_id: chatmaker-board-idmc-0001-starcore-v4-2-2-knowledge
   - section_id: components-and-wiring
     title: 模块、接线与机械接口
-    summary: 从自研模块编号、接线规则和机械资料选择安全方案。
+    summary: 按七个自研模块编号读取简单接线、电气边界和可靠资料入口。
     consumers: [chatmaker, chatduino, chatweb, chatcad]
     topics: [components, wiring, mechanical]
     pack_id: chatmaker-board-idmc-0001-starcore-v4-2-2-knowledge
   - section_id: libraries-and-examples
     title: 扩展、库与示例模式
-    summary: 按 Mind+ 扩展准备、头文件映射和已清洗代码模式开发。
+    summary: 查找七个自研模块的 Mind+ 扩展、准确 API、完整示例和编译证据。
     consumers: [chatmaker, chatduino]
     topics: [libraries, examples, extensions]
     pack_id: chatmaker-board-idmc-0001-starcore-v4-2-2-knowledge
