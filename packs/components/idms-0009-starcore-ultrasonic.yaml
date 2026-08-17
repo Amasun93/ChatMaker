@@ -19,11 +19,14 @@ verification:
     status: verified
     checked_at: "2026-08-17"
     evidence: Governed sources identify IDMS-0009 as the DFRobot_URM10 GPIO route on P_H/P_O, separate from sen0304 I2C modules.
-  code_compiled: &unverified
+  code_compiled:
+    status: verified
+    checked_at: "2026-08-18"
+    evidence: starcore-idms-0009-ultrasonic-distance-compile-2026-08-18
+  firmware_uploaded: &unverified
     status: unverified
     checked_at: null
     evidence: null
-  firmware_uploaded: *unverified
   physical_effect_verified: *unverified
   echo_level_verified:
     status: unverified
@@ -31,7 +34,7 @@ verification:
     evidence: null
 historical_lead:
   status: legacy_reported
-  evidence: Legacy graphical projects report compilation; current ChatMaker compilation, ECHO voltage, distance accuracy, and timeout behavior remain unchecked.
+  evidence: Legacy graphical projects remain a separate lead; ECHO voltage, distance accuracy, timeout behavior, and physical readings remain unchecked.
 pins:
   - id: VCC
     role: power
@@ -51,8 +54,8 @@ identification:
 libraries:
   - name: Mind+ sen0001 URM10 extension
     headers: [DFRobot_URM10.h]
-    status: unverified
-    notes: The source-reviewed GPIO API is known, but the new ChatMaker-owned example has not yet been compiled.
+    status: compile_verified
+    notes: The checked-in example compiled with the installed Mind+ 1.8 extension; distance behavior remains unverified.
 mindplus:
   extension: sen0001
   headers: [DFRobot_URM10.h]

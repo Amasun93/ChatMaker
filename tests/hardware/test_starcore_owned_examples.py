@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import unittest
+import hashlib
 from pathlib import Path
 
 import yaml
@@ -8,6 +9,8 @@ import yaml
 
 ROOT = Path(__file__).resolve().parents[2]
 BOARD_ID = "idmc-0001-starcore-v4-2-2"
+CURRENT_FQBN = "dfrobot:mpython:mpython:FlashMode=dio,FlashFreq=80,UploadSpeed=1500000,DebugLevel=none"
+COMPILE_REPORT = "docs/verification/2026-08-18-starcore-seven-module-compilation.md"
 RECIPES = {
     "starcore-idmd-0001-rgb-pwm": "idmd-0001-starcore-rgb-light",
     "starcore-idmd-0002-serial-mp3": "idmd-0002-starcore-serial-mp3",
@@ -40,11 +43,52 @@ class StarcoreOwnedExampleTests(unittest.TestCase):
                     {wire["component"] for wire in recipe["wiring"]},
                     {component_id},
                 )
-                self.assertEqual(recipe["verification"]["code_compiled"]["status"], "unverified")
+                compiled = recipe["verification"]["code_compiled"]
+                self.assertEqual(compiled["status"], "verified")
+                self.assertEqual(compiled["checked_at"], "2026-08-18")
+                evidence = recipe["compile_evidence"]
+                self.assertEqual(compiled["evidence"], evidence["id"])
+                self.assertRegex(
+                    evidence["completed_at"],
+                    r"^2026-08-18T\d{2}:\d{2}:\d{2}\+08:00$",
+                )
+                self.assertEqual(evidence["fqbn"], CURRENT_FQBN)
+                self.assertEqual(evidence["exit_code"], 0)
+                self.assertEqual(evidence["report"], COMPILE_REPORT)
+                self.assertIn("Mind+ 1.8", evidence["toolchain"])
+                self.assertIn("arduino-builder -compile", evidence["command"])
+                self.assertGreater(evidence["flash_bytes"], 0)
+                self.assertGreater(evidence["ram_bytes"], 0)
+                self.assertRegex(evidence["source_sha256"], r"^[0-9a-f]{64}$")
+                self.assertRegex(evidence["application_sha256"], r"^[0-9a-f]{64}$")
+                self.assertRegex(evidence["partitions_sha256"], r"^[0-9a-f]{64}$")
+                self.assertFalse(Path(evidence["application_artifact"]).is_absolute())
+                self.assertFalse(Path(evidence["partitions_artifact"]).is_absolute())
+                source_digest = hashlib.sha256(
+                    (ROOT / expected_source).read_bytes()
+                ).hexdigest()
+                self.assertEqual(evidence["source_sha256"], source_digest)
+                for gate in ("firmware_uploaded", "physical_effect_verified"):
+                    self.assertEqual(recipe["verification"][gate]["status"], "unverified")
                 component = load_yaml(
                     ROOT / "packs" / "components" / f"{component_id}.yaml"
                 )
                 self.assertEqual(component["example_files"], [expected_source])
+                component_compiled = component["verification"]["code_compiled"]
+                self.assertEqual(component_compiled["status"], "verified")
+                self.assertEqual(component_compiled["checked_at"], "2026-08-18")
+                self.assertEqual(component_compiled["evidence"], evidence["id"])
+                self.assertNotIn("compile_evidence", component)
+                for gate in ("firmware_uploaded", "physical_effect_verified"):
+                    self.assertEqual(component["verification"][gate]["status"], "unverified")
+
+        report = ROOT / COMPILE_REPORT
+        self.assertTrue(report.is_file())
+        report_text = report.read_text(encoding="utf-8")
+        self.assertIn(CURRENT_FQBN, report_text)
+        for recipe_id in RECIPES:
+            self.assertIn(recipe_id, report_text)
+        self.assertNotRegex(report_text, r"[A-Z]:\\")
 
     def test_examples_keep_beginner_safe_structure_and_diagnostics(self):
         for recipe_id in RECIPES:

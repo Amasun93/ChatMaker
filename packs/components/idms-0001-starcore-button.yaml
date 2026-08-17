@@ -19,15 +19,18 @@ verification:
     status: verified
     checked_at: "2026-08-17"
     evidence: The governed module snapshot identifies a GND/VCC/SIG digital sensor with active-HIGH pressed state.
-  code_compiled: &unverified
+  code_compiled:
+    status: verified
+    checked_at: "2026-08-18"
+    evidence: starcore-idms-0001-button-input-compile-2026-08-18
+  firmware_uploaded: &unverified
     status: unverified
     checked_at: null
     evidence: null
-  firmware_uploaded: *unverified
   physical_effect_verified: *unverified
 historical_lead:
   status: legacy_reported
-  evidence: Legacy Starcore material describes the button route; the new ChatMaker example and current physical behavior remain unchecked.
+  evidence: Legacy Starcore material describes the button route; current compilation is separate and physical behavior remains unchecked.
 pins:
   - id: GND
     role: ground

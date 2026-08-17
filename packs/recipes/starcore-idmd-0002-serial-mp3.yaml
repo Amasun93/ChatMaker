@@ -11,12 +11,32 @@ verification:
     status: verified
     checked_at: "2026-08-17"
     evidence: Governed sources confirm controller RX=P15, TX=P16 and the separate 5V connector bank.
-  code_compiled: &unverified
+  code_compiled:
+    status: verified
+    checked_at: "2026-08-18"
+    evidence: starcore-idmd-0002-serial-mp3-compile-2026-08-18
+  firmware_uploaded: &unverified
     status: unverified
     checked_at: null
     evidence: null
-  firmware_uploaded: *unverified
   physical_effect_verified: *unverified
+compile_evidence:
+  id: starcore-idmd-0002-serial-mp3-compile-2026-08-18
+  completed_at: "2026-08-18T02:06:13+08:00"
+  report: docs/verification/2026-08-18-starcore-seven-module-compilation.md
+  toolchain: Mind+ 1.8 arduino-builder (IDE 10819)
+  command: arduino-builder -compile -fqbn=dfrobot:mpython:mpython:FlashMode=dio,FlashFreq=80,UploadSpeed=1500000,DebugLevel=none -build-path $TEMP/starcore-mindplus-builds/700d110c64fb examples/chatduino/starcore/starcore-idmd-0002-serial-mp3/starcore-idmd-0002-serial-mp3.ino
+  fqbn: dfrobot:mpython:mpython:FlashMode=dio,FlashFreq=80,UploadSpeed=1500000,DebugLevel=none
+  exit_code: 0
+  source_sha256: 50e6596a60140733148ef009cdadcfca64af4e24621d1f74d95e40ba8109b33a
+  flash_bytes: 238692
+  flash_percent: 18
+  ram_bytes: 17844
+  ram_percent: 6
+  application_artifact: $TEMP/starcore-mindplus-builds/700d110c64fb/starcore-idmd-0002-serial-mp3.ino.bin
+  application_sha256: 899f668ccf2a491ac0ff37a73c769eba07d3536aed53fba18ebcdaadffee69a1
+  partitions_artifact: $TEMP/starcore-mindplus-builds/700d110c64fb/starcore-idmd-0002-serial-mp3.ino.partitions.bin
+  partitions_sha256: efba4421982bd177695a2e2091828fe3b6aa42076be3844a84f0fb08085cead4
 boards: [idmc-0001-starcore-v4-2-2]
 components: [idmd-0002-starcore-serial-mp3]
 wiring:

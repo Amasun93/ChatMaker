@@ -11,12 +11,32 @@ verification:
     status: verified
     checked_at: "2026-08-17"
     evidence: Governed Starcore sources confirm the active-LOW common-anode wiring and P13/P14/P15 classroom route.
-  code_compiled: &unverified
+  code_compiled:
+    status: verified
+    checked_at: "2026-08-18"
+    evidence: starcore-idmd-0001-rgb-pwm-compile-2026-08-18
+  firmware_uploaded: &unverified
     status: unverified
     checked_at: null
     evidence: null
-  firmware_uploaded: *unverified
   physical_effect_verified: *unverified
+compile_evidence:
+  id: starcore-idmd-0001-rgb-pwm-compile-2026-08-18
+  completed_at: "2026-08-18T02:03:47+08:00"
+  report: docs/verification/2026-08-18-starcore-seven-module-compilation.md
+  toolchain: Mind+ 1.8 arduino-builder (IDE 10819)
+  command: arduino-builder -compile -fqbn=dfrobot:mpython:mpython:FlashMode=dio,FlashFreq=80,UploadSpeed=1500000,DebugLevel=none -build-path $TEMP/starcore-mindplus-builds/200a35288de1 examples/chatduino/starcore/starcore-idmd-0001-rgb-pwm/starcore-idmd-0001-rgb-pwm.ino
+  fqbn: dfrobot:mpython:mpython:FlashMode=dio,FlashFreq=80,UploadSpeed=1500000,DebugLevel=none
+  exit_code: 0
+  source_sha256: cd654d952af092e3784fe8cf5bfdd7c7f4f0e353cd2c8b3a167b95a4e73a020c
+  flash_bytes: 237360
+  flash_percent: 18
+  ram_bytes: 17820
+  ram_percent: 6
+  application_artifact: $TEMP/starcore-mindplus-builds/200a35288de1/starcore-idmd-0001-rgb-pwm.ino.bin
+  application_sha256: bd0e0d088fcbce21271fce57d7bef94a3b5d726f5c418632fc81130f056e7a66
+  partitions_artifact: $TEMP/starcore-mindplus-builds/200a35288de1/starcore-idmd-0001-rgb-pwm.ino.partitions.bin
+  partitions_sha256: efba4421982bd177695a2e2091828fe3b6aa42076be3844a84f0fb08085cead4
 boards: [idmc-0001-starcore-v4-2-2]
 components: [idmd-0001-starcore-rgb-light]
 wiring:

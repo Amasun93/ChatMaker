@@ -19,15 +19,18 @@ verification:
     status: verified
     checked_at: "2026-08-17"
     evidence: The governed owned-source snapshot identifies IDMD-0001 as a common-anode, active-LOW, three-channel PWM module.
-  code_compiled: &unverified
+  code_compiled:
+    status: verified
+    checked_at: "2026-08-18"
+    evidence: starcore-idmd-0001-rgb-pwm-compile-2026-08-18
+  firmware_uploaded: &unverified
     status: unverified
     checked_at: null
     evidence: null
-  firmware_uploaded: *unverified
   physical_effect_verified: *unverified
 historical_lead:
   status: legacy_reported
-  evidence: Legacy Starcore material reports prior use; ChatMaker has not yet compiled the new owned-component example.
+  evidence: Legacy Starcore material reports prior use; current compilation is tracked separately by the referenced evidence ID and does not prove hardware behavior.
 pins:
   - id: VCC
     role: common-anode-power

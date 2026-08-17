@@ -11,12 +11,32 @@ verification:
     status: verified
     checked_at: "2026-08-17"
     evidence: Governed sources confirm GND/VCC/SIG wiring and active-HIGH pressed state.
-  code_compiled: &unverified
+  code_compiled:
+    status: verified
+    checked_at: "2026-08-18"
+    evidence: starcore-idms-0001-button-input-compile-2026-08-18
+  firmware_uploaded: &unverified
     status: unverified
     checked_at: null
     evidence: null
-  firmware_uploaded: *unverified
   physical_effect_verified: *unverified
+compile_evidence:
+  id: starcore-idms-0001-button-input-compile-2026-08-18
+  completed_at: "2026-08-18T02:06:04+08:00"
+  report: docs/verification/2026-08-18-starcore-seven-module-compilation.md
+  toolchain: Mind+ 1.8 arduino-builder (IDE 10819)
+  command: arduino-builder -compile -fqbn=dfrobot:mpython:mpython:FlashMode=dio,FlashFreq=80,UploadSpeed=1500000,DebugLevel=none -build-path $TEMP/starcore-mindplus-builds/0689f18ec9d0 examples/chatduino/starcore/starcore-idms-0001-button-input/starcore-idms-0001-button-input.ino
+  fqbn: dfrobot:mpython:mpython:FlashMode=dio,FlashFreq=80,UploadSpeed=1500000,DebugLevel=none
+  exit_code: 0
+  source_sha256: 9f77a2f2738dc93029218d8b892e4ceaaae1d5e9a6772c5dca57f4ab161769b7
+  flash_bytes: 237016
+  flash_percent: 18
+  ram_bytes: 17820
+  ram_percent: 6
+  application_artifact: $TEMP/starcore-mindplus-builds/0689f18ec9d0/starcore-idms-0001-button-input.ino.bin
+  application_sha256: fec5a506638a43b7f1875f6ec13e503082075f37e47582117ad1322be256bd36
+  partitions_artifact: $TEMP/starcore-mindplus-builds/0689f18ec9d0/starcore-idms-0001-button-input.ino.partitions.bin
+  partitions_sha256: efba4421982bd177695a2e2091828fe3b6aa42076be3844a84f0fb08085cead4
 boards: [idmc-0001-starcore-v4-2-2]
 components: [idms-0001-starcore-button]
 wiring:

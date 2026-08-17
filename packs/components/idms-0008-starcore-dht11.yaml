@@ -19,15 +19,18 @@ verification:
     status: verified
     checked_at: "2026-08-17"
     evidence: Governed sources confirm IDMS-0008, 3.3 V classroom power, P0 default, DFRobot_DHT behavior, and 2500 ms alternating reads.
-  code_compiled: &unverified
+  code_compiled:
+    status: verified
+    checked_at: "2026-08-18"
+    evidence: starcore-idms-0008-dht11-serial-compile-2026-08-18
+  firmware_uploaded: &unverified
     status: unverified
     checked_at: null
     evidence: null
-  firmware_uploaded: *unverified
   physical_effect_verified: *unverified
 historical_lead:
   status: legacy_reported
-  evidence: Legacy compilation and hardware notes are retained only as a lead; the new ChatMaker-owned example is not yet compiled or physically checked.
+  evidence: Legacy compilation and hardware notes remain only a separate lead; physical readings are still unchecked.
 pins:
   - id: GND
     role: ground
@@ -45,8 +48,8 @@ identification:
 libraries:
   - name: Mind+ DHT temperature-humidity extension
     headers: [DFRobot_DHT.h]
-    status: unverified
-    notes: The owned API behavior is source-reviewed, but the new ChatMaker example has not yet been compiled.
+    status: compile_verified
+    notes: The checked-in example compiled with the installed Mind+ 1.8 extension; sensor readings remain unverified.
 mindplus:
   extension: dhtTHSensor
   headers: [DFRobot_DHT.h]

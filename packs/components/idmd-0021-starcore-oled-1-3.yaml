@@ -19,15 +19,18 @@ verification:
     status: verified
     checked_at: "2026-08-17"
     evidence: Governed owned sources identify IDMD-0021 as an SSD1306 128x64 I2C module using address 0x3C or 0x3D.
-  code_compiled: &unverified
+  code_compiled:
+    status: verified
+    checked_at: "2026-08-18"
+    evidence: starcore-idmd-0021-oled-message-compile-2026-08-18
+  firmware_uploaded: &unverified
     status: unverified
     checked_at: null
     evidence: null
-  firmware_uploaded: *unverified
   physical_effect_verified: *unverified
 historical_lead:
   status: legacy_reported
-  evidence: Legacy material reports OLED compilation and display use; the new ChatMaker-owned example has not yet been compiled or shown on current hardware.
+  evidence: Legacy material reports OLED use; current compilation is tracked separately, while display output on hardware remains unchecked.
 pins:
   - id: VCC
     role: power
@@ -47,8 +50,8 @@ identification:
 libraries:
   - name: Mind+ MPython display API
     headers: [MPython.h]
-    status: unverified
-    notes: MPython.h supplies the global display object; current owned-example compilation remains pending.
+    status: compile_verified
+    notes: MPython.h supplied the global display object during the current Mind+ 1.8 compilation; display output remains unverified.
 mindplus:
   extension: esp32
   headers: [MPython.h]

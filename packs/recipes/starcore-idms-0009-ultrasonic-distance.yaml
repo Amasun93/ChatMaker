@@ -11,12 +11,32 @@ verification:
     status: verified
     checked_at: "2026-08-17"
     evidence: Governed sources confirm the IDMS-0009 GPIO URM10 route and 80-120ms read interval.
-  code_compiled: &unverified
+  code_compiled:
+    status: verified
+    checked_at: "2026-08-18"
+    evidence: starcore-idms-0009-ultrasonic-distance-compile-2026-08-18
+  firmware_uploaded: &unverified
     status: unverified
     checked_at: null
     evidence: null
-  firmware_uploaded: *unverified
   physical_effect_verified: *unverified
+compile_evidence:
+  id: starcore-idms-0009-ultrasonic-distance-compile-2026-08-18
+  completed_at: "2026-08-18T02:14:54+08:00"
+  report: docs/verification/2026-08-18-starcore-seven-module-compilation.md
+  toolchain: Mind+ 1.8 arduino-builder (IDE 10819)
+  command: arduino-builder -compile -fqbn=dfrobot:mpython:mpython:FlashMode=dio,FlashFreq=80,UploadSpeed=1500000,DebugLevel=none -build-path $TEMP/starcore-mindplus-builds/0e580e42d35d examples/chatduino/starcore/starcore-idms-0009-ultrasonic-distance/starcore-idms-0009-ultrasonic-distance.ino
+  fqbn: dfrobot:mpython:mpython:FlashMode=dio,FlashFreq=80,UploadSpeed=1500000,DebugLevel=none
+  exit_code: 0
+  source_sha256: 449904d4241edf18eb62e1af84e7b66535d1bd9dec03142fe7f3bdf3518e8eb2
+  flash_bytes: 237972
+  flash_percent: 18
+  ram_bytes: 17828
+  ram_percent: 6
+  application_artifact: $TEMP/starcore-mindplus-builds/0e580e42d35d/starcore-idms-0009-ultrasonic-distance.ino.bin
+  application_sha256: 60a5c6e0727f012c9d366852639412be5fe4a52ff3021201bf054c355c08748b
+  partitions_artifact: $TEMP/starcore-mindplus-builds/0e580e42d35d/starcore-idms-0009-ultrasonic-distance.ino.partitions.bin
+  partitions_sha256: efba4421982bd177695a2e2091828fe3b6aa42076be3844a84f0fb08085cead4
   echo_level_verified: *unverified
 boards: [idmc-0001-starcore-v4-2-2]
 components: [idms-0009-starcore-ultrasonic]

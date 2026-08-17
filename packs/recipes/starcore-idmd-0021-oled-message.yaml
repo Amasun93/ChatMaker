@@ -11,12 +11,32 @@ verification:
     status: verified
     checked_at: "2026-08-17"
     evidence: Governed sources confirm the SSD1306 128x64 module, P19/P20 bus, and MPython display API.
-  code_compiled: &unverified
+  code_compiled:
+    status: verified
+    checked_at: "2026-08-18"
+    evidence: starcore-idmd-0021-oled-message-compile-2026-08-18
+  firmware_uploaded: &unverified
     status: unverified
     checked_at: null
     evidence: null
-  firmware_uploaded: *unverified
   physical_effect_verified: *unverified
+compile_evidence:
+  id: starcore-idmd-0021-oled-message-compile-2026-08-18
+  completed_at: "2026-08-18T02:08:22+08:00"
+  report: docs/verification/2026-08-18-starcore-seven-module-compilation.md
+  toolchain: Mind+ 1.8 arduino-builder (IDE 10819)
+  command: arduino-builder -compile -fqbn=dfrobot:mpython:mpython:FlashMode=dio,FlashFreq=80,UploadSpeed=1500000,DebugLevel=none -build-path $TEMP/starcore-mindplus-builds/87dcd2302466 examples/chatduino/starcore/starcore-idmd-0021-oled-message/starcore-idmd-0021-oled-message.ino
+  fqbn: dfrobot:mpython:mpython:FlashMode=dio,FlashFreq=80,UploadSpeed=1500000,DebugLevel=none
+  exit_code: 0
+  source_sha256: 938a92ea08d9f8baf37ff85c8cfdf44fff1724f977ff71ef29ae92dce2d4e8d1
+  flash_bytes: 270032
+  flash_percent: 20
+  ram_bytes: 17812
+  ram_percent: 6
+  application_artifact: $TEMP/starcore-mindplus-builds/87dcd2302466/starcore-idmd-0021-oled-message.ino.bin
+  application_sha256: 557409ecba570f05e696a46e229f13dc2cc49c3d264d893ed57db970894176bd
+  partitions_artifact: $TEMP/starcore-mindplus-builds/87dcd2302466/starcore-idmd-0021-oled-message.ino.partitions.bin
+  partitions_sha256: efba4421982bd177695a2e2091828fe3b6aa42076be3844a84f0fb08085cead4
 boards: [idmc-0001-starcore-v4-2-2]
 components: [idmd-0021-starcore-oled-1-3]
 wiring:

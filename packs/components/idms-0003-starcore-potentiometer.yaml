@@ -19,15 +19,18 @@ verification:
     status: verified
     checked_at: "2026-08-17"
     evidence: The governed snapshot identifies IDMS-0003 as a GND/VCC/SIG analog-output module with 3.3 V as the safe Starcore default.
-  code_compiled: &unverified
+  code_compiled:
+    status: verified
+    checked_at: "2026-08-18"
+    evidence: starcore-idms-0003-potentiometer-read-compile-2026-08-18
+  firmware_uploaded: &unverified
     status: unverified
     checked_at: null
     evidence: null
-  firmware_uploaded: *unverified
   physical_effect_verified: *unverified
 historical_lead:
   status: legacy_reported
-  evidence: Legacy Starcore material describes analog use; current ChatMaker compilation, range, and physical direction remain unchecked.
+  evidence: Legacy Starcore material describes analog use; current compilation is separate, while range and physical direction remain unchecked.
 pins:
   - id: GND
     role: ground

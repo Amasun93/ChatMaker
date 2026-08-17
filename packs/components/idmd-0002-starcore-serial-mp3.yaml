@@ -19,15 +19,18 @@ verification:
     status: verified
     checked_at: "2026-08-17"
     evidence: The governed source audit confirms P15 as controller RX, P16 as controller TX, and the separate 5 V connector-bank power route.
-  code_compiled: &unverified
+  code_compiled:
+    status: verified
+    checked_at: "2026-08-18"
+    evidence: starcore-idmd-0002-serial-mp3-compile-2026-08-18
+  firmware_uploaded: &unverified
     status: unverified
     checked_at: null
     evidence: null
-  firmware_uploaded: *unverified
   physical_effect_verified: *unverified
 historical_lead:
   status: legacy_reported
-  evidence: Legacy Mind+ material reports compilation, but the new ChatMaker example, storage medium, speaker, and playback remain unchecked.
+  evidence: Legacy Mind+ material remains a separate lead; storage medium, speaker, playback, and physical behavior remain unchecked.
 pins:
   - id: VCC
     role: 5v-power
@@ -47,8 +50,8 @@ identification:
 libraries:
   - name: Mind+ Serial MP3 extension
     headers: [DFRobot_SerialMp3.h]
-    status: unverified
-    notes: The source-reviewed API is known, but this ChatMaker-owned example has not yet been compiled.
+    status: compile_verified
+    notes: The checked-in example compiled with the installed Mind+ 1.8 library; runtime playback remains unverified.
 mindplus:
   extension: serialMp3
   headers: [DFRobot_SerialMp3.h]

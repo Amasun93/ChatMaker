@@ -282,7 +282,11 @@ class CatalogTests(unittest.TestCase):
                 self.assertTrue(any(any("\u4e00" <= char <= "\u9fff" for char in alias) for alias in record["aliases"]))
                 self.assertEqual(record["supported_boards"], [STARCORE_BOARD_ID])
                 self.assertEqual(record["verification"]["source_reviewed"]["status"], "verified")
-                self.assertEqual(record["verification"]["code_compiled"]["status"], "unverified")
+                compiled = record["verification"]["code_compiled"]
+                self.assertEqual(compiled["status"], "verified")
+                self.assertEqual(compiled["checked_at"], "2026-08-18")
+                self.assertTrue(compiled["evidence"].startswith("starcore-"))
+                self.assertTrue(compiled["evidence"].endswith("-compile-2026-08-18"))
                 self.assertEqual(record["verification"]["firmware_uploaded"]["status"], "unverified")
                 self.assertEqual(record["verification"]["physical_effect_verified"]["status"], "unverified")
                 self.assertEqual(record["historical_lead"]["status"], "legacy_reported")
