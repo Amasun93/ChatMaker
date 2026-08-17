@@ -6,29 +6,38 @@
 
 ## 0. 当前源码：最小 Core 与渐进知识 / Current source: minimal Core and progressive knowledge
 
-rc5 仍是当前公开下载。本节说明 rc5 之后的源码能力；Task 7 只在本地构建和验证 `ChatMaker-Core-0.1.0-rc5.zip`，没有创建新的 GitHub Release。源码维护者可以运行：
+rc5 仍是当前公开下载。本节说明 rc5 之后的源码能力；后续 Core 按平台构建为 `ChatMaker-Core-0.1.0-rc5-<platform>.zip`，没有创建新的 GitHub Release。源码维护者可以运行：
 
-rc5 remains the current public download. This section documents post-rc5 source behavior. Task 7 builds and verifies `ChatMaker-Core-0.1.0-rc5.zip` locally and does not create a new GitHub Release. A source maintainer may run:
+rc5 remains the current public download. This section documents post-rc5 source behavior. Later Core artifacts are platform-specific: `ChatMaker-Core-0.1.0-rc5-<platform>.zip`; no new GitHub Release is created here. A source maintainer may run:
 
 ```powershell
-python scripts/build_release.py --output dist --version 0.1.0-rc5
-Get-FileHash .\dist\ChatMaker-Core-0.1.0-rc5.zip -Algorithm SHA256
-Get-Content .\dist\ChatMaker-Core-0.1.0-rc5.zip.sha256
+python scripts/prepare_core_runtime.py --output .\prepared-runtime --platform-tag windows-amd64
+python scripts/build_release.py --output dist --version 0.1.0-rc5 --platform-tag windows-amd64 --prepared-root .\prepared-runtime\windows-amd64 --release-sequence 1
+python scripts/sign_core_release.py `
+  --manifest .\dist\ChatMaker-Core-0.1.0-rc5-windows-amd64.zip.manifest.json `
+  --private-key <受控发布环境中的官方私钥路径>
+Get-FileHash .\dist\ChatMaker-Core-0.1.0-rc5-windows-amd64.zip -Algorithm SHA256
+Get-Content .\dist\ChatMaker-Core-0.1.0-rc5-windows-amd64.zip.sha256
 ```
 
-两处 SHA-256 一致后，把 Core 解压到临时目录以取出其中的 bootstrap 脚本；它会再次校验同一 ZIP，并把版本化运行环境安装到 `~/.chatmaker/versions/`：
+发布者会同时交付 canonical `.manifest.json` 与 detached `.manifest.json.sig.json`。用户应从可信官方渠道取得 `bootstrap.py` 和同目录的 `core_release_signature.py`；不要把尚未验签 ZIP 内的脚本当作信任起点。trusted bootstrap 先用内嵌官方 Ed25519 公钥验证 detached manifest，再只从同一只读文件描述符快照校验、解包 ZIP，并把版本化运行环境安装到 `~/.chatmaker/versions/`：
 
-After the two SHA-256 values match, extract the Core only to obtain its bootstrap script. The script checks the same ZIP again and installs a versioned runtime under `~/.chatmaker/versions/`:
+The publisher also ships a canonical `.manifest.json` and detached `.manifest.json.sig.json`. Obtain `bootstrap.py` and its sibling `core_release_signature.py` from the trusted official channel; do not treat a script extracted from the not-yet-authenticated ZIP as a trust anchor. The trusted bootstrap verifies the detached manifest with its embedded official Ed25519 key, validates and extracts one descriptor-backed ZIP snapshot, and installs under `~/.chatmaker/versions/`:
 
 ```powershell
-Expand-Archive .\dist\ChatMaker-Core-0.1.0-rc5.zip -DestinationPath .\core-check
-python .\core-check\ChatMaker-Core-0.1.0-rc5\scripts\bootstrap.py `
-  --archive .\dist\ChatMaker-Core-0.1.0-rc5.zip `
-  --checksum .\dist\ChatMaker-Core-0.1.0-rc5.zip.sha256
+python .\trusted-bootstrap\bootstrap.py `
+  --archive .\dist\ChatMaker-Core-0.1.0-rc5-windows-amd64.zip `
+  --checksum .\dist\ChatMaker-Core-0.1.0-rc5-windows-amd64.zip.sha256 `
+  --release-manifest .\dist\ChatMaker-Core-0.1.0-rc5-windows-amd64.zip.manifest.json `
+  --release-signature .\dist\ChatMaker-Core-0.1.0-rc5-windows-amd64.zip.manifest.json.sig.json
 ~\.chatmaker\bin\chatmaker-install.cmd doctor
 ```
 
-macOS/Linux use the same `python .../scripts/bootstrap.py --archive ... --checksum ...` arguments; the resulting launcher is `~/.chatmaker/bin/chatmaker-install`. Bootstrap uses only Python 3.11 standard-library code before Core is installed. It does not use an editable install, and a second run for the same checked archive reuses the verified version while running `chatmaker-install auto` again so host configuration can converge.
+macOS uses the same four evidence arguments with the matching `macos-x86_64` or `macos-arm64` archive; the resulting launcher is `~/.chatmaker/bin/chatmaker-install`. Linux is not part of this bootstrap release. Bootstrap and its Ed25519 verifier use only Python 3.11 standard-library code before Core is installed. Runtime installation is strictly local: pip receives `--isolated --no-index --find-links --require-hashes --no-deps`, and the venv does not inherit system site packages. A second trusted-bootstrap run derives the closed-world allowlist again from signed wheel `RECORD` files before running `auto --home`.
+
+官方签名证明 release 来源；trusted bootstrap 的重跑只提供“当下这一刻”的漂移检查、隔离与修复。它不是 OS secure boot，也不承诺抵抗已经获得同用户任意写权限、能修改 verifier/launcher 或能在验证后继续竞态写入的攻击者。stable launcher 会 fail closed，并在 trusted bootstrap 重跑时修复，但 launcher 不会证明自身可信。
+
+The official signature proves release origin. A trusted-bootstrap rerun provides point-in-time drift detection, quarantine, and repair only. This is not OS secure boot and does not resist an attacker who already has arbitrary same-user writes, can replace the verifier/launcher, or races after verification. The stable launcher fails closed and is repaired by trusted bootstrap, but does not prove its own trustworthiness.
 
 Core 内有运行层、三个 Skill、schema、3/12/14 条规范记录、三个紧凑索引和当前案例。它没有详细 Wiki 正文、`knowledge_sources/`、`tests/`、开发缓存或已构建的可选 `.cmpack`。`chatmaker-doctor` 通过只证明这些内置内容可读，不证明任何硬件效果。
 
@@ -79,22 +88,21 @@ chatmaker-pack rollback chatmaker-board-arduino-nano-classic-wiki --version 1.0.
 
 ## 1. 共同前置条件 / Common prerequisites
 
-1. Windows 64 位；Python 3.11 或更高版本，并可使用 `python -m pip`。
-2. 下载 `ChatMaker-0.1.0-rc5.zip` 与同名 `.sha256` 到同一个下载目录。
-3. 先在下载目录校验 ZIP，再解压并进入长期保留的源码目录。安装器和 editable install 会引用该目录，不要在使用期间移动或删除它。
+1. Windows x64、macOS Intel 或 Apple Silicon；安装对应平台的 Python 3.11。
+2. 下载与电脑匹配的 ZIP、同名 `.sha256`、`.manifest.json` 和 detached `.manifest.json.sig.json`：Windows 为 `windows-amd64`，Mac 为 `macos-x86_64` 或 `macos-arm64`。
+3. 从可信官方渠道取得 trusted-bootstrap 目录。先人工比对 SHA-256，再由 trusted bootstrap 验证官方签名和离线运行包。
 
-Windows 64-bit and Python 3.11+ are required. Start in the download directory that contains both the ZIP and sidecar. Verify first; only then extract and enter the persistent source directory.
+Use the platform-specific Core ZIP and Python 3.11. Keep the ZIP, checksum, canonical manifest, detached signature, and official trusted-bootstrap directory together. No persistent source checkout or runtime network access is needed.
 
 ```powershell
-Get-FileHash .\ChatMaker-0.1.0-rc5.zip -Algorithm SHA256
-Get-Content .\ChatMaker-0.1.0-rc5.zip.sha256
-Expand-Archive .\ChatMaker-0.1.0-rc5.zip -DestinationPath .
-Set-Location .\ChatMaker-0.1.0-rc5
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-python -m pip install --upgrade pip
-python -m pip install -e .
-chatmaker-doctor
+Get-FileHash .\ChatMaker-Core-0.1.0-rc5-windows-amd64.zip -Algorithm SHA256
+Get-Content .\ChatMaker-Core-0.1.0-rc5-windows-amd64.zip.sha256
+python .\trusted-bootstrap\bootstrap.py `
+  --archive .\ChatMaker-Core-0.1.0-rc5-windows-amd64.zip `
+  --checksum .\ChatMaker-Core-0.1.0-rc5-windows-amd64.zip.sha256 `
+  --release-manifest .\ChatMaker-Core-0.1.0-rc5-windows-amd64.zip.manifest.json `
+  --release-signature .\ChatMaker-Core-0.1.0-rc5-windows-amd64.zip.manifest.json.sig.json
+~\.chatmaker\bin\chatmaker-install.cmd doctor
 ```
 
 两处 SHA-256 必须完全一致。`chatmaker-doctor` 校验资料包和三套 Skill，但不探测或证明真实硬件。

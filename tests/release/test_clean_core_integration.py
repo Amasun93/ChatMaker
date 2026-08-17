@@ -11,6 +11,10 @@ directory.
 
 from __future__ import annotations
 
+import base64
+import csv
+import hashlib
+import io
 import json
 import os
 from pathlib import Path
@@ -22,9 +26,13 @@ import tomllib
 import unittest
 import zipfile
 
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+
 
 ROOT = Path(__file__).resolve().parents[2]
 VERSION = "0.1.0-rc5"
+PLATFORM_TAG = "windows-amd64" if os.name == "nt" else "macos-arm64" if os.uname().machine in {"arm64", "aarch64"} else "macos-x86_64"
 EXPECTED_COMMANDS = {
     "chatmaker-doctor",
     "chatmaker-catalog",
@@ -44,6 +52,63 @@ EXPECTED_COMMANDS = {
     "chatmaker-pack",
     "chatmaker-knowledge",
 }
+
+
+def prepared_runtime(root: Path) -> Path:
+    prepared = root / "prepared"
+    wheelhouse = prepared / "wheelhouse"
+    wheelhouse.mkdir(parents=True, exist_ok=True)
+    wheel = wheelhouse / "chatmaker-0.1.0rc5-py3-none-any.whl"
+    payloads = {
+        "chatmaker/__init__.py": b"",
+        "chatmaker/installers/__init__.py": b"",
+        "chatmaker/installers/auto.py": b"import json\ndef main(argv=None): print(json.dumps({'success':True,'status':'ready_with_limits'})); return 0\nif __name__ == '__main__': raise SystemExit(main())\n",
+        "chatmaker-0.1.0rc5.dist-info/METADATA": b"Metadata-Version: 2.1\nName: chatmaker\nVersion: 0.1.0rc5\n",
+        "chatmaker-0.1.0rc5.dist-info/WHEEL": b"Wheel-Version: 1.0\nRoot-Is-Purelib: true\nTag: py3-none-any\n",
+    }
+    rows: list[list[str]] = []
+    for name, value in sorted(payloads.items()):
+        encoded = base64.urlsafe_b64encode(hashlib.sha256(value).digest()).rstrip(b"=").decode("ascii")
+        rows.append([name, f"sha256={encoded}", str(len(value))])
+    rows.append(["chatmaker-0.1.0rc5.dist-info/RECORD", "", ""])
+    record = io.StringIO(newline="")
+    csv.writer(record, lineterminator="\n").writerows(rows)
+    with zipfile.ZipFile(wheel, "w") as archive:
+        for name, value in payloads.items():
+            archive.writestr(name, value)
+        archive.writestr("chatmaker-0.1.0rc5.dist-info/RECORD", record.getvalue())
+    digest = __import__("hashlib").sha256(wheel.read_bytes()).hexdigest()
+    manifest = {"schema_version": 2, "platform_tag": PLATFORM_TAG, "python_requires": "==3.11.*", "core_wheel": wheel.name, "wheels": [{"filename": wheel.name, "project": "chatmaker", "version": "0.1.0rc5", "size": wheel.stat().st_size, "sha256": digest, "tags": ["py3-none-any"], "requires": []}]}
+    (prepared / "manifest.json").write_bytes((json.dumps(manifest, sort_keys=True, separators=(",", ":")) + "\n").encode("ascii"))
+    (prepared / "requirements.txt").write_bytes(f"chatmaker==0.1.0rc5 --hash=sha256:{digest}\n".encode("ascii"))
+    return prepared
+
+
+def signed_test_bootstrap(root: Path, release_manifest: Path) -> tuple[Path, Path]:
+    """Create a trusted-bootstrap test copy anchored to an ephemeral key; CLI has no override."""
+    key = Ed25519PrivateKey.generate()
+    public = key.public_key().public_bytes(serialization.Encoding.Raw, serialization.PublicFormat.Raw)
+    trusted = root / "trusted-bootstrap"
+    trusted.mkdir()
+    shutil.copy2(ROOT / "scripts" / "bootstrap.py", trusted / "bootstrap.py")
+    verifier = (ROOT / "scripts" / "core_release_signature.py").read_text(encoding="utf-8")
+    verifier = verifier.replace(
+        "89b25c42329e5deff966621a115f479883b78fd3db5610f34a5600f4e8fd1da9",
+        public.hex(),
+    ).replace(
+        "70570b179cf452abcc7486f76a408a25faee3702433663e99b7418498d725f67",
+        hashlib.sha256(public).hexdigest(),
+    )
+    (trusted / "core_release_signature.py").write_text(verifier, encoding="utf-8", newline="\n")
+    manifest_bytes = release_manifest.read_bytes()
+    detached = {
+        "algorithm": "ed25519",
+        "key_id": "chatmaker-official-2026-01",
+        "signature": base64.b64encode(key.sign(b"ChatMaker Core Release Manifest v1\0" + manifest_bytes)).decode("ascii"),
+    }
+    signature = root / "release.sig.json"
+    signature.write_bytes((json.dumps(detached, sort_keys=True, separators=(",", ":")) + "\n").encode("ascii"))
+    return trusted / "bootstrap.py", signature
 
 
 class CleanCoreIntegrationTests(unittest.TestCase):
@@ -90,6 +155,7 @@ class CleanCoreIntegrationTests(unittest.TestCase):
             home = base / "fresh 用户 home"
             build.mkdir()
             extract.mkdir()
+            prepared = prepared_runtime(base)
             build_result = json.loads(
                 self._run(
                     [
@@ -101,6 +167,10 @@ class CleanCoreIntegrationTests(unittest.TestCase):
                         str(build),
                         "--version",
                         VERSION,
+                        "--platform-tag",
+                        PLATFORM_TAG,
+                        "--prepared-root",
+                        str(prepared),
                     ],
                     cwd=ROOT,
                     env=os.environ.copy(),
@@ -108,7 +178,8 @@ class CleanCoreIntegrationTests(unittest.TestCase):
             )
             with zipfile.ZipFile(build_result["archive"]) as archive:
                 archive.extractall(extract)
-            core = extract / f"ChatMaker-Core-{VERSION}"
+            core = extract / f"ChatMaker-Core-{VERSION}-{PLATFORM_TAG}"
+            trusted_bootstrap, release_signature = signed_test_bootstrap(base, Path(build_result["release_manifest"]))
             environment = os.environ.copy()
             environment.update(
                 {
@@ -128,11 +199,15 @@ class CleanCoreIntegrationTests(unittest.TestCase):
                 self._run(
                     [
                         sys.executable,
-                        str(core / "scripts" / "bootstrap.py"),
+                        str(trusted_bootstrap),
                         "--archive",
                         str(build_result["archive"]),
                         "--checksum",
                         str(build_result["checksum_file"]),
+                        "--release-manifest",
+                        str(build_result["release_manifest"]),
+                        "--release-signature",
+                        str(release_signature),
                         "--home",
                         str(home),
                     ],
@@ -158,6 +233,7 @@ class CleanCoreIntegrationTests(unittest.TestCase):
             build.mkdir()
             extract.mkdir()
             home.mkdir()
+            prepared = prepared_runtime(base)
 
             build_result = json.loads(
                 self._run(
@@ -170,6 +246,10 @@ class CleanCoreIntegrationTests(unittest.TestCase):
                         str(build),
                         "--version",
                         VERSION,
+                        "--platform-tag",
+                        PLATFORM_TAG,
+                        "--prepared-root",
+                        str(prepared),
                     ],
                     cwd=ROOT,
                     env=os.environ.copy(),
@@ -177,7 +257,7 @@ class CleanCoreIntegrationTests(unittest.TestCase):
             )
             with zipfile.ZipFile(build_result["archive"]) as archive:
                 archive.extractall(extract)
-            core = extract / f"ChatMaker-Core-{VERSION}"
+            core = extract / f"ChatMaker-Core-{VERSION}-{PLATFORM_TAG}"
 
             self.assertEqual(
                 {path.name for path in (core / "skills").iterdir() if path.is_dir()},

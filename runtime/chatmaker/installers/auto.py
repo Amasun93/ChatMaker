@@ -15,7 +15,7 @@ from .transaction import InstallTransaction, TransactionResult, canonical_instal
 from . import workbuddy
 
 
-PROJECT_ROOT = Path(__file__).resolve().parents[3]
+PROJECT_ROOT = Path(os.environ.get("CHATMAKER_PROJECT_ROOT", Path(__file__).resolve().parents[3])).resolve()
 SOURCE_SKILLS = PROJECT_ROOT / "skills"
 INSTALLATION_ID = "universal-auto"
 

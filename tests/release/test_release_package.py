@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import base64
+import csv
 import hashlib
 import importlib.util
+import io
 import json
 import re
 import subprocess
@@ -19,6 +21,7 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 
 ROOT = Path(__file__).resolve().parents[2]
 RELEASE_VERSION = "0.1.0-rc5"
+TEST_PLATFORM = "windows-amd64"
 
 
 def load_builder():
@@ -28,6 +31,40 @@ def load_builder():
     assert spec.loader is not None
     spec.loader.exec_module(module)
     return module
+
+
+def prepared_runtime(directory: Path) -> Path:
+    root = directory / "prepared"
+    wheelhouse = root / "wheelhouse"
+    wheelhouse.mkdir(parents=True, exist_ok=True)
+    wheel = wheelhouse / "chatmaker-0.1.0rc5-py3-none-any.whl"
+    payloads = {
+        "chatmaker/__init__.py": b"",
+        "chatmaker-0.1.0rc5.dist-info/METADATA": b"Metadata-Version: 2.1\nName: chatmaker\nVersion: 0.1.0rc5\n",
+        "chatmaker-0.1.0rc5.dist-info/WHEEL": b"Wheel-Version: 1.0\nRoot-Is-Purelib: true\nTag: py3-none-any\n",
+    }
+    rows: list[list[str]] = []
+    for name, value in sorted(payloads.items()):
+        encoded = base64.urlsafe_b64encode(hashlib.sha256(value).digest()).rstrip(b"=").decode("ascii")
+        rows.append([name, f"sha256={encoded}", str(len(value))])
+    rows.append(["chatmaker-0.1.0rc5.dist-info/RECORD", "", ""])
+    record = io.StringIO(newline="")
+    csv.writer(record, lineterminator="\n").writerows(rows)
+    with zipfile.ZipFile(wheel, "w") as archive:
+        for name, value in payloads.items():
+            archive.writestr(name, value)
+        archive.writestr("chatmaker-0.1.0rc5.dist-info/RECORD", record.getvalue())
+    digest = hashlib.sha256(wheel.read_bytes()).hexdigest()
+    manifest = {
+        "schema_version": 2,
+        "platform_tag": TEST_PLATFORM,
+        "python_requires": "==3.11.*",
+        "core_wheel": wheel.name,
+        "wheels": [{"filename": wheel.name, "project": "chatmaker", "version": "0.1.0rc5", "size": wheel.stat().st_size, "sha256": digest, "tags": ["py3-none-any"], "requires": []}],
+    }
+    (root / "manifest.json").write_bytes((json.dumps(manifest, sort_keys=True, separators=(",", ":")) + "\n").encode("ascii"))
+    (root / "requirements.txt").write_bytes(f"chatmaker==0.1.0rc5 --hash=sha256:{digest}\n".encode("ascii"))
+    return root
 
 
 class ReleasePackageTests(unittest.TestCase):
@@ -88,29 +125,29 @@ class ReleasePackageTests(unittest.TestCase):
     def test_core_excludes_knowledge_source_workspace_even_if_recursively_included(self):
         builder = load_builder()
         with tempfile.TemporaryDirectory() as directory:
-            result = builder.build_release(ROOT, Path(directory), RELEASE_VERSION)
+            result = builder.build_release(ROOT, Path(directory), RELEASE_VERSION, platform_tag=TEST_PLATFORM, prepared_root=prepared_runtime(Path(directory)))
             with zipfile.ZipFile(result["archive"]) as archive:
                 names = set(archive.namelist())
 
-        prefix = f"ChatMaker-Core-{RELEASE_VERSION}/"
+        prefix = f"ChatMaker-Core-{RELEASE_VERSION}-{TEST_PLATFORM}/"
         self.assertFalse(any("knowledge_sources/" in name for name in names), names)
 
     def test_core_release_contains_the_stdlib_bootstrap_script(self):
         """Catches publishing a Core archive that cannot install itself on a fresh machine."""
         builder = load_builder()
         with tempfile.TemporaryDirectory() as directory:
-            result = builder.build_release(ROOT, Path(directory), RELEASE_VERSION)
+            result = builder.build_release(ROOT, Path(directory), RELEASE_VERSION, platform_tag=TEST_PLATFORM, prepared_root=prepared_runtime(Path(directory)))
             with zipfile.ZipFile(result["archive"]) as archive:
                 self.assertIn(
-                    f"ChatMaker-Core-{RELEASE_VERSION}/scripts/bootstrap.py",
+                    f"ChatMaker-Core-{RELEASE_VERSION}-{TEST_PLATFORM}/scripts/bootstrap.py",
                     archive.namelist(),
                 )
 
     def test_core_readme_relative_links_resolve_inside_core(self):
         builder = load_builder()
         with tempfile.TemporaryDirectory() as directory:
-            result = builder.build_release(ROOT, Path(directory), RELEASE_VERSION)
-            prefix = f"ChatMaker-Core-{RELEASE_VERSION}/"
+            result = builder.build_release(ROOT, Path(directory), RELEASE_VERSION, platform_tag=TEST_PLATFORM, prepared_root=prepared_runtime(Path(directory)))
+            prefix = f"ChatMaker-Core-{RELEASE_VERSION}-{TEST_PLATFORM}/"
             with zipfile.ZipFile(result["archive"]) as archive:
                 names = set(archive.namelist())
                 for readme_name in ("README.md", "README_EN.md"):
@@ -128,11 +165,11 @@ class ReleasePackageTests(unittest.TestCase):
     def test_release_zip_excludes_esp32_runtime_cache_directories(self):
         builder = load_builder()
         with tempfile.TemporaryDirectory() as directory:
-            result = builder.build_release(ROOT, Path(directory), RELEASE_VERSION)
+            result = builder.build_release(ROOT, Path(directory), RELEASE_VERSION, platform_tag=TEST_PLATFORM, prepared_root=prepared_runtime(Path(directory)))
             with zipfile.ZipFile(result["archive"]) as archive:
                 names = set(archive.namelist())
 
-        prefix = f"ChatMaker-Core-{RELEASE_VERSION}/examples/chatduino/esp32/"
+        prefix = f"ChatMaker-Core-{RELEASE_VERSION}-{TEST_PLATFORM}/examples/chatduino/esp32/"
         self.assertIn(prefix + "blink-external-led/blink-external-led.ino", names)
         self.assertFalse(
             any(
@@ -179,17 +216,21 @@ class ReleasePackageTests(unittest.TestCase):
         self.assertIn("946528 B", final_evidence)
         self.assertIn("47168 B", final_evidence)
 
-    def test_installation_verifies_archive_before_entering_extracted_directory(self):
+    def test_installation_uses_a_trusted_bootstrap_and_all_detached_release_evidence(self):
         installation = (ROOT / "docs" / "installation.md").read_text(encoding="utf-8")
-        checksum_position = installation.find("Get-FileHash .\\ChatMaker-0.1.0-rc5.zip")
-        extract_position = installation.find("Expand-Archive .\\ChatMaker-0.1.0-rc5.zip")
-        enter_position = installation.find("Set-Location .\\ChatMaker-0.1.0-rc5")
+        checksum_position = installation.find("Get-FileHash .\\ChatMaker-Core-0.1.0-rc5-windows-amd64.zip")
+        bootstrap_position = installation.find("python .\\trusted-bootstrap\\bootstrap.py", checksum_position)
+        manifest_position = installation.find("--release-manifest", bootstrap_position)
+        signature_position = installation.find("--release-signature", manifest_position)
 
         self.assertGreaterEqual(checksum_position, 0)
-        self.assertGreaterEqual(extract_position, 0)
-        self.assertGreaterEqual(enter_position, 0)
-        self.assertLess(checksum_position, extract_position)
-        self.assertLess(extract_position, enter_position)
+        self.assertGreaterEqual(bootstrap_position, 0)
+        self.assertGreaterEqual(manifest_position, 0)
+        self.assertGreaterEqual(signature_position, 0)
+        self.assertLess(checksum_position, bootstrap_position)
+        self.assertNotIn("Expand-Archive .\\ChatMaker-Core-0.1.0-rc5-windows-amd64.zip", installation)
+        self.assertIn("point-in-time drift detection", installation)
+        self.assertIn("not OS secure boot", installation)
 
     def test_workbuddy_stdio_is_excluded_from_help_claim(self):
         installation = (ROOT / "docs" / "installation.md").read_text(encoding="utf-8")
@@ -201,6 +242,7 @@ class ReleasePackageTests(unittest.TestCase):
 
     def test_core_cli_defaults_to_rc5_and_reports_archive_size(self):
         with tempfile.TemporaryDirectory() as directory:
+            prepared = prepared_runtime(Path(directory))
             completed = subprocess.run(
                 [
                     sys.executable,
@@ -209,6 +251,10 @@ class ReleasePackageTests(unittest.TestCase):
                     str(ROOT),
                     "--output",
                     directory,
+                    "--platform-tag",
+                    TEST_PLATFORM,
+                    "--prepared-root",
+                    str(prepared),
                 ],
                 cwd=ROOT,
                 text=True,
@@ -221,15 +267,29 @@ class ReleasePackageTests(unittest.TestCase):
         self.assertEqual(result["version"], RELEASE_VERSION)
         self.assertEqual(
             Path(result["archive"]).name,
-            f"ChatMaker-Core-{RELEASE_VERSION}.zip",
+            f"ChatMaker-Core-{RELEASE_VERSION}-{TEST_PLATFORM}.zip",
         )
         self.assertEqual(result["size_bytes"], archive_size)
+
+    def test_release_version_is_pep440_equal_to_the_core_wheel_version(self):
+        """Catches punctuation stripping treating distinct PEP 440 versions as the same release."""
+        builder = load_builder()
+        with tempfile.TemporaryDirectory() as directory:
+            prepared = prepared_runtime(Path(directory))
+            with self.assertRaisesRegex(builder.ReleaseError, "core_wheel_version_mismatch"):
+                builder.build_release(
+                    ROOT,
+                    Path(directory) / "dist",
+                    "0.10-rc5",
+                    platform_tag=TEST_PLATFORM,
+                    prepared_root=prepared,
+                )
 
     def test_core_zip_is_deterministic_and_matches_the_frozen_content_classes(self):
         builder = load_builder()
         with tempfile.TemporaryDirectory() as directory:
-            first = builder.build_release(ROOT, Path(directory) / "first", RELEASE_VERSION)
-            second = builder.build_release(ROOT, Path(directory) / "second", RELEASE_VERSION)
+            first = builder.build_release(ROOT, Path(directory) / "first", RELEASE_VERSION, platform_tag=TEST_PLATFORM, prepared_root=prepared_runtime(Path(directory) / "fixture"))
+            second = builder.build_release(ROOT, Path(directory) / "second", RELEASE_VERSION, platform_tag=TEST_PLATFORM, prepared_root=prepared_runtime(Path(directory) / "fixture"))
 
             first_zip = Path(first["archive"])
             second_zip = Path(second["archive"])
@@ -237,13 +297,26 @@ class ReleasePackageTests(unittest.TestCase):
             second_hash = hashlib.sha256(second_zip.read_bytes()).hexdigest()
             with zipfile.ZipFile(first_zip) as archive:
                 names = set(archive.namelist())
+                infos = archive.infolist()
 
-        prefix = f"ChatMaker-Core-{RELEASE_VERSION}/"
+        prefix = f"ChatMaker-Core-{RELEASE_VERSION}-{TEST_PLATFORM}/"
         metadata = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
 
         self.assertEqual(metadata["project"]["version"], "0.1.0rc5")
         self.assertEqual(first_hash, second_hash)
         self.assertEqual(first_hash, first["sha256"])
+        self.assertEqual([info.filename for info in infos], sorted(info.filename for info in infos))
+        for info in infos:
+            self.assertEqual(info.date_time, (2026, 8, 14, 0, 0, 0))
+            self.assertEqual(info.create_system, 3)
+            self.assertEqual(info.create_version, 20)
+            self.assertEqual(info.extract_version, 20)
+            self.assertEqual(info.flag_bits, 0)
+            self.assertEqual(info.internal_attr, 0)
+            self.assertEqual(info.external_attr, 0o100644 << 16)
+            self.assertEqual(info.compress_type, zipfile.ZIP_DEFLATED)
+            self.assertEqual(info.comment, b"")
+            self.assertEqual(info.extra, b"")
         root_files = {
             name.removeprefix(prefix)
             for name in names
