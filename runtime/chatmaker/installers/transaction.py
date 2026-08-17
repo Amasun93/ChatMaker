@@ -46,6 +46,14 @@ class InstallConflict(RuntimeError):
     """Managed content changed after ChatMaker installed it."""
 
 
+class ConcurrentInstallConflict(InstallConflict):
+    """A managed target changed after its transaction snapshot was captured."""
+
+    def __init__(self, identity: str, message: str) -> None:
+        super().__init__(message)
+        self.identity = identity
+
+
 @dataclass(frozen=True)
 class TransactionResult(Mapping[str, Any]):
     success: bool
@@ -1206,12 +1214,15 @@ class InstallTransaction:
         operation_id: str,
         *,
         inject_point: str | None = None,
+        pre_replace_inject_point: str | None = None,
+        expected_current_hashes: Mapping[str, str] | None = None,
         target_guards: _TargetDirectoryGuards | None = None,
         verify_targets: bool = True,
     ) -> None:
         stages: dict[str, Path] = {}
         displaced: dict[str, Path] = {}
         applied: list[Mapping[str, Any]] = []
+        preserve_identities: set[str] = set()
         parents = [_absolute(record["target"]).parent for record in records]
         for parent in parents:
             _ensure_safe_directory(parent)
@@ -1248,9 +1259,30 @@ class InstallTransaction:
                 moved = self._restore_displaced_path(target, operation_id, identity)
                 if target_guards.exists(moved):
                     raise UnsafeInstallPath(f"restore displacement collision: {moved}")
+                if pre_replace_inject_point is not None:
+                    self._inject(
+                        pre_replace_inject_point,
+                        {"identity": identity, "target": str(target)},
+                    )
+                actual_current = _MISSING_HASH
                 if target_guards.exists(target):
                     target_guards.replace(target, moved)
                     displaced[identity] = moved
+                    actual_current = _full_path_hash(moved)
+                expected_current = (
+                    expected_current_hashes.get(identity)
+                    if expected_current_hashes is not None
+                    else None
+                )
+                if expected_current is not None and actual_current != expected_current:
+                    if target_guards.exists(moved):
+                        target_guards.replace(moved, target)
+                        displaced.pop(identity, None)
+                    preserve_identities.add(identity)
+                    raise ConcurrentInstallConflict(
+                        identity,
+                        f"managed target changed before restore: {identity}",
+                    )
                 if record["before_exists"]:
                     stage = stages[identity]
                     if stage.is_dir():
@@ -1266,9 +1298,23 @@ class InstallTransaction:
 
             if verify_targets:
                 for record in records:
+                    identity = str(record["identity"])
                     target = _absolute(record["target"])
                     if _full_path_hash(target) != record["before_hash"]:
-                        raise InstallConflict("restored target hash mismatch")
+                        preserve_identities.add(identity)
+                        raise ConcurrentInstallConflict(
+                            identity,
+                            f"restored target changed before verification: {identity}",
+                        )
+            for record in records:
+                identity = str(record["identity"])
+                target = _absolute(record["target"])
+                if _full_path_hash(target) != record["before_hash"]:
+                    preserve_identities.add(identity)
+                    raise ConcurrentInstallConflict(
+                        identity,
+                        f"restored target changed before commit: {identity}",
+                    )
             for identity, moved in tuple(displaced.items()):
                 target_guards.remove(moved)
                 displaced.pop(identity, None)
@@ -1277,6 +1323,11 @@ class InstallTransaction:
                 identity = str(record["identity"])
                 target = _absolute(record["target"])
                 moved = displaced.get(identity)
+                if identity in preserve_identities:
+                    if moved is not None and target_guards.exists(moved):
+                        target_guards.remove(moved)
+                        displaced.pop(identity, None)
+                    continue
                 if target_guards.exists(target):
                     target_guards.remove(target)
                 if moved is not None and target_guards.exists(moved):
@@ -1319,18 +1370,20 @@ class InstallTransaction:
         operation_id: str,
         target_guards: _TargetDirectoryGuards | None = None,
     ) -> None:
-        skill_records = [record for record in records if record["kind"] == "skill"]
-        parents = [_absolute(record["target"]).parent for record in skill_records]
+        parents = [_absolute(record["target"]).parent for record in records]
         owns_guards = target_guards is None
         if target_guards is None:
             target_guards = _TargetDirectoryGuards(parents)
             target_guards.__enter__()
         try:
-            for record in skill_records:
+            for record in records:
                 target = _absolute(record["target"])
-                path = target.parent / (
-                    f".chatmaker-{operation_id}-{record['name']}.displaced"
+                suffix = (
+                    str(record["name"])
+                    if record["kind"] == "skill"
+                    else _path_token(str(record["identity"]))
                 )
+                path = target.parent / f".chatmaker-{operation_id}-{suffix}.displaced"
                 if target_guards.exists(path):
                     target_guards.remove(path)
         finally:
@@ -1800,7 +1853,30 @@ class InstallTransaction:
         self._prepare_management_root()
         with exclusive_file_lock(self.lock_path):
             self._recover_locked()
-            return self._apply_locked(normalized)
+            try:
+                return self._apply_locked(normalized)
+            except ConcurrentInstallConflict as exc:
+                active = self._load_state()
+                return TransactionResult(
+                    False,
+                    "conflict",
+                    transaction_id=(
+                        str(active.get("active_transaction_id") or "") or None
+                        if active is not None
+                        else None
+                    ),
+                    managed_hash=(
+                        str(active.get("managed_hash") or "") or None
+                        if active is not None
+                        else None
+                    ),
+                    conflicts=(
+                        {
+                            "identity": exc.identity,
+                            "reason": "concurrent_modification",
+                        },
+                    ),
+                )
 
     def _apply_locked(self, normalized: Sequence[_Change]) -> TransactionResult:
         active = self._load_state()
@@ -1915,25 +1991,6 @@ class InstallTransaction:
                             raise InstallConflict(
                                 "composed ChatMaker Skill does not match its source hash"
                             )
-                else:
-                    current = _read_json_object(item.target, missing_ok=True)
-                    servers = current.setdefault("mcpServers", {})
-                    if not isinstance(servers, dict):
-                        raise ValueError("mcpServers must be an object")
-                    migrated_key = migrated_keys.get(item.identity)
-                    if migrated_key is not None and migrated_key in servers:
-                        migrated_value = servers[migrated_key]
-                        if not (
-                            isinstance(migrated_value, Mapping)
-                            and migrated_value.get("args")
-                            == list(item.migrate_from_args or ())
-                        ):
-                            raise InstallConflict(
-                                "historical MCP entry changed during migration"
-                            )
-                        servers.pop(migrated_key)
-                    servers[str(item.server_key)] = dict(item.server or {})
-                    target_guards.write_bytes(stage, _canonical_json(current))
                 stages[item.identity] = stage
 
             _ensure_safe_directory(backup_root)
@@ -2018,8 +2075,37 @@ class InstallTransaction:
                         )
                     record["migrated_skills"] = migrated_skills
                 if item.kind == "mcp":
-                    before_key_exists, before_value = _mcp_value(
-                        item.target, str(item.server_key)
+                    snapshot = (
+                        _read_json_object(_absolute(backup), missing_ok=True)
+                        if backup is not None
+                        else {}
+                    )
+                    servers = snapshot.setdefault("mcpServers", {})
+                    if not isinstance(servers, dict):
+                        raise ValueError("mcpServers must be an object")
+                    before_key_exists = str(item.server_key) in servers
+                    before_value = servers.get(str(item.server_key))
+                    migrated_key = migrated_keys.get(item.identity)
+                    migrated_exists = bool(
+                        migrated_key is not None and migrated_key in servers
+                    )
+                    migrated_value = (
+                        servers.get(migrated_key) if migrated_key is not None else None
+                    )
+                    if migrated_exists:
+                        if not (
+                            isinstance(migrated_value, Mapping)
+                            and migrated_value.get("args")
+                            == list(item.migrate_from_args or ())
+                        ):
+                            raise ConcurrentInstallConflict(
+                                item.identity,
+                                "historical MCP entry changed during migration",
+                            )
+                        servers.pop(str(migrated_key))
+                    servers[str(item.server_key)] = dict(item.server or {})
+                    target_guards.write_bytes(
+                        stages[item.identity], _canonical_json(snapshot)
                     )
                     record.update(
                         {
@@ -2029,11 +2115,7 @@ class InstallTransaction:
                             "installed_value": dict(item.server or {}),
                         }
                     )
-                    migrated_key = migrated_keys.get(item.identity)
                     if migrated_key is not None:
-                        migrated_exists, migrated_value = _mcp_value(
-                            item.target, migrated_key
-                        )
                         record.update(
                             {
                                 "migrated_server_key": migrated_key,
@@ -2049,11 +2131,20 @@ class InstallTransaction:
                 records.append(record)
 
             for record in records:
+                if _full_path_hash(_absolute(record["target"])) != record[
+                    "before_hash"
+                ]:
+                    raise ConcurrentInstallConflict(
+                        str(record["identity"]),
+                        "managed target changed after its before-image was captured: "
+                        f"{record['identity']}",
+                    )
                 for migrated in record.get("migrated_skills", []):
                     if _full_path_hash(_absolute(migrated["target"])) != migrated[
                         "before_hash"
                     ]:
-                        raise InstallConflict(
+                        raise ConcurrentInstallConflict(
+                            str(migrated["identity"]),
                             "migrated Skill changed after its before-image was captured: "
                             f"{migrated['identity']}"
                         )
@@ -2230,9 +2321,16 @@ class InstallTransaction:
                             target_guards.replace(displaced_path, target)
                             displaced.pop(identity, None)
                             preserve_identities.add(identity)
-                            raise InstallConflict(
+                            raise ConcurrentInstallConflict(
+                                identity,
                                 f"managed Skill changed before activation: {identity}"
                             )
+                    elif record["before_hash"] != _MISSING_HASH:
+                        preserve_identities.add(identity)
+                        raise ConcurrentInstallConflict(
+                            identity,
+                            f"managed Skill disappeared before activation: {identity}",
+                        )
                     try:
                         _activate_staging(stages[identity], target, target_guards)
                     except Exception:
@@ -2272,7 +2370,8 @@ class InstallTransaction:
                                 )
                                 displaced.pop(migrated_identity, None)
                                 preserve_identities.add(migrated_identity)
-                                raise InstallConflict(
+                                raise ConcurrentInstallConflict(
+                                    migrated_identity,
                                     "migrated Skill changed before activation: "
                                     f"{migrated_identity}"
                                 )
@@ -2280,6 +2379,30 @@ class InstallTransaction:
                     self._inject(
                         "mcp_replacement", {"identity": identity, "target": str(target)}
                     )
+                    displaced_path = target.parent / (
+                        f".chatmaker-{transaction_id}-{_path_token(identity)}.displaced"
+                    )
+                    if target_guards.exists(displaced_path):
+                        raise UnsafeInstallPath(
+                            f"install displacement path already exists: {displaced_path}"
+                        )
+                    if target_guards.exists(target):
+                        target_guards.replace(target, displaced_path)
+                        displaced[identity] = displaced_path
+                        if _full_path_hash(displaced_path) != record["before_hash"]:
+                            target_guards.replace(displaced_path, target)
+                            displaced.pop(identity, None)
+                            preserve_identities.add(identity)
+                            raise ConcurrentInstallConflict(
+                                identity,
+                                f"managed MCP config changed before activation: {identity}",
+                            )
+                    elif record["before_hash"] != _MISSING_HASH:
+                        preserve_identities.add(identity)
+                        raise ConcurrentInstallConflict(
+                            identity,
+                            f"managed MCP config disappeared before activation: {identity}",
+                        )
                     target_guards.replace(stages[identity], target)
                 applied.append(record)
 
@@ -2291,12 +2414,39 @@ class InstallTransaction:
                 identity = str(record["identity"])
                 expected = record.get("migration_hash", desired[identity])
                 if actual != expected:
-                    raise RuntimeError(f"installation verification failed: {identity}")
+                    preserve_identities.add(identity)
+                    raise ConcurrentInstallConflict(
+                        identity,
+                        f"installation verification failed: {identity}",
+                    )
                 for migrated in record.get("migrated_skills", []):
                     if _full_path_hash(_absolute(migrated["target"])) != _MISSING_HASH:
-                        raise RuntimeError(
+                        migrated_identity = str(migrated["identity"])
+                        preserve_identities.add(migrated_identity)
+                        raise ConcurrentInstallConflict(
+                            migrated_identity,
                             "installation migration verification failed: "
-                            f"{migrated['identity']}"
+                            f"{migrated_identity}",
+                        )
+
+            for record in records:
+                identity = str(record["identity"])
+                actual = self._current_hash(record)
+                expected = record.get("migration_hash", record["installed_hash"])
+                if actual != expected:
+                    preserve_identities.add(identity)
+                    raise ConcurrentInstallConflict(
+                        identity,
+                        f"managed target changed before commit: {identity}",
+                    )
+                for migrated in record.get("migrated_skills", []):
+                    migrated_identity = str(migrated["identity"])
+                    if _full_path_hash(_absolute(migrated["target"])) != _MISSING_HASH:
+                        preserve_identities.add(migrated_identity)
+                        raise ConcurrentInstallConflict(
+                            migrated_identity,
+                            "migrated Skill changed before commit: "
+                            f"{migrated_identity}",
                         )
 
             for identity, path in tuple(displaced.items()):
@@ -2520,6 +2670,11 @@ class InstallTransaction:
                 after_records,
                 transaction_id,
                 inject_point=inject_point,
+                pre_replace_inject_point=f"{kind}_before_target",
+                expected_current_hashes={
+                    str(record["identity"]): str(record["before_hash"])
+                    for record in current_records
+                },
                 target_guards=target_guards,
             )
             if target_guards is not None:
@@ -2537,6 +2692,17 @@ class InstallTransaction:
                 {"transaction_id": transaction_id, "path": str(journal_path)},
             )
             self._finalize_journal(journal_path, journal)
+        except ConcurrentInstallConflict:
+            self._cleanup_operation_displaced(
+                after_records,
+                transaction_id,
+                target_guards=target_guards,
+            )
+            journal["status"] = "rolled_back"
+            journal["rolled_back_at_ns"] = time.time_ns()
+            _write_json_atomic(journal_path, journal)
+            self._restore_state_value(current_state)
+            raise
         except Exception:
             self._restore_records_atomically(
                 current_records,
@@ -2636,16 +2802,30 @@ class InstallTransaction:
                             target_guards=target_guards,
                         )
                     )
-                self._run_restore_operation(
-                    kind="restore",
-                    current_state=active,
-                    current_records=current_records,
-                    after_records=after_records,
-                    next_state=previous,
-                    target_transaction_id=transaction_id,
-                    inject_point="restore_after_target",
-                    target_guards=target_guards,
-                )
+                try:
+                    self._run_restore_operation(
+                        kind="restore",
+                        current_state=active,
+                        current_records=current_records,
+                        after_records=after_records,
+                        next_state=previous,
+                        target_transaction_id=transaction_id,
+                        inject_point="restore_after_target",
+                        target_guards=target_guards,
+                    )
+                except ConcurrentInstallConflict as exc:
+                    return TransactionResult(
+                        False,
+                        "conflict",
+                        transaction_id=transaction_id,
+                        managed_hash=str(active.get("managed_hash") or "") or None,
+                        conflicts=(
+                            {
+                                "identity": exc.identity,
+                                "reason": "concurrent_modification",
+                            },
+                        ),
+                    )
             finally:
                 target_guards.__exit__(None, None, None)
             return TransactionResult(
@@ -2777,15 +2957,31 @@ class InstallTransaction:
                     transaction_id,
                     target_guards=target_guards,
                 )
-                self._run_restore_operation(
-                    kind="uninstall",
-                    current_state=active,
-                    current_records=current_records,
-                    after_records=after_records,
-                    next_state=None,
-                    inject_point="uninstall_after_target",
-                    target_guards=target_guards,
-                )
+                try:
+                    self._run_restore_operation(
+                        kind="uninstall",
+                        current_state=active,
+                        current_records=current_records,
+                        after_records=after_records,
+                        next_state=None,
+                        inject_point="uninstall_after_target",
+                        target_guards=target_guards,
+                    )
+                except ConcurrentInstallConflict as exc:
+                    return TransactionResult(
+                        False,
+                        "conflict",
+                        transaction_id=(
+                            str(active.get("active_transaction_id") or "") or None
+                        ),
+                        managed_hash=str(active.get("managed_hash") or "") or None,
+                        conflicts=(
+                            {
+                                "identity": exc.identity,
+                                "reason": "concurrent_modification",
+                            },
+                        ),
+                    )
             finally:
                 target_guards.__exit__(None, None, None)
             restored = [

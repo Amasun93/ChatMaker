@@ -70,6 +70,38 @@ class InstallTransactionTests(unittest.TestCase):
             failure_injector=inject if fail_at else None,
         )
 
+    def _single_skill_change(self):
+        return {
+            "kind": "skill_bundle",
+            "source": self.source,
+            "path": self.skills_root,
+            "names": ["chatmaker"],
+        }
+
+    def _single_mcp_change(self):
+        return {
+            "kind": "mcp_server",
+            "path": self.config,
+            "server_key": "chatmaker-test",
+            "server": {"type": "stdio", "command": "python", "args": ["-m", "test"]},
+        }
+
+    def _assert_active_transaction(self, transaction_id: str) -> None:
+        state = json.loads(
+            next((self.management_root / "state").glob("*.json")).read_text(
+                encoding="utf-8"
+            )
+        )
+        self.assertEqual(state["phase"], "active")
+        self.assertEqual(state["active_transaction_id"], transaction_id)
+
+    def _assert_latest_operation_rolled_back(self) -> None:
+        journals = [
+            json.loads(path.read_text(encoding="utf-8"))
+            for path in (self.management_root / "transactions").glob("*.json")
+        ]
+        self.assertIn("rolled_back", {journal["status"] for journal in journals})
+
     def _seed_existing_state(self) -> None:
         old = self.skills_root / "chatmaker"
         old.mkdir(parents=True)
@@ -184,6 +216,59 @@ class InstallTransactionTests(unittest.TestCase):
             for path in (self.management_root / "transactions").glob("*.json")
         ]
         self.assertEqual([item["status"] for item in journals], ["rolled_back"])
+
+    def test_skill_apply_race_returns_conflict_and_preserves_latest_external_write(self):
+        self._seed_existing_state()
+        edited = False
+
+        def edit_before_replace(point, context):
+            nonlocal edited
+            if point == "skill_activation" and not edited:
+                edited = True
+                (Path(context["target"]) / "external.txt").write_text(
+                    "latest skill write", encoding="utf-8"
+                )
+
+        result = InstallTransaction(
+            root=self.management_root,
+            installation_id="test-install",
+            failure_injector=edit_before_replace,
+        ).apply([self._single_skill_change()])
+
+        self.assertFalse(result.success)
+        self.assertEqual(result.status, "conflict")
+        self.assertEqual(
+            (self.skills_root / "chatmaker" / "external.txt").read_text(encoding="utf-8"),
+            "latest skill write",
+        )
+        self.assertEqual(list((self.management_root / "state").glob("*.json")), [])
+        self._assert_latest_operation_rolled_back()
+
+    def test_mcp_apply_race_returns_conflict_and_preserves_latest_external_write(self):
+        self._seed_existing_state()
+        edited = False
+
+        def edit_before_replace(point, context):
+            nonlocal edited
+            if point == "mcp_replacement" and not edited:
+                edited = True
+                data = json.loads(self.config.read_text(encoding="utf-8"))
+                data["mcpServers"]["external-latest"] = {"command": "teacher"}
+                self.config.write_text(json.dumps(data), encoding="utf-8")
+
+        result = InstallTransaction(
+            root=self.management_root,
+            installation_id="test-install",
+            failure_injector=edit_before_replace,
+        ).apply([self._single_mcp_change()])
+
+        self.assertFalse(result.success)
+        self.assertEqual(result.status, "conflict")
+        saved = json.loads(self.config.read_text(encoding="utf-8"))
+        self.assertEqual(saved["mcpServers"]["external-latest"], {"command": "teacher"})
+        self.assertEqual(saved["mcpServers"]["chatmaker-test"], {"command": "old"})
+        self.assertEqual(list((self.management_root / "state").glob("*.json")), [])
+        self._assert_latest_operation_rolled_back()
 
     def test_migration_verification_crash_recovers_every_before_image(self):
         original = self._seed_migration_state()
@@ -326,9 +411,10 @@ class InstallTransactionTests(unittest.TestCase):
             "_atomic_backup",
             side_effect=mutate_chatduino_after_backup,
         ):
-            with self.assertRaises(InstallConflict):
-                self._transaction().apply([self._migration_changes()[0]])
+            result = self._transaction().apply([self._migration_changes()[0]])
 
+        self.assertFalse(result.success)
+        self.assertEqual(result.status, "conflict")
         self.assertFalse((self.skills_root / "chatmaker").exists())
         self.assertEqual(
             (self.skills_root / "chatduino" / "owner.txt").read_text(encoding="utf-8"),
@@ -395,9 +481,10 @@ class InstallTransactionTests(unittest.TestCase):
             installation_id="test-install",
             failure_injector=edit_when_migration_starts,
         )
-        with self.assertRaises(InstallConflict):
-            transaction.apply([self._migration_changes()[0]])
+        result = transaction.apply([self._migration_changes()[0]])
 
+        self.assertFalse(result.success)
+        self.assertEqual(result.status, "conflict")
         self.assertFalse((self.skills_root / "chatmaker").exists())
         self.assertEqual(
             (self.skills_root / "chatduino" / "owner.txt").read_text(encoding="utf-8"),
@@ -489,6 +576,71 @@ class InstallTransactionTests(unittest.TestCase):
         self.assertEqual(recovered.status, "already_restored")
         self._assert_original_state()
 
+    def test_skill_restore_race_preserves_latest_write_and_rolls_back_started_mcp_restore(self):
+        self._seed_existing_state()
+        installed = self._transaction().apply(self._changes())
+        edited = False
+
+        def edit_before_skill(point, context):
+            nonlocal edited
+            if (
+                point == "restore_before_target"
+                and str(context["identity"]).endswith("chatmaker")
+                and not edited
+            ):
+                edited = True
+                (self.skills_root / "chatmaker" / "external.txt").write_text(
+                    "latest restore skill write", encoding="utf-8"
+                )
+
+        result = InstallTransaction(
+            root=self.management_root,
+            installation_id="test-install",
+            failure_injector=edit_before_skill,
+        ).restore(installed.transaction_id)
+
+        self.assertFalse(result.success)
+        self.assertEqual(result.status, "conflict")
+        self.assertEqual(
+            (self.skills_root / "chatmaker" / "external.txt").read_text(encoding="utf-8"),
+            "latest restore skill write",
+        )
+        self.assertEqual(
+            json.loads(self.config.read_text(encoding="utf-8"))["mcpServers"][
+                "chatmaker-test"
+            ]["args"],
+            ["-m", "test"],
+        )
+        self._assert_active_transaction(installed.transaction_id)
+        self._assert_latest_operation_rolled_back()
+
+    def test_mcp_restore_race_returns_conflict_and_preserves_latest_external_write(self):
+        self._seed_existing_state()
+        installed = self._transaction().apply([self._single_mcp_change()])
+        edited = False
+
+        def edit_before_mcp(point, _context):
+            nonlocal edited
+            if point == "restore_before_target" and not edited:
+                edited = True
+                data = json.loads(self.config.read_text(encoding="utf-8"))
+                data["mcpServers"]["external-latest"] = {"command": "teacher"}
+                self.config.write_text(json.dumps(data), encoding="utf-8")
+
+        result = InstallTransaction(
+            root=self.management_root,
+            installation_id="test-install",
+            failure_injector=edit_before_mcp,
+        ).restore(installed.transaction_id)
+
+        self.assertFalse(result.success)
+        self.assertEqual(result.status, "conflict")
+        saved = json.loads(self.config.read_text(encoding="utf-8"))
+        self.assertEqual(saved["mcpServers"]["external-latest"], {"command": "teacher"})
+        self.assertEqual(saved["mcpServers"]["chatmaker-test"]["args"], ["-m", "test"])
+        self._assert_active_transaction(installed.transaction_id)
+        self._assert_latest_operation_rolled_back()
+
     def test_migration_restore_crash_preserves_new_plugin_and_skill_replacement(self):
         self._seed_migration_state()
         installed = self._transaction().apply(self._migration_changes())
@@ -545,6 +697,71 @@ class InstallTransactionTests(unittest.TestCase):
         self.assertEqual(recovered.status, "uninstalled")
         self._assert_original_state()
         self.assertEqual(self._transaction().uninstall().status, "already_absent")
+
+    def test_skill_uninstall_race_preserves_latest_write_and_rolls_back_started_mcp_uninstall(self):
+        self._seed_existing_state()
+        installed = self._transaction().apply(self._changes())
+        edited = False
+
+        def edit_before_skill(point, context):
+            nonlocal edited
+            if (
+                point == "uninstall_before_target"
+                and str(context["identity"]).endswith("chatmaker")
+                and not edited
+            ):
+                edited = True
+                (self.skills_root / "chatmaker" / "external.txt").write_text(
+                    "latest uninstall skill write", encoding="utf-8"
+                )
+
+        result = InstallTransaction(
+            root=self.management_root,
+            installation_id="test-install",
+            failure_injector=edit_before_skill,
+        ).uninstall()
+
+        self.assertFalse(result.success)
+        self.assertEqual(result.status, "conflict")
+        self.assertEqual(
+            (self.skills_root / "chatmaker" / "external.txt").read_text(encoding="utf-8"),
+            "latest uninstall skill write",
+        )
+        self.assertEqual(
+            json.loads(self.config.read_text(encoding="utf-8"))["mcpServers"][
+                "chatmaker-test"
+            ]["args"],
+            ["-m", "test"],
+        )
+        self._assert_active_transaction(installed.transaction_id)
+        self._assert_latest_operation_rolled_back()
+
+    def test_mcp_uninstall_race_returns_conflict_and_preserves_latest_external_write(self):
+        self._seed_existing_state()
+        installed = self._transaction().apply([self._single_mcp_change()])
+        edited = False
+
+        def edit_before_mcp(point, _context):
+            nonlocal edited
+            if point == "uninstall_before_target" and not edited:
+                edited = True
+                data = json.loads(self.config.read_text(encoding="utf-8"))
+                data["mcpServers"]["external-latest"] = {"command": "teacher"}
+                self.config.write_text(json.dumps(data), encoding="utf-8")
+
+        result = InstallTransaction(
+            root=self.management_root,
+            installation_id="test-install",
+            failure_injector=edit_before_mcp,
+        ).uninstall()
+
+        self.assertFalse(result.success)
+        self.assertEqual(result.status, "conflict")
+        saved = json.loads(self.config.read_text(encoding="utf-8"))
+        self.assertEqual(saved["mcpServers"]["external-latest"], {"command": "teacher"})
+        self.assertEqual(saved["mcpServers"]["chatmaker-test"]["args"], ["-m", "test"])
+        self._assert_active_transaction(installed.transaction_id)
+        self._assert_latest_operation_rolled_back()
 
     def test_migration_uninstall_crash_preserves_new_plugin_and_skill_replacement(self):
         self._seed_migration_state()
