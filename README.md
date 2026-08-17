@@ -12,9 +12,32 @@ ChatMaker 是面向老师、学生和黑客松参与者的 AI 创作伙伴。用
 
 对话窗口就是创作环境。Mind+、编译器、串口和浏览器在后台完成专业工作，用户不需要先学习一套 IDE。
 
-> 当前处于早期开发阶段。[`v0.1.0-rc5`](https://github.com/Amasun93/ChatMaker/releases/tag/v0.1.0-rc5) 已作为 GitHub 预发布版公开。它包含 Nano/Uno Mind+ 编译、ESP32 官方 Core 准备与精确 FQBN 编译、手机 AP 页面嵌入、可执行路由和创意规划、显式高级游乐场、WorkBuddy 1.7.0 的 23 个工具，以及真实 Chromium 自动化。没有匹配实板证据，因此仍不能声称完成烧录或实物闭环。
+> 当前处于 Alpha 快速迭代阶段。[`v0.1.0-rc5`](https://github.com/Amasun93/ChatMaker/releases/tag/v0.1.0-rc5) 是最近一个打包的预发布版；`main` 分支包含更新的 ChatMaker Knowledge 和通用安装器。没有匹配实板证据，因此仍不能声称完成烧录或实物闭环。
 
-rc5 之后的当前源码正在准备新的 `ChatMaker-Core-<version>.zip` 和三个按板卡下载的 LLMWiki 知识包；本阶段没有创建新的 GitHub Release。rc5 仍是当前公开预发布版。
+## 从 GitHub 安装当前 Alpha
+
+把下面这段话和仓库链接交给你正在使用的 AI 即可：
+
+```text
+请安装 ChatMaker 当前 Alpha 源码版：
+https://github.com/Amasun93/ChatMaker
+
+请先阅读仓库 README 和 docs/installation.md，检查本机环境，安装项目，
+然后运行 chatmaker-install auto 和 chatmaker-install doctor。
+完成后告诉我已经安装的 Skill、MCP 工具，以及仍需我处理的项目。
+```
+
+也可以在终端直接执行：
+
+```powershell
+git clone https://github.com/Amasun93/ChatMaker.git
+Set-Location ChatMaker
+python -m pip install .
+chatmaker-install auto
+chatmaker-install doctor
+```
+
+安装器会根据本机实际环境选择可用的 Skill 目录和 MCP 配置。当前源码版用于体验和反馈；正式发布包、完整 macOS 验证与硬件实测会在后续阶段补齐。
 
 ## 它补上的能力
 

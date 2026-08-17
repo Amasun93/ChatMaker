@@ -13,6 +13,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest import mock
 import zipfile
 import runpy
 
@@ -578,6 +579,40 @@ class BootstrapTests(unittest.TestCase):
             self.assertNotIn("tampered code executed", module.read_text(encoding="utf-8"))
             quarantines = list((home / ".chatmaker" / "quarantine").glob("9.8.7-*"))
             self.assertEqual(len(quarantines), 1)
+
+    def test_failed_repair_activation_restores_the_previous_version(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            base = Path(temporary)
+            archive, checksum, manifest, signature = self._make_core(base)
+            home = base / "home"
+            first = self._run(archive, checksum, manifest, signature, home, env=os.environ.copy())
+            self.assertEqual(first.returncode, 0, first.stdout)
+            version_root = home / ".chatmaker" / "versions" / "9.8.7"
+            module = version_root / "venv" / (
+                "Lib/site-packages" if os.name == "nt" else "lib/python3.11/site-packages"
+            ) / "chatmaker" / "installers" / "auto.py"
+            module.write_text("# previous installed version\n", encoding="utf-8")
+            bootstrap = runpy.run_path(str(self.trusted_bootstrap))
+            real_replace = os.replace
+
+            def fail_staging_activation(source, destination):
+                source_path = Path(source)
+                if source_path.name.startswith(".9.8.7.staging-") and Path(destination) == version_root:
+                    raise OSError("simulated activation failure")
+                return real_replace(source, destination)
+
+            with mock.patch.object(bootstrap["os"], "replace", side_effect=fail_staging_activation):
+                with self.assertRaisesRegex(OSError, "simulated activation failure"):
+                    bootstrap["run"](
+                        archive=archive,
+                        checksum=checksum,
+                        release_manifest=manifest,
+                        release_signature=signature,
+                        home=home,
+                    )
+
+            self.assertTrue(version_root.is_dir())
+            self.assertEqual(module.read_text(encoding="utf-8"), "# previous installed version\n")
 
     def test_tampered_pyvenv_command_is_rebuilt_before_the_venv_interpreter_runs(self):
         """Catches partial pyvenv.cfg validation accepting a drifted interpreter binding record."""

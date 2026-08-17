@@ -872,7 +872,8 @@ def _quarantine(home_root: Path, version: str, version_root: Path) -> Path:
 def _restore_quarantined(home_root: Path, version: str, version_root: Path, quarantined: Path | None) -> None:
     if quarantined is None or not quarantined.exists():
         return
-    _quarantine(home_root, version, version_root)
+    if version_root.exists():
+        _quarantine(home_root, version, version_root)
     os.replace(quarantined, version_root)
     _fsync_directory(version_root.parent)
 
@@ -1025,7 +1026,12 @@ def run(
                 quarantined: Path | None = None
                 if repaired:
                     quarantined = _quarantine(home_root, version, version_root)
-                os.replace(staging, version_root)
+                try:
+                    os.replace(staging, version_root)
+                except Exception:
+                    if repaired:
+                        _restore_quarantined(home_root, version, version_root, quarantined)
+                    raise
                 _fsync_directory(version_root.parent)
                 _atomic_write(version_root / "venv" / "pyvenv.cfg", _venv_config_bytes(version_root / "venv"))
                 installed_manifest, installed_wheelhouse, _ = _runtime_bundle(version_root / core.name, platform_tag)
