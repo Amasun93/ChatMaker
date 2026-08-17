@@ -30,6 +30,14 @@ pins:
     capabilities: [analog-input, digital, i2c-scl]
   - id: D2
     capabilities: [digital, interrupt, input, output]
+  - id: D6
+    capabilities: [digital, pwm, input, output]
+  - id: D7
+    capabilities: [digital, input, output]
+  - id: D8
+    capabilities: [digital, input, output]
+  - id: D9
+    capabilities: [digital, pwm, input, output]
   - id: 5V
     capabilities: [power, shared]
   - id: GND

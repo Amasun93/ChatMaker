@@ -22,8 +22,8 @@ verification:
     evidence: Reviewed the WS2812B electrical/timing datasheet, the maintained NeoPixel library, and Adafruit wiring and power guidance.
   code_compiled:
     status: verified
-    checked_at: "2026-08-14"
-    evidence: The Nano ws2812-one-pixel example compiled with Mind+ 2.x and DFRobot_Mindplus_NeoPixel 1.0.0; see docs/verification/2026-08-14-nano-mindplus-compilation.md.
+    checked_at: "2026-08-17"
+    evidence: Nano and Uno DFRobot examples, ESP32 Adafruit NeoPixel example and Starcore MPython example compiled; see docs/verification/2026-08-17-common-module-compilation.md.
   firmware_uploaded: &unverified
     status: unverified
     checked_at: null
@@ -40,6 +40,9 @@ pins:
     role: data-output
 supported_boards:
   - arduino-nano-classic
+  - arduino-uno-r3
+  - esp32-devkit-v1
+  - idmc-0001-starcore-v4-2-2
 constraints:
   - Confirm the DIN arrow direction; data must enter DIN rather than DOUT.
   - Use a 300 to 500 ohm series resistor near DIN and follow the documented power-input capacitor guidance.
@@ -52,8 +55,19 @@ libraries:
     headers: [DFRobot_NeoPixel.h]
     status: compile_verified
     notes: The checked-in Nano example compiled with Mind+ 2.x and DFRobot_Mindplus_NeoPixel 1.0.0.
+  - name: Adafruit NeoPixel 1.15.5
+    headers: [Adafruit_NeoPixel.h]
+    status: compile_verified
+    notes: ESP32 example compiled with Arduino-ESP32 3.3.11 and Adafruit NeoPixel 1.15.5.
+  - name: Mind+ MPython NeoPixel API
+    headers: [MPython.h]
+    status: compile_verified
+    notes: Starcore example compiled with DFRobot_NeoPixel exposed through MPython.h and the safe index range 0 through count minus one.
 example_files:
   - examples/chatduino/nano/ws2812-one-pixel/ws2812-one-pixel.ino
+  - examples/chatduino/uno/ws2812-one-pixel/ws2812-one-pixel.ino
+  - examples/chatduino/esp32/ws2812-one-pixel/ws2812-one-pixel.ino
+  - examples/chatduino/starcore/ws2812-strip/ws2812-strip.ino
 common_failures:
   - Reversing DIN and DOUT prevents the strip from responding.
   - Missing shared ground causes random or absent data even when the 5 V supply is present.
@@ -61,3 +75,6 @@ common_failures:
   - Powering many pixels from the Nano 5 V pin causes resets, voltage drop, or overheated wiring.
 board_notes:
   arduino-nano-classic: The example uses D6, one pixel, and brightness 32; use an external 5 V supply with shared ground before expanding the pixel count.
+  arduino-uno-r3: Use D6 for DIN in the example; power a strip from a suitable external 5 V supply and share GND.
+  esp32-devkit-v1: Use GPIO27 for DIN; a 3.3 V to 5 V logic-level shifter is the reliable classroom choice when the strip runs at 5 V.
+  idmc-0001-starcore-v4-2-2: Use DIN P8, external 5 V power and shared GND; MPython.h already exposes the NeoPixel type.

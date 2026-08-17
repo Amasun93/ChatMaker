@@ -36,6 +36,10 @@ pins:
     capabilities: [analog-input, input-only]
   - id: P3
     capabilities: [analog-input, input-only]
+  - id: P8
+    capabilities: [digital, analog-input, pwm, dac]
+  - id: P9
+    capabilities: [digital, analog-input, pwm, dac]
   - id: P13
     capabilities: [digital, pwm, spi-sck]
   - id: P14
@@ -46,6 +50,10 @@ pins:
     capabilities: [i2c-scl, shared]
   - id: P20
     capabilities: [i2c-sda, spi-mosi, shared]
+  - id: P_H
+    capabilities: [digital, ultrasonic-trigger, silkscreen-h]
+  - id: P_O
+    capabilities: [digital, ultrasonic-echo, silkscreen-o]
   - id: 3V3
     capabilities: [power]
   - id: GND

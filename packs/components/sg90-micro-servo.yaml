@@ -11,16 +11,21 @@ supply_voltage:
 sources:
   - title: Arduino Servo library reference
     url: https://docs.arduino.cc/libraries/servo/
+  - title: ESP32Servo library
+    url: https://github.com/madhephaestus/ESP32Servo
 verification:
-  source_reviewed: &unverified
+  source_reviewed:
+    status: verified
+    checked_at: "2026-08-17"
+    evidence: Reviewed Arduino Servo power guidance and the ESP32Servo library interface.
+  code_compiled:
+    status: verified
+    checked_at: "2026-08-17"
+    evidence: Nano and Uno DFRobot examples, ESP32Servo example and Starcore P9 example compiled; see docs/verification/2026-08-17-common-module-compilation.md.
+  firmware_uploaded: &unverified
     status: unverified
     checked_at: null
     evidence: null
-  code_compiled:
-    status: verified
-    checked_at: "2026-08-14"
-    evidence: The Nano servo-button example using DFRobot_Servo.h compiled with Mind+ 2.x; see docs/verification/2026-08-14-nano-mindplus-compilation.md.
-  firmware_uploaded: *unverified
   physical_effect_verified: *unverified
 pins:
   - id: VCC
@@ -31,6 +36,9 @@ pins:
     role: control
 supported_boards:
   - arduino-nano-classic
+  - arduino-uno-r3
+  - esp32-devkit-v1
+  - idmc-0001-starcore-v4-2-2
 constraints:
   - Never power the servo from a GPIO pin; use a suitable 5 V supply and connect grounds together.
   - Confirm wire colors and mechanical limits before commanding a wide sweep.
@@ -41,10 +49,24 @@ libraries:
     headers: [DFRobot_Servo.h]
     status: compile_verified
     notes: The checked-in Nano example compiled with DFRobot_Servo.h and the Servo angle API supplied by Mind+ 2.x.
+  - name: ESP32Servo 3.2.1
+    headers: [ESP32Servo.h]
+    status: compile_verified
+    notes: ESP32 example compiled with ESP32Servo 3.2.1 on GPIO18 at 50 Hz and a conservative 500 to 2400 microsecond pulse range.
+  - name: Mind+ DFRobot Servo library for Starcore
+    headers: [DFRobot_Servo.h]
+    status: compile_verified
+    notes: Starcore P9 example compiled with Mind+ 1.8; historical P7 wiring can conflict with the onboard WS2812 path.
 example_files:
   - examples/chatduino/nano/servo-button/servo-button.ino
+  - examples/chatduino/uno/servo-button/servo-button.ino
+  - examples/chatduino/esp32/servo-button/servo-button.ino
+  - examples/chatduino/starcore/servo-position/servo-position.ino
 common_failures:
   - Powering the servo from an undersized USB or board rail can reset the Nano or cause jitter.
   - Sending angles beyond the mechanism limits can stall and overheat the servo.
 board_notes:
   arduino-nano-classic: The compiled example uses D9 for the signal; use an adequate 5 V supply and a shared ground for loaded motion.
+  arduino-uno-r3: Use D9 for signal and a separate adequate 5 V supply with shared GND.
+  esp32-devkit-v1: Use GPIO18 for signal; never feed 5 V into an ESP32 GPIO and power the servo separately with shared GND.
+  idmc-0001-starcore-v4-2-2: Use P9 for signal and an external 5 V supply with shared GND; do not use the board 3V3 rail for servo power.

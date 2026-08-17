@@ -1,0 +1,73 @@
+schema_version: "1.0"
+kind: component
+id: lcd1602-i2c-pcf8574
+name: HD44780-compatible LCD1602 with confirmed PCF8574 I2C backpack
+aliases: [LCD1602, 1602液晶屏, I2C字符屏]
+category: display
+interface: i2c
+supply_voltage:
+  minimum: 3.3
+  maximum: 5.0
+sources:
+  - title: Arduino LiquidCrystal library for parallel HD44780 displays
+    url: https://docs.arduino.cc/libraries/liquidcrystal
+  - title: Arduino LiquidCrystal PCF8574 library
+    url: https://docs.arduino.cc/libraries/liquidcrystal_pcf8574/
+verification:
+  source_reviewed:
+    status: verified
+    checked_at: "2026-08-17"
+    evidence: Reviewed the distinction between bare parallel HD44780 modules and PCF8574 I2C backpacks plus the maintained PCF8574 library API.
+  code_compiled:
+    status: verified
+    checked_at: "2026-08-17"
+    evidence: Nano, Uno and ESP32 LiquidCrystal_PCF8574 examples plus the Starcore DFRobot example compiled; see docs/verification/2026-08-17-common-module-compilation.md.
+  firmware_uploaded: &unverified
+    status: unverified
+    checked_at: null
+    evidence: null
+  physical_effect_verified: *unverified
+pins:
+  - id: VCC
+    role: power
+  - id: GND
+    role: ground
+  - id: SCL
+    role: i2c-clock
+  - id: SDA
+    role: i2c-data
+supported_boards:
+  - arduino-nano-classic
+  - arduino-uno-r3
+  - esp32-devkit-v1
+  - idmc-0001-starcore-v4-2-2
+constraints:
+  - Use this record only for a 16x2 HD44780-compatible display with a confirmed PCF8574 I2C backpack; a bare 16-pin parallel LCD needs different wiring and code.
+  - Scan the I2C bus before choosing an address; 0x27 and 0x3F are common but not guaranteed.
+  - Many 5 V backpacks pull SDA and SCL up to 5 V; use a bidirectional level shifter with ESP32 or Starcore unless the exact adapter is confirmed 3.3 V safe.
+identification:
+  - Confirm a 16-column by 2-row LCD, an attached PCF8574-family backpack, four pins labelled GND/VCC/SDA/SCL, its safe supply voltage, and the scanned address.
+libraries:
+  - name: LiquidCrystal_PCF8574 2.3.0
+    headers: [LiquidCrystal_PCF8574.h]
+    status: compile_verified
+    notes: Nano, Uno and ESP32 examples compiled with the same maintained Arduino library; install it progressively when the project first needs this display.
+  - name: Mind+ DFRobot LiquidCrystal I2C library
+    headers: [DFRobot_LiquidCrystal_I2C.h]
+    status: compile_verified
+    notes: Starcore example compiled with the library bundled with Mind+ 1.8; address 0x27 remains a replaceable example value.
+example_files:
+  - examples/chatduino/nano/lcd1602-i2c-hello/lcd1602-i2c-hello.ino
+  - examples/chatduino/uno/lcd1602-i2c-hello/lcd1602-i2c-hello.ino
+  - examples/chatduino/esp32/lcd1602-i2c-hello/lcd1602-i2c-hello.ino
+  - examples/chatduino/starcore/lcd1602-i2c-hello/lcd1602-i2c-hello.ino
+common_failures:
+  - Treating a parallel 16-pin screen as the four-wire I2C version produces unusable wiring and code.
+  - A wrong address or swapped SDA/SCL leaves the backlight on but shows no text.
+  - Wrong contrast-potentiometer position can make working text invisible.
+  - A 5 V I2C pull-up connected directly to a 3.3 V board can damage the input pins.
+board_notes:
+  arduino-nano-classic: Use SDA A4 and SCL A5; scan the address before changing the example's 0x27 value.
+  arduino-uno-r3: Use SDA A4 and SCL A5; scan the address before changing the example's 0x27 value.
+  esp32-devkit-v1: Use SDA GPIO21 and SCL GPIO22 through a bidirectional level shifter unless the backpack is confirmed 3.3 V safe.
+  idmc-0001-starcore-v4-2-2: Use a matching-voltage I2C interface and preserve shared P19/P20; add level shifting for an ordinary 5 V backpack.

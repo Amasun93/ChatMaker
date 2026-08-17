@@ -13,4 +13,12 @@ source_refs:
 
 可靠示例先做一个输入或一个输出：串口心跳、模拟原始值、按钮状态、OLED 英文、单色灯带。确认单模块结果后再组合。DHT11 每次读取间隔至少约 2.5 秒，并避免同一节拍连续调用两个 getter；超声波无效或超时返回值不能当作真实零距离；舵机和灯带使用外部电源并共地。
 
-源资料含有已编译和部分实物反馈，但 ChatMaker 当前仓库尚未把星核板示例复制并重新编译。因此本页提供的是清洗后的选择规则，不把历史证据提升为当前项目的编译或实物通过状态。
+当前仓库已提供五个最小示例，并已使用当前 Mind+ 1.8 mPython 目标完成编译：
+
+- OLED：只包含 `MPython.h`，使用内置 `display`，示例 `examples/chatduino/starcore/oled-i2c-hello/oled-i2c-hello.ino`
+- LCD1602 I2C：`DFRobot_LiquidCrystal_I2C.h`，示例 `examples/chatduino/starcore/lcd1602-i2c-hello/lcd1602-i2c-hello.ino`
+- WS2812：只包含 `MPython.h`，使用内置 `DFRobot_NeoPixel`，示例 `examples/chatduino/starcore/ws2812-strip/ws2812-strip.ino`
+- SG90：`DFRobot_Servo.h`，示例 `examples/chatduino/starcore/servo-position/servo-position.ino`
+- 超声波：`DFRobot_URM10.h`，示例 `examples/chatduino/starcore/ultrasonic-distance/ultrasonic-distance.ino`
+
+代码能编译只代表语法、板型和库组合可用；由于目前没有实体板，烧录、串口结果和物理效果仍保持 `unverified`。

@@ -35,6 +35,18 @@ pins:
     capabilities: [digital, input, output, boot-sensitive]
   - id: GPIO23
     capabilities: [digital, input, output, spi-mosi]
+  - id: GPIO18
+    capabilities: [digital, input, output, pwm]
+  - id: GPIO21
+    capabilities: [digital, input, output, i2c-sda]
+  - id: GPIO22
+    capabilities: [digital, input, output, i2c-scl]
+  - id: GPIO25
+    capabilities: [digital, input, output, adc2, dac, pwm]
+  - id: GPIO26
+    capabilities: [digital, input, output, adc2, dac, pwm]
+  - id: GPIO27
+    capabilities: [digital, input, output, adc2, pwm]
   - id: GPIO34
     capabilities: [digital, analog-input, adc1, input-only, no-internal-pull]
   - id: 3V3
