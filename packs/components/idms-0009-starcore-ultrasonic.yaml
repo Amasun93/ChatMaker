@@ -1,0 +1,66 @@
+schema_version: "1.0"
+kind: component
+id: idms-0009-starcore-ultrasonic
+hardware_id: IDMS-0009
+name: IDMS-0009 星核板 GPIO 超声波模块
+aliases: [星核超声波测距, 自研超声波传感器, IDMS-0009测距模块]
+category: input
+interface: gpio-trigger-echo
+supply_voltage:
+  minimum: 2.8
+  maximum: 5.0
+logic_boundary: TRIG uses H/P_H and ECHO uses O/P_O; the current batch's ECHO voltage is unverified, so protect the ESP32 3.3 V input until measured.
+source_ids: [starcore-module-catalog-snapshot, starcore-classroom-module-cards-snapshot, starcore-code-patterns-snapshot, starcore-mechanical-facts-snapshot]
+sources:
+  - title: ChatMaker governed Starcore source manifest
+    url: https://github.com/Amasun93/ChatMaker/tree/main/knowledge_sources
+verification:
+  source_reviewed:
+    status: verified
+    checked_at: "2026-08-17"
+    evidence: Governed sources identify IDMS-0009 as the DFRobot_URM10 GPIO route on P_H/P_O, separate from sen0304 I2C modules.
+  code_compiled: &unverified
+    status: unverified
+    checked_at: null
+    evidence: null
+  firmware_uploaded: *unverified
+  physical_effect_verified: *unverified
+  echo_level_verified:
+    status: unverified
+    checked_at: null
+    evidence: null
+historical_lead:
+  status: legacy_reported
+  evidence: Legacy graphical projects report compilation; current ChatMaker compilation, ECHO voltage, distance accuracy, and timeout behavior remain unchecked.
+pins:
+  - id: VCC
+    role: power
+  - id: GND
+    role: ground
+  - id: TRIG
+    role: trigger-input
+  - id: ECHO
+    role: echo-output
+supported_boards: [idmc-0001-starcore-v4-2-2]
+constraints:
+  - This owned module uses GPIO TRIG/ECHO with DFRobot_URM10; it is not the sen0304 I2C ultrasonic route.
+  - Treat a returned zero as timeout or failure, not as a confirmed zero-centimetre distance.
+  - Measure or level-protect ECHO before assuming a 5 V-powered batch is safe for ESP32 input.
+identification:
+  - Confirm IDMS-0009, H/O or TRIG/ECHO labels, and the current module batch; do not substitute HC-SR04 or an I2C ultrasonic card by appearance alone.
+libraries:
+  - name: Mind+ sen0001 URM10 extension
+    headers: [DFRobot_URM10.h]
+    status: unverified
+    notes: The source-reviewed GPIO API is known, but the new ChatMaker-owned example has not yet been compiled.
+mindplus:
+  extension: sen0001
+  headers: [DFRobot_URM10.h]
+  api: urm10.getDistanceCM(P_H, P_O); zero means timeout or failure
+example_files:
+  - examples/chatduino/starcore/starcore-idms-0009-ultrasonic-distance/starcore-idms-0009-ultrasonic-distance.ino
+common_failures:
+  - Selecting sen0304 or an I2C address uses the wrong interface and library.
+  - Treating zero as a real target distance hides timeouts, disconnection, and incompatible batches.
+board_notes:
+  idmc-0001-starcore-v4-2-2: Connect TRIG to H/P_H and ECHO to O/P_O; keep 80 to 120 ms between readings and protect ECHO until its level is measured.

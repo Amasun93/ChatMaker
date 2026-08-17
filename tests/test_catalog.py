@@ -14,6 +14,16 @@ import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
 CATALOG_PATH = ROOT / "runtime" / "chatmaker" / "catalog.py"
+STARCORE_BOARD_ID = "idmc-0001-starcore-v4-2-2"
+OWNED_STARCORE_COMPONENTS = {
+    "idmd-0001-starcore-rgb-light": "IDMD-0001",
+    "idmd-0002-starcore-serial-mp3": "IDMD-0002",
+    "idmd-0021-starcore-oled-1-3": "IDMD-0021",
+    "idms-0001-starcore-button": "IDMS-0001",
+    "idms-0003-starcore-potentiometer": "IDMS-0003",
+    "idms-0008-starcore-dht11": "IDMS-0008",
+    "idms-0009-starcore-ultrasonic": "IDMS-0009",
+}
 
 
 def load_catalog():
@@ -255,6 +265,64 @@ class CatalogTests(unittest.TestCase):
         self.assertEqual(len(result["knowledge"]["sections"]), 8)
         self.assertEqual(result["knowledge"]["sections"][0]["section_id"], "start-here")
 
+    def test_starcore_open_board_contains_seven_distinct_owned_components(self):
+        result = self.catalog.open_board(STARCORE_BOARD_ID, project_root=ROOT)
+
+        self.assertTrue(result["success"], result)
+        component_ids = {item["id"] for item in result["components"]}
+        self.assertTrue(set(OWNED_STARCORE_COMPONENTS).issubset(component_ids))
+
+    def test_owned_starcore_component_identity_and_evidence_are_not_generic(self):
+        for component_id, hardware_id in OWNED_STARCORE_COMPONENTS.items():
+            with self.subTest(component_id=component_id):
+                result = self.catalog.get_catalog_record(component_id, project_root=ROOT)
+                self.assertTrue(result["success"], result)
+                record = result["record"]
+                self.assertEqual(record["hardware_id"], hardware_id)
+                self.assertTrue(any(any("\u4e00" <= char <= "\u9fff" for char in alias) for alias in record["aliases"]))
+                self.assertEqual(record["supported_boards"], [STARCORE_BOARD_ID])
+                self.assertEqual(record["verification"]["source_reviewed"]["status"], "verified")
+                self.assertEqual(record["verification"]["code_compiled"]["status"], "unverified")
+                self.assertEqual(record["verification"]["firmware_uploaded"]["status"], "unverified")
+                self.assertEqual(record["verification"]["physical_effect_verified"]["status"], "unverified")
+                self.assertEqual(record["historical_lead"]["status"], "legacy_reported")
+                self.assertTrue(record["source_ids"])
+                self.assertTrue(record["logic_boundary"])
+                self.assertIn("extension", record["mindplus"])
+                self.assertIn("headers", record["mindplus"])
+                self.assertIn("api", record["mindplus"])
+
+    def test_owned_starcore_components_keep_the_three_dangerous_lookalikes_separate(self):
+        results = [
+            self.catalog.get_catalog_record(component_id, project_root=ROOT)
+            for component_id in (
+                "idmd-0001-starcore-rgb-light",
+                "idms-0001-starcore-button",
+                "idms-0009-starcore-ultrasonic",
+            )
+        ]
+        for result in results:
+            self.assertTrue(result["success"], result)
+        rgb, button, ultrasonic = [result["record"] for result in results]
+
+        self.assertEqual(rgb["interface"], "three-channel-pwm-common-anode")
+        self.assertEqual(rgb["mindplus"]["api"], "ledc PWM; LOW increases brightness")
+        self.assertNotIn("WS2812", " ".join(rgb["aliases"]))
+        self.assertEqual(button["interface"], "three-wire-digital-output")
+        self.assertEqual(button["mindplus"]["api"], "pinMode(INPUT); digitalRead(); pressed=HIGH")
+        self.assertNotIn("i2c", button["interface"].casefold())
+        self.assertEqual(ultrasonic["interface"], "gpio-trigger-echo")
+        self.assertEqual(ultrasonic["mindplus"]["extension"], "sen0001")
+        self.assertEqual(ultrasonic["mindplus"]["headers"], ["DFRobot_URM10.h"])
+        self.assertNotIn("sen0304", ultrasonic["mindplus"]["api"].casefold())
+
+    def test_owned_oled_and_ultrasonic_do_not_reuse_generic_starcore_evidence(self):
+        for generic_id in ("ssd1306-i2c-128x64-module", "hc-sr04"):
+            with self.subTest(generic_id=generic_id):
+                generic = self.catalog.get_catalog_record(generic_id, project_root=ROOT)["record"]
+                self.assertNotIn(STARCORE_BOARD_ID, generic["supported_boards"])
+                self.assertFalse(any("/starcore/" in path for path in generic["example_files"]))
+
     def test_json_cli_searches_the_checked_in_catalog(self):
         self.assertIsNotNone(self.catalog, "catalog runtime is missing")
         environment = dict(os.environ)
@@ -277,7 +345,9 @@ class CatalogTests(unittest.TestCase):
         self.assertEqual(completed.returncode, 0, completed.stderr)
         payload = json.loads(completed.stdout)
         self.assertTrue(payload["success"], payload)
-        self.assertEqual(payload["matches"][0]["id"], "linear-potentiometer-10k")
+        match_ids = {item["id"] for item in payload["matches"]}
+        self.assertIn("linear-potentiometer-10k", match_ids)
+        self.assertIn("idms-0003-starcore-potentiometer", match_ids)
 
 
 if __name__ == "__main__":

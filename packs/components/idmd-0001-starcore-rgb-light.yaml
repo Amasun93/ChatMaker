@@ -1,0 +1,61 @@
+schema_version: "1.0"
+kind: component
+id: idmd-0001-starcore-rgb-light
+hardware_id: IDMD-0001
+name: IDMD-0001 星核板共阳 RGB 灯
+aliases: [星核RGB灯, 三路PWM彩灯, 自研RGB灯模块]
+category: output
+interface: three-channel-pwm-common-anode
+supply_voltage:
+  minimum: 3.3
+  maximum: 3.3
+logic_boundary: Use the Starcore 3.3 V classroom supply; RED, GREEN, and BLUE are active-LOW PWM channels and are not a WS2812 data bus.
+source_ids: [starcore-module-catalog-snapshot, starcore-mechanical-facts-snapshot]
+sources:
+  - title: ChatMaker governed Starcore source manifest
+    url: https://github.com/Amasun93/ChatMaker/tree/main/knowledge_sources
+verification:
+  source_reviewed:
+    status: verified
+    checked_at: "2026-08-17"
+    evidence: The governed owned-source snapshot identifies IDMD-0001 as a common-anode, active-LOW, three-channel PWM module.
+  code_compiled: &unverified
+    status: unverified
+    checked_at: null
+    evidence: null
+  firmware_uploaded: *unverified
+  physical_effect_verified: *unverified
+historical_lead:
+  status: legacy_reported
+  evidence: Legacy Starcore material reports prior use; ChatMaker has not yet compiled the new owned-component example.
+pins:
+  - id: VCC
+    role: common-anode-power
+  - id: RED
+    role: active-low-pwm-red
+  - id: GREEN
+    role: active-low-pwm-green
+  - id: BLUE
+    role: active-low-pwm-blue
+supported_boards: [idmc-0001-starcore-v4-2-2]
+constraints:
+  - This is not a WS2812 or NeoPixel module; it consumes three PWM-capable pins and has no DIN/DOUT chain.
+  - Drive each channel with inverted PWM, where a lower duty value produces more light.
+identification:
+  - Confirm the IDMD-0001 marking and separate RED, GREEN, BLUE, and VCC labels before using this card.
+libraries:
+  - name: Mind+ mPython Arduino core PWM
+    headers: [MPython.h]
+    status: builtin
+    notes: The source-reviewed route uses three LEDC PWM channels; current ChatMaker compilation is still pending.
+mindplus:
+  extension: esp32
+  headers: [MPython.h]
+  api: ledc PWM; LOW increases brightness
+example_files:
+  - examples/chatduino/starcore/starcore-idmd-0001-rgb-pwm/starcore-idmd-0001-rgb-pwm.ino
+common_failures:
+  - Treating the module as WS2812 produces no useful output because it has three independent active-LOW channels.
+  - Forgetting PWM inversion makes brightness controls appear reversed.
+board_notes:
+  idmc-0001-starcore-v4-2-2: The classroom starting pins are P13, P14, and P15; confirm no other project function already owns them.

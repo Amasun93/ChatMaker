@@ -1,0 +1,59 @@
+schema_version: "1.0"
+kind: component
+id: idms-0003-starcore-potentiometer
+hardware_id: IDMS-0003
+name: IDMS-0003 星核板电位器旋钮
+aliases: [星核电位器, 自研旋钮传感器, IDMS-0003电位器]
+category: input
+interface: three-wire-analog-output
+supply_voltage:
+  minimum: 3.3
+  maximum: 3.3
+logic_boundary: Use 3.3 V with Starcore so SIG cannot exceed the ESP32 ADC limit; do not copy a 5 V Nano potentiometer connection.
+source_ids: [starcore-module-catalog-snapshot, starcore-mechanical-facts-snapshot]
+sources:
+  - title: ChatMaker governed Starcore source manifest
+    url: https://github.com/Amasun93/ChatMaker/tree/main/knowledge_sources
+verification:
+  source_reviewed:
+    status: verified
+    checked_at: "2026-08-17"
+    evidence: The governed snapshot identifies IDMS-0003 as a GND/VCC/SIG analog-output module with 3.3 V as the safe Starcore default.
+  code_compiled: &unverified
+    status: unverified
+    checked_at: null
+    evidence: null
+  firmware_uploaded: *unverified
+  physical_effect_verified: *unverified
+historical_lead:
+  status: legacy_reported
+  evidence: Legacy Starcore material describes analog use; current ChatMaker compilation, range, and physical direction remain unchecked.
+pins:
+  - id: GND
+    role: ground
+  - id: VCC
+    role: 3v3-power
+  - id: SIG
+    role: analog-output
+supported_boards: [idmc-0001-starcore-v4-2-2]
+constraints:
+  - Power from 3.3V so the wiper output remains inside the ESP32 input range.
+  - P0 or P1 is the normal analog starting point; confirm raw range and direction on the current module before mapping values.
+identification:
+  - Confirm IDMS-0003 and the GND/VCC/SIG module labels rather than using a bare potentiometer pin assumption.
+libraries:
+  - name: Mind+ mPython analog input
+    headers: [MPython.h]
+    status: builtin
+    notes: Uses analogRead; current owned-example compilation remains pending.
+mindplus:
+  extension: esp32
+  headers: [MPython.h]
+  api: analogRead(P0 or P1); expected classroom range is usually 0..4095
+example_files:
+  - examples/chatduino/starcore/starcore-idms-0003-potentiometer-read/starcore-idms-0003-potentiometer-read.ino
+common_failures:
+  - Powering the module from 5V can place an unsafe voltage on an ESP32 ADC pin.
+  - Mapping before checking raw minimum, maximum, and rotation direction hides wiring or batch differences.
+board_notes:
+  idmc-0001-starcore-v4-2-2: Prefer P0 or P1 and 3.3V; the final recipe will choose one exact classroom pin.

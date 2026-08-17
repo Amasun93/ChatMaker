@@ -19,7 +19,7 @@ verification:
   code_compiled:
     status: verified
     checked_at: "2026-08-17"
-    evidence: Nano, Uno and ESP32 pulse-timing examples plus the Starcore DFRobot_URM10 example compiled; see docs/verification/2026-08-17-common-module-compilation.md.
+    evidence: Nano, Uno and ESP32 pulse-timing examples compiled; see docs/verification/2026-08-17-common-module-compilation.md.
   firmware_uploaded: &unverified
     status: unverified
     checked_at: null
@@ -38,7 +38,6 @@ supported_boards:
   - arduino-nano-classic
   - arduino-uno-r3
   - esp32-devkit-v1
-  - idmc-0001-starcore-v4-2-2
 constraints:
   - Use a pulse timeout so a missing echo cannot block the program forever.
   - The 5 V ECHO signal needs level shifting before use with a 3.3 V-only board.
@@ -49,15 +48,10 @@ libraries:
     headers: []
     status: builtin
     notes: The compiled example uses digitalWrite, delayMicroseconds, and pulseIn with a timeout; no external library is required.
-  - name: Mind+ DFRobot URM10 library
-    headers: [DFRobot_URM10.h]
-    status: compile_verified
-    notes: Starcore getDistanceCM(P_H, P_O) example compiled with Mind+ 1.8; a returned zero means timeout or invalid reading, not a confirmed zero-centimetre target.
 example_files:
   - examples/chatduino/nano/ultrasonic-buzzer/ultrasonic-buzzer.ino
   - examples/chatduino/uno/ultrasonic-distance/ultrasonic-distance.ino
   - examples/chatduino/esp32/ultrasonic-distance/ultrasonic-distance.ino
-  - examples/chatduino/starcore/ultrasonic-distance/ultrasonic-distance.ino
 common_failures:
   - Omitting the pulseIn timeout can freeze the loop when no echo returns.
   - Soft fabric, angled surfaces, or targets outside the useful range can produce timeouts or unstable readings.
@@ -65,4 +59,3 @@ board_notes:
   arduino-nano-classic: The compiled 5 V Nano example uses TRIG D7 and ECHO D8.
   arduino-uno-r3: Use TRIG D7 and ECHO D8; both board and sensor use 5 V logic.
   esp32-devkit-v1: Use TRIG GPIO25 and ECHO GPIO26 only through a divider or level shifter because raw ECHO is 5 V.
-  idmc-0001-starcore-v4-2-2: Connect module TRIG to silkscreen H and ECHO to O; code uses P_H and P_O, and the ECHO path must be safe for 3.3 V logic.

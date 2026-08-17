@@ -5,11 +5,27 @@ properties:
   schema_version: {const: "1.0"}
   kind: {const: component}
   id: {type: string, pattern: "^[a-z0-9][a-z0-9-]+$"}
+  hardware_id: {type: string, pattern: "^[A-Z0-9]+-[0-9]+$"}
   name: {type: string, minLength: 1}
   aliases: {type: array, items: {type: string, minLength: 1}}
   category: {type: string, minLength: 1}
   interface: {type: string, minLength: 1}
   supply_voltage: {type: object, required: [minimum, maximum]}
+  logic_boundary: {type: string, minLength: 1}
+  source_ids: {type: array, minItems: 1, uniqueItems: true, items: {type: string, minLength: 1}}
+  mindplus:
+    type: object
+    required: [extension, headers, api]
+    properties:
+      extension: {type: string, minLength: 1}
+      headers: {type: array, items: {type: string, minLength: 1}}
+      api: {type: string, minLength: 1}
+  historical_lead:
+    type: object
+    required: [status, evidence]
+    properties:
+      status: {const: legacy_reported}
+      evidence: {type: string, minLength: 1}
   sources: {$ref: "#/$defs/sources"}
   verification: {$ref: "#/$defs/verification"}
   pins: {type: array, minItems: 1, items: {type: object, required: [id, role]}}

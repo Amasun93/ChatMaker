@@ -1,0 +1,60 @@
+schema_version: "1.0"
+kind: component
+id: idms-0008-starcore-dht11
+hardware_id: IDMS-0008
+name: IDMS-0008 星核板 DHT11 温湿度模块
+aliases: [星核DHT11, 自研温湿度传感器, IDMS-0008温湿度]
+category: input
+interface: single-wire-digital-dht11
+supply_voltage:
+  minimum: 3.3
+  maximum: 3.3
+logic_boundary: Use 3.3 V and SIG on P0 for the classroom default; P14 is only a diagnostic comparison, not an equal default.
+source_ids: [starcore-module-catalog-snapshot, starcore-classroom-module-cards-snapshot, starcore-code-patterns-snapshot, starcore-mechanical-facts-snapshot]
+sources:
+  - title: ChatMaker governed Starcore source manifest
+    url: https://github.com/Amasun93/ChatMaker/tree/main/knowledge_sources
+verification:
+  source_reviewed:
+    status: verified
+    checked_at: "2026-08-17"
+    evidence: Governed sources confirm IDMS-0008, 3.3 V classroom power, P0 default, DFRobot_DHT behavior, and 2500 ms alternating reads.
+  code_compiled: &unverified
+    status: unverified
+    checked_at: null
+    evidence: null
+  firmware_uploaded: *unverified
+  physical_effect_verified: *unverified
+historical_lead:
+  status: legacy_reported
+  evidence: Legacy compilation and hardware notes are retained only as a lead; the new ChatMaker-owned example is not yet compiled or physically checked.
+pins:
+  - id: GND
+    role: ground
+  - id: VCC
+    role: 3v3-power
+  - id: SIG
+    role: dht11-data
+supported_boards: [idmc-0001-starcore-v4-2-2]
+constraints:
+  - Wait at least 2500 ms and alternate one getter per interval because each getter starts a bus read.
+  - The current library initializes failed readings to zero; do not use isnan as the sole failure test.
+  - Use P0 first; P14 is reserved for troubleshooting comparison.
+identification:
+  - Confirm IDMS-0008, DHT11, and the module GND/VCC/SIG order; do not reuse a generic bare-sensor pinout.
+libraries:
+  - name: Mind+ DHT temperature-humidity extension
+    headers: [DFRobot_DHT.h]
+    status: unverified
+    notes: The owned API behavior is source-reviewed, but the new ChatMaker example has not yet been compiled.
+mindplus:
+  extension: dhtTHSensor
+  headers: [DFRobot_DHT.h]
+  api: dht.begin(P0, DHT11); alternate getTemperature() and getHumidity() every 2500 ms
+example_files:
+  - examples/chatduino/starcore/starcore-idms-0008-dht11-serial/starcore-idms-0008-dht11-serial.ino
+common_failures:
+  - Reading both getters in one fast loop can repeat bus transactions and produce zero or stale values.
+  - Starting on P14 instead of the source-reviewed P0 classroom route can reproduce a known zero-reading problem.
+board_notes:
+  idmc-0001-starcore-v4-2-2: Connect GND, 3.3V, and SIG to P0; use P14 only during controlled troubleshooting.

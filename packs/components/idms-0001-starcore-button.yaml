@@ -1,0 +1,59 @@
+schema_version: "1.0"
+kind: component
+id: idms-0001-starcore-button
+hardware_id: IDMS-0001
+name: IDMS-0001 星核板三线按钮
+aliases: [星核按钮传感器, 自研三线按键, IDMS-0001按钮]
+category: input
+interface: three-wire-digital-output
+supply_voltage:
+  minimum: 2.5
+  maximum: 3.3
+logic_boundary: Power at 3.3 V for Starcore; SIG is a digital output where pressed is HIGH and released is LOW, not an I2C RGB-button bus.
+source_ids: [starcore-module-catalog-snapshot, starcore-mechanical-facts-snapshot]
+sources:
+  - title: ChatMaker governed Starcore source manifest
+    url: https://github.com/Amasun93/ChatMaker/tree/main/knowledge_sources
+verification:
+  source_reviewed:
+    status: verified
+    checked_at: "2026-08-17"
+    evidence: The governed module snapshot identifies a GND/VCC/SIG digital sensor with active-HIGH pressed state.
+  code_compiled: &unverified
+    status: unverified
+    checked_at: null
+    evidence: null
+  firmware_uploaded: *unverified
+  physical_effect_verified: *unverified
+historical_lead:
+  status: legacy_reported
+  evidence: Legacy Starcore material describes the button route; the new ChatMaker example and current physical behavior remain unchecked.
+pins:
+  - id: GND
+    role: ground
+  - id: VCC
+    role: 3v3-power
+  - id: SIG
+    role: active-high-digital-output
+supported_boards: [idmc-0001-starcore-v4-2-2]
+constraints:
+  - This is a powered three-wire digital module, not a passive two-terminal button and not an I2C RGB button.
+  - Use plain INPUT and debounce transitions; pressed is HIGH and released is LOW.
+identification:
+  - Confirm IDMS-0001 and GND/VCC/SIG labels; do not substitute a two-pin switch or I2C button panel.
+libraries:
+  - name: Mind+ mPython digital input
+    headers: [MPython.h]
+    status: builtin
+    notes: Uses pinMode and digitalRead; current owned-example compilation remains pending.
+mindplus:
+  extension: esp32
+  headers: [MPython.h]
+  api: pinMode(INPUT); digitalRead(); pressed=HIGH
+example_files:
+  - examples/chatduino/starcore/starcore-idms-0001-button-input/starcore-idms-0001-button-input.ino
+common_failures:
+  - Using INPUT_PULLUP and active-LOW logic from a passive-button example reverses the intended behavior.
+  - Assuming an I2C address or RGB-light API selects the wrong hardware family.
+board_notes:
+  idmc-0001-starcore-v4-2-2: Start from one free digital input and the module's 3.3V/GND/SIG labels; the final recipe will freeze the exact classroom pin.

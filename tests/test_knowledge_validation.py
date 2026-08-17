@@ -9,6 +9,15 @@ import yaml
 
 
 ROOT = Path(__file__).resolve().parents[1]
+OWNED_STARCORE_COMPONENT_IDS = [
+    "idmd-0001-starcore-rgb-light",
+    "idmd-0002-starcore-serial-mp3",
+    "idmd-0021-starcore-oled-1-3",
+    "idms-0001-starcore-button",
+    "idms-0003-starcore-potentiometer",
+    "idms-0008-starcore-dht11",
+    "idms-0009-starcore-ultrasonic",
+]
 SECTION_IDS = [
     "start-here",
     "identify-and-safety",
@@ -79,6 +88,21 @@ class KnowledgeIndexValidationTests(unittest.TestCase):
         with self.assertRaises(jsonschema.ValidationError):
             self.validator.validate(index)
 
+
+class OwnedStarcoreComponentValidationTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        schema = yaml.safe_load(
+            (ROOT / "packs/schemas/component.schema.yaml").read_text(encoding="utf-8")
+        )
+        cls.validator = jsonschema.Draft202012Validator(schema)
+
+    def test_all_seven_owned_component_cards_validate(self):
+        for component_id in OWNED_STARCORE_COMPONENT_IDS:
+            with self.subTest(component_id=component_id):
+                path = ROOT / "packs" / "components" / f"{component_id}.yaml"
+                self.assertTrue(path.is_file(), path)
+                self.validator.validate(yaml.safe_load(path.read_text(encoding="utf-8")))
 
 if __name__ == "__main__":
     unittest.main()

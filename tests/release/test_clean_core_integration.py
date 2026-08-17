@@ -358,7 +358,7 @@ class CleanCoreIntegrationTests(unittest.TestCase):
             )
             self.assertEqual(
                 doctor["packs"]["counts"],
-                {"board": 4, "component": 13, "recipe": 16},
+                {"board": 4, "component": 20, "recipe": 16},
             )
             self.assertEqual(doctor["packs"]["knowledge_indexes"], 4)
             self.assertEqual(
