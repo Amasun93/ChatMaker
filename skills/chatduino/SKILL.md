@@ -72,6 +72,14 @@ Read [esp32-doit-devkit-v1.md](references/esp32-doit-devkit-v1.md) before accept
 - Keep official-core discovery, FQBN details, compilation, upload, reboot, serial evidence, AP connectivity, HTTP exchange, and physical effects separate.
 - For this repository's AP demo, keep `examples/chatweb/esp32-ap-control.html` as the only editable page source. Regenerate `examples/chatduino/esp32/ap-led-sensor/page_html.h` with `chatmaker-web-embed ... --symbol CHATMAKER_AP_PAGE` before compile; do not hand-edit the generated header.
 
+## IDMC-0001 Starcore v4.2.2
+
+- Use `starcore_doctor`, `starcore_ports`, `starcore_compile`, and `starcore_compile_upload` in WorkBuddy; use `chatmaker-starcore` in Codex.
+- Compile with the current Mind+ 1.8 target `dfrobot:mpython:mpython:FlashMode=dio,FlashFreq=80,UploadSpeed=1500000,DebugLevel=none`.
+- Keep the Mind+ 2.0 `mindplus:esp32:mpython:...` target as historical knowledge; do not silently mix the two targets.
+- Upload only after the user has confirmed the physical board is Starcore v4.2.2 and one unambiguous non-Bluetooth wired port remains.
+- A successful compile or upload does not verify restart, serial output, connected modules, browser exchange, or physical effects.
+
 ## Safety boundaries
 
 - Keep USB and external power disconnected while wiring.

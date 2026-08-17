@@ -49,6 +49,10 @@ class WorkBuddyBridgeTests(unittest.TestCase):
                 "uno_compile",
                 "uno_compile_upload",
                 "avr_project_run",
+                "starcore_doctor",
+                "starcore_ports",
+                "starcore_compile",
+                "starcore_compile_upload",
                 "esp32_prepare_environment",
                 "esp32_doctor",
                 "esp32_ports",
@@ -68,9 +72,8 @@ class WorkBuddyBridgeTests(unittest.TestCase):
                 "cad_generate",
             },
         )
-        self.assertEqual(self.server.SERVER_VERSION, "1.12.0")
-        self.assertEqual(len(names), 28)
-        self.assertFalse(any("starcore" in name for name in names))
+        self.assertEqual(self.server.SERVER_VERSION, "1.13.0")
+        self.assertEqual(len(names), 32)
         upload_tool = next(
             tool for tool in self.server.TOOLS
             if tool["name"] == "nano_compile_upload"
@@ -123,6 +126,7 @@ class WorkBuddyBridgeTests(unittest.TestCase):
         self.assertIn("knowledge_get", instructions)
         self.assertIn("start-here", instructions)
         self.assertIn("avr_project_run", instructions)
+        self.assertIn("星核板", instructions)
 
     def test_knowledge_get_routes_index_or_section_to_shared_reader(self):
         original = self.server.knowledge.execute_request

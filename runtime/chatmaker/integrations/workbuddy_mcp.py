@@ -14,11 +14,12 @@ from chatmaker.hardware import esp32_devkit_v1 as esp32_bridge
 from chatmaker.hardware import nano_mindplus as bridge
 from chatmaker.hardware import project_flow
 from chatmaker.hardware import serial_monitor
+from chatmaker.hardware import starcore
 from chatmaker.hardware import uno_mindplus as uno_bridge
 
 
 SERVER_NAME = "chatmaker-hardware"
-SERVER_VERSION = "1.12.0"
+SERVER_VERSION = "1.13.0"
 PROTOCOL_VERSION = "2024-11-05"
 
 TOOLS = [
@@ -243,6 +244,43 @@ TOOLS = [
             "esp32:esp32@3.3.11；不会跳到最新版、降级较新的官方 core，或用 FireBeetle/mPython 代替。"
         ),
         "inputSchema": {"type": "object", "properties": {}, "additionalProperties": False},
+    },
+    {
+        "name": "starcore_doctor",
+        "description": "检查星核板 v4.2.2 的 Mind+ 1.8 mPython 兼容编译环境和有线串口；Mind+ 2.0 目标只作为历史记录。",
+        "inputSchema": {"type": "object", "properties": {}, "additionalProperties": False},
+    },
+    {
+        "name": "starcore_ports",
+        "description": "列出星核板候选有线串口；串口芯片不能单独证明板卡身份。",
+        "inputSchema": {"type": "object", "properties": {}, "additionalProperties": False},
+    },
+    {
+        "name": "starcore_compile",
+        "description": "使用已安装的 Mind+ 1.8 和当前 dfrobot:mpython 目标真实编译星核板程序。",
+        "inputSchema": {
+            "type": "object", "required": ["code"],
+            "properties": {
+                "code": {"type": "string", "minLength": 1},
+                "project_name": {"type": "string", "default": "starcore-project"},
+                "timeout": {"type": "integer", "minimum": 30, "maximum": 1200, "default": 900},
+            }, "additionalProperties": False,
+        },
+    },
+    {
+        "name": "starcore_compile_upload",
+        "description": "编译星核板程序；仅在用户确认 v4.2.2 板卡身份且只有一个明确有线端口时自动烧录。",
+        "inputSchema": {
+            "type": "object", "required": ["code", "board_confirmed"],
+            "properties": {
+                "code": {"type": "string", "minLength": 1},
+                "board_confirmed": {"type": "boolean"},
+                "project_name": {"type": "string", "default": "starcore-project"},
+                "port": {"type": "string", "pattern": "^COM[0-9]+$"},
+                "timeout": {"type": "integer", "minimum": 30, "maximum": 1200, "default": 900},
+                "upload_timeout": {"type": "integer", "minimum": 30, "maximum": 600, "default": 300},
+            }, "additionalProperties": False,
+        },
     },
     {
         "name": "esp32_doctor",
@@ -570,6 +608,8 @@ def _tool_result(name: str, arguments: dict[str, Any]) -> dict[str, Any]:
         adapter = uno_bridge
     elif name.startswith("esp32_"):
         adapter = esp32_bridge
+    elif name.startswith("starcore_"):
+        adapter = starcore
 
     if name in {"nano_prepare_environment", "uno_prepare_environment"}:
         request = {
@@ -580,22 +620,22 @@ def _tool_result(name: str, arguments: dict[str, Any]) -> dict[str, Any]:
         }
     elif name == "esp32_prepare_environment":
         request = {"action": "prepare-environment"}
-    elif name in {"nano_doctor", "uno_doctor", "esp32_doctor"}:
+    elif name in {"nano_doctor", "uno_doctor", "esp32_doctor", "starcore_doctor"}:
         request = {"action": "doctor"}
-    elif name in {"nano_ports", "uno_ports", "esp32_ports"}:
+    elif name in {"nano_ports", "uno_ports", "esp32_ports", "starcore_ports"}:
         request = {
             "action": "ports",
             "port": arguments.get("port"),
             "board_profile": arguments.get("board_profile"),
         }
-    elif name in {"nano_compile", "uno_compile", "esp32_compile"}:
+    elif name in {"nano_compile", "uno_compile", "esp32_compile", "starcore_compile"}:
         request = {"action": "compile", **arguments}
-    elif name in {"nano_compile_upload", "uno_compile_upload", "esp32_compile_upload"}:
+    elif name in {"nano_compile_upload", "uno_compile_upload", "esp32_compile_upload", "starcore_compile_upload"}:
         request = {"action": "compile-upload", **arguments}
     else:
         raise ValueError(f"unknown_tool: {name}")
     suspended: list[dict[str, Any]] = []
-    upload_tools = {"nano_compile_upload", "uno_compile_upload", "esp32_compile_upload"}
+    upload_tools = {"nano_compile_upload", "uno_compile_upload", "esp32_compile_upload", "starcore_compile_upload"}
     if name in upload_tools:
         suspended = serial_monitor.SERIAL_MANAGER.suspend_all()
     result = adapter.execute_request(request)
@@ -609,6 +649,7 @@ def _tool_result(name: str, arguments: dict[str, Any]) -> dict[str, Any]:
     expected_setup = result.get("error") in {
         "exact_esp32_toolchain_missing",
         "board_identity_confirmation_required",
+        "starcore_identity_confirmation_required",
     }
     return {
         "content": [{"type": "text", "text": json.dumps(result, ensure_ascii=False)}],
@@ -629,11 +670,12 @@ def handle(request: dict[str, Any]) -> dict[str, Any] | None:
             "capabilities": {"tools": {"listChanged": False}},
             "serverInfo": {"name": SERVER_NAME, "version": SERVER_VERSION},
             "instructions": (
-                "处理 Arduino Uno Rev3、经典 Nano ATmega328P、精确确认的 DOIT ESP32 DEVKIT V1 和杜邦线通用模块。"
+                "处理 Arduino Uno Rev3、经典 Nano ATmega328P、星核板 v4.2.2、精确确认的 DOIT ESP32 DEVKIT V1 和杜邦线通用模块。"
                 "先用 catalog_search/get 读取匹配资料，确认精确板卡身份后用 knowledge_get 读取 start-here 索引或指定章节，"
                 "再按板型调用对应 doctor。ESP32 只接受官方 3.3.11 core "
                 "和精确 DOIT FQBN；先调用 esp32_prepare_environment 自动检查，并且只安装 ChatMaker 验证的锁定版本。"
                 "ESP-WROOM-32 模块丝印本身不算载板确认，也不会替换成 FireBeetle。"
+                "星核板使用 Mind+ 1.8 的 dfrobot:mpython 当前目标；Mind+ 2.0 目标只保留为历史资料。"
                 "编程前核对板卡、模块型号/丝印和引脚；Nano/Uno 默认调用 avr_project_run 连续完成"
                 "环境检查、编译、可用时烧录和串口观察，独立工具用于诊断；"
                 "ESP32 调用 esp32_compile_upload；只有精确载板身份和唯一非蓝牙有线端口都明确时才上传，"
