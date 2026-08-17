@@ -465,7 +465,7 @@ TOOLS = [
     },
     {
         "name": "cad_generate",
-        "description": "生成可调参数的 ChatCAD 安装底板，并输出 OpenSCAD、DXF、SVG、STL 和浏览器预览实验室。",
+        "description": "按制作方式生成 Chat2D 激光切割盒子或 Chat3D 打印外壳；输出参数文件、对应图纸/模型和白底预览实验室。",
         "inputSchema": {
             "type": "object",
             "required": ["board_id", "project_name", "output_dir"],
@@ -481,6 +481,11 @@ TOOLS = [
                 },
                 "project_name": {"type": "string", "minLength": 1},
                 "output_dir": {"type": "string", "minLength": 1},
+                "mode": {
+                    "type": "string",
+                    "enum": ["chat2d", "chat3d", "mounting-plate"],
+                    "default": "mounting-plate",
+                },
                 "equipment_id": {
                     "type": "string",
                     "default": "lasermaker-generic",
@@ -499,6 +504,17 @@ TOOLS = [
                         "standoff_height": {"type": "number", "minimum": 0, "maximum": 20},
                         "hole_diameter": {"type": "number", "minimum": 0.8, "maximum": 10},
                         "standoff_outer_diameter": {"type": "number", "minimum": 1.8, "maximum": 20},
+                        "box_width": {"type": "number", "minimum": 30, "maximum": 600},
+                        "box_depth": {"type": "number", "minimum": 30, "maximum": 600},
+                        "box_height": {"type": "number", "minimum": 15, "maximum": 300},
+                        "material_thickness": {"type": "number", "minimum": 1, "maximum": 12},
+                        "joint_size": {"type": "number", "minimum": 3, "maximum": 50},
+                        "inner_width": {"type": "number", "minimum": 20, "maximum": 500},
+                        "inner_depth": {"type": "number", "minimum": 20, "maximum": 500},
+                        "inner_height": {"type": "number", "minimum": 8, "maximum": 300},
+                        "wall": {"type": "number", "minimum": 1, "maximum": 8},
+                        "floor": {"type": "number", "minimum": 1, "maximum": 8},
+                        "lid": {"type": "number", "minimum": 1, "maximum": 8},
                     },
                     "additionalProperties": False,
                 },

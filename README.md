@@ -155,7 +155,7 @@ chatmaker-pack rollback chatmaker-board-arduino-nano-classic-knowledge --version
 | 范围 | 状态 | 已有证据 |
 | --- | --- | --- |
 | ChatMaker、ChatDuino、ChatWeb 结构 | 已验证 | 项目校验和 Skill 格式校验通过 |
-| ChatCAD Alpha | 开发版可用 | Nano、Uno、ESP32、星核板机械资料已接入；可生成 SCAD、DXF、SVG、STL 和参数预览实验室；真实试装待用户验证 |
+| ChatCAD V1 模式 | 开发版可用 | Chat2D 生成带可调指接榫的六面激光盒、底板拖拽孔位、四色图层、DXF/SVG 和组装预览；Chat3D 生成可旋转的打印外壳及 OpenSCAD/STL；真实试装待用户验证 |
 | 创作伙伴对话规则 | 已写入 | 尚需独立前向测试 |
 | 数据包和证据状态 | 已验证 | 自动测试与项目 doctor 通过 |
 | ChatMaker Knowledge 渐进知识包 | 四板卡已接入 | Nano、Uno、ESP32、星核板均有板卡索引、详细知识包和机械资料入口；ChatMaker、ChatDuino、ChatWeb、ChatCAD 共用同一板卡身份 |

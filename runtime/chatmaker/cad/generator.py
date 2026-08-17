@@ -196,16 +196,31 @@ def generate_project(request: dict[str, Any]) -> dict[str, Any]:
     loaded = get_profile(board_id)
     if not loaded.get("success"):
         return loaded
-    equipment_id = str(request.get("equipment_id", "lasermaker-generic"))
-    material_id = str(request.get("material_id", "wood-sheet-3mm"))
-    fabrication = get_fabrication_profile(equipment_id, material_id)
-    if not fabrication.get("success"):
-        return fabrication
+    mode = str(request.get("mode", "mounting-plate"))
+    if mode not in {"mounting-plate", "chat2d", "chat3d"}:
+        return {"success": False, "error": "unsupported_cad_mode", "mode": mode}
     project_name = _PROJECT_NAME.sub("-", str(request.get("project_name", "chatcad-project")).strip()).strip("-.") or "chatcad-project"
     output_dir = Path(str(request.get("output_dir", project_name))).expanduser().resolve()
     parameters = request.get("parameters", {})
     if not isinstance(parameters, dict):
         return {"success": False, "error": "parameters_must_be_object"}
+    if mode == "chat3d":
+        from . import chat3d
+        try:
+            return chat3d.generate(request, loaded["profile"], output_dir, project_name)
+        except (OSError, ValueError) as exc:
+            return {"success": False, "error": "cad_generation_failed", "detail": str(exc)}
+    equipment_id = str(request.get("equipment_id", "lasermaker-generic"))
+    material_id = str(request.get("material_id", "wood-sheet-3mm"))
+    fabrication = get_fabrication_profile(equipment_id, material_id)
+    if not fabrication.get("success"):
+        return fabrication
+    if mode == "chat2d":
+        from . import chat2d
+        try:
+            return chat2d.generate(request, loaded["profile"], fabrication, output_dir, project_name)
+        except (OSError, ValueError) as exc:
+            return {"success": False, "error": "cad_generation_failed", "detail": str(exc)}
     try:
         geometry = _geometry(
             loaded["profile"],

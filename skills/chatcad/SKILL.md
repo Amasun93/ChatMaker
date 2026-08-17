@@ -9,13 +9,13 @@ Act as a creative CAD partner. Help the user describe the effect and fabrication
 
 ## Create the first version
 
-1. Confirm the exact board identity and whether the result is for laser cutting, 3D printing, or both. Ask only when the answer changes the model.
+1. Confirm the exact board identity and whether the result is for laser cutting or 3D printing. Ask only when the answer changes the model. Route laser cutting to Chat2D and 3D printing to Chat3D; do not mix the two fabrication states.
 2. If the idea is incomplete, offer two or three simple directions with the visible effect, fabrication method, and one important choice.
 3. Read the board with `cad_profile_get`. Never substitute another board's dimensions.
 4. For fabrication, call `cad_fabrication_get`. The Alpha default is `lasermaker-generic` with adjustable `wood-sheet-3mm`; use its color layers and keep machine power/speed at `calibration-required` until the exact machine and material are tested.
-5. Generate a rule-based first version with `cad_generate`. Alpha supports mounting plates and cylindrical standoffs.
-6. Give the user the returned `preview_lab` file. Explain that the left side changes parameters and the right side previews the result.
-7. Let the user download DXF, SVG, SCAD, or STL from the page. Keep the SCAD file as the editable source.
+5. For laser cutting call `cad_generate` with `mode=chat2d`. The white laboratory edits box dimensions, defaults to 3 mm wood, lets the user drag/label board or generic module footprints, keeps LaserMaker colors, previews the assembled box, and exports DXF/SVG.
+6. For 3D printing call `cad_generate` with `mode=chat3d`. The white laboratory adjusts enclosure dimensions, wall, floor, lid and standoffs; its canvas supports mouse/touch rotation, wheel zoom and Shift-drag pan; export OpenSCAD/STL.
+7. Give the user the returned `preview_lab` file. Explain that parameter changes in the page affect its next export. Keep the SCAD file as the editable source for Chat3D.
 
 ## Keep evidence clear
 
