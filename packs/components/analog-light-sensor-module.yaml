@@ -18,8 +18,8 @@ verification:
     evidence: null
   code_compiled:
     status: verified
-    checked_at: "2026-08-14"
-    evidence: The Nano light-led and oled-light examples using A0 compiled with Mind+ 2.x; see docs/verification/2026-08-14-nano-mindplus-compilation.md.
+    checked_at: "2026-08-17"
+    evidence: Nano and Uno OLED dashboard examples using A0 compiled with Mind+ 2.x; see docs/verification/2026-08-17-avr-oled-dashboard-compilation.md.
   firmware_uploaded: *unverified
   physical_effect_verified: *unverified
 pins:
@@ -33,6 +33,7 @@ pins:
     role: threshold-digital-output
 supported_boards:
   - arduino-nano-classic
+  - arduino-uno-r3
 constraints:
   - Use this record only when AO is visible on the module; a bare photoresistor requires an external voltage divider.
   - Calibrate the light threshold from observed readings because module orientation and the onboard comparator can invert expectations.
@@ -46,8 +47,11 @@ libraries:
 example_files:
   - examples/chatduino/nano/light-led/light-led.ino
   - examples/chatduino/nano/oled-light/oled-light.ino
+  - examples/chatduino/nano/oled-dashboard/oled-dashboard.ino
+  - examples/chatduino/uno/oled-dashboard/oled-dashboard.ino
 common_failures:
   - Using DO when the program expects AO produces only thresholded HIGH or LOW values.
   - The direction of the reading can differ between modules, so hard-coded dark thresholds need calibration.
 board_notes:
   arduino-nano-classic: Connect AO to A0 and record several light and dark readings before choosing a threshold.
+  arduino-uno-r3: Connect AO to A0 and record several light and dark readings before choosing a threshold.

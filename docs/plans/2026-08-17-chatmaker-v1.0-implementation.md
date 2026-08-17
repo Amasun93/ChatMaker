@@ -49,6 +49,9 @@
 - Create: `examples/chatduino/nano/oled-dashboard/oled-dashboard.ino`
 - Create: `examples/chatduino/uno/oled-dashboard/oled-dashboard.ino`
 - Modify: `packs/components/ssd1306-i2c-128x64-module.yaml`
+- Modify: `packs/components/analog-light-sensor-module.yaml`
+- Modify: `packs/components/momentary-button-two-pin.yaml`
+- Modify: `packs/boards/arduino-uno-r3.yaml`
 - Modify: `runtime/chatmaker/hardware/nano_examples.py`
 
 **Steps:**

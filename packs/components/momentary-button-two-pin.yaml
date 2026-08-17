@@ -18,8 +18,8 @@ verification:
     evidence: null
   code_compiled:
     status: verified
-    checked_at: "2026-08-14"
-    evidence: The Nano servo-button example using INPUT_PULLUP compiled with Mind+ 2.x; see docs/verification/2026-08-14-nano-mindplus-compilation.md.
+    checked_at: "2026-08-17"
+    evidence: Nano and Uno OLED dashboard examples using D2 INPUT_PULLUP compiled with Mind+ 2.x; see docs/verification/2026-08-17-avr-oled-dashboard-compilation.md.
   firmware_uploaded: *unverified
   physical_effect_verified: *unverified
 pins:
@@ -29,6 +29,7 @@ pins:
     role: switch-contact
 supported_boards:
   - arduino-nano-classic
+  - arduino-uno-r3
 constraints:
   - With INPUT_PULLUP, connect one terminal to the input and the other to GND; pressed reads LOW.
   - A four-leg tactile switch has internally paired legs, so confirm which legs are opposite sides.
@@ -41,8 +42,11 @@ libraries:
     notes: Uses INPUT_PULLUP and digitalRead; no external library is required.
 example_files:
   - examples/chatduino/nano/servo-button/servo-button.ino
+  - examples/chatduino/nano/oled-dashboard/oled-dashboard.ino
+  - examples/chatduino/uno/oled-dashboard/oled-dashboard.ino
 common_failures:
   - Wiring two internally connected legs of a four-leg button makes the input appear permanently pressed or released.
   - INPUT_PULLUP reverses the intuitive logic, so pressed is LOW.
 board_notes:
   arduino-nano-classic: The compiled example connects the button between D2 and GND.
+  arduino-uno-r3: Connect the button between D2 and GND and use INPUT_PULLUP.

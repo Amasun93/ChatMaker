@@ -1,0 +1,64 @@
+schema_version: "1.0"
+kind: recipe
+id: uno-oled-dashboard
+name: Uno light dashboard with button pages
+summary: Show a live analog light reading and an observed range page on a confirmed SSD1306 OLED.
+sources:
+  - title: Arduino Analog Read Serial example
+    url: https://docs.arduino.cc/built-in-examples/basics/AnalogReadSerial/
+  - title: Arduino InputPullupSerial example
+    url: https://docs.arduino.cc/built-in-examples/digital/InputPullupSerial/
+  - title: SSD1306 controller datasheet
+    url: https://cdn-shop.adafruit.com/datasheets/SSD1306.pdf
+verification:
+  source_reviewed: &unverified
+    status: unverified
+    checked_at: null
+    evidence: null
+  code_compiled:
+    status: verified
+    checked_at: "2026-08-17"
+    evidence: Compiled with Mind+ 2.x using FQBN mindplus:avr:uno; see docs/verification/2026-08-17-avr-oled-dashboard-compilation.md.
+  firmware_uploaded: *unverified
+  physical_effect_verified: *unverified
+boards:
+  - arduino-uno-r3
+components:
+  - analog-light-sensor-module
+  - momentary-button-two-pin
+  - ssd1306-i2c-128x64-module
+wiring:
+  - component: analog-light-sensor-module
+    component_pin: VCC
+    board_pin: 5V
+    shared: true
+  - component: analog-light-sensor-module
+    component_pin: GND
+    board_pin: GND
+    shared: true
+  - component: analog-light-sensor-module
+    component_pin: AO
+    board_pin: A0
+  - component: momentary-button-two-pin
+    component_pin: terminal-1
+    board_pin: D2
+  - component: momentary-button-two-pin
+    component_pin: terminal-2
+    board_pin: GND
+    shared: true
+  - component: ssd1306-i2c-128x64-module
+    component_pin: VCC
+    board_pin: 5V
+    shared: true
+  - component: ssd1306-i2c-128x64-module
+    component_pin: GND
+    board_pin: GND
+    shared: true
+  - component: ssd1306-i2c-128x64-module
+    component_pin: SCL
+    board_pin: A5
+  - component: ssd1306-i2c-128x64-module
+    component_pin: SDA
+    board_pin: A4
+source_file: examples/chatduino/uno/oled-dashboard/oled-dashboard.ino
+expected_effect: The OLED refreshes a live light page, the button changes to a minimum/maximum page, and serial output starts with UNO_OLED_DASHBOARD_READY.

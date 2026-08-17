@@ -15,8 +15,8 @@ verification:
     evidence: null
   code_compiled:
     status: verified
-    checked_at: "2026-08-14"
-    evidence: Ten total ChatMaker Nano examples compiled from the ChatMaker paths with Mind+ 2.x and FQBN mindplus:avr:nano:cpu=atmega328, including the six original v1.2 examples and four current ChatMaker additions; see docs/verification/2026-08-14-nano-mindplus-compilation.md.
+    checked_at: "2026-08-17"
+    evidence: The OLED dashboard compiled with Mind+ 2.x and FQBN mindplus:avr:nano:cpu=atmega328, extending the previously verified Nano examples; see docs/verification/2026-08-17-avr-oled-dashboard-compilation.md.
   firmware_uploaded: *unverified
   physical_effect_verified: *unverified
 pins:

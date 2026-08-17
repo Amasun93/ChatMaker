@@ -17,6 +17,7 @@ EXPECTED = {
     "dht11-serial",
     "light-led",
     "oled-light",
+    "oled-dashboard",
     "potentiometer-led",
     "relay-control-side",
     "rgb-led-cycle",

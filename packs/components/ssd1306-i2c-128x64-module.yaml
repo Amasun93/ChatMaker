@@ -18,8 +18,8 @@ verification:
     evidence: null
   code_compiled:
     status: verified
-    checked_at: "2026-08-14"
-    evidence: The Nano oled-light example using DFRobot_SSD1306_I2C.h compiled with Mind+ 2.x; see docs/verification/2026-08-14-nano-mindplus-compilation.md.
+    checked_at: "2026-08-17"
+    evidence: Nano and Uno OLED dashboard examples using DFRobot_SSD1306_I2C.h compiled with Mind+ 2.x; see docs/verification/2026-08-17-avr-oled-dashboard-compilation.md.
   firmware_uploaded: *unverified
   physical_effect_verified: *unverified
 pins:
@@ -33,6 +33,7 @@ pins:
     role: i2c-data
 supported_boards:
   - arduino-nano-classic
+  - arduino-uno-r3
 constraints:
   - Use this record only after confirming SSD1306, 128x64, four-pin I2C, and a module supply rating compatible with 5 V.
   - Do not substitute SH1106 or a seven-pin SPI display; scan for address 0x3C or 0x3D before changing libraries.
@@ -42,11 +43,14 @@ libraries:
   - name: Mind+ DFRobot SSD1306 I2C library
     headers: [DFRobot_SSD1306_I2C.h]
     status: compile_verified
-    notes: The checked-in Nano example compiled with DFRobot_SSD1306_I2C.h and address 0x3C using Mind+ 2.x.
+    notes: The checked-in Nano and Uno dashboard examples compiled with DFRobot_SSD1306_I2C.h and address 0x3C using Mind+ 2.x.
 example_files:
   - examples/chatduino/nano/oled-light/oled-light.ino
+  - examples/chatduino/nano/oled-dashboard/oled-dashboard.ino
+  - examples/chatduino/uno/oled-dashboard/oled-dashboard.ino
 common_failures:
   - A screen sold only as 0.96-inch OLED may use SH1106, SPI, another resolution, or another address.
   - Swapped SDA and SCL or the wrong 0x3C versus 0x3D address leaves the screen blank.
 board_notes:
   arduino-nano-classic: Use SDA A4 and SCL A5; confirm module 5 V compatibility before connecting VCC to 5V.
+  arduino-uno-r3: Use SDA A4 and SCL A5; confirm module 5 V compatibility before connecting VCC to 5V.
