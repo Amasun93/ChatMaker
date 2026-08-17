@@ -1,17 +1,17 @@
 {
   "schema_version": "1.0",
-  "sequence": 2,
+  "sequence": 3,
   "generated_at": "2026-08-17T00:00:00Z",
   "expires_at": "2026-09-16T00:00:00Z",
   "packs": [
     {
       "pack_id": "chatmaker-board-arduino-nano-classic-knowledge",
       "pack_type": "knowledge",
-      "version": "1.1.0",
+      "version": "1.2.0",
       "board_id": "arduino-nano-classic",
-      "url": "https://raw.githubusercontent.com/Amasun93/ChatMaker/d59f52648e832cd732c279b874c22c7b9a051aa2/distribution/packs/chatmaker-board-arduino-nano-classic-knowledge-1.1.0.cmpack",
-      "length": 10908,
-      "sha256": "520c7a3fd097380b3424832beae60af3b6a3ca7286c8c0f2c15f83e114bea8de",
+      "url": "https://raw.githubusercontent.com/Amasun93/ChatMaker/1556a055d9625409e9380f4e6abdf7c0e95778fc/distribution/packs/chatmaker-board-arduino-nano-classic-knowledge-1.2.0.cmpack",
+      "length": 11785,
+      "sha256": "c836cb390eaecc7c632d45722900e301499a19682aeab4a5357b359b357bcf20",
       "compatibility": {
         "core": {"minimum": "0.1.0", "maximum_exclusive": "0.2.0"},
         "pack_manifest_schema": ["1.0"],
@@ -21,11 +21,11 @@
     {
       "pack_id": "chatmaker-board-arduino-uno-r3-knowledge",
       "pack_type": "knowledge",
-      "version": "1.1.0",
+      "version": "1.2.0",
       "board_id": "arduino-uno-r3",
-      "url": "https://raw.githubusercontent.com/Amasun93/ChatMaker/d59f52648e832cd732c279b874c22c7b9a051aa2/distribution/packs/chatmaker-board-arduino-uno-r3-knowledge-1.1.0.cmpack",
-      "length": 10712,
-      "sha256": "13ccaaeddae9ea834a8b2d05d0fb767474343c36c05f7bce5295b5dc320fd914",
+      "url": "https://raw.githubusercontent.com/Amasun93/ChatMaker/1556a055d9625409e9380f4e6abdf7c0e95778fc/distribution/packs/chatmaker-board-arduino-uno-r3-knowledge-1.2.0.cmpack",
+      "length": 11244,
+      "sha256": "f925ccbd7f91fe7fd0e665adb720b91f22db46c50f63358e352735c9f3b93713",
       "compatibility": {
         "core": {"minimum": "0.1.0", "maximum_exclusive": "0.2.0"},
         "pack_manifest_schema": ["1.0"],
@@ -35,11 +35,11 @@
     {
       "pack_id": "chatmaker-board-esp32-devkit-v1-knowledge",
       "pack_type": "knowledge",
-      "version": "1.1.0",
+      "version": "1.2.0",
       "board_id": "esp32-devkit-v1",
-      "url": "https://raw.githubusercontent.com/Amasun93/ChatMaker/d59f52648e832cd732c279b874c22c7b9a051aa2/distribution/packs/chatmaker-board-esp32-devkit-v1-knowledge-1.1.0.cmpack",
-      "length": 10902,
-      "sha256": "2c1ec4d80c43db90547683c8fd3a7ec754acd1dd02389d4bfa1655bcf4b8311e",
+      "url": "https://raw.githubusercontent.com/Amasun93/ChatMaker/1556a055d9625409e9380f4e6abdf7c0e95778fc/distribution/packs/chatmaker-board-esp32-devkit-v1-knowledge-1.2.0.cmpack",
+      "length": 11621,
+      "sha256": "c02249952c827244ce1273f20760a36d266ab17ecc7bd87ef67a8cc4a1fc8a2c",
       "compatibility": {
         "core": {"minimum": "0.1.0", "maximum_exclusive": "0.2.0"},
         "pack_manifest_schema": ["1.0"],
@@ -49,11 +49,11 @@
     {
       "pack_id": "chatmaker-board-idmc-0001-starcore-v4-2-2-knowledge",
       "pack_type": "knowledge",
-      "version": "1.0.0",
+      "version": "1.1.0",
       "board_id": "idmc-0001-starcore-v4-2-2",
-      "url": "https://raw.githubusercontent.com/Amasun93/ChatMaker/d59f52648e832cd732c279b874c22c7b9a051aa2/distribution/packs/chatmaker-board-idmc-0001-starcore-v4-2-2-knowledge-1.0.0.cmpack",
-      "length": 14752,
-      "sha256": "ef8c4635db058cf25399fa1840e43386a8e0ca3850199076e6b5986010e534b7",
+      "url": "https://raw.githubusercontent.com/Amasun93/ChatMaker/1556a055d9625409e9380f4e6abdf7c0e95778fc/distribution/packs/chatmaker-board-idmc-0001-starcore-v4-2-2-knowledge-1.1.0.cmpack",
+      "length": 16070,
+      "sha256": "abaefb3078e2a9b08fd7e6d09ad5c4d16017e39576f4794de74947dda735479c",
       "compatibility": {
         "core": {"minimum": "0.1.0", "maximum_exclusive": "0.2.0"},
         "pack_manifest_schema": ["1.0"],
