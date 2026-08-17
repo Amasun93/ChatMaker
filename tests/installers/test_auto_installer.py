@@ -137,6 +137,89 @@ class UniversalInstallerTests(unittest.TestCase):
         self.assertFalse((self.home / ".codex").exists())
         self.assertFalse((self.home / ".workbuddy").exists())
 
+    def test_explicit_target_combines_with_detected_hosts_in_one_transaction(self):
+        """Catches explicit paths replacing, rather than extending, detected hosts."""
+        environment = self._environment(codex=True, workbuddy=True)
+        target = self.root / "another host" / "skills"
+        before = sorted(path.relative_to(self.home) for path in self.home.rglob("*"))
+
+        planned = self._run(
+            "auto", "--dry-run", "--skill-root", str(target), environment=environment
+        )
+
+        self.assertEqual([host["host"] for host in planned["hosts"]], ["codex", "workbuddy", "explicit"])
+        self.assertEqual(before, sorted(path.relative_to(self.home) for path in self.home.rglob("*")))
+        self.assertFalse(self.state_root.exists())
+        self.assertFalse(target.exists())
+
+        installed = self._run("auto", "--skill-root", str(target), environment=environment)
+        repeated = self._run("auto", "--skill-root", str(target), environment=environment)
+
+        self.assertTrue(installed["success"])
+        self.assertEqual([host["host"] for host in installed["hosts"]], ["codex", "workbuddy", "explicit"])
+        self.assertEqual(repeated["status"], "already_current")
+        self.assertEqual(repeated["transaction_id"], installed["transaction_id"])
+        self.assertEqual(
+            [path.name for path in (self.state_root / "transactions").glob("*.json")],
+            [f"{installed['transaction_id']}.json"],
+        )
+        for skill_root in (self.codex_home / "skills", self.workbuddy_home / "skills", target):
+            self.assertTrue((skill_root / "chatmaker" / "SKILL.md").is_file())
+
+    def test_doctor_verifies_workbuddy_split_skill_and_mcp_paths(self):
+        """Catches doctor looking for Skills beside a separately configured MCP file."""
+        environment = self._environment(workbuddy=True)
+        config = self.root / "separate WorkBuddy config" / "mcp.json"
+        config.parent.mkdir()
+        config.write_text(json.dumps({"mcpServers": {"keep": {"command": "other"}}}), encoding="utf-8")
+        environment["WORKBUDDY_CONFIG"] = str(config)
+
+        self._run("auto", environment=environment)
+        result = self._run("doctor", environment=environment)
+
+        self.assertTrue(result["success"])
+        self.assertEqual(result["status"], "healthy")
+        self.assertEqual([host["host"] for host in result["hosts"]], ["workbuddy"])
+        self.assertEqual(result["hosts"][0]["config"], str(config))
+        self.assertTrue(result["hosts"][0]["mcp_server_ready"])
+
+    def test_explicit_path_overlapping_a_detected_host_is_deduplicated(self):
+        """Catches duplicate managed Skill identities in the combined transaction."""
+        environment = self._environment(codex=True)
+        target = self.codex_home / "skills"
+
+        installed = self._run("auto", "--skill-root", str(target), environment=environment)
+
+        self.assertTrue(installed["success"])
+        self.assertEqual([host["host"] for host in installed["hosts"]], ["codex", "explicit"])
+        self.assertEqual(len(installed["changes"]), 3)
+        self.assertTrue((target / "chatmaker" / "SKILL.md").is_file())
+
+    def test_doctor_reports_partial_multi_host_installation_without_writing(self):
+        """Catches a partial Codex host masking healthy split-path WorkBuddy."""
+        environment = self._environment(workbuddy=True)
+        config = self.root / "separate WorkBuddy config" / "mcp.json"
+        config.parent.mkdir()
+        config.write_text(
+            json.dumps({"mcpServers": {"keep": {"command": "other"}}}),
+            encoding="utf-8",
+        )
+        environment["WORKBUDDY_CONFIG"] = str(config)
+        self._run("auto", environment=environment)
+        (self.codex_home / "skills").mkdir(parents=True)
+        environment["CODEX_HOME"] = str(self.codex_home)
+        before = {path: path.read_bytes() for path in self.home.rglob("*") if path.is_file()}
+
+        result = self._run("doctor", environment=environment)
+
+        after = {path: path.read_bytes() for path in self.home.rglob("*") if path.is_file()}
+        self.assertFalse(result["success"])
+        self.assertEqual(result["status"], "needs_install")
+        self.assertEqual([host["host"] for host in result["hosts"]], ["codex", "workbuddy"])
+        self.assertFalse(result["hosts"][0]["success"])
+        self.assertTrue(result["hosts"][1]["success"])
+        self.assertEqual(before, after)
+
     def test_doctor_verifies_an_explicit_skill_target_without_guessing_a_host(self):
         """Catches doctor reporting an installed explicit target as unsupported."""
         target = self.root / "another host" / "skills"

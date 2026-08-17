@@ -11,7 +11,7 @@ from typing import Any, Mapping, Sequence
 from .capabilities import probe_environment
 from .hosts import ADAPTERS, ExplicitHostAdapter, WorkBuddyHostAdapter, plan_installation
 from .skill_bundle import SKILL_NAMES
-from .transaction import InstallTransaction, TransactionResult
+from .transaction import InstallTransaction, TransactionResult, canonical_install_path
 from . import workbuddy
 
 
@@ -68,29 +68,88 @@ def _next_actions(environment: Mapping[str, Any], plan: Mapping[str, Any]) -> li
 
 def _changes(plan: Mapping[str, Any]) -> list[dict[str, Any]]:
     changes: list[dict[str, Any]] = []
+    identities: set[str] = set()
     for host in plan.get("hosts", []):
         skill_dir = host.get("skill_dir")
         if skill_dir:
-            changes.append(
-                {
-                    "kind": "skill_bundle",
-                    "source": SOURCE_SKILLS,
-                    "path": Path(str(skill_dir)),
-                    "names": list(SKILL_NAMES),
-                }
-            )
+            root = canonical_install_path(Path(str(skill_dir)))
+            names = [
+                name
+                for name in SKILL_NAMES
+                if f"skill:{root / name}" not in identities
+            ]
+            identities.update(f"skill:{root / name}" for name in names)
+            if names:
+                changes.append(
+                    {
+                        "kind": "skill_bundle",
+                        "source": SOURCE_SKILLS,
+                        "path": root,
+                        "names": names,
+                    }
+                )
         mcp_config = host.get("mcp_config")
         mcp_server = host.get("mcp_server")
         if mcp_config and isinstance(mcp_server, Mapping):
-            changes.append(
-                {
-                    "kind": "mcp_server",
-                    "path": Path(str(mcp_config)),
-                    "server_key": workbuddy.SERVER_KEY,
-                    "server": dict(mcp_server),
-                }
-            )
+            target = canonical_install_path(Path(str(mcp_config)))
+            identity = f"mcp:{target}#{workbuddy.SERVER_KEY}"
+            if identity not in identities:
+                identities.add(identity)
+                changes.append(
+                    {
+                        "kind": "mcp_server",
+                        "path": target,
+                        "server_key": workbuddy.SERVER_KEY,
+                        "server": dict(mcp_server),
+                    }
+                )
     return changes
+
+
+def _detected_context(
+    environment: Mapping[str, Any], python_executable: str
+) -> dict[str, Any]:
+    """Plan built-in hosts without letting an explicit other-host path replace them."""
+    report = dict(environment)
+    for key in ("skill_roots", "mcp_configs"):
+        report[key] = [
+            dict(item)
+            for item in environment.get(key, [])
+            if isinstance(item, Mapping) and item.get("host") != "explicit"
+        ]
+    return {"report": report, "python_executable": python_executable}
+
+
+def _combine_plans(*plans: Mapping[str, Any]) -> dict[str, Any]:
+    """Combine host plans in deterministic order; transaction changes deduplicate later."""
+    hosts = [dict(host) for plan in plans for host in plan.get("hosts", [])]
+    limits = [
+        limit
+        for plan in plans
+        for limit in plan.get("limits", [])
+    ]
+    writes = [
+        dict(write)
+        for plan in plans
+        for write in plan.get("writes", [])
+    ]
+    if not hosts:
+        return {
+            "status": "ready_with_limits",
+            "hosts": [],
+            "writes": [],
+            "limits": limits or ["no_supported_host_detected"],
+        }
+    return {
+        "status": (
+            "ready"
+            if all(host.get("status") == "ready" for host in hosts)
+            else "ready_with_limits"
+        ),
+        "hosts": hosts,
+        "writes": writes,
+        "limits": limits,
+    }
 
 
 def _explicit_plan(environment: Mapping[str, Any], python_executable: str) -> dict[str, Any]:
@@ -202,8 +261,17 @@ def run(
     selected_home = Path(args.home).expanduser() if args.home else home
     selected_root = Path(args.state_root).expanduser() if args.state_root else transaction_root
     environment = probe_environment(home=selected_home, environ=environment_values).to_dict()
-    context = {"report": environment, "python_executable": environment["python"]["executable"]}
-    plan = _explicit_plan(environment, environment["python"]["executable"]) if (args.skill_root or args.mcp_config) else plan_installation(context)
+    python_executable = environment["python"]["executable"]
+    context = {"report": environment, "python_executable": python_executable}
+    detected = plan_installation(_detected_context(environment, python_executable))
+    plan = (
+        _combine_plans(
+            detected,
+            _explicit_plan(environment, python_executable),
+        )
+        if (args.skill_root or args.mcp_config)
+        else detected
+    )
     next_actions = _next_actions(environment, plan)
 
     if args.action == "doctor":
