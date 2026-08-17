@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ChatMaker 串口设备台</title>
+  <style>
+    :root { color-scheme:light; --paper:#f5f2ea; --ink:#13231d; --green:#167c5a; --amber:#e7a528; --red:#b63b32; }
+    * { box-sizing:border-box; }
+    body { margin:0; min-height:100vh; background:linear-gradient(145deg,#fbfaf5,#e8eee9); color:var(--ink); font-family:Inter,"Microsoft YaHei",sans-serif; }
+    main { width:min(980px,100%); margin:auto; padding:clamp(20px,5vw,64px); }
+    header { display:flex; justify-content:space-between; gap:20px; align-items:flex-start; margin-bottom:30px; }
+    h1 { margin:0 0 10px; font-size:clamp(2rem,6vw,4.5rem); letter-spacing:-.05em; }
+    .mode { padding:8px 13px; border:1px solid currentColor; border-radius:999px; font-weight:800; }
+    .grid { display:grid; grid-template-columns:1.15fr .85fr; gap:20px; }
+    .card { padding:24px; border:1px solid #cad5ce; border-radius:22px; background:#fff; box-shadow:0 18px 55px #264d3a12; }
+    .status { display:flex; gap:10px; align-items:center; font-weight:800; }
+    .dot { width:12px; height:12px; border-radius:50%; background:var(--red); }
+    [data-state="connected"] .dot { background:var(--green); box-shadow:0 0 0 7px #167c5a20; }
+    [data-state="loading"] .dot { background:var(--amber); }
+    button { min-height:48px; padding:11px 18px; border:0; border-radius:14px; background:var(--ink); color:white; font:inherit; font-weight:800; cursor:pointer; }
+    button.secondary { color:var(--ink); background:#e8eee9; }
+    button:focus-visible { outline:4px solid var(--amber); outline-offset:3px; }
+    .actions { display:flex; flex-wrap:wrap; gap:10px; margin:24px 0; }
+    .reading { font-size:clamp(3rem,9vw,6rem); font-weight:900; line-height:1; color:var(--green); }
+    pre { min-height:190px; max-height:310px; overflow:auto; padding:16px; border-radius:16px; background:#12211b; color:#d9f6e8; white-space:pre-wrap; }
+    .note { margin-top:18px; padding:14px 16px; border-left:5px solid var(--amber); background:#fff8df; }
+    @media(max-width:720px){ header{display:block}.mode{display:inline-block;margin-top:14px}.grid{grid-template-columns:1fr} }
+    @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
+  </style>
+</head>
+<body>
+  <main data-state="disconnected" id="app">
+    <header>
+      <div><p>CHATMAKER · 可选硬件交互</p><h1>串口设备台</h1><p>先把硬件跑通，再按需打开这个页面。</p></div>
+      <span class="mode" id="mode">真实设备模式</span>
+    </header>
+    <section class="grid">
+      <article class="card">
+        <div class="status"><span class="dot"></span><span id="status">设备未连接</span></div>
+        <div class="actions">
+          <button id="connect">连接设备</button>
+          <button id="led" class="secondary" disabled>切换 LED</button>
+          <button id="demo" class="secondary">进入模拟模式</button>
+        </div>
+        <p>当前传感器读数</p><output class="reading" id="reading">--</output>
+        <p class="note" id="note">真实连接需要 Chromium 浏览器，并从 localhost 或 HTTPS 打开。页面显示成功不等于实体效果已经发生。</p>
+      </article>
+      <article class="card"><h2>消息记录</h2><pre id="log" aria-live="polite">等待连接…</pre></article>
+    </section>
+  </main>
+  <script>
+    const app=document.querySelector('#app'), statusEl=document.querySelector('#status'), logEl=document.querySelector('#log');
+    const connectBtn=document.querySelector('#connect'), ledBtn=document.querySelector('#led'), demoBtn=document.querySelector('#demo');
+    const reading=document.querySelector('#reading'), mode=document.querySelector('#mode');
+    let port, writer, readingLoop=false, led=false, simulation=false;
+    const log=(text)=>{ logEl.textContent=`${new Date().toLocaleTimeString()}  ${text}\n${logEl.textContent}`.slice(0,5000); };
+    const state=(name,text)=>{ app.dataset.state=name; statusEl.textContent=text; };
+    async function send(message){
+      if(simulation){ log(`模拟发送 ${JSON.stringify(message)}`); return; }
+      if(!writer) throw new Error('设备尚未连接');
+      await writer.write(new TextEncoder().encode(JSON.stringify(message)+'\n'));
+      log(`发送 ${JSON.stringify(message)}`);
+    }
+    async function readLines(){
+      const reader=port.readable.getReader(); let buffer=''; readingLoop=true;
+      try{
+        while(readingLoop){ const {value,done}=await reader.read(); if(done) break; buffer+=new TextDecoder().decode(value,{stream:true});
+          const lines=buffer.split(/\r?\n/); buffer=lines.pop();
+          for(const line of lines){ if(!line.trim()) continue; log(`收到 ${line}`); try{ const msg=JSON.parse(line); if(msg.type==='telemetry') reading.value=String(msg.value); }catch{} }
+        }
+      }finally{ reader.releaseLock(); }
+    }
+    connectBtn.addEventListener('click',async()=>{
+      if(!('serial' in navigator)){ state('error','当前浏览器不支持 Web Serial'); return; }
+      try{ state('loading','正在选择设备…'); port=await navigator.serial.requestPort(); await port.open({baudRate:115200});
+        writer=port.writable.getWriter(); state('connected','真实设备已连接'); ledBtn.disabled=false; connectBtn.disabled=true; log('真实串口已打开'); readLines();
+      }catch(error){ state('error',`连接失败：${error.message}`); log(`错误 ${error.message}`); }
+    });
+    ledBtn.addEventListener('click',async()=>{ try{ led=!led; await send({type:'command',target:'led',value:led}); ledBtn.textContent=led?'关闭 LED':'打开 LED'; }catch(error){ state('error',error.message); } });
+    demoBtn.addEventListener('click',()=>{ simulation=!simulation; mode.textContent=simulation?'模拟模式':'真实设备模式'; demoBtn.textContent=simulation?'退出模拟模式':'进入模拟模式';
+      if(simulation){ state('connected','模拟设备已连接（不代表真实硬件）'); ledBtn.disabled=false; reading.value='512'; log('进入模拟模式'); }
+      else{ state('disconnected','设备未连接'); ledBtn.disabled=true; reading.value='--'; log('退出模拟模式'); }
+    });
+  </script>
+</body>
+</html>
