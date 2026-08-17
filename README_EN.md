@@ -42,17 +42,17 @@ Compilation, firmware upload, browser interaction, serial evidence, and physical
 
 ## Progressive board knowledge
 
-The first Core install contains the Python runtime, four internal Skills, 4 boards, 13 components, 16 recipes, compact indexes, schemas, and current runnable examples. It deliberately excludes detailed Knowledge bodies, the knowledge workspace, tests, optional `.cmpack` artifacts, and development caches.
+The first Core install contains the Python runtime, four Skill directories, 4 boards, 20 components, 23 recipes, four compact Knowledge indexes, schemas, and current runnable examples. It deliberately excludes detailed Knowledge bodies, the knowledge workspace, tests, optional `.cmpack` artifacts, and development caches.
 
 When an AI first requests a detailed board section, `chatmaker-knowledge` defaults to automatic installation. It accepts a pack only after checking the official registry signature, immutable URL, length, SHA-256, manifest, and every payload file. Later reads reuse the verified installation. An installed version remains readable after offline revalidation; an exact cache can authorize a new offline install only while its signed receipt is unexpired.
 
-Automatic installation is limited to passive knowledge pages. It never installs drivers, Mind+, Arduino cores, Node, Chromium, PATH changes, hooks, or administrator-level software. The host installer manages the four internal Skills and the `chatmaker` WorkBuddy MCP entry; `chatmaker-pack` alone manages knowledge content.
+Automatic installation is limited to passive knowledge pages. It never installs drivers, Mind+, Arduino cores, Node, Chromium, PATH changes, hooks, or administrator-level software. The host installer exposes only ChatMaker at the top level, nests ChatDuino, ChatWeb, and ChatCAD as internal Skills, and manages the `chatmaker` WorkBuddy MCP entry; `chatmaker-pack` alone manages knowledge content.
 
 ```powershell
 chatmaker-knowledge --request-json '{"action":"section","board_id":"arduino-nano-classic","consumer":"chatduino","section_id":"identify-and-safety"}'
-chatmaker-pack status chatmaker-board-arduino-nano-classic-wiki
-chatmaker-pack update chatmaker-board-arduino-nano-classic-wiki
-chatmaker-pack rollback chatmaker-board-arduino-nano-classic-wiki --version 1.0.0
+chatmaker-pack status chatmaker-board-arduino-nano-classic-knowledge
+chatmaker-pack update chatmaker-board-arduino-nano-classic-knowledge
+chatmaker-pack rollback chatmaker-board-arduino-nano-classic-knowledge --version 1.0.0
 ```
 
 Experiments belong in a separate local override directory and stay labelled `provenance=local_override`; they cannot impersonate official content. See the [installation guide](docs/installation.md) for cache, offline, update, and rollback instructions.
@@ -92,7 +92,7 @@ npm run test:browser
 
 Read the [creative partner design](https://github.com/Amasun93/ChatMaker/blob/main/docs/plans/2026-08-14-chatmaker-creative-partner-design.md) and [implementation plan](https://github.com/Amasun93/ChatMaker/blob/main/docs/plans/2026-08-14-chatmaker-v0.1-implementation.md) for current scope and evidence.
 
-Current source uses WorkBuddy stdio server `1.13.0` with 32 tools, including `knowledge_get` and the three ChatCAD tools. The public rc5 paragraph above remains historical and still describes the rc5 artifact accurately.
+Current source uses WorkBuddy stdio server `1.14.0` with 33 tools, including `knowledge_get`, `cad_component_profile_get`, and the other three ChatCAD tools. The public rc5 paragraph above remains historical and still describes the rc5 artifact accurately.
 
 ## License
 

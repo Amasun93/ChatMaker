@@ -11,6 +11,7 @@ from . import nano_mindplus
 EXAMPLE_NAMES = (
     "blink",
     "dht11-serial",
+    "lcd1602-i2c-hello",
     "light-led",
     "oled-light",
     "oled-dashboard",

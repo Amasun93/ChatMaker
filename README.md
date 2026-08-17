@@ -140,7 +140,7 @@ V1.0 采用渐进创作流程：先帮助用户跑通最小硬件作品，再按
 
 ## 板卡知识怎样按需出现
 
-Core 首次安装只带运行层、ChatMaker / ChatDuino / ChatWeb / ChatCAD 四个 Skill、紧凑索引、首批板卡和机械资料、schema 与当前案例，不带体积较大的扩展正文。这样基础安装更小，也不会把测试或构建缓存交给普通用户。
+Core 首次安装只带运行层、ChatMaker / ChatDuino / ChatWeb / ChatCAD 四个 Skill、4 块板卡、20 种元器件、23 个配方、四个紧凑索引、首批机械资料、schema 与当前案例，不带体积较大的扩展正文。这样基础安装更小，也不会把测试或构建缓存交给普通用户。
 
 当 AI 第一次读取某块板卡的详细章节时，`chatmaker-knowledge` 可以按需取得对应知识包并在之后复用。这个动作只安装知识资料，不会安装驱动、Mind+、Arduino Core、Node 或 Chromium。
 
@@ -157,23 +157,23 @@ chatmaker-pack rollback chatmaker-board-arduino-nano-classic-knowledge --version
 
 | 范围 | 状态 | 已有证据 |
 | --- | --- | --- |
-| ChatMaker、ChatDuino、ChatWeb 结构 | 已验证 | 项目校验和 Skill 格式校验通过 |
+| ChatMaker 单入口和三个内部模块结构 | 已验证 | 宿主顶层只有 ChatMaker；ChatDuino、ChatWeb、ChatCAD 在内部独立维护并通过 Skill 格式校验 |
 | ChatCAD V1 模式 | 开发版可用 | Chat2D 生成带可调指接榫的六面激光盒、底板拖拽孔位、四色图层、DXF/SVG 和组装预览；Chat3D 生成可旋转的打印外壳及 OpenSCAD/STL；真实试装待用户验证 |
 | 创作伙伴对话规则 | 已写入 | 尚需独立前向测试 |
 | 数据包和证据状态 | 已验证 | 自动测试与项目 doctor 通过 |
 | ChatMaker Knowledge 渐进知识包 | 四板卡已接入 | Nano、Uno、ESP32、星核板均有板卡索引、详细知识包和机械资料入口；ChatMaker、ChatDuino、ChatWeb、ChatCAD 共用同一板卡身份 |
-| Nano Mind+ 编译和烧录迁移 | 部分验证 | 原 33 项行为测试已迁移；新增两页 OLED 仪表盘后共有 11 个示例从 ChatMaker 路径真实编译；烧录等待有线 Nano |
+| Nano Mind+ 编译和烧录迁移 | 部分验证 | 原 33 项行为测试已迁移；当前共有 12 个示例从 ChatMaker 路径真实编译；烧录等待有线 Nano |
 | Nano/Uno Mind+ 项目流程 | 部分验证 | 独立板型规则、Blink 和 OLED 仪表盘已真实编译；新增连续入口自动检查环境、编译并在有唯一有线端口时烧录，实体板效果等待用户测试 |
-| 星核板 Mind+ 适配器 | 编译已验证 | 使用 Mind+ 1.8 当前 mPython 兼容目标完成 Blink/串口心跳真实编译；安全烧录入口已接入，等待实体星核板测试 |
+| 星核板 Mind+ 适配器 | 编译已验证 | 使用 Mind+ 1.8 当前 mPython 兼容目标完成基础示例和七个自研模块示例真实编译；安全烧录入口已接入，等待实体星核板测试 |
 | DOIT ESP32 DevKit V1 | 部分验证 | 官方 `esp32:esp32@3.3.11` 已安装；`prepare-environment` 真实 no-op 成功；`esp32:esp32:esp32doit-devkit-v1` 已通过 Blink 和 AP 案例真实编译；烧录、启动、串口、SoftAP、HTTP 和实体效果仍待实板 |
-| 常用模块、库和示例 | 首批已验证 | 12 种元器件、16 个配方通过资料校验；11 个 Nano、2 个 Uno 和 2 个 ESP32 示例真实编译 |
+| 常用模块、库和示例 | 首批已验证 | 20 种元器件、23 个配方通过资料校验；12 个 Nano、2 个 Uno、2 个 ESP32 和 7 个星核板自研模块示例真实编译 |
 | ESP32 AP 手机控制案例 | 部分验证 | `examples/chatweb/esp32-ap-control.html` 是唯一页面源，`chatmaker-web-embed` 生成 `examples/chatduino/esp32/ap-led-sensor/page_html.h`，固件用 `send_P` 和显式长度嵌入页面；浏览器模拟和固件真实编译已通过，硬件仍未验证 |
 | ChatWeb 生成和本地预览 | 部分验证 | 支持课堂页、小游戏、模拟硬件页、ESP32 HTTP 页面，以及按需启用的 Nano/Uno Web Serial 控制台；真实串口网页交互等待实体板测试，模拟预览不代表硬件已连接 |
 | ChatWeb 小游戏 | Alpha 可试玩 | 新增 `mini-game` 路由和反应挑战、躲避收集、拖拽解谜三种单文件模板；默认离线、支持触控，复杂平台与节奏玩法保留为进阶方向 |
 | 可执行路由与创意规划 | 已验证 | `chatmaker-route` 返回硬件、网页、组合或澄清路线；`chatmaker-web-plan` 在信息不足时只提问，在信息充分时给出 2–3 条精选方向 |
 | 高级方向游乐场 | 显式启用 | 额外方向和 `chatmaker-web-playground` 仅在布尔 `advanced=true` / CLI `--advanced` 时开放 |
 | 浏览器自动化 | 已验证 | Chromium 覆盖课堂页、模拟硬件页、ESP32 AP 模拟页和高级游乐场；检查主要交互、390 px 手机布局、至少 44 px 触控目标和零控制台错误 |
-| 通用 AI 环境安装 | Alpha 可用 | `chatmaker-install auto` 安装四个 Skill，并接入包含 ChatCAD 的通用 MCP；本阶段由用户在真实 WorkBuddy 中体验反馈 |
+| 通用 AI 环境安装 | Alpha 可用 | `chatmaker-install auto` 在宿主顶层只安装 ChatMaker，将 ChatDuino、ChatWeb、ChatCAD 放入内部目录，并接入通用 MCP；本阶段由用户在真实 WorkBuddy 中体验反馈 |
 | 串口运行诊断 | 已实现待硬件 | WorkBuddy 6 个串口工具与 Codex JSONL 会话通过自动测试；当前无有线 Nano/Uno，真实日志待现场读取 |
 | v0.1.0-rc1 发布候选 | 历史发布 | [GitHub 预发布](https://github.com/Amasun93/ChatMaker/releases/tag/v0.1.0-rc1)；保留其原始产物与当时验证记录 |
 | v0.1.0-rc2 发布候选 | 已发布 | [GitHub 预发布](https://github.com/Amasun93/ChatMaker/releases/tag/v0.1.0-rc2)；rc1 继续保留，rc2 新增串口运行层 |

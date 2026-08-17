@@ -15,6 +15,7 @@ from chatmaker.hardware.nano_examples import EXAMPLE_NAMES, compile_examples  # 
 EXPECTED = {
     "blink",
     "dht11-serial",
+    "lcd1602-i2c-hello",
     "light-led",
     "oled-light",
     "oled-dashboard",

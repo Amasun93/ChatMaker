@@ -12,7 +12,7 @@ chatmaker-install auto
 chatmaker-install doctor
 ```
 
-`auto` 会根据电脑上实际存在的 AI 工作目录完成接入，安装 ChatMaker、ChatDuino、ChatWeb、ChatCAD 四个 Skill 和通用 MCP。当前是快速迭代版；如需卸载或恢复，可运行 `chatmaker-install uninstall` 或 `chatmaker-install restore <transaction_id>`。下方签名 Core 章节是正式发布流程参考，普通 Alpha 体验不需要先构建发布包。
+`auto` 会根据电脑上实际存在的 AI 工作目录完成接入：宿主顶层只安装 ChatMaker，ChatDuino、ChatWeb、ChatCAD 作为它的内部 Skill，并登记通用 MCP。当前是快速迭代版；如需卸载或恢复，可运行 `chatmaker-install uninstall` 或 `chatmaker-install restore <transaction_id>`。下方签名 Core 章节是正式发布流程参考，普通 Alpha 体验不需要先构建发布包。
 Alpha 使用可编辑源码安装，请保留克隆目录；更新时运行 `git pull`，再运行一次 `chatmaker-install auto`。
 
 > rc5 已作为 [GitHub 公开预发布版](https://github.com/Amasun93/ChatMaker/releases/tag/v0.1.0-rc5) 发布。rc1–rc4 仍是独立历史发布；不要把 rc5 的验证结果倒写到旧版本记录中。
@@ -54,9 +54,9 @@ macOS uses the same four evidence arguments with the matching `macos-x86_64` or 
 
 The official signature proves release origin. A trusted-bootstrap rerun provides point-in-time drift detection, quarantine, and repair only. This is not OS secure boot and does not resist an attacker who already has arbitrary same-user writes, can replace the verifier/launcher, or races after verification. The stable launcher fails closed and is repaired by trusted bootstrap, but does not prove its own trustworthiness.
 
-Core 内有运行层、四个 Skill、schema、4/12/14 条规范记录、四个详细板卡知识索引、首批机械资料和当前案例。它没有扩展知识正文、`knowledge_sources/`、`tests/`、开发缓存或已构建的可选 `.cmpack`。`chatmaker-doctor` 通过只证明这些内置内容可读，不证明任何硬件效果。
+Core 内有运行层、四个 Skill、schema、4/20/23 条规范记录、四个详细板卡知识索引、首批机械资料和当前案例。它没有扩展知识正文、`knowledge_sources/`、`tests/`、开发缓存或已构建的可选 `.cmpack`。`chatmaker-doctor` 通过只证明这些内置内容可读，不证明任何硬件效果。
 
-The Core contains runtime code, four Skills, schemas, the canonical 4/12/14 records, four detailed board indexes, the first mechanical profiles, and current examples. It excludes extended knowledge bodies, `knowledge_sources/`, `tests/`, development caches, and built optional `.cmpack` artifacts. A successful doctor proves only that built-in software content is readable.
+The Core contains runtime code, four Skills, schemas, the canonical 4/20/23 records, four detailed board indexes, the first mechanical profiles, and current examples. It excludes extended knowledge bodies, `knowledge_sources/`, `tests/`, development caches, and built optional `.cmpack` artifacts. A successful doctor proves only that built-in software content is readable.
 
 ### 第一次自动读取 / First automatic read
 
@@ -93,13 +93,13 @@ chatmaker-pack rollback chatmaker-board-arduino-nano-classic-knowledge --version
 - `update` 只接受注册表中的更高版本；失败时旧版本继续工作。`rollback` 只切换到本机已经完整验证的旧版本。
 - 默认用户数据在 `~/.chatmaker/` 的 cache、store、state 等分区。不要手动修改官方 store；漂移内容会被隔离。
 - 实验知识放在 `~/.chatmaker/overrides/`，或用 `CHATMAKER_PACKS_PATH` 指向独立目录。返回值会显示 `provenance=local_override`，避免把个人内容当成官方事实。
-- 运行这些内容命令不会写 AI 宿主配置。只有 `chatmaker-install auto` 会在探测到真实宿主后接入四个 Skill 和 MCP 条目，并继续使用事务备份恢复。
+- 运行这些内容命令不会写 AI 宿主配置。只有 `chatmaker-install auto` 会在探测到真实宿主后接入顶层 ChatMaker、三个内部 Skill 和 MCP 条目，并继续使用事务备份恢复。
 
 - An already installed version remains readable offline after full local revalidation. An exact cache can authorize a new offline install only while its signed registry receipt is still unexpired; an expired receipt cannot authorize a new install. Never-downloaded or expired missing content fails clearly instead of guessing.
 - `update` accepts only a newer registry version and preserves the old active version on failure. `rollback` selects only a previously verified local version.
 - User content lives under separated cache/store/state folders in `~/.chatmaker/`. Do not edit the official store by hand; drift is quarantined.
 - Put experiments under `~/.chatmaker/overrides/`, or point `CHATMAKER_PACKS_PATH` at a separate directory. Results remain labelled `provenance=local_override`.
-- Content commands never write Codex or WorkBuddy configuration. Only `chatmaker-install auto` changes detected host configuration, with the existing transactional backup and restore behavior.
+- Content commands never write Codex or WorkBuddy configuration. Only `chatmaker-install auto` changes detected host configuration by installing top-level ChatMaker, its three internal Skills, and the MCP entry, with the existing transactional backup and restore behavior.
 
 ## 1. 共同前置条件 / Common prerequisites
 
@@ -247,7 +247,7 @@ npx playwright install chromium
 npm run test:browser
 ```
 
-需要查看普通 CLI 参数时，可对这些命令分别传入 `--help`：`chatmaker-doctor`、`chatmaker-catalog`、`chatmaker-route`、`chatmaker-nano`、`chatmaker-uno`、`chatmaker-avr-project`、`chatmaker-starcore`、`chatmaker-esp32`、`chatmaker-nano-examples`、`chatmaker-serial`、`chatmaker-cad`、`chatmaker-install`、`chatmaker-web`、`chatmaker-web-plan`、`chatmaker-web-playground`、`chatmaker-web-preview`、`chatmaker-web-embed`。
+需要查看普通 CLI 参数时，可对这些命令分别传入 `--help`：`chatmaker-doctor`、`chatmaker-catalog`、`chatmaker-route`、`chatmaker-nano`、`chatmaker-uno`、`chatmaker-avr-project`、`chatmaker-starcore`、`chatmaker-esp32`、`chatmaker-nano-examples`、`chatmaker-serial`、`chatmaker-cad`、`chatmaker-install`、`chatmaker-pack`、`chatmaker-knowledge`、`chatmaker-web`、`chatmaker-web-plan`、`chatmaker-web-playground`、`chatmaker-web-preview`、`chatmaker-web-embed`。
 
 For ordinary CLI usage, pass `--help` to the commands listed above. `chatmaker-workbuddy-mcp` is different: it is a JSON-RPC stdio service that waits for input and must not be invoked with `--help`. Run `chatmaker-install doctor` to inspect detected integrations safely.
 
