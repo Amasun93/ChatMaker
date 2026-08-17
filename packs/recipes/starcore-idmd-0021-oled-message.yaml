@@ -1,0 +1,28 @@
+schema_version: "1.0"
+kind: recipe
+id: starcore-idmd-0021-oled-message
+name: 星核板 IDMD-0021 OLED 欢迎信息
+summary: 用 MPython 内置 display 对象在已确认的 1.3 寸 I2C OLED 上显示两行文字。
+sources:
+  - title: ChatMaker governed Starcore source manifest
+    url: https://github.com/Amasun93/ChatMaker/tree/main/knowledge_sources
+verification:
+  source_reviewed:
+    status: verified
+    checked_at: "2026-08-17"
+    evidence: Governed sources confirm the SSD1306 128x64 module, P19/P20 bus, and MPython display API.
+  code_compiled: &unverified
+    status: unverified
+    checked_at: null
+    evidence: null
+  firmware_uploaded: *unverified
+  physical_effect_verified: *unverified
+boards: [idmc-0001-starcore-v4-2-2]
+components: [idmd-0021-starcore-oled-1-3]
+wiring:
+  - {component: idmd-0021-starcore-oled-1-3, component_pin: VCC, board_pin: 3V3}
+  - {component: idmd-0021-starcore-oled-1-3, component_pin: GND, board_pin: GND}
+  - {component: idmd-0021-starcore-oled-1-3, component_pin: SCL, board_pin: P19}
+  - {component: idmd-0021-starcore-oled-1-3, component_pin: SDA, board_pin: P20}
+source_file: examples/chatduino/starcore/starcore-idmd-0021-oled-message/starcore-idmd-0021-oled-message.ino
+expected_effect: 串口显示 STARCORE_OLED_READY，OLED 显示 Starcore ready 和 ChatMaker；地址与实物显示仍需接板确认。

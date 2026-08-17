@@ -382,7 +382,7 @@ class ReleasePackageTests(unittest.TestCase):
         )
         self.assertEqual(
             len([name for name in names if name.startswith(prefix + "packs/recipes/")]),
-            16,
+            23,
         )
         self.assertEqual(
             len([name for name in names if name.startswith(prefix + "knowledge/boards/")]),

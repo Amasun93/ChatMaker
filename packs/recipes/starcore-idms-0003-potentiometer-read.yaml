@@ -1,0 +1,27 @@
+schema_version: "1.0"
+kind: recipe
+id: starcore-idms-0003-potentiometer-read
+name: 星核板 IDMS-0003 电位器读数
+summary: 以 3.3V 安全供电，在 P0 读取旋钮原始 ADC 数值，不预先假定方向和满量程。
+sources:
+  - title: ChatMaker governed Starcore source manifest
+    url: https://github.com/Amasun93/ChatMaker/tree/main/knowledge_sources
+verification:
+  source_reviewed:
+    status: verified
+    checked_at: "2026-08-17"
+    evidence: Governed sources confirm the 3.3V GND/VCC/SIG analog route and P0/P1 starting pins.
+  code_compiled: &unverified
+    status: unverified
+    checked_at: null
+    evidence: null
+  firmware_uploaded: *unverified
+  physical_effect_verified: *unverified
+boards: [idmc-0001-starcore-v4-2-2]
+components: [idms-0003-starcore-potentiometer]
+wiring:
+  - {component: idms-0003-starcore-potentiometer, component_pin: VCC, board_pin: 3V3}
+  - {component: idms-0003-starcore-potentiometer, component_pin: GND, board_pin: GND}
+  - {component: idms-0003-starcore-potentiometer, component_pin: SIG, board_pin: P0}
+source_file: examples/chatduino/starcore/starcore-idms-0003-potentiometer-read/starcore-idms-0003-potentiometer-read.ino
+expected_effect: 串口先显示 STARCORE_POT_READY，随后每 200ms 输出一次 P0 原始值；实际范围和转向仍需接板确认。

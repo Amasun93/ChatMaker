@@ -1,0 +1,28 @@
+schema_version: "1.0"
+kind: recipe
+id: starcore-idmd-0002-serial-mp3
+name: 星核板 IDMD-0002 播放第一首音频
+summary: 从明确的 5V 接口给串口 MP3 供电，交叉连接 TXD/RXD，并只发送一次播放命令。
+sources:
+  - title: ChatMaker governed Starcore source manifest
+    url: https://github.com/Amasun93/ChatMaker/tree/main/knowledge_sources
+verification:
+  source_reviewed:
+    status: verified
+    checked_at: "2026-08-17"
+    evidence: Governed sources confirm controller RX=P15, TX=P16 and the separate 5V connector bank.
+  code_compiled: &unverified
+    status: unverified
+    checked_at: null
+    evidence: null
+  firmware_uploaded: *unverified
+  physical_effect_verified: *unverified
+boards: [idmc-0001-starcore-v4-2-2]
+components: [idmd-0002-starcore-serial-mp3]
+wiring:
+  - {component: idmd-0002-starcore-serial-mp3, component_pin: VCC, board_pin: 5V}
+  - {component: idmd-0002-starcore-serial-mp3, component_pin: GND, board_pin: GND}
+  - {component: idmd-0002-starcore-serial-mp3, component_pin: TXD, board_pin: P15}
+  - {component: idmd-0002-starcore-serial-mp3, component_pin: RXD, board_pin: P16}
+source_file: examples/chatduino/starcore/starcore-idmd-0002-serial-mp3/starcore-idmd-0002-serial-mp3.ino
+expected_effect: 串口显示 STARCORE_MP3_READY 后，模块以设定音量播放编号 1 的曲目；存储介质、扬声器和声音仍需实物确认。

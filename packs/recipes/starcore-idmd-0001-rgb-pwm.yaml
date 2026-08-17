@@ -1,0 +1,28 @@
+schema_version: "1.0"
+kind: recipe
+id: starcore-idmd-0001-rgb-pwm
+name: 星核板 IDMD-0001 RGB 呼吸灯
+summary: 用三路反相 PWM 安全驱动已确认的共阳 RGB 模块；它不是 WS2812 灯带。
+sources: &sources
+  - title: ChatMaker governed Starcore source manifest
+    url: https://github.com/Amasun93/ChatMaker/tree/main/knowledge_sources
+verification:
+  source_reviewed:
+    status: verified
+    checked_at: "2026-08-17"
+    evidence: Governed Starcore sources confirm the active-LOW common-anode wiring and P13/P14/P15 classroom route.
+  code_compiled: &unverified
+    status: unverified
+    checked_at: null
+    evidence: null
+  firmware_uploaded: *unverified
+  physical_effect_verified: *unverified
+boards: [idmc-0001-starcore-v4-2-2]
+components: [idmd-0001-starcore-rgb-light]
+wiring:
+  - {component: idmd-0001-starcore-rgb-light, component_pin: VCC, board_pin: 3V3}
+  - {component: idmd-0001-starcore-rgb-light, component_pin: RED, board_pin: P13}
+  - {component: idmd-0001-starcore-rgb-light, component_pin: GREEN, board_pin: P14}
+  - {component: idmd-0001-starcore-rgb-light, component_pin: BLUE, board_pin: P15}
+source_file: examples/chatduino/starcore/starcore-idmd-0001-rgb-pwm/starcore-idmd-0001-rgb-pwm.ino
+expected_effect: 串口先显示 STARCORE_RGB_READY，三种颜色再以柔和亮度依次切换；实物效果仍需接板确认。

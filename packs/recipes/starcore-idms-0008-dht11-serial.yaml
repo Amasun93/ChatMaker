@@ -1,0 +1,27 @@
+schema_version: "1.0"
+kind: recipe
+id: starcore-idms-0008-dht11-serial
+name: 星核板 IDMS-0008 温湿度串口读取
+summary: 在 P0 使用 DFRobot_DHT，每隔 2500ms 交替读取温度和湿度，零值只报告为待检查读数。
+sources:
+  - title: ChatMaker governed Starcore source manifest
+    url: https://github.com/Amasun93/ChatMaker/tree/main/knowledge_sources
+verification:
+  source_reviewed:
+    status: verified
+    checked_at: "2026-08-17"
+    evidence: Governed sources confirm P0, DFRobot_DHT, DHT11, and alternating 2500ms getter behavior.
+  code_compiled: &unverified
+    status: unverified
+    checked_at: null
+    evidence: null
+  firmware_uploaded: *unverified
+  physical_effect_verified: *unverified
+boards: [idmc-0001-starcore-v4-2-2]
+components: [idms-0008-starcore-dht11]
+wiring:
+  - {component: idms-0008-starcore-dht11, component_pin: VCC, board_pin: 3V3}
+  - {component: idms-0008-starcore-dht11, component_pin: GND, board_pin: GND}
+  - {component: idms-0008-starcore-dht11, component_pin: SIG, board_pin: P0}
+source_file: examples/chatduino/starcore/starcore-idms-0008-dht11-serial/starcore-idms-0008-dht11-serial.ino
+expected_effect: 串口先显示 STARCORE_DHT11_READY，之后温度与湿度每 2.5 秒交替出现；零读数与准确度仍需实物排查。

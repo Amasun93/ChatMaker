@@ -68,6 +68,18 @@ class TeacherExperienceContractTests(unittest.TestCase):
             with self.subTest(gate=gate):
                 self.assertIn(gate, skill)
 
+    def test_starcore_owned_recipes_keep_plain_text_wiring_as_the_default(self):
+        skill = (SKILL / "SKILL.md").read_text(encoding="utf-8")
+        contract = (SKILL / "references" / "beginner-hardware-contract.md").read_text(
+            encoding="utf-8"
+        )
+
+        self.assertIn("IDMC-0001 Starcore v4.2.2", skill)
+        self.assertIn("one visible disconnected-power `text` wiring block", skill)
+        self.assertIn("【先断电】", contract)
+        self.assertIn("【按顺序接线】", contract)
+        self.assertIn("Do not create SVG", contract)
+
 
 if __name__ == "__main__":
     unittest.main()

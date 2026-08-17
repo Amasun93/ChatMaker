@@ -1,0 +1,29 @@
+schema_version: "1.0"
+kind: recipe
+id: starcore-idms-0009-ultrasonic-distance
+name: 星核板 IDMS-0009 超声波测距
+summary: 以 3.3V 供电并使用 DFRobot_URM10 的 P_H/P_O GPIO 路线；返回零时报告无回波。
+sources:
+  - title: ChatMaker governed Starcore source manifest
+    url: https://github.com/Amasun93/ChatMaker/tree/main/knowledge_sources
+verification:
+  source_reviewed:
+    status: verified
+    checked_at: "2026-08-17"
+    evidence: Governed sources confirm the IDMS-0009 GPIO URM10 route and 80-120ms read interval.
+  code_compiled: &unverified
+    status: unverified
+    checked_at: null
+    evidence: null
+  firmware_uploaded: *unverified
+  physical_effect_verified: *unverified
+  echo_level_verified: *unverified
+boards: [idmc-0001-starcore-v4-2-2]
+components: [idms-0009-starcore-ultrasonic]
+wiring:
+  - {component: idms-0009-starcore-ultrasonic, component_pin: VCC, board_pin: 3V3}
+  - {component: idms-0009-starcore-ultrasonic, component_pin: GND, board_pin: GND}
+  - {component: idms-0009-starcore-ultrasonic, component_pin: TRIG, board_pin: P_H}
+  - {component: idms-0009-starcore-ultrasonic, component_pin: ECHO, board_pin: P_O}
+source_file: examples/chatduino/starcore/starcore-idms-0009-ultrasonic-distance/starcore-idms-0009-ultrasonic-distance.ino
+expected_effect: 串口先显示 STARCORE_ULTRASONIC_READY，随后约每 100ms 输出距离或 NO_ECHO；距离准确度仍需实物确认。
