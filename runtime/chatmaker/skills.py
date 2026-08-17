@@ -34,6 +34,13 @@ def validate_skill_directory(skill_dir: Path) -> list[str]:
     if not isinstance(metadata.get("description"), str) or not metadata["description"].strip():
         errors.append(f"{skill_path}: description must be non-empty text")
 
+    requires_ui_metadata = skill_dir.name == "chatmaker" or skill_dir.name not in {
+        "chatduino",
+        "chatweb",
+        "chatcad",
+    }
+    if not agent_path.is_file() and not requires_ui_metadata:
+        return errors
     if not agent_path.is_file():
         errors.append(f"{agent_path}: missing UI metadata")
         return errors
@@ -54,4 +61,3 @@ def validate_skill_directory(skill_dir: Path) -> list[str]:
         if invocation not in interface["default_prompt"]:
             errors.append(f"{agent_path}: default_prompt must mention {invocation}")
     return errors
-

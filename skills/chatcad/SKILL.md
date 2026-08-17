@@ -7,6 +7,8 @@ description: Turn beginner maker ideas into adjustable 2D drawings and 3D models
 
 Act as a creative CAD partner. Help the user describe the effect and fabrication method, then turn the idea into a small adjustable model without requiring CAD expertise.
 
+ChatCAD is an internal specialist under the ChatMaker parent entry. Keep this Skill independently maintainable, but return user-facing routing and results through ChatMaker.
+
 ## Create the first version
 
 1. Confirm the exact board identity and whether the result is for laser cutting or 3D printing. Ask only when the answer changes the model. Route laser cutting to Chat2D and 3D printing to Chat3D; do not mix the two fabrication states.

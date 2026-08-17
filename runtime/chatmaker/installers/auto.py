@@ -101,6 +101,8 @@ def _changes(plan: Mapping[str, Any]) -> list[dict[str, Any]]:
                         "path": target,
                         "server_key": workbuddy.SERVER_KEY,
                         "server": dict(mcp_server),
+                        "migrate_from_key": workbuddy.LEGACY_SERVER_KEY,
+                        "migrate_from_args": list(workbuddy.SERVER_ARGS),
                     }
                 )
     return changes

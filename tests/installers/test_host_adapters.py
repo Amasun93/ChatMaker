@@ -258,6 +258,7 @@ class HostAdapterTests(unittest.TestCase):
                 saved["mcpServers"][workbuddy.SERVER_KEY]["args"],
                 ["-m", "chatmaker.integrations.mcp"],
             )
+            self.assertEqual(workbuddy.SERVER_KEY, "chatmaker")
             self.assertEqual(
                 saved["mcpServers"][workbuddy.SERVER_KEY]["cwd"],
                 str((ROOT / "runtime").resolve()),

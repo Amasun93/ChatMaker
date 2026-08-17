@@ -1,4 +1,0 @@
-interface:
-  display_name: "ChatDuino"
-  short_description: "Build and verify Arduino and ESP32 projects"
-  default_prompt: "Use $chatduino to build and verify my hardware project."

@@ -10,6 +10,8 @@
 
 ChatMaker 是面向老师、学生和黑客松参与者的 AI 创作伙伴。用户说出想法、选择喜欢的方向并确认实际效果。ChatMaker 负责启发创意、设计方案、生成代码、调用工具和检查结果。
 
+ChatMaker 是唯一入口；ChatDuino、ChatWeb 和 ChatCAD 是由它在内部调用、分别维护的专业模块。
+
 对话窗口就是创作环境。Mind+、编译器、串口和浏览器在后台完成专业工作，用户不需要先学习一套 IDE。
 
 > 当前处于 Alpha 快速迭代阶段。[`v0.1.0-rc5`](https://github.com/Amasun93/ChatMaker/releases/tag/v0.1.0-rc5) 是最近一个打包的预发布版；`main` 分支包含更新的 ChatMaker Knowledge 和通用安装器。没有匹配实板证据，因此仍不能声称完成烧录或实物闭环。
@@ -24,7 +26,8 @@ https://github.com/Amasun93/ChatMaker
 
 请先阅读仓库 README 和 docs/installation.md，检查本机环境，安装项目，
 然后运行 chatmaker-install auto 和 chatmaker-install doctor。
-完成后告诉我已经安装的 Skill、MCP 工具，以及仍需我处理的项目。
+完成后使用 $chatmaker 作为唯一入口，并告诉我已经安装的内部 Skill、MCP 工具，
+以及仍需我处理的项目。
 ```
 
 也可以在终端直接执行：
@@ -131,7 +134,7 @@ Skill 负责告诉 AI 应该怎样判断、哪些技术事实不能猜、什么�
 
 这套结构让 AI 保留判断能力，同时在接线安全、端口选择、编译烧录和完成状态上受到明确约束。
 
-V1.0 采用渐进创作流程：先帮助用户跑通最小硬件作品，再按需推荐显示屏、传感器、网页交互、激光切割盒子或 3D 打印外壳。网页和 CAD 不是每个项目的必经步骤。正式主线板卡是 Nano、Uno 和星核板 v4.2.2；Nano、Uno 第一版允许把现有 Mind+ 当作后台工具链。完整边界见 [V1.0 创作流程合同](docs/contracts/v1-creative-flow.md)。
+V1.0 采用渐进创作流程：先帮助用户跑通最小硬件作品，再按需推荐显示屏、传感器、网页交互、激光切割盒子或 3D 打印外壳。网页和 CAD 不是每个项目的必经步骤。正式主线板卡是 Nano、Uno 和星核板 v4.2.2；Nano、Uno 第一版允许把现有 Mind+ 当作后台工具链。完整边界见 [V1.0 创作流程合同](https://github.com/Amasun93/ChatMaker/blob/main/docs/contracts/v1-creative-flow.md)。
 
 完整设计见 [ChatMaker 创作伙伴设计](https://github.com/Amasun93/ChatMaker/blob/main/docs/plans/2026-08-14-chatmaker-creative-partner-design.md)。
 

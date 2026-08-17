@@ -323,7 +323,8 @@ class WorkBuddyBridgeTests(unittest.TestCase):
 
             self.assertTrue(result["success"])
             self.assertEqual(saved["mcpServers"]["existing"]["command"], "keep-me")
-            self.assertIn("arduino-nano-mindplus", saved["mcpServers"])
+            self.assertIn(self.installer.SERVER_KEY, saved["mcpServers"])
+            self.assertEqual(self.installer.SERVER_KEY, "chatmaker")
             self.assertIsNotNone(result["backup"])
 
     def test_waiting_for_hardware_is_a_prompt_not_an_mcp_tool_error(self):

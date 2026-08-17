@@ -8,21 +8,27 @@
 
 ChatMaker helps teachers, students, and hackathon participants move from a clear request or a rough idea to an implemented and verified project. The user chooses the direction and judges the visible result. ChatMaker handles concept development, professional implementation, tools, and evidence.
 
+ChatMaker is the only user entry. ChatDuino, ChatWeb, and ChatCAD remain separately maintained internal specialists invoked by ChatMaker.
+
+To install the current Alpha, give your AI this repository link and ask it to read this README and `docs/installation.md`, install the project, run `chatmaker-install auto` and `chatmaker-install doctor`, then: "Use $chatmaker as the only user entry."
+
 > Early development status: [`v0.1.0-rc5`](https://github.com/Amasun93/ChatMaker/releases/tag/v0.1.0-rc5) is now available as a public GitHub prerelease. It includes Nano/Uno Mind+ compilation, controlled official ESP32 preparation and exact-FQBN compilation, the embedded AP page, executable routing and creative planning, an opt-in advanced playground, WorkBuddy 1.7.0 with 23 tools, and real Chromium automation. No matching physical-board evidence exists, so upload and physical behavior are not claimed.
 
-Current post-rc5 source is preparing a minimal `ChatMaker-Core-<version>.zip` plus three board-specific LLMWiki knowledge packs. This work does not create a new GitHub Release; rc5 remains the current public prerelease.
+Current post-rc5 source is preparing a minimal `ChatMaker-Core-<version>.zip` plus four board-specific ChatMaker Knowledge packs. This work does not create a new GitHub Release; rc5 remains the current public prerelease.
 
 ## Architecture
 
 ```text
 ChatMaker
 ├─ ChatDuino   hardware, wiring, firmware, compile, upload, serial
-└─ ChatWeb     front-end creation, classroom tools, device UI, browser checks
+├─ ChatWeb     front-end creation, classroom tools, device UI, browser checks
+└─ ChatCAD     parameterized 2D/3D fabrication design and preview
 ```
 
 - **ChatMaker** adapts to how clear the user's idea is and routes the project.
 - **ChatDuino** turns effects into safe wiring, complete firmware, compilation, upload, and physical checks.
 - **ChatWeb** proposes two or three curated visual directions and builds classroom tools, creative interactions, and hardware interfaces.
+- **ChatCAD** creates adjustable laser-cut drawings and 3D-printable models from trusted mechanical facts.
 
 Beginner projects use one self-contained HTML file by default. Advanced style catalogs and a playground appear only when requested. Wiring uses one plain `text` block by default; SVG diagrams are optional and never replace the text source of truth.
 
@@ -36,14 +42,14 @@ Compilation, firmware upload, browser interaction, serial evidence, and physical
 
 ## Progressive board knowledge
 
-The first Core install contains the Python runtime, the ChatMaker / ChatDuino / ChatWeb Skills, 3 boards, 12 components, 14 recipes, compact indexes, schemas, and current runnable examples. It deliberately excludes detailed Wiki bodies, the knowledge workspace, tests, optional `.cmpack` artifacts, and development caches.
+The first Core install contains the Python runtime, four internal Skills, 4 boards, 13 components, 16 recipes, compact indexes, schemas, and current runnable examples. It deliberately excludes detailed Knowledge bodies, the knowledge workspace, tests, optional `.cmpack` artifacts, and development caches.
 
-When an AI first requests a detailed board section, `chatmaker-llmwiki` defaults to automatic installation. It accepts a pack only after checking the official registry signature, immutable URL, length, SHA-256, manifest, and every payload file. Later reads reuse the verified installation. An installed version remains readable after offline revalidation; an exact cache can authorize a new offline install only while its signed receipt is unexpired.
+When an AI first requests a detailed board section, `chatmaker-knowledge` defaults to automatic installation. It accepts a pack only after checking the official registry signature, immutable URL, length, SHA-256, manifest, and every payload file. Later reads reuse the verified installation. An installed version remains readable after offline revalidation; an exact cache can authorize a new offline install only while its signed receipt is unexpired.
 
-Automatic installation is limited to passive knowledge pages. It never installs drivers, Mind+, Arduino cores, Node, Chromium, PATH changes, hooks, or administrator-level software, and it never edits Codex or WorkBuddy configuration. Host installers continue to manage only the three Skills and the WorkBuddy MCP entry; `chatmaker-pack` alone manages knowledge content.
+Automatic installation is limited to passive knowledge pages. It never installs drivers, Mind+, Arduino cores, Node, Chromium, PATH changes, hooks, or administrator-level software. The host installer manages the four internal Skills and the `chatmaker` WorkBuddy MCP entry; `chatmaker-pack` alone manages knowledge content.
 
 ```powershell
-chatmaker-llmwiki --request-json '{"action":"section","board_id":"arduino-nano-classic","consumer":"chatduino","section_id":"identify-and-safety"}'
+chatmaker-knowledge --request-json '{"action":"section","board_id":"arduino-nano-classic","consumer":"chatduino","section_id":"identify-and-safety"}'
 chatmaker-pack status chatmaker-board-arduino-nano-classic-wiki
 chatmaker-pack update chatmaker-board-arduino-nano-classic-wiki
 chatmaker-pack rollback chatmaker-board-arduino-nano-classic-wiki --version 1.0.0
@@ -86,7 +92,7 @@ npm run test:browser
 
 Read the [creative partner design](https://github.com/Amasun93/ChatMaker/blob/main/docs/plans/2026-08-14-chatmaker-creative-partner-design.md) and [implementation plan](https://github.com/Amasun93/ChatMaker/blob/main/docs/plans/2026-08-14-chatmaker-v0.1-implementation.md) for current scope and evidence.
 
-Current source uses WorkBuddy stdio server `1.8.0` with 24 tools, including `llmwiki_get`. The public rc5 paragraph above remains historical and still describes the rc5 artifact accurately.
+Current source uses WorkBuddy stdio server `1.13.0` with 32 tools, including `knowledge_get` and the three ChatCAD tools. The public rc5 paragraph above remains historical and still describes the rc5 artifact accurately.
 
 ## License
 

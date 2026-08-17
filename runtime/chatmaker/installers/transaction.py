@@ -89,6 +89,8 @@ class _Change:
     source: Path | None = None
     server_key: str | None = None
     server: Mapping[str, Any] | None = None
+    migrate_from_key: str | None = None
+    migrate_from_args: tuple[str, ...] | None = None
 
 
 def _canonical_json(value: Any) -> bytes:
@@ -481,6 +483,22 @@ def _mcp_value(path: Path, key: str) -> tuple[bool, Any]:
 def _mcp_hash(path: Path, key: str) -> str:
     exists, value = _mcp_value(path, key)
     return _json_hash({"exists": exists, "value": value if exists else None})
+
+
+def _managed_mcp_hash(path: Path, key: str, migrated_key: str | None = None) -> str:
+    exists, value = _mcp_value(path, key)
+    state: dict[str, Any] = {
+        "exists": exists,
+        "value": value if exists else None,
+    }
+    if migrated_key is not None:
+        migrated_exists, migrated_value = _mcp_value(path, migrated_key)
+        state["migrated"] = {
+            "key": migrated_key,
+            "exists": migrated_exists,
+            "value": migrated_value if migrated_exists else None,
+        }
+    return _json_hash(state)
 
 
 def _write_bytes_atomic(path: Path, content: bytes) -> None:
@@ -984,6 +1002,19 @@ class InstallTransaction:
             key = record.get("server_key")
             if key != name or record.get("identity") != f"mcp:{target}#{key}":
                 raise InstallConflict("journal MCP identity is malformed")
+            migrated_key = record.get("migrated_server_key")
+            if migrated_key is not None:
+                if (
+                    not isinstance(migrated_key, str)
+                    or not migrated_key
+                    or migrated_key == key
+                    or "\x00" in migrated_key
+                ):
+                    raise InstallConflict("journal migrated MCP key is malformed")
+                if not isinstance(record.get("before_migrated_key_exists"), bool):
+                    raise InstallConflict(
+                        "journal migrated MCP before-image is malformed"
+                    )
         else:
             raise InstallConflict("journal record kind is malformed")
         for key in ("before_hash", "installed_hash"):
@@ -1387,6 +1418,25 @@ class InstallTransaction:
                 if not isinstance(server, Mapping):
                     raise ValueError("mcp_server requires an object server")
                 server_value = json.loads(_canonical_json(dict(server)).decode("utf-8"))
+                migrate_from_key = raw.get("migrate_from_key")
+                migrate_from_args = raw.get("migrate_from_args")
+                if migrate_from_key is not None:
+                    migrate_from_key = str(migrate_from_key)
+                    if (
+                        not migrate_from_key
+                        or "\x00" in migrate_from_key
+                        or migrate_from_key == key
+                    ):
+                        raise ValueError("mcp_server migrate_from_key is invalid")
+                    if (
+                        not isinstance(migrate_from_args, Sequence)
+                        or isinstance(migrate_from_args, (str, bytes))
+                        or not all(isinstance(item, str) for item in migrate_from_args)
+                    ):
+                        raise ValueError("mcp_server migrate_from_args must be a string sequence")
+                    migrate_from_args = tuple(migrate_from_args)
+                elif migrate_from_args is not None:
+                    raise ValueError("mcp_server migrate_from_args requires migrate_from_key")
                 identity = f"mcp:{target}#{key}"
                 normalized.append(
                     _Change(
@@ -1396,6 +1446,8 @@ class InstallTransaction:
                         name=key,
                         server_key=key,
                         server=server_value,
+                        migrate_from_key=migrate_from_key,
+                        migrate_from_args=migrate_from_args,
                     )
                 )
             else:
@@ -1444,6 +1496,14 @@ class InstallTransaction:
             if not key or key != name:
                 raise UnsafeInstallPath("managed MCP key is malformed")
             expected_identity = f"mcp:{target}#{key}"
+            migrated_key = record.get("migrated_server_key")
+            if migrated_key is not None and (
+                not isinstance(migrated_key, str)
+                or not migrated_key
+                or migrated_key == key
+                or "\x00" in migrated_key
+            ):
+                raise UnsafeInstallPath("managed migrated MCP key is malformed")
         else:
             raise InstallConflict(f"unknown managed content kind: {kind}")
         if record.get("identity") != expected_identity:
@@ -1471,14 +1531,41 @@ class InstallTransaction:
         key = change.server_key if isinstance(change, _Change) else str(change["server_key"])
         if key is None:
             raise ValueError("missing MCP server key")
-        return _mcp_hash(target, key)
+        migrated_key = (
+            change.migrate_from_key
+            if isinstance(change, _Change)
+            else change.get("migrated_server_key")
+        )
+        return _managed_mcp_hash(
+            target,
+            key,
+            str(migrated_key) if migrated_key is not None else None,
+        )
 
     @staticmethod
-    def _desired_hash(change: _Change) -> str:
+    def _desired_hash(change: _Change, migrated_key: str | None = None) -> str:
         if change.kind == "skill":
             assert change.source is not None
             return _path_hash(change.source)
-        return _json_hash({"exists": True, "value": dict(change.server or {})})
+        state: dict[str, Any] = {"exists": True, "value": dict(change.server or {})}
+        if migrated_key is not None:
+            state["migrated"] = {
+                "key": migrated_key,
+                "exists": False,
+                "value": None,
+            }
+        return _json_hash(state)
+
+    @staticmethod
+    def _migration_matches(change: _Change) -> bool:
+        if change.kind != "mcp" or change.migrate_from_key is None:
+            return False
+        exists, value = _mcp_value(change.target, change.migrate_from_key)
+        return bool(
+            exists
+            and isinstance(value, Mapping)
+            and value.get("args") == list(change.migrate_from_args or ())
+        )
 
     def _conflicts(self, state: Mapping[str, Any]) -> list[dict[str, Any]]:
         conflicts = []
@@ -1562,7 +1649,35 @@ class InstallTransaction:
         active_by_id = {
             str(item["identity"]): dict(item) for item in (active or {}).get("managed", [])
         }
-        desired = {item.identity: self._desired_hash(item) for item in normalized}
+        migrated_keys: dict[str, str] = {}
+        superseded_legacy: dict[str, dict[str, Any]] = {}
+        for item in normalized:
+            if item.kind != "mcp" or item.migrate_from_key is None:
+                continue
+            current_record = active_by_id.get(item.identity)
+            if current_record is not None and current_record.get(
+                "migrated_server_key"
+            ) == item.migrate_from_key:
+                migrated_keys[item.identity] = item.migrate_from_key
+                continue
+            legacy_identity = f"mcp:{item.target}#{item.migrate_from_key}"
+            legacy_record = active_by_id.get(legacy_identity)
+            legacy_value = (
+                legacy_record.get("installed_value")
+                if isinstance(legacy_record, Mapping)
+                else None
+            )
+            if isinstance(legacy_value, Mapping) and legacy_value.get("args") == list(
+                item.migrate_from_args or ()
+            ):
+                migrated_keys[item.identity] = item.migrate_from_key
+                superseded_legacy[item.identity] = active_by_id.pop(legacy_identity)
+            elif self._migration_matches(item):
+                migrated_keys[item.identity] = item.migrate_from_key
+        desired = {
+            item.identity: self._desired_hash(item, migrated_keys.get(item.identity))
+            for item in normalized
+        }
         changed = [
             item
             for item in normalized
@@ -1610,6 +1725,18 @@ class InstallTransaction:
                     servers = current.setdefault("mcpServers", {})
                     if not isinstance(servers, dict):
                         raise ValueError("mcpServers must be an object")
+                    migrated_key = migrated_keys.get(item.identity)
+                    if migrated_key is not None and migrated_key in servers:
+                        migrated_value = servers[migrated_key]
+                        if not (
+                            isinstance(migrated_value, Mapping)
+                            and migrated_value.get("args")
+                            == list(item.migrate_from_args or ())
+                        ):
+                            raise InstallConflict(
+                                "historical MCP entry changed during migration"
+                            )
+                        servers.pop(migrated_key)
                     servers[str(item.server_key)] = dict(item.server or {})
                     target_guards.write_bytes(stage, _canonical_json(current))
                 stages[item.identity] = stage
@@ -1652,6 +1779,20 @@ class InstallTransaction:
                             "installed_value": dict(item.server or {}),
                         }
                     )
+                    migrated_key = migrated_keys.get(item.identity)
+                    if migrated_key is not None:
+                        migrated_exists, migrated_value = _mcp_value(
+                            item.target, migrated_key
+                        )
+                        record.update(
+                            {
+                                "migrated_server_key": migrated_key,
+                                "before_migrated_key_exists": migrated_exists,
+                                "before_migrated_value": (
+                                    migrated_value if migrated_exists else None
+                                ),
+                            }
+                        )
                 records.append(record)
 
             managed_by_id = dict(active_by_id)
@@ -1667,10 +1808,34 @@ class InstallTransaction:
                             "before_hash",
                             "before_key_exists",
                             "before_value",
+                            "before_migrated_key_exists",
+                            "before_migrated_value",
                         )
                         if key in record
                     }
                     baseline["transaction_id"] = transaction_id
+                    legacy_record = superseded_legacy.get(item.identity)
+                    if legacy_record is not None:
+                        legacy_baseline = legacy_record.get("baseline")
+                        if not isinstance(legacy_baseline, Mapping):
+                            raise InstallConflict(
+                                "historical MCP baseline is malformed"
+                            )
+                        for key in (
+                            "before_exists",
+                            "backup",
+                            "before_hash",
+                            "transaction_id",
+                        ):
+                            baseline[key] = legacy_baseline.get(key)
+                        baseline["before_migrated_key_exists"] = bool(
+                            legacy_baseline.get("before_key_exists")
+                        )
+                        baseline["before_migrated_value"] = (
+                            legacy_baseline.get("before_value")
+                            if legacy_baseline.get("before_key_exists")
+                            else None
+                        )
                 managed = {
                     "kind": item.kind,
                     "identity": item.identity,
@@ -1686,6 +1851,10 @@ class InstallTransaction:
                             "installed_value": dict(item.server or {}),
                         }
                     )
+                    if record.get("migrated_server_key") is not None:
+                        managed["migrated_server_key"] = record[
+                            "migrated_server_key"
+                        ]
                 managed_by_id[item.identity] = managed
             managed_records = sorted(managed_by_id.values(), key=lambda item: item["identity"])
             managed_hash = _aggregate_hash(managed_records)
@@ -1770,10 +1939,11 @@ class InstallTransaction:
             self._inject(
                 "verification", {"transaction_id": transaction_id, "records": records}
             )
-            for item in changed:
-                actual = self._current_hash(item)
-                if actual != desired[item.identity]:
-                    raise RuntimeError(f"installation verification failed: {item.identity}")
+            for record in records:
+                actual = self._current_hash(record)
+                identity = str(record["identity"])
+                if actual != desired[identity]:
+                    raise RuntimeError(f"installation verification failed: {identity}")
 
             for identity, path in tuple(displaced.items()):
                 self._inject(
@@ -2073,6 +2243,13 @@ class InstallTransaction:
                 servers[key] = baseline.get("before_value")
             else:
                 servers.pop(key, None)
+            migrated_key = managed.get("migrated_server_key")
+            if migrated_key is not None:
+                migrated_key = str(migrated_key)
+                if baseline.get("before_migrated_key_exists"):
+                    servers[migrated_key] = baseline.get("before_migrated_value")
+                else:
+                    servers.pop(migrated_key, None)
             config_existed = bool(baseline.get("before_exists"))
             desired_exists = config_existed or bool(servers) or set(data) != {"mcpServers"}
             backup: str | None = None

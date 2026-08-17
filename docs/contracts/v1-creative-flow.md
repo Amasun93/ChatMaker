@@ -24,10 +24,13 @@
 
 ## 专业模块
 
+- ChatMaker：唯一面向用户的入口，理解作品目标并在内部调用专业模块。
 - ChatDuino：板卡、模块、接线、代码、编译、烧录、串口和实物确认。
 - ChatWeb：独立课堂工具，或用户明确需要后的硬件网页交互。
 - ChatCAD：制造入口；Chat2D 面向激光切割，Chat3D 面向 3D 打印。
 - ChatMaker Knowledge：共享板卡、模块、库、示例、机械和设备工艺事实。
+
+ChatDuino、ChatWeb 和 ChatCAD 保持独立目录，便于分别维护和测试，但不作为用户安装后的独立入口。它们只读取 ChatMaker 仓库内的规范数据和运行工具，不在运行时查询旧 Nano、旧星核板或其他外部 Skill。
 
 ## 完成证据
 

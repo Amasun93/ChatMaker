@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Install ChatMaker Skills and the Nano stdio MCP without replacing unrelated settings."""
+"""Install ChatMaker Skills and its generic stdio MCP without replacing unrelated settings."""
 
 from __future__ import annotations
 
@@ -16,7 +16,9 @@ from chatmaker.installers.skill_bundle import (
 from chatmaker.installers.transaction import InstallTransaction, canonical_install_path
 
 
-SERVER_KEY = "arduino-nano-mindplus"
+SERVER_KEY = "chatmaker"
+LEGACY_SERVER_KEY = "arduino-nano-mindplus"
+SERVER_ARGS = ["-m", "chatmaker.integrations.mcp"]
 PACKAGE_ROOT = Path(__file__).resolve().parents[1]
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 SKILL_MANIFEST_NAME = "chatmaker-workbuddy-skills.json"
@@ -53,7 +55,7 @@ def install(
     server = {
         "type": "stdio",
         "command": str(Path(python_executable).resolve()) if Path(python_executable).exists() else python_executable,
-        "args": ["-m", "chatmaker.integrations.mcp"],
+        "args": list(SERVER_ARGS),
         "cwd": str(PACKAGE_ROOT.parent.resolve()),
         "env": {"PYTHONUTF8": "1", "PYTHONUNBUFFERED": "1"},
         "defer_loading": False,
@@ -76,6 +78,8 @@ def install(
                 "path": config_path,
                 "server_key": SERVER_KEY,
                 "server": server,
+                "migrate_from_key": LEGACY_SERVER_KEY,
+                "migrate_from_args": list(SERVER_ARGS),
             },
         ]
     )

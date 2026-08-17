@@ -50,10 +50,20 @@ def prepared_runtime(directory: Path) -> Path:
     rows.append(["chatmaker-0.1.0rc5.dist-info/RECORD", "", ""])
     record = io.StringIO(newline="")
     csv.writer(record, lineterminator="\n").writerows(rows)
+    def frozen_wheel_info(name: str) -> zipfile.ZipInfo:
+        info = zipfile.ZipInfo(name, date_time=(2026, 8, 14, 0, 0, 0))
+        info.create_system = 3
+        info.external_attr = 0o100644 << 16
+        info.compress_type = zipfile.ZIP_DEFLATED
+        return info
+
     with zipfile.ZipFile(wheel, "w") as archive:
         for name, value in payloads.items():
-            archive.writestr(name, value)
-        archive.writestr("chatmaker-0.1.0rc5.dist-info/RECORD", record.getvalue())
+            archive.writestr(frozen_wheel_info(name), value)
+        archive.writestr(
+            frozen_wheel_info("chatmaker-0.1.0rc5.dist-info/RECORD"),
+            record.getvalue(),
+        )
     digest = hashlib.sha256(wheel.read_bytes()).hexdigest()
     manifest = {
         "schema_version": 2,
@@ -74,27 +84,27 @@ class ReleasePackageTests(unittest.TestCase):
         registry = json.loads(registry_path.read_text(encoding="utf-8"))
         expected = {
             "chatmaker-board-arduino-nano-classic-knowledge": (
-                "chatmaker-board-arduino-nano-classic-knowledge-1.1.0.cmpack",
-                10908,
-                "520c7a3fd097380b3424832beae60af3b6a3ca7286c8c0f2c15f83e114bea8de",
+                "chatmaker-board-arduino-nano-classic-knowledge-1.2.0.cmpack",
+                11785,
+                "c836cb390eaecc7c632d45722900e301499a19682aeab4a5357b359b357bcf20",
             ),
             "chatmaker-board-arduino-uno-r3-knowledge": (
-                "chatmaker-board-arduino-uno-r3-knowledge-1.1.0.cmpack",
-                10712,
-                "13ccaaeddae9ea834a8b2d05d0fb767474343c36c05f7bce5295b5dc320fd914",
+                "chatmaker-board-arduino-uno-r3-knowledge-1.2.0.cmpack",
+                11244,
+                "f925ccbd7f91fe7fd0e665adb720b91f22db46c50f63358e352735c9f3b93713",
             ),
             "chatmaker-board-esp32-devkit-v1-knowledge": (
-                "chatmaker-board-esp32-devkit-v1-knowledge-1.1.0.cmpack",
-                10902,
-                "2c1ec4d80c43db90547683c8fd3a7ec754acd1dd02389d4bfa1655bcf4b8311e",
+                "chatmaker-board-esp32-devkit-v1-knowledge-1.2.0.cmpack",
+                11621,
+                "c02249952c827244ce1273f20760a36d266ab17ecc7bd87ef67a8cc4a1fc8a2c",
             ),
             "chatmaker-board-idmc-0001-starcore-v4-2-2-knowledge": (
-                "chatmaker-board-idmc-0001-starcore-v4-2-2-knowledge-1.0.0.cmpack",
-                14752,
-                "ef8c4635db058cf25399fa1840e43386a8e0ca3850199076e6b5986010e534b7",
+                "chatmaker-board-idmc-0001-starcore-v4-2-2-knowledge-1.1.0.cmpack",
+                16070,
+                "abaefb3078e2a9b08fd7e6d09ad5c4d16017e39576f4794de74947dda735479c",
             ),
         }
-        self.assertEqual(registry["sequence"], 2)
+        self.assertEqual(registry["sequence"], 3)
         generated_at = datetime.fromisoformat(registry["generated_at"].replace("Z", "+00:00"))
         expires_at = datetime.fromisoformat(registry["expires_at"].replace("Z", "+00:00"))
         self.assertLessEqual((expires_at - generated_at).days, 31)
@@ -104,7 +114,7 @@ class ReleasePackageTests(unittest.TestCase):
             artifact = ROOT / "distribution" / "packs" / filename
             self.assertEqual(item["url"], (
                 "https://raw.githubusercontent.com/Amasun93/ChatMaker/"
-                "d59f52648e832cd732c279b874c22c7b9a051aa2/distribution/packs/"
+                "1556a055d9625409e9380f4e6abdf7c0e95778fc/distribution/packs/"
                 + filename
             ))
             self.assertEqual(item["length"], artifact.stat().st_size)
@@ -342,6 +352,9 @@ class ReleasePackageTests(unittest.TestCase):
         self.assertIn(prefix + "skills/chatduino/SKILL.md", names)
         self.assertIn(prefix + "skills/chatweb/SKILL.md", names)
         self.assertIn(prefix + "skills/chatcad/SKILL.md", names)
+        self.assertIn(prefix + "skills/chatmaker/agents/openai.yaml", names)
+        for specialist in ("chatduino", "chatweb", "chatcad"):
+            self.assertNotIn(prefix + f"skills/{specialist}/agents/openai.yaml", names)
         self.assertIn(prefix + "runtime/chatmaker/installers/codex.py", names)
         self.assertIn(prefix + "runtime/chatmaker/installers/workbuddy.py", names)
         self.assertIn(prefix + "runtime/chatmaker/installers/skill_bundle.py", names)
@@ -365,15 +378,15 @@ class ReleasePackageTests(unittest.TestCase):
         )
         self.assertEqual(
             len([name for name in names if name.startswith(prefix + "packs/components/")]),
-            12,
+            13,
         )
         self.assertEqual(
             len([name for name in names if name.startswith(prefix + "packs/recipes/")]),
-            14,
+            16,
         )
         self.assertEqual(
             len([name for name in names if name.startswith(prefix + "knowledge/boards/")]),
-            3,
+            4,
         )
         forbidden_parts = {
             ".git",

@@ -4,17 +4,17 @@
 
 ## rc5 之后的当前源码 / Current source after rc5
 
-这次源码更新没有创建新的 GitHub Release，也没有改写 rc1–rc5 的历史证据。它新增确定性的最小 `ChatMaker-Core-<version>.zip`：只包含运行层、三个 Skill、schema、3/12/14 规范记录、三个紧凑索引、当前案例、最小文档、Python 元数据和许可证；不包含详细 Wiki 正文、知识工作区、测试、缓存或可选 `.cmpack` 成品。
+这次源码更新没有创建新的 GitHub Release，也没有改写 rc1–rc5 的历史证据。它新增确定性的最小 `ChatMaker-Core-<version>.zip`：只包含运行层、四个内部 Skill、schema、4/13/16 规范记录、四个紧凑索引、当前案例、最小文档、Python 元数据和许可证；不包含详细 Knowledge 正文、知识工作区、测试、缓存或可选 `.cmpack` 成品。ChatMaker 是唯一用户入口，ChatDuino、ChatWeb、ChatCAD 只作为内部专业模块。
 
-Nano、Uno 和 DOIT ESP32 DevKit V1 各有一个只读 LLMWiki 知识包。首次读取缺少的详细章节时，reader 默认从签名注册表自动验证、下载并激活；第二次复用。已安装版本可离线重校验后读取；缓存只有在签名 receipt 未过期时才能授权新的离线安装。更新和回滚只由 `chatmaker-pack` 处理，不会修改 Codex/WorkBuddy 配置。自动安装范围不包括驱动、Mind+、Arduino Core、Node、Chromium、PATH、安装钩子或管理员操作。
+Nano、Uno、DOIT ESP32 DevKit V1 和星核板各有一个只读 ChatMaker Knowledge 知识包。首次读取缺少的详细章节时，reader 默认从签名注册表自动验证、下载并激活；第二次复用。已安装版本可离线重校验后读取；缓存只有在签名 receipt 未过期时才能授权新的离线安装。更新和回滚只由 `chatmaker-pack` 处理，不会修改 Codex/WorkBuddy 配置。自动安装范围不包括驱动、Mind+、Arduino Core、Node、Chromium、PATH、安装钩子或管理员操作。
 
-WorkBuddy 当前源码服务版本为 `1.8.0`，共有 24 个工具，新增共用的 `llmwiki_get`。这条说明描述 rc5 之后的源码，不改变下面 rc5 发布物当时的 `1.7.0` / 23 工具事实。
+WorkBuddy 当前源码服务版本为 `1.13.0`，共有 32 个工具，使用共用的 `knowledge_get` 并包含三个 ChatCAD 工具。这条说明描述 rc5 之后的源码，不改变下面 rc5 发布物当时的 `1.7.0` / 23 工具事实。
 
-This source update creates no new GitHub Release and does not rewrite rc1–rc5 evidence. It adds a deterministic minimal `ChatMaker-Core-<version>.zip` containing runtime code, three Skills, schemas, canonical 3/12/14 records, three compact indexes, current examples, minimal documentation, Python metadata, and the license. Detailed Wiki bodies, the knowledge workspace, tests, caches, and optional built `.cmpack` artifacts are excluded.
+This source update creates no new GitHub Release and does not rewrite rc1–rc5 evidence. It adds a deterministic minimal `ChatMaker-Core-<version>.zip` containing runtime code, four internal Skills, schemas, canonical 4/13/16 records, four compact indexes, current examples, minimal documentation, Python metadata, and the license. Detailed Knowledge bodies, the knowledge workspace, tests, caches, and optional built `.cmpack` artifacts are excluded. ChatMaker is the only user entry; ChatDuino, ChatWeb, and ChatCAD are internal specialists.
 
-Nano, Uno, and DOIT ESP32 DevKit V1 each have one read-only LLMWiki pack. A first detailed-section read verifies, downloads, and activates an absent pack from the signed registry; later reads reuse it. Installed content remains readable after offline revalidation, while cached content can authorize a new offline install only before its signed receipt expires. Only `chatmaker-pack` performs content update and rollback, without editing Codex/WorkBuddy configuration. Automatic content installation never includes drivers, Mind+, Arduino cores, Node, Chromium, PATH changes, hooks, or administrator actions.
+Nano, Uno, DOIT ESP32 DevKit V1, and Starcore each have one read-only ChatMaker Knowledge pack. A first detailed-section read verifies, downloads, and activates an absent pack from the signed registry; later reads reuse it. Installed content remains readable after offline revalidation, while cached content can authorize a new offline install only before its signed receipt expires. Only `chatmaker-pack` performs content update and rollback, without editing Codex/WorkBuddy configuration. Automatic content installation never includes drivers, Mind+, Arduino cores, Node, Chromium, PATH changes, hooks, or administrator actions.
 
-Current source uses WorkBuddy server `1.8.0` with 24 tools, adding shared `llmwiki_get`. The rc5 section below remains an accurate historical description of the rc5 artifact's `1.7.0` / 23 tools.
+Current source uses WorkBuddy server `1.13.0` with 32 tools, including shared `knowledge_get` and three ChatCAD tools. The rc5 section below remains an accurate historical description of the rc5 artifact's `1.7.0` / 23 tools.
 
 ## 中文
 

@@ -91,9 +91,124 @@ class UniversalInstallerTests(unittest.TestCase):
         saved = json.loads((self.workbuddy_home / "mcp.json").read_text(encoding="utf-8"))
         self.assertEqual(saved["mcpServers"]["keep"], {"command": "other"})
         self.assertEqual(
-            saved["mcpServers"]["arduino-nano-mindplus"]["args"],
+            saved["mcpServers"]["chatmaker"]["args"],
             ["-m", "chatmaker.integrations.mcp"],
         )
+
+    def test_auto_migrates_only_the_historical_chatmaker_mcp_key(self):
+        environment = self._environment(workbuddy=True)
+        config = self.workbuddy_home / "mcp.json"
+        original = {
+            "mcpServers": {
+                "keep": {"command": "other"},
+                "arduino-nano-mindplus": {
+                    "command": "python",
+                    "args": ["-m", "chatmaker.integrations.mcp"],
+                    "env": {"OLD": "1"},
+                },
+            },
+            "hostSetting": True,
+        }
+        config.write_text(json.dumps(original, indent=2) + "\n", encoding="utf-8")
+
+        installed = self._run("auto", environment=environment)
+        first_bytes = config.read_bytes()
+        repeated = self._run("auto", environment=environment)
+        saved = json.loads(first_bytes)
+
+        self.assertTrue(installed["success"])
+        self.assertEqual(repeated["status"], "already_current")
+        self.assertEqual(config.read_bytes(), first_bytes)
+        self.assertNotIn("arduino-nano-mindplus", saved["mcpServers"])
+        self.assertEqual(saved["mcpServers"]["keep"], {"command": "other"})
+        self.assertEqual(saved["mcpServers"]["chatmaker"]["args"], ["-m", "chatmaker.integrations.mcp"])
+
+    def test_auto_preserves_a_real_legacy_plugin_and_allows_coexistence(self):
+        environment = self._environment(workbuddy=True)
+        config = self.workbuddy_home / "mcp.json"
+        legacy = {
+            "command": "legacy-nano-server",
+            "args": ["--stdio"],
+            "env": {"TEACHER": "keep-byte-for-byte"},
+        }
+        config.write_text(
+            json.dumps({"mcpServers": {"arduino-nano-mindplus": legacy}}, indent=2) + "\n",
+            encoding="utf-8",
+        )
+
+        self._run("auto", environment=environment)
+        saved = json.loads(config.read_text(encoding="utf-8"))
+
+        self.assertEqual(saved["mcpServers"]["arduino-nano-mindplus"], legacy)
+        self.assertIn("chatmaker", saved["mcpServers"])
+        self.assertEqual(len(saved["mcpServers"]), 2)
+
+    def test_restore_and_uninstall_recover_the_pre_migration_mcp_before_image(self):
+        environment = self._environment(workbuddy=True)
+        config = self.workbuddy_home / "mcp.json"
+        original = {
+            "mcpServers": {
+                "arduino-nano-mindplus": {
+                    "command": "python",
+                    "args": ["-m", "chatmaker.integrations.mcp"],
+                },
+                "keep": {"command": "other"},
+            },
+            "hostSetting": True,
+        }
+        config.write_text(json.dumps(original, indent=2) + "\n", encoding="utf-8")
+
+        installed = self._run("auto", environment=environment)
+        restored = self._run(
+            "restore", installed["transaction_id"], environment=environment
+        )
+
+        self.assertTrue(restored["success"])
+        self.assertEqual(json.loads(config.read_text(encoding="utf-8")), original)
+
+        installed_again = self._run("auto", environment=environment)
+        self.assertTrue(installed_again["success"])
+        uninstalled = self._run("uninstall", environment=environment)
+
+        self.assertTrue(uninstalled["success"])
+        self.assertEqual(json.loads(config.read_text(encoding="utf-8")), original)
+
+    def test_migration_supersedes_old_managed_key_but_uninstall_keeps_original_baseline(self):
+        from chatmaker.installers.transaction import InstallTransaction  # noqa: PLC0415
+
+        environment = self._environment(workbuddy=True)
+        config = self.workbuddy_home / "mcp.json"
+        original = {"mcpServers": {"keep": {"command": "other"}}, "hostSetting": True}
+        config.write_text(json.dumps(original, indent=2) + "\n", encoding="utf-8")
+        legacy = {
+            "command": "python",
+            "args": ["-m", "chatmaker.integrations.mcp"],
+        }
+        prior = InstallTransaction(
+            root=self.state_root,
+            installation_id=self.auto.INSTALLATION_ID,
+        ).apply(
+            [
+                {
+                    "kind": "mcp_server",
+                    "path": config,
+                    "server_key": "arduino-nano-mindplus",
+                    "server": legacy,
+                }
+            ]
+        )
+        self.assertTrue(prior["success"])
+
+        migrated = self._run("auto", environment=environment)
+        self.assertTrue(migrated["success"])
+        saved = json.loads(config.read_text(encoding="utf-8"))
+        self.assertNotIn("arduino-nano-mindplus", saved["mcpServers"])
+        self.assertIn("chatmaker", saved["mcpServers"])
+
+        removed = self._run("uninstall", environment=environment)
+
+        self.assertTrue(removed["success"])
+        self.assertEqual(json.loads(config.read_text(encoding="utf-8")), original)
 
     def test_repeat_auto_is_idempotent_and_reports_unchanged(self):
         """Catches repeat installation creating another transaction or changing host files."""
@@ -290,7 +405,7 @@ class UniversalInstallerTests(unittest.TestCase):
         self.assertEqual(result["status"], "uninstalled")
         self.assertFalse((self.codex_home / "skills" / "chatmaker").exists())
         saved = json.loads(config.read_text(encoding="utf-8"))
-        self.assertNotIn("arduino-nano-mindplus", saved["mcpServers"])
+        self.assertNotIn("chatmaker", saved["mcpServers"])
         self.assertEqual(saved["mcpServers"]["keep"], {"command": "other"})
         self.assertEqual(saved["mcpServers"]["later"], {"command": "teacher-added"})
 

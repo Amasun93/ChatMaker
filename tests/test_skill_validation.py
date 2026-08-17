@@ -76,10 +76,34 @@ class SkillValidationTests(unittest.TestCase):
     def test_checked_in_skills_are_valid(self):
         skill_dirs = sorted(path for path in (ROOT / "skills").iterdir() if path.is_dir())
 
-        self.assertEqual([path.name for path in skill_dirs], ["chatduino", "chatmaker", "chatweb"])
+        self.assertEqual([path.name for path in skill_dirs], ["chatcad", "chatduino", "chatmaker", "chatweb"])
         for skill in skill_dirs:
             with self.subTest(skill=skill.name):
                 self.assertEqual(validate_skill_directory(skill), [])
+
+    def test_internal_specialist_may_omit_user_facing_ui_metadata(self):
+        with tempfile.TemporaryDirectory() as directory:
+            skill = Path(directory) / "chatduino"
+            skill.mkdir()
+            (skill / "SKILL.md").write_text(
+                "---\nname: chatduino\ndescription: Internal hardware specialist.\n---\n\n# ChatDuino\n",
+                encoding="utf-8",
+            )
+
+            self.assertEqual(validate_skill_directory(skill), [])
+
+    def test_chatmaker_still_requires_user_facing_ui_metadata(self):
+        with tempfile.TemporaryDirectory() as directory:
+            skill = Path(directory) / "chatmaker"
+            skill.mkdir()
+            (skill / "SKILL.md").write_text(
+                "---\nname: chatmaker\ndescription: Public router.\n---\n\n# ChatMaker\n",
+                encoding="utf-8",
+            )
+
+            errors = validate_skill_directory(skill)
+
+        self.assertTrue(any("missing UI metadata" in error for error in errors))
 
 
 if __name__ == "__main__":
