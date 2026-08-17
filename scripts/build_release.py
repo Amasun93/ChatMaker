@@ -12,6 +12,7 @@ CORE_PATHS = (
     "README.md",
     "README_EN.md",
     "pyproject.toml",
+    "scripts/bootstrap.py",
     "docs/installation.md",
     "examples",
     "packs/boards",

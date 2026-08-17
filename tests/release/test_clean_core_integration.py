@@ -81,6 +81,73 @@ class CleanCoreIntegrationTests(unittest.TestCase):
         suffix = ".exe" if os.name == "nt" else ""
         return scripts / f"{name}{suffix}"
 
+    def test_extracted_core_bootstrap_installs_the_versioned_runtime_and_runs_auto(self):
+        """Catches a release whose bundled bootstrap cannot start from a fresh user HOME."""
+        with tempfile.TemporaryDirectory(prefix="chatmaker-bootstrap-clean-") as directory:
+            base = Path(directory)
+            build = base / "build"
+            extract = base / "extract"
+            home = base / "fresh 用户 home"
+            build.mkdir()
+            extract.mkdir()
+            build_result = json.loads(
+                self._run(
+                    [
+                        sys.executable,
+                        str(ROOT / "scripts" / "build_release.py"),
+                        "--root",
+                        str(ROOT),
+                        "--output",
+                        str(build),
+                        "--version",
+                        VERSION,
+                    ],
+                    cwd=ROOT,
+                    env=os.environ.copy(),
+                ).stdout
+            )
+            with zipfile.ZipFile(build_result["archive"]) as archive:
+                archive.extractall(extract)
+            core = extract / f"ChatMaker-Core-{VERSION}"
+            environment = os.environ.copy()
+            environment.update(
+                {
+                    "HOME": str(home),
+                    "USERPROFILE": str(home),
+                    "PIP_CONFIG_FILE": os.devnull,
+                    "PIP_DISABLE_PIP_VERSION_CHECK": "1",
+                    "PIP_NO_INDEX": "1",
+                    "PYTHONNOUSERSITE": "1",
+                    "TMP": str(base / "tmp"),
+                    "TEMP": str(base / "tmp"),
+                }
+            )
+            environment.pop("PYTHONPATH", None)
+            (base / "tmp").mkdir()
+            result = json.loads(
+                self._run(
+                    [
+                        sys.executable,
+                        str(core / "scripts" / "bootstrap.py"),
+                        "--archive",
+                        str(build_result["archive"]),
+                        "--checksum",
+                        str(build_result["checksum_file"]),
+                        "--home",
+                        str(home),
+                    ],
+                    cwd=base,
+                    env=environment,
+                    timeout=240,
+                ).stdout
+            )
+
+            self.assertTrue(result["success"])
+            self.assertEqual(result["status"], "installed")
+            self.assertEqual(result["auto"]["status"], "ready_with_limits")
+            self.assertTrue(Path(result["venv"]).is_dir())
+            self.assertTrue(Path(result["launcher"]).is_file())
+
     def test_extracted_core_installs_and_operates_in_fresh_home(self):
         with tempfile.TemporaryDirectory(prefix="chatmaker-clean-core-") as directory:
             base = Path(directory)

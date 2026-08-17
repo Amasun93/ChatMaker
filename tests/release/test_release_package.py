@@ -95,6 +95,17 @@ class ReleasePackageTests(unittest.TestCase):
         prefix = f"ChatMaker-Core-{RELEASE_VERSION}/"
         self.assertFalse(any("knowledge_sources/" in name for name in names), names)
 
+    def test_core_release_contains_the_stdlib_bootstrap_script(self):
+        """Catches publishing a Core archive that cannot install itself on a fresh machine."""
+        builder = load_builder()
+        with tempfile.TemporaryDirectory() as directory:
+            result = builder.build_release(ROOT, Path(directory), RELEASE_VERSION)
+            with zipfile.ZipFile(result["archive"]) as archive:
+                self.assertIn(
+                    f"ChatMaker-Core-{RELEASE_VERSION}/scripts/bootstrap.py",
+                    archive.namelist(),
+                )
+
     def test_core_readme_relative_links_resolve_inside_core(self):
         builder = load_builder()
         with tempfile.TemporaryDirectory() as directory:

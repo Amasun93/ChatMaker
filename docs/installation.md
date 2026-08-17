@@ -16,19 +16,19 @@ Get-FileHash .\dist\ChatMaker-Core-0.1.0-rc5.zip -Algorithm SHA256
 Get-Content .\dist\ChatMaker-Core-0.1.0-rc5.zip.sha256
 ```
 
-两处 SHA-256 一致后，把 Core 解压到长期保留的目录，再创建独立虚拟环境：
+两处 SHA-256 一致后，把 Core 解压到临时目录以取出其中的 bootstrap 脚本；它会再次校验同一 ZIP，并把版本化运行环境安装到 `~/.chatmaker/versions/`：
 
-After the two SHA-256 values match, extract the Core into a persistent directory and create a dedicated virtual environment:
+After the two SHA-256 values match, extract the Core only to obtain its bootstrap script. The script checks the same ZIP again and installs a versioned runtime under `~/.chatmaker/versions/`:
 
 ```powershell
 Expand-Archive .\dist\ChatMaker-Core-0.1.0-rc5.zip -DestinationPath .\core-check
-Set-Location .\core-check\ChatMaker-Core-0.1.0-rc5
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-python -m pip install -e .
-chatmaker-install auto
-chatmaker-install doctor
+python .\core-check\ChatMaker-Core-0.1.0-rc5\scripts\bootstrap.py `
+  --archive .\dist\ChatMaker-Core-0.1.0-rc5.zip `
+  --checksum .\dist\ChatMaker-Core-0.1.0-rc5.zip.sha256
+~\.chatmaker\bin\chatmaker-install.cmd doctor
 ```
+
+macOS/Linux use the same `python .../scripts/bootstrap.py --archive ... --checksum ...` arguments; the resulting launcher is `~/.chatmaker/bin/chatmaker-install`. Bootstrap uses only Python 3.11 standard-library code before Core is installed. It does not use an editable install, and a second run for the same checked archive reuses the verified version while running `chatmaker-install auto` again so host configuration can converge.
 
 Core 内有运行层、三个 Skill、schema、3/12/14 条规范记录、三个紧凑索引和当前案例。它没有详细 Wiki 正文、`knowledge_sources/`、`tests/`、开发缓存或已构建的可选 `.cmpack`。`chatmaker-doctor` 通过只证明这些内置内容可读，不证明任何硬件效果。
 
