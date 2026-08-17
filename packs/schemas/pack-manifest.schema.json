@@ -19,12 +19,13 @@
       "enum": [
         "chatmaker-board-arduino-nano-classic-knowledge",
         "chatmaker-board-arduino-uno-r3-knowledge",
-        "chatmaker-board-esp32-devkit-v1-knowledge"
+        "chatmaker-board-esp32-devkit-v1-knowledge",
+        "chatmaker-board-idmc-0001-starcore-v4-2-2-knowledge"
       ]
     },
     "pack_version": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:-[0-9A-Za-z.-]+)?$"},
     "pack_type": {"const": "knowledge"},
-    "board_id": {"enum": ["arduino-nano-classic", "arduino-uno-r3", "esp32-devkit-v1"]},
+    "board_id": {"enum": ["arduino-nano-classic", "arduino-uno-r3", "esp32-devkit-v1", "idmc-0001-starcore-v4-2-2"]},
     "compatibility": {"$ref": "#/$defs/compatibility"},
     "files": {
       "type": "array",
@@ -86,6 +87,10 @@
     {
       "if": {"properties": {"board_id": {"const": "esp32-devkit-v1"}}},
       "then": {"properties": {"pack_id": {"const": "chatmaker-board-esp32-devkit-v1-knowledge"}}}
+    },
+    {
+      "if": {"properties": {"board_id": {"const": "idmc-0001-starcore-v4-2-2"}}},
+      "then": {"properties": {"pack_id": {"const": "chatmaker-board-idmc-0001-starcore-v4-2-2-knowledge"}}}
     }
   ]
 }

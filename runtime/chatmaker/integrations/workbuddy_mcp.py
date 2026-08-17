@@ -57,9 +57,14 @@ TOOLS = [
             "properties": {
                 "board_id": {
                     "type": "string",
-                    "enum": ["arduino-nano-classic", "arduino-uno-r3", "esp32-devkit-v1"],
+                    "enum": [
+                        "arduino-nano-classic",
+                        "arduino-uno-r3",
+                        "esp32-devkit-v1",
+                        "idmc-0001-starcore-v4-2-2",
+                    ],
                 },
-                "consumer": {"type": "string", "enum": ["chatmaker", "chatduino", "chatweb"]},
+                "consumer": {"type": "string", "enum": ["chatmaker", "chatduino", "chatweb", "chatcad"]},
                 "section_id": {
                     "type": "string",
                     "enum": [

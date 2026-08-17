@@ -1,0 +1,53 @@
+schema_version: "1.0"
+kind: knowledge-index
+board_id: idmc-0001-starcore-v4-2-2
+max_section_bytes: 65536
+sections:
+  - section_id: start-here
+    title: 星核板从这里开始
+    summary: 确认 v4.2.2 板型，按编程、网页或 CAD 目标读取对应资料。
+    consumers: [chatmaker, chatduino, chatweb, chatcad]
+    topics: [identity, workflow, mechanical]
+    pack_id: chatmaker-board-idmc-0001-starcore-v4-2-2-knowledge
+  - section_id: identify-and-safety
+    title: 识别与安全
+    summary: 核对星核板、S/V/G 接口、3.3V 逻辑和供电边界。
+    consumers: [chatmaker, chatduino, chatweb, chatcad]
+    topics: [identity, safety, power]
+    pack_id: chatmaker-board-idmc-0001-starcore-v4-2-2-knowledge
+  - section_id: pins-and-electrical
+    title: 引脚与电气规则
+    summary: 使用 P 引脚映射、I2C 接口和启动敏感引脚规则。
+    consumers: [chatmaker, chatduino, chatweb]
+    topics: [pins, electrical, i2c]
+    pack_id: chatmaker-board-idmc-0001-starcore-v4-2-2-knowledge
+  - section_id: toolchains-and-upload
+    title: Mind+、编译与上传
+    summary: 区分 Mind+ 1.8 当前路线和 2.0 历史路线，分开记录验证状态。
+    consumers: [chatmaker, chatduino]
+    topics: [mindplus, compile, upload]
+    pack_id: chatmaker-board-idmc-0001-starcore-v4-2-2-knowledge
+  - section_id: components-and-wiring
+    title: 模块、接线与机械接口
+    summary: 从自研模块编号、接线规则和机械资料选择安全方案。
+    consumers: [chatmaker, chatduino, chatweb, chatcad]
+    topics: [components, wiring, mechanical]
+    pack_id: chatmaker-board-idmc-0001-starcore-v4-2-2-knowledge
+  - section_id: libraries-and-examples
+    title: 扩展、库与示例模式
+    summary: 按 Mind+ 扩展准备、头文件映射和已清洗代码模式开发。
+    consumers: [chatmaker, chatduino]
+    topics: [libraries, examples, extensions]
+    pack_id: chatmaker-board-idmc-0001-starcore-v4-2-2-knowledge
+  - section_id: web-and-protocol
+    title: 网页与通信协议
+    summary: 在网页和星核板联合项目中先定义消息、端口和验证边界。
+    consumers: [chatmaker, chatduino, chatweb]
+    topics: [web, protocol, serial]
+    pack_id: chatmaker-board-idmc-0001-starcore-v4-2-2-knowledge
+  - section_id: troubleshooting
+    title: 排错与证据状态
+    summary: 按板型、扩展、编译、串口和实物结果逐层定位问题。
+    consumers: [chatmaker, chatduino, chatweb, chatcad]
+    topics: [diagnosis, evidence, physical-fit]
+    pack_id: chatmaker-board-idmc-0001-starcore-v4-2-2-knowledge

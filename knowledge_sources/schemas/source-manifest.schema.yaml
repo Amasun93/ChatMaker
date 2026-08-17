@@ -1,6 +1,6 @@
 $schema: https://json-schema.org/draft/2020-12/schema
 $id: https://chatmaker.dev/schemas/knowledge-source-manifest.schema.yaml
-title: ChatMaker governed LLMWiki source manifest
+title: ChatMaker governed Knowledge source manifest
 type: object
 additionalProperties: false
 required:
@@ -25,7 +25,7 @@ properties:
     type: string
     minLength: 1
   board_id:
-    enum: [arduino-nano-classic, arduino-uno-r3, esp32-devkit-v1]
+    enum: [arduino-nano-classic, arduino-uno-r3, esp32-devkit-v1, idmc-0001-starcore-v4-2-2]
   source_type:
     enum: [canonical-board-documentation, checked-in-project-documentation, owned-local-source]
   canonical_url:

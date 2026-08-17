@@ -435,7 +435,15 @@ class KnowledgeReaderTests(unittest.TestCase):
             }
         )
 
-        self.assertEqual(BOARD_IDS, ("arduino-nano-classic", "arduino-uno-r3", "esp32-devkit-v1"))
+        self.assertEqual(
+            BOARD_IDS,
+            (
+                "arduino-nano-classic",
+                "arduino-uno-r3",
+                "esp32-devkit-v1",
+                "idmc-0001-starcore-v4-2-2",
+            ),
+        )
         self.assertEqual(PACK_IDS[BOARD_ID], PACK_ID)
         self.assertEqual(validate_index_bytes(index)["kind"], "knowledge-index")
         self.assertEqual(

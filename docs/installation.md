@@ -54,9 +54,9 @@ macOS uses the same four evidence arguments with the matching `macos-x86_64` or 
 
 The official signature proves release origin. A trusted-bootstrap rerun provides point-in-time drift detection, quarantine, and repair only. This is not OS secure boot and does not resist an attacker who already has arbitrary same-user writes, can replace the verifier/launcher, or races after verification. The stable launcher fails closed and is repaired by trusted bootstrap, but does not prove its own trustworthiness.
 
-Core 内有运行层、四个 Skill、schema、4/12/14 条规范记录、三个详细板卡知识索引、首批机械资料和当前案例。它没有扩展知识正文、`knowledge_sources/`、`tests/`、开发缓存或已构建的可选 `.cmpack`。`chatmaker-doctor` 通过只证明这些内置内容可读，不证明任何硬件效果。
+Core 内有运行层、四个 Skill、schema、4/12/14 条规范记录、四个详细板卡知识索引、首批机械资料和当前案例。它没有扩展知识正文、`knowledge_sources/`、`tests/`、开发缓存或已构建的可选 `.cmpack`。`chatmaker-doctor` 通过只证明这些内置内容可读，不证明任何硬件效果。
 
-The Core contains runtime code, four Skills, schemas, the canonical 4/12/14 records, three detailed board indexes, the first mechanical profiles, and current examples. It excludes extended knowledge bodies, `knowledge_sources/`, `tests/`, development caches, and built optional `.cmpack` artifacts. A successful doctor proves only that built-in software content is readable.
+The Core contains runtime code, four Skills, schemas, the canonical 4/12/14 records, four detailed board indexes, the first mechanical profiles, and current examples. It excludes extended knowledge bodies, `knowledge_sources/`, `tests/`, development caches, and built optional `.cmpack` artifacts. A successful doctor proves only that built-in software content is readable.
 
 ### 第一次自动读取 / First automatic read
 

@@ -24,7 +24,7 @@ These Version 1 names are the stable entrypoints for ChatMaker Knowledge.
 ## Index request
 
 Required string fields are `action=index`, `board_id`, and `consumer`.
-Consumers are `chatmaker`, `chatduino`, or `chatweb`.
+Consumers are `chatmaker`, `chatduino`, `chatweb`, or `chatcad`.
 
 <!-- contract:index.request -->
 ```json

@@ -15,8 +15,9 @@ BOARD_IDS = (
     "arduino-nano-classic",
     "arduino-uno-r3",
     "esp32-devkit-v1",
+    "idmc-0001-starcore-v4-2-2",
 )
-CONSUMERS = ("chatmaker", "chatduino", "chatweb")
+CONSUMERS = ("chatmaker", "chatduino", "chatweb", "chatcad")
 SECTION_IDS = (
     "start-here",
     "identify-and-safety",
@@ -34,6 +35,7 @@ SOURCE_REFS = {
     "arduino-nano-classic": "source-arduino-nano-classic-documentation",
     "arduino-uno-r3": "source-arduino-uno-r3-documentation",
     "esp32-devkit-v1": "source-esp32-devkit-v1-doit-board-definition",
+    "idmc-0001-starcore-v4-2-2": "source-idmc-0001-starcore-v4-2-2-owned-docs",
 }
 
 _SAFE_ID = re.compile(r"^[a-z0-9][a-z0-9-]*$")

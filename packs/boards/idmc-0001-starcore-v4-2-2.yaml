@@ -6,6 +6,8 @@ family: esp32
 mcu: ESP32
 logic_voltage: 3.3
 sources:
+  - title: Starcore owned board and Mind+ documentation
+    url: https://github.com/Amasun93/ChatMaker/tree/main/knowledge_sources
   - title: ChatMaker sanitized Starcore mechanical knowledge
     url: https://github.com/Amasun93/ChatMaker/tree/main/knowledge/mechanical
 verification:
@@ -28,13 +30,34 @@ verification:
 pins:
   - id: P0
     capabilities: [analog-input, digital]
+  - id: P1
+    capabilities: [analog-input, digital]
+  - id: P2
+    capabilities: [analog-input, input-only]
+  - id: P3
+    capabilities: [analog-input, input-only]
+  - id: P13
+    capabilities: [digital, pwm, spi-sck]
+  - id: P14
+    capabilities: [digital, pwm, spi-miso]
+  - id: P15
+    capabilities: [digital, pwm]
+  - id: P19
+    capabilities: [i2c-scl, shared]
+  - id: P20
+    capabilities: [i2c-sda, spi-mosi, shared]
   - id: 3V3
     capabilities: [power]
   - id: GND
     capabilities: [ground, shared]
 constraints:
+  - ESP32 input signals must remain at or below 3.3V; a 5V-powered module does not guarantee a safe signal level.
+  - P2 and P3 are input-only; P5, P11, P16, P25, P27 and P28 require startup-state caution.
+  - In Mind+ choose the mPython-compatible target, but use Starcore physical wiring rather than copying another board image.
   - Use the exact v4.2.2 mechanical profile for CAD work.
   - Physical fit, supplied screws and connector clearance remain unverified.
 toolchains:
-  - id: mindplus-mpython-compatible
-    status: planned
+  - id: mindplus-1.8-mpython
+    status: source_reviewed_current
+  - id: mindplus-2.0-mpython
+    status: historical_only

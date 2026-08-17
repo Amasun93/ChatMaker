@@ -15,12 +15,12 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "runtime"))
 
 from chatmaker.knowledge_semantics import (  # noqa: E402
+    BOARD_IDS,
     KnowledgeSemanticError,
     validate_page_bytes,
 )
 
 
-BOARD_IDS = ("arduino-nano-classic", "arduino-uno-r3", "esp32-devkit-v1")
 MAX_SECTION_BYTES = 65_536
 
 

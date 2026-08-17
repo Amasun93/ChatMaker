@@ -120,17 +120,23 @@ class KnowledgePublicationPipelineTests(unittest.TestCase):
         result = self.validate(ROOT)
 
         self.assertTrue(result["success"], result["errors"])
-        self.assertEqual(result["counts"], {"manifests": 3, "pages": 24})
+        self.assertEqual(result["counts"], {"manifests": 4, "pages": 32})
         expected_boards = {
             "arduino-nano-classic",
             "arduino-uno-r3",
             "esp32-devkit-v1",
+            "idmc-0001-starcore-v4-2-2",
         }
         actual_boards = set()
         for path in (ROOT / "knowledge_sources" / "manifests").glob("*.yaml"):
             manifest = yaml.safe_load(path.read_text(encoding="utf-8"))
             actual_boards.add(manifest["board_id"])
-            self.assertEqual(manifest["cleaning_verified"]["status"], "unverified")
+            expected_cleaning = (
+                "verified"
+                if manifest["board_id"] == "idmc-0001-starcore-v4-2-2"
+                else "unverified"
+            )
+            self.assertEqual(manifest["cleaning_verified"]["status"], expected_cleaning)
             self.assertEqual(manifest["publication_approved"]["status"], "verified")
             self.assertEqual(len(manifest["page_declarations"]), 8)
             if manifest["board_id"] in {"arduino-nano-classic", "arduino-uno-r3"}:
@@ -188,7 +194,7 @@ class KnowledgePublicationPipelineTests(unittest.TestCase):
             result = self.validate(Path(directory))
 
         self.assertTrue(result["success"], result["errors"])
-        self.assertEqual(result["counts"], {"manifests": 3, "pages": 1})
+        self.assertEqual(result["counts"], {"manifests": 4, "pages": 1})
 
     def test_page_uses_exact_six_fields_and_a_nonempty_body(self):
         for body, extra_frontmatter in (

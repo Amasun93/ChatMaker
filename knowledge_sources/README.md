@@ -1,6 +1,6 @@
-# LLMWiki source workspace
+# ChatMaker Knowledge source workspace
 
-This directory is the publication gate for future ChatMaker LLMWiki pages. It
+This directory is the publication gate for ChatMaker Knowledge pages. It
 does not change the canonical board, component, recipe, or verification records
 under `packs/`.
 
@@ -30,14 +30,14 @@ knowledge_sources/
         <section-id>.md
 ```
 
-The current workspace contains eight approved pages for each of the three
-boards (24 pages total). A page must carry the exact six-field YAML frontmatter
+The current workspace contains eight approved pages for each of four boards
+(32 pages total). A page must carry the exact six-field YAML frontmatter
 contract with its stable ID, exact board ID, section ID, and `source_refs`; its
 nonempty body alone is limited to 65,536 UTF-8 bytes. The validator rejects
 paths outside that layout, unknown sources, malformed frontmatter, duplicate
 stable IDs, and any declared page whose source has not separately received
 publication approval.
 
-LLMWiki is a file-system method: ordinary YAML manifests and Markdown files
-validated and later packed by ChatMaker. It is not a required external product
-or service.
+The structure follows the persistent LLM-maintained wiki method, but its public
+product name and runtime entrypoint are ChatMaker Knowledge. No external wiki
+product or service is required.

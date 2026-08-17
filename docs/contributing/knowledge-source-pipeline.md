@@ -1,7 +1,7 @@
-# LLMWiki knowledge-source pipeline
+# ChatMaker Knowledge source pipeline
 
-This is the local, reviewable route from a useful board source to a future
-LLMWiki pack. It deliberately keeps source handling, publishing approval, and
+This is the local, reviewable route from a useful board source to a governed
+ChatMaker Knowledge pack. It deliberately keeps source handling, publishing approval, and
 hardware evidence separate.
 
 ## Before writing a page
@@ -27,7 +27,7 @@ hardware evidence separate.
    ```
 
 6. Add the Markdown page only after that declaration. Its YAML frontmatter must
-   include `schema_version: "1.0"`, `kind: llmwiki-page`, `stable_id`,
+   include `schema_version: "1.0"`, `kind: knowledge-page`, `stable_id`,
    `board_id`, `section_id`, and `source_refs`. `source_refs` must name the
    checked-in manifest IDs used by the page.
 
@@ -44,7 +44,8 @@ manifest, an unapproved declaration, an escaping path, malformed frontmatter,
 unsupported schema version, duplicate stable ID, missing source reference, or a
 page body over 65,536 UTF-8 bytes. It writes nothing and is suitable for CI.
 
-LLMWiki here means a file-system method: YAML records and Markdown pages that
-can later be built into a passive pack. No external LLMWiki product is required.
+The source workspace uses a persistent file-system wiki method: YAML records
+and Markdown pages that can later be built into a passive pack. The public
+module name is ChatMaker Knowledge; no external wiki product is required.
 The current task creates the gate only; it does not publish pages or assert that
 source, compile, upload, serial, or physical hardware evidence has changed.

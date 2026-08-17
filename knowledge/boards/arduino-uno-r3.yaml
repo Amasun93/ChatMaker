@@ -6,13 +6,13 @@ sections:
   - section_id: start-here
     title: Start here
     summary: Choose the exact board and workflow.
-    consumers: [chatmaker, chatduino, chatweb]
+    consumers: [chatmaker, chatduino, chatweb, chatcad]
     topics: [identity, workflow]
     pack_id: chatmaker-board-arduino-uno-r3-knowledge
   - section_id: identify-and-safety
     title: Identify and safety
     summary: Confirm identity and review safety boundaries.
-    consumers: [chatmaker, chatduino, chatweb]
+    consumers: [chatmaker, chatduino, chatweb, chatcad]
     topics: [identity, safety]
     pack_id: chatmaker-board-arduino-uno-r3-knowledge
   - section_id: pins-and-electrical
@@ -30,7 +30,7 @@ sections:
   - section_id: components-and-wiring
     title: Components and wiring
     summary: Resolve canonical components and wiring constraints.
-    consumers: [chatmaker, chatduino, chatweb]
+    consumers: [chatmaker, chatduino, chatweb, chatcad]
     topics: [components, wiring]
     pack_id: chatmaker-board-arduino-uno-r3-knowledge
   - section_id: libraries-and-examples

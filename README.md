@@ -156,7 +156,7 @@ chatmaker-pack rollback chatmaker-board-arduino-nano-classic-knowledge --version
 | ChatCAD Alpha | 开发版可用 | Nano、Uno、ESP32、星核板机械资料已接入；可生成 SCAD、DXF、SVG、STL 和参数预览实验室；真实试装待用户验证 |
 | 创作伙伴对话规则 | 已写入 | 尚需独立前向测试 |
 | 数据包和证据状态 | 已验证 | 自动测试与项目 doctor 通过 |
-| ChatMaker Knowledge 渐进知识包 | 本地软件门已验证 | 三个详细板卡知识包、签名注册表、首次自动获取、缓存复用、更新/回滚和本地 override 已覆盖；星核板首批机械资料直接随 Core 提供 |
+| ChatMaker Knowledge 渐进知识包 | 四板卡已接入 | Nano、Uno、ESP32、星核板均有板卡索引、详细知识包和机械资料入口；ChatMaker、ChatDuino、ChatWeb、ChatCAD 共用同一板卡身份 |
 | Nano Mind+ 编译和烧录迁移 | 部分验证 | 原 33 项行为测试已迁移；10 个示例从 ChatMaker 路径真实编译；烧录等待有线 Nano |
 | Uno Mind+ 独立适配器 | 部分验证 | 独立 1.x/2.x FQBN、固定 115200 上传规则、Codex/WorkBuddy 入口和 Blink 真实编译已验证；烧录等待有线 Uno |
 | DOIT ESP32 DevKit V1 | 部分验证 | 官方 `esp32:esp32@3.3.11` 已安装；`prepare-environment` 真实 no-op 成功；`esp32:esp32:esp32doit-devkit-v1` 已通过 Blink 和 AP 案例真实编译；烧录、启动、串口、SoftAP、HTTP 和实体效果仍待实板 |

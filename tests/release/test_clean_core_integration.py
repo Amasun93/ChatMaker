@@ -358,7 +358,7 @@ class CleanCoreIntegrationTests(unittest.TestCase):
                 doctor["packs"]["counts"],
                 {"board": 4, "component": 12, "recipe": 14},
             )
-            self.assertEqual(doctor["packs"]["knowledge_indexes"], 3)
+            self.assertEqual(doctor["packs"]["knowledge_indexes"], 4)
             self.assertEqual(
                 set(doctor["skills"]["results"]),
                 {"chatmaker", "chatduino", "chatweb", "chatcad"},

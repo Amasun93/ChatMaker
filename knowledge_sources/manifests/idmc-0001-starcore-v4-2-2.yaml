@@ -1,0 +1,46 @@
+schema_version: "1.0"
+id: source-idmc-0001-starcore-v4-2-2-owned-docs
+title: IDMC-0001 星核板 v4.2.2 自有资料清洗集
+board_id: idmc-0001-starcore-v4-2-2
+source_type: owned-local-source
+owned_local_source:
+  description: >-
+    Six owned and reviewed Starcore board, wiring, code-pattern, extension,
+    classroom-module, and sanitized mechanical source files. Original source
+    bytes and manufacturing files remain outside this repository.
+  sha256: 1129ceb24d3b1997a8991a12b70936667cf98672870f6d8f44f41735a369218e
+license_use_boundary: >-
+  Publish original rewritten usage guidance and normalized facts only. Do not
+  publish STEP, complete DXF, Gerber, schematic, PCB, production archives,
+  private paths, or source-document bodies.
+cleaning_version: chatmaker-starcore-knowledge-v1
+review_date: "2026-08-17"
+cleaning_verified:
+  status: verified
+  date: "2026-08-17"
+  evidence: Six selected source files were framed deterministically and hashed before writing derivative pages.
+source_reviewed:
+  status: verified
+  date: "2026-08-17"
+  evidence: Board, wiring, Mind+ extension, module evidence, code patterns, and sanitized mechanical facts were reviewed together.
+publication_approved:
+  status: verified
+  date: "2026-08-17"
+  evidence: Approved these eight rewritten passive Knowledge pages; manufacturing assets and private paths remain excluded.
+page_declarations:
+  - stable_id: idmc-0001-starcore-v4-2-2-start-here
+    path: published/boards/idmc-0001-starcore-v4-2-2/start-here.md
+  - stable_id: idmc-0001-starcore-v4-2-2-identify-and-safety
+    path: published/boards/idmc-0001-starcore-v4-2-2/identify-and-safety.md
+  - stable_id: idmc-0001-starcore-v4-2-2-pins-and-electrical
+    path: published/boards/idmc-0001-starcore-v4-2-2/pins-and-electrical.md
+  - stable_id: idmc-0001-starcore-v4-2-2-toolchains-and-upload
+    path: published/boards/idmc-0001-starcore-v4-2-2/toolchains-and-upload.md
+  - stable_id: idmc-0001-starcore-v4-2-2-components-and-wiring
+    path: published/boards/idmc-0001-starcore-v4-2-2/components-and-wiring.md
+  - stable_id: idmc-0001-starcore-v4-2-2-libraries-and-examples
+    path: published/boards/idmc-0001-starcore-v4-2-2/libraries-and-examples.md
+  - stable_id: idmc-0001-starcore-v4-2-2-web-and-protocol
+    path: published/boards/idmc-0001-starcore-v4-2-2/web-and-protocol.md
+  - stable_id: idmc-0001-starcore-v4-2-2-troubleshooting
+    path: published/boards/idmc-0001-starcore-v4-2-2/troubleshooting.md
