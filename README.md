@@ -131,6 +131,8 @@ Skill 负责告诉 AI 应该怎样判断、哪些技术事实不能猜、什么�
 
 这套结构让 AI 保留判断能力，同时在接线安全、端口选择、编译烧录和完成状态上受到明确约束。
 
+V1.0 采用渐进创作流程：先帮助用户跑通最小硬件作品，再按需推荐显示屏、传感器、网页交互、激光切割盒子或 3D 打印外壳。网页和 CAD 不是每个项目的必经步骤。正式主线板卡是 Nano、Uno 和星核板 v4.2.2；Nano、Uno 第一版允许把现有 Mind+ 当作后台工具链。完整边界见 [V1.0 创作流程合同](docs/contracts/v1-creative-flow.md)。
+
 完整设计见 [ChatMaker 创作伙伴设计](https://github.com/Amasun93/ChatMaker/blob/main/docs/plans/2026-08-14-chatmaker-creative-partner-design.md)。
 
 ## 板卡知识怎样按需出现
