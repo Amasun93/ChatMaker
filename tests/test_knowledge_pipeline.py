@@ -41,6 +41,16 @@ def approved_gate() -> dict[str, str]:
 
 
 class KnowledgePublicationPipelineTests(unittest.TestCase):
+    STARCORE_MODULE_IDS = {
+        "IDMD-0001",
+        "IDMD-0002",
+        "IDMD-0021",
+        "IDMS-0001",
+        "IDMS-0003",
+        "IDMS-0008",
+        "IDMS-0009",
+    }
+
     def make_workspace(self, root: Path) -> Path:
         workspace = root / "knowledge_sources"
         shutil.copytree(ROOT / "knowledge_sources", workspace)
@@ -142,6 +152,47 @@ class KnowledgePublicationPipelineTests(unittest.TestCase):
             if manifest["board_id"] in {"arduino-nano-classic", "arduino-uno-r3"}:
                 self.assertEqual(manifest["source_reviewed"]["status"], "unverified")
         self.assertEqual(actual_boards, expected_boards)
+
+    def test_starcore_manifest_governs_exact_seven_module_rewrites(self):
+        manifest = yaml.safe_load(
+            (
+                ROOT
+                / "knowledge_sources"
+                / "manifests"
+                / "idmc-0001-starcore-v4-2-2.yaml"
+            ).read_text(encoding="utf-8")
+        )
+
+        migrations = manifest["module_migrations"]
+        self.assertEqual({item["hardware_id"] for item in migrations}, self.STARCORE_MODULE_IDS)
+        self.assertEqual(len(migrations), len(self.STARCORE_MODULE_IDS))
+        evidence_ids = {item["source_id"] for item in manifest["source_evidence"]}
+        for item in migrations:
+            self.assertTrue(item["approved_rewritten_uses"])
+            self.assertTrue(set(item["source_ids"]).issubset(evidence_ids))
+        for evidence in manifest["source_evidence"]:
+            self.assertRegex(evidence["sha256"], r"^[0-9a-f]{64}$")
+        self.assertIn("normalized facts", manifest["publication_boundary"]["public"])
+        self.assertIn("manufacturing source files", manifest["publication_boundary"]["private"])
+
+    def test_publication_validator_rejects_private_local_source_references(self):
+        for leaked_reference in (r"C:\private\module.txt", "private/module.step"):
+            with self.subTest(leaked_reference=leaked_reference), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                workspace = self.make_workspace(root)
+                manifest_path, manifest = self.manifest(
+                    workspace, "idmc-0001-starcore-v4-2-2"
+                )
+                manifest["source_evidence"][0]["description"] = leaked_reference
+                write_yaml(manifest_path, manifest)
+
+                result = self.validate(root)
+
+                self.assertFalse(result["success"])
+                self.assertTrue(
+                    any("private source reference" in error for error in result["errors"]),
+                    result,
+                )
 
     def test_page_path_is_exact_board_filename_depth_and_section_matches_stem(self):
         with tempfile.TemporaryDirectory() as directory:

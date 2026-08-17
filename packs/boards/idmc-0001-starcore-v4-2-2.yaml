@@ -36,6 +36,10 @@ pins:
     capabilities: [analog-input, input-only]
   - id: P3
     capabilities: [analog-input, input-only]
+  - id: P5
+    capabilities: [digital, onboard-button-a, boot-related]
+  - id: P11
+    capabilities: [digital, onboard-button-b, boot-related]
   - id: P8
     capabilities: [digital, analog-input, pwm, dac]
   - id: P9
@@ -45,7 +49,13 @@ pins:
   - id: P14
     capabilities: [digital, pwm, spi-miso]
   - id: P15
-    capabilities: [digital, pwm]
+    kind: gpio
+    capabilities: [digital, pwm, uart-rx]
+    source_ids: [starcore-board-pin-map-snapshot, starcore-code-patterns-snapshot]
+  - id: P16
+    kind: gpio
+    capabilities: [digital, pwm, uart-tx, boot-related]
+    source_ids: [starcore-board-pin-map-snapshot, starcore-code-patterns-snapshot]
   - id: P19
     capabilities: [i2c-scl, shared]
   - id: P20
@@ -54,8 +64,18 @@ pins:
     capabilities: [digital, ultrasonic-trigger, silkscreen-h]
   - id: P_O
     capabilities: [digital, ultrasonic-echo, silkscreen-o]
+  - id: P25
+    capabilities: [digital, analog-input, touch, boot-related]
+  - id: P27
+    capabilities: [digital, analog-input, touch, boot-related]
+  - id: P28
+    capabilities: [digital, analog-input, touch, boot-related]
   - id: 3V3
     capabilities: [power]
+  - id: 5V
+    kind: power-rail
+    capabilities: [power, connector-bank]
+    source_ids: [starcore-board-pin-map-snapshot]
   - id: GND
     capabilities: [ground, shared]
 constraints:
@@ -64,6 +84,7 @@ constraints:
   - In Mind+ choose the mPython-compatible target, but use Starcore physical wiring rather than copying another board image.
   - Use the exact v4.2.2 mechanical profile for CAD work.
   - Physical fit, supplied screws and connector clearance remain unverified.
+constraint_pin_refs: [P2, P3, P5, P11, P16, P25, P27, P28]
 toolchains:
   - id: mindplus-1.8-mpython
     status: source_reviewed_current

@@ -12,7 +12,7 @@ import yaml
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "runtime"))
 
-from chatmaker.packs import canonical_verification_snapshot, validate_repository  # noqa: E402
+from chatmaker.packs import canonical_verification_snapshot, validate_record, validate_repository  # noqa: E402
 
 
 GATES = {
@@ -282,6 +282,64 @@ class PackValidationTests(unittest.TestCase):
         self.assertGreaterEqual(report.counts["board"], 3)
         self.assertGreaterEqual(report.counts["component"], 1)
         self.assertGreaterEqual(report.counts["recipe"], 1)
+
+    def test_board_constraint_pin_refs_must_exist(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self.make_repository(root)
+            invalid = board()
+            invalid["constraint_pin_refs"] = ["D13", "D12"]
+            write_yaml(root / "boards" / "board-one.yaml", invalid)
+
+            report = self.validate(root)
+
+        self.assertFalse(report.ok)
+        self.assertTrue(
+            any("constraint_pin_refs" in error and "D12" in error for error in report.errors),
+            report.errors,
+        )
+
+    def test_starcore_uart_and_five_volt_contract_is_source_backed(self):
+        record = yaml.safe_load(
+            (ROOT / "packs" / "boards" / "idmc-0001-starcore-v4-2-2.yaml").read_text(
+                encoding="utf-8"
+            )
+        )
+        pins = {pin["id"]: pin for pin in record["pins"]}
+
+        self.assertIn("uart-rx", pins["P15"]["capabilities"])
+        self.assertIn("uart-tx", pins["P16"]["capabilities"])
+        self.assertTrue(pins["P15"]["source_ids"])
+        self.assertTrue(pins["P16"]["source_ids"])
+        self.assertEqual(pins["5V"]["kind"], "power-rail")
+        self.assertIn("connector-bank", pins["5V"]["capabilities"])
+        self.assertNotIn("digital", pins["5V"]["capabilities"])
+        self.assertTrue(pins["5V"]["source_ids"])
+        self.assertTrue(set(record["constraint_pin_refs"]).issubset(pins))
+
+    def test_starcore_uart_and_power_contract_is_semantically_enforced(self):
+        source = yaml.safe_load(
+            (ROOT / "packs" / "boards" / "idmc-0001-starcore-v4-2-2.yaml").read_text(
+                encoding="utf-8"
+            )
+        )
+        cases = []
+        missing_uart_source = deepcopy(source)
+        next(pin for pin in missing_uart_source["pins"] if pin["id"] == "P16").pop(
+            "source_ids"
+        )
+        cases.append((missing_uart_source, "P16", "source_ids"))
+        gpio_five_volt = deepcopy(source)
+        next(pin for pin in gpio_five_volt["pins"] if pin["id"] == "5V")["kind"] = "gpio"
+        cases.append((gpio_five_volt, "5V", "power-rail"))
+
+        for invalid, pin_id, expected in cases:
+            with self.subTest(pin_id=pin_id):
+                errors = validate_record(invalid, ROOT / "packs" / "schemas")
+                self.assertTrue(
+                    any(pin_id in error and expected in error for error in errors),
+                    errors,
+                )
 
     def test_first_component_pack_contains_the_planned_twelve_modules(self):
         expected_ids = {

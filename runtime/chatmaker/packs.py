@@ -75,6 +75,38 @@ def validate_record(record: dict[str, Any], schema_dir: Path) -> list[str]:
                 errors.append(
                     f"verification.{gate_name}.evidence: verified status requires checked_at and evidence"
                 )
+    if kind == "board":
+        pin_ids = {pin.get("id") for pin in record.get("pins", []) if isinstance(pin, dict)}
+        for pin_id in record.get("constraint_pin_refs", []):
+            if pin_id not in pin_ids:
+                errors.append(
+                    f"constraint_pin_refs: constraint references missing board pin {pin_id!r}"
+                )
+        for pin in record.get("pins", []):
+            if not isinstance(pin, dict) or pin.get("kind") != "power-rail":
+                continue
+            capabilities = set(pin.get("capabilities", []))
+            if capabilities.intersection({"digital", "analog-input", "pwm", "gpio"}):
+                errors.append(
+                    f"pins.{pin.get('id')}: a power-rail cannot also be a GPIO capability"
+                )
+        if record.get("id") == "idmc-0001-starcore-v4-2-2":
+            pins_by_id = {
+                pin.get("id"): pin for pin in record.get("pins", []) if isinstance(pin, dict)
+            }
+            for pin_id, uart_role in (("P15", "uart-rx"), ("P16", "uart-tx")):
+                pin = pins_by_id.get(pin_id, {})
+                if uart_role not in pin.get("capabilities", []):
+                    errors.append(f"pins.{pin_id}: Starcore requires source-confirmed {uart_role}")
+                if not pin.get("source_ids"):
+                    errors.append(f"pins.{pin_id}.source_ids: Starcore UART role requires sources")
+            five_volt = pins_by_id.get("5V", {})
+            if five_volt.get("kind") != "power-rail":
+                errors.append("pins.5V: Starcore 5V must be represented as a power-rail")
+            if "connector-bank" not in five_volt.get("capabilities", []):
+                errors.append("pins.5V: Starcore 5V requires a connector-bank capability")
+            if not five_volt.get("source_ids"):
+                errors.append("pins.5V.source_ids: Starcore power interface requires sources")
     return errors
 
 

@@ -62,11 +62,66 @@ properties:
           type: string
           pattern: "^[a-z0-9][a-z0-9-]*$"
         path: {type: string, minLength: 1}
+  source_evidence:
+    type: array
+    minItems: 1
+    uniqueItems: true
+    items:
+      type: object
+      additionalProperties: false
+      required: [source_id, description, sha256]
+      properties:
+        source_id: {type: string, pattern: "^[a-z0-9][a-z0-9-]*$"}
+        description: {type: string, minLength: 1}
+        sha256: {type: string, pattern: "^[0-9a-f]{64}$"}
+  module_migrations:
+    type: array
+    minItems: 1
+    uniqueItems: true
+    items:
+      type: object
+      additionalProperties: false
+      required: [hardware_id, approved_rewritten_uses, source_ids]
+      properties:
+        hardware_id: {type: string, pattern: "^IDM[DS]-[0-9]{4}$"}
+        approved_rewritten_uses:
+          type: array
+          minItems: 1
+          uniqueItems: true
+          items:
+            enum: [normalized-facts, beginner-wiring-guidance, library-api-guidance, derivative-examples, sanitized-mechanical-facts]
+        source_ids:
+          type: array
+          minItems: 1
+          uniqueItems: true
+          items: {type: string, pattern: "^[a-z0-9][a-z0-9-]*$"}
+  publication_boundary:
+    type: object
+    additionalProperties: false
+    required: [public, private]
+    properties:
+      public:
+        type: array
+        minItems: 1
+        uniqueItems: true
+        items: {type: string, minLength: 1}
+      private:
+        type: array
+        minItems: 1
+        uniqueItems: true
+        items: {type: string, minLength: 1}
 oneOf:
   - required: [canonical_url]
     not: {required: [owned_local_source]}
   - required: [owned_local_source]
     not: {required: [canonical_url]}
+allOf:
+  - if:
+      properties:
+        board_id: {const: idmc-0001-starcore-v4-2-2}
+      required: [board_id]
+    then:
+      required: [source_evidence, module_migrations, publication_boundary]
 $defs:
   gate:
     type: object

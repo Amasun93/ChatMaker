@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path, PurePosixPath
+import re
 import stat
 import sys
 from typing import Any
@@ -22,6 +23,26 @@ from chatmaker.knowledge_semantics import (  # noqa: E402
 
 
 MAX_SECTION_BYTES = 65_536
+STARCORE_MODULE_IDS = {
+    "IDMD-0001",
+    "IDMD-0002",
+    "IDMD-0021",
+    "IDMS-0001",
+    "IDMS-0003",
+    "IDMS-0008",
+    "IDMS-0009",
+}
+MANUFACTURING_SOURCE_EXTENSIONS = (
+    "step",
+    "stp",
+    "dxf",
+    "gerber",
+    "gbr",
+    "sch",
+    "pcb",
+    "kicad_pcb",
+    "lcpx",
+)
 
 
 def _error_path(error: Any) -> str:
@@ -112,6 +133,47 @@ def _validate_gate(manifest_path: Path, gate_name: str, gate: Any, errors: list[
         errors.append(f"{manifest_path}: {gate_name}: verified status requires its own date and evidence")
 
 
+def _private_source_reference(value: Any) -> bool:
+    if isinstance(value, dict):
+        return any(_private_source_reference(item) for item in value.values())
+    if isinstance(value, list):
+        return any(_private_source_reference(item) for item in value)
+    if not isinstance(value, str) or "://" in value:
+        return False
+    stripped = value.strip()
+    if re.search(r"(?:^|\s)[A-Za-z]:[\\/]", stripped) or stripped.startswith(("/", "\\\\")):
+        return True
+    extensions = "|".join(re.escape(item) for item in MANUFACTURING_SOURCE_EXTENSIONS)
+    return bool(re.search(rf"(?i)(?:^|[\\/])[^\\/\s]+\.(?:{extensions})(?:$|\s)", stripped))
+
+
+def _validate_starcore_migrations(
+    manifest_path: Path, manifest: dict[str, Any], errors: list[str]
+) -> None:
+    if manifest.get("board_id") != "idmc-0001-starcore-v4-2-2":
+        return
+    source_evidence = manifest.get("source_evidence", [])
+    evidence_ids = {
+        item.get("source_id")
+        for item in source_evidence
+        if isinstance(item, dict) and isinstance(item.get("source_id"), str)
+    }
+    migrations = manifest.get("module_migrations", [])
+    hardware_ids = [
+        item.get("hardware_id") for item in migrations if isinstance(item, dict)
+    ]
+    if len(hardware_ids) != len(set(hardware_ids)) or set(hardware_ids) != STARCORE_MODULE_IDS:
+        errors.append(f"{manifest_path}: module_migrations must contain the exact seven approved hardware IDs")
+    for item in migrations:
+        if not isinstance(item, dict):
+            continue
+        unknown_sources = set(item.get("source_ids", [])) - evidence_ids
+        if unknown_sources:
+            errors.append(
+                f"{manifest_path}: module {item.get('hardware_id')!r} references unknown source IDs {sorted(unknown_sources)}"
+            )
+
+
 def validate_knowledge_publication(root: Path) -> dict[str, Any]:
     root = Path(root).resolve()
     workspace = root / "knowledge_sources"
@@ -153,6 +215,9 @@ def validate_knowledge_publication(root: Path) -> dict[str, Any]:
                 errors.append(f"{path}: schema {_error_path(error)}: {error.message}")
             for gate_name in ("cleaning_verified", "source_reviewed", "publication_approved"):
                 _validate_gate(path, gate_name, manifest.get(gate_name), errors)
+            _validate_starcore_migrations(path, manifest, errors)
+            if _private_source_reference(manifest):
+                errors.append(f"{path}: private source reference is not allowed in a publication manifest")
 
     source_manifests: dict[str, tuple[Path, dict[str, Any]]] = {}
     declarations: dict[str, tuple[Path, dict[str, Any], dict[str, Any]]] = {}
@@ -198,6 +263,10 @@ def validate_knowledge_publication(root: Path) -> dict[str, Any]:
         if page_error is not None:
             errors.append(f"{page_path}: malformed frontmatter: {page_error}")
             continue
+        if _private_source_reference(frontmatter) or _private_source_reference(
+            body.decode("utf-8") if body is not None else ""
+        ):
+            errors.append(f"{page_path}: private source reference is not allowed in a published page")
         if relative not in declarations:
             errors.append(f"{page_path}: page is not an approved declaration")
         declared = declarations.get(relative)

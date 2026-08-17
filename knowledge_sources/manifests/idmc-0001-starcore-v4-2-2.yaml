@@ -27,6 +27,55 @@ publication_approved:
   status: verified
   date: "2026-08-17"
   evidence: Approved these eight rewritten passive Knowledge pages; manufacturing assets and private paths remain excluded.
+source_evidence:
+  - source_id: starcore-module-catalog-snapshot
+    description: Reviewed normalized board and module catalog snapshot.
+    sha256: fffa9a46d791820c6224ca82507fc7e7e732edf6e920b115e2394698081402f4
+  - source_id: starcore-classroom-module-cards-snapshot
+    description: Reviewed classroom wiring and library behavior snapshot.
+    sha256: f180a3436f77d4ecf47a65d393c8ada12394cb93a7ede69b18eab720ca0b5393
+  - source_id: starcore-code-patterns-snapshot
+    description: Reviewed Mind+ compatible code-pattern snapshot.
+    sha256: 5e955b581adff149663668857c959c2dfad3ca2d4f8c9276b9a2a202c6a45a8b
+  - source_id: starcore-board-pin-map-snapshot
+    description: Reviewed board pin map and signal-board connector snapshot.
+    sha256: 4bc1fdf3472bb55e7a4c44305f3547278567fddd9b8955e5360a41d49d83c796
+  - source_id: starcore-mechanical-facts-snapshot
+    description: Reviewed sanitized module dimensions and opening facts snapshot.
+    sha256: 68553ec917d9aead498618db1da4189a8d697e707630c733437dfaddac594620
+module_migrations:
+  - hardware_id: IDMD-0001
+    approved_rewritten_uses: [normalized-facts, beginner-wiring-guidance, derivative-examples, sanitized-mechanical-facts]
+    source_ids: [starcore-module-catalog-snapshot, starcore-mechanical-facts-snapshot]
+  - hardware_id: IDMD-0002
+    approved_rewritten_uses: [normalized-facts, beginner-wiring-guidance, library-api-guidance, derivative-examples, sanitized-mechanical-facts]
+    source_ids: [starcore-module-catalog-snapshot, starcore-classroom-module-cards-snapshot, starcore-code-patterns-snapshot, starcore-board-pin-map-snapshot, starcore-mechanical-facts-snapshot]
+  - hardware_id: IDMD-0021
+    approved_rewritten_uses: [normalized-facts, beginner-wiring-guidance, library-api-guidance, derivative-examples, sanitized-mechanical-facts]
+    source_ids: [starcore-module-catalog-snapshot, starcore-classroom-module-cards-snapshot, starcore-code-patterns-snapshot, starcore-board-pin-map-snapshot, starcore-mechanical-facts-snapshot]
+  - hardware_id: IDMS-0001
+    approved_rewritten_uses: [normalized-facts, beginner-wiring-guidance, derivative-examples, sanitized-mechanical-facts]
+    source_ids: [starcore-module-catalog-snapshot, starcore-mechanical-facts-snapshot]
+  - hardware_id: IDMS-0003
+    approved_rewritten_uses: [normalized-facts, beginner-wiring-guidance, derivative-examples, sanitized-mechanical-facts]
+    source_ids: [starcore-module-catalog-snapshot, starcore-mechanical-facts-snapshot]
+  - hardware_id: IDMS-0008
+    approved_rewritten_uses: [normalized-facts, beginner-wiring-guidance, library-api-guidance, derivative-examples, sanitized-mechanical-facts]
+    source_ids: [starcore-module-catalog-snapshot, starcore-classroom-module-cards-snapshot, starcore-code-patterns-snapshot, starcore-mechanical-facts-snapshot]
+  - hardware_id: IDMS-0009
+    approved_rewritten_uses: [normalized-facts, beginner-wiring-guidance, library-api-guidance, derivative-examples, sanitized-mechanical-facts]
+    source_ids: [starcore-module-catalog-snapshot, starcore-classroom-module-cards-snapshot, starcore-code-patterns-snapshot, starcore-mechanical-facts-snapshot]
+publication_boundary:
+  public:
+    - normalized facts
+    - rewritten usage guidance
+    - source IDs and content hashes
+    - derivative examples
+    - sanitized mechanical facts
+  private:
+    - original source bytes
+    - private paths
+    - manufacturing source files
 page_declarations:
   - stable_id: idmc-0001-starcore-v4-2-2-start-here
     path: published/boards/idmc-0001-starcore-v4-2-2/start-here.md
