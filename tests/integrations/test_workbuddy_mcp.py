@@ -48,6 +48,7 @@ class WorkBuddyBridgeTests(unittest.TestCase):
                 "uno_ports",
                 "uno_compile",
                 "uno_compile_upload",
+                "avr_project_run",
                 "esp32_prepare_environment",
                 "esp32_doctor",
                 "esp32_ports",
@@ -67,8 +68,8 @@ class WorkBuddyBridgeTests(unittest.TestCase):
                 "cad_generate",
             },
         )
-        self.assertEqual(self.server.SERVER_VERSION, "1.11.0")
-        self.assertEqual(len(names), 27)
+        self.assertEqual(self.server.SERVER_VERSION, "1.12.0")
+        self.assertEqual(len(names), 28)
         self.assertFalse(any("starcore" in name for name in names))
         upload_tool = next(
             tool for tool in self.server.TOOLS
@@ -76,6 +77,33 @@ class WorkBuddyBridgeTests(unittest.TestCase):
         )
         self.assertIn("自动", upload_tool["description"])
         self.assertIn("接入", upload_tool["description"])
+
+    def test_avr_project_run_routes_to_continuous_flow(self):
+        captured = None
+        original = self.server.project_flow.run_project
+        original_suspend = self.server.serial_monitor.SERIAL_MANAGER.suspend_all
+        original_resume = self.server.serial_monitor.SERIAL_MANAGER.resume_all
+
+        def fake(request, **options):
+            nonlocal captured
+            captured = request
+            return {"success": False, "state": "compiled-awaiting-hardware"}
+
+        self.server.project_flow.run_project = fake
+        self.server.serial_monitor.SERIAL_MANAGER.suspend_all = lambda: []
+        self.server.serial_monitor.SERIAL_MANAGER.resume_all = lambda sessions: []
+        try:
+            result = self.server._tool_result(
+                "avr_project_run",
+                {"board_id": "arduino-uno-r3", "code": "void setup(){} void loop(){}"},
+            )
+        finally:
+            self.server.project_flow.run_project = original
+            self.server.serial_monitor.SERIAL_MANAGER.suspend_all = original_suspend
+            self.server.serial_monitor.SERIAL_MANAGER.resume_all = original_resume
+
+        self.assertFalse(result["isError"])
+        self.assertEqual(captured["board_id"], "arduino-uno-r3")
 
     def test_initialize_routes_esp32_to_safe_compile_upload(self):
         response = self.server.handle(
@@ -94,6 +122,7 @@ class WorkBuddyBridgeTests(unittest.TestCase):
         self.assertIn("HTTP", instructions)
         self.assertIn("knowledge_get", instructions)
         self.assertIn("start-here", instructions)
+        self.assertIn("avr_project_run", instructions)
 
     def test_knowledge_get_routes_index_or_section_to_shared_reader(self):
         original = self.server.knowledge.execute_request

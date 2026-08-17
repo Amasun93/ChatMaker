@@ -160,7 +160,7 @@ chatmaker-pack rollback chatmaker-board-arduino-nano-classic-knowledge --version
 | 数据包和证据状态 | 已验证 | 自动测试与项目 doctor 通过 |
 | ChatMaker Knowledge 渐进知识包 | 四板卡已接入 | Nano、Uno、ESP32、星核板均有板卡索引、详细知识包和机械资料入口；ChatMaker、ChatDuino、ChatWeb、ChatCAD 共用同一板卡身份 |
 | Nano Mind+ 编译和烧录迁移 | 部分验证 | 原 33 项行为测试已迁移；新增两页 OLED 仪表盘后共有 11 个示例从 ChatMaker 路径真实编译；烧录等待有线 Nano |
-| Uno Mind+ 独立适配器 | 部分验证 | 独立 1.x/2.x FQBN、固定 115200 上传规则、Codex/WorkBuddy 入口、Blink 和 OLED 仪表盘真实编译已验证；烧录等待有线 Uno |
+| Nano/Uno Mind+ 项目流程 | 部分验证 | 独立板型规则、Blink 和 OLED 仪表盘已真实编译；新增连续入口自动检查环境、编译并在有唯一有线端口时烧录，实体板效果等待用户测试 |
 | DOIT ESP32 DevKit V1 | 部分验证 | 官方 `esp32:esp32@3.3.11` 已安装；`prepare-environment` 真实 no-op 成功；`esp32:esp32:esp32doit-devkit-v1` 已通过 Blink 和 AP 案例真实编译；烧录、启动、串口、SoftAP、HTTP 和实体效果仍待实板 |
 | 常用模块、库和示例 | 首批已验证 | 12 种元器件、16 个配方通过资料校验；11 个 Nano、2 个 Uno 和 2 个 ESP32 示例真实编译 |
 | ESP32 AP 手机控制案例 | 部分验证 | `examples/chatweb/esp32-ap-control.html` 是唯一页面源，`chatmaker-web-embed` 生成 `examples/chatduino/esp32/ap-led-sensor/page_html.h`，固件用 `send_P` 和显式长度嵌入页面；浏览器模拟和固件真实编译已通过，硬件仍未验证 |
@@ -197,6 +197,7 @@ chatmaker-catalog --request-json '{"action":"search","query":"继电器","kind":
 chatmaker-route --request-json '{"hardware":{"board":"arduino-nano-classic"}}'
 chatmaker-nano --request-json '{"action":"doctor"}'
 chatmaker-uno --request-json '{"action":"doctor"}'
+chatmaker-avr-project --request-json '{"board_id":"arduino-uno-r3","code":"void setup(){} void loop(){}"}'
 chatmaker-esp32 --request-json '{"action":"prepare-environment"}'
 chatmaker-cad --request-json '{"action":"generate","board_id":"arduino-uno-r3","project_name":"uno-base","output_dir":"uno-base"}'
 chatmaker-nano-examples --root examples/chatduino/nano

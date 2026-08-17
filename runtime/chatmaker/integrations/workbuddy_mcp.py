@@ -12,12 +12,13 @@ from chatmaker import knowledge
 from chatmaker.cad import generator as cad_generator
 from chatmaker.hardware import esp32_devkit_v1 as esp32_bridge
 from chatmaker.hardware import nano_mindplus as bridge
+from chatmaker.hardware import project_flow
 from chatmaker.hardware import serial_monitor
 from chatmaker.hardware import uno_mindplus as uno_bridge
 
 
 SERVER_NAME = "chatmaker-hardware"
-SERVER_VERSION = "1.11.0"
+SERVER_VERSION = "1.12.0"
 PROTOCOL_VERSION = "2024-11-05"
 
 TOOLS = [
@@ -204,6 +205,33 @@ TOOLS = [
                 "port": {"type": "string", "pattern": "^COM[0-9]+$"},
                 "timeout": {"type": "integer", "minimum": 30, "maximum": 900, "default": 600},
                 "upload_timeout": {"type": "integer", "minimum": 30, "maximum": 300, "default": 180},
+            },
+            "additionalProperties": False,
+        },
+    },
+    {
+        "name": "avr_project_run",
+        "description": (
+            "Nano/Uno 默认连续入口：检查 Mind+ 环境、真实编译、有唯一明确有线端口时自动烧录，"
+            "并可等待串口标记。没有接板时停在“编译完成、等待硬件”，不会误报烧录成功。"
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["board_id", "code"],
+            "properties": {
+                "board_id": {
+                    "type": "string",
+                    "enum": ["arduino-nano-classic", "arduino-uno-r3"],
+                },
+                "code": {"type": "string", "minLength": 1},
+                "project_name": {"type": "string"},
+                "port": {"type": "string", "pattern": "^COM[0-9]+$"},
+                "timeout": {"type": "integer", "minimum": 30, "maximum": 900, "default": 600},
+                "upload_timeout": {"type": "integer", "minimum": 30, "maximum": 300, "default": 180},
+                "expected_serial_marker": {"type": "string"},
+                "observe_serial": {"type": "boolean", "default": True},
+                "serial_baudrate": {"type": "integer", "minimum": 300, "maximum": 2000000, "default": 9600},
+                "serial_timeout": {"type": "number", "minimum": 0, "maximum": 60, "default": 5},
             },
             "additionalProperties": False,
         },
@@ -505,13 +533,36 @@ def _tool_result(name: str, arguments: dict[str, Any]) -> dict[str, Any]:
         )
     elif name == "serial_close":
         result = serial_monitor.SERIAL_MANAGER.close(arguments.get("session_id", ""))
+    elif name == "avr_project_run":
+        suspended = serial_monitor.SERIAL_MANAGER.suspend_all()
+        try:
+            result = project_flow.run_project(
+                arguments,
+                serial_manager=serial_monitor.SERIAL_MANAGER,
+            )
+        finally:
+            resumed = serial_monitor.SERIAL_MANAGER.resume_all(suspended)
+        result["serial_sessions"] = {
+            "closed_before_upload": suspended,
+            "reopened_after_upload": resumed,
+        }
     else:
         result = None
     if result is not None:
         expected_empty = result.get("error") in {"no_serial_output", "serial_marker_not_seen"}
+        expected_project_pause = result.get("state") in {
+            "awaiting-environment",
+            "compiled-awaiting-hardware",
+            "uploaded-awaiting-observation",
+            "physical-confirmation-needed",
+        }
         return {
             "content": [{"type": "text", "text": json.dumps(result, ensure_ascii=False)}],
-            "isError": not bool(result.get("success")) and not expected_empty,
+            "isError": (
+                not bool(result.get("success"))
+                and not expected_empty
+                and not expected_project_pause
+            ),
         }
 
     adapter = bridge
@@ -583,7 +634,8 @@ def handle(request: dict[str, Any]) -> dict[str, Any] | None:
                 "再按板型调用对应 doctor。ESP32 只接受官方 3.3.11 core "
                 "和精确 DOIT FQBN；先调用 esp32_prepare_environment 自动检查，并且只安装 ChatMaker 验证的锁定版本。"
                 "ESP-WROOM-32 模块丝印本身不算载板确认，也不会替换成 FireBeetle。"
-                "编程前核对板卡、模块型号/丝印和引脚；Nano/Uno 调用对应 compile_upload，"
+                "编程前核对板卡、模块型号/丝印和引脚；Nano/Uno 默认调用 avr_project_run 连续完成"
+                "环境检查、编译、可用时烧录和串口观察，独立工具用于诊断；"
                 "ESP32 调用 esp32_compile_upload；只有精确载板身份和唯一非蓝牙有线端口都明确时才上传，"
                 "上传成功仍不能代替启动、Wi-Fi、HTTP 或实体效果验证。"
                 "需要运行日志时使用 serial_open/read/expect/write/close；空输出不算实物证据。"
