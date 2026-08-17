@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from .directions import DesignDirection, suggest_directions
+from .game_templates import render_game
 
 
 @dataclass(frozen=True)
@@ -36,6 +37,14 @@ def _direction_for(request: WebProjectRequest) -> DesignDirection:
 
 
 def _render(request: WebProjectRequest, direction: DesignDirection) -> str:
+    if request.kind == "mini-game":
+        return render_game(
+            title=request.title,
+            prompt=request.prompt,
+            start_label=request.primary_label,
+            direction=direction,
+        )
+
     title = html.escape(request.title, quote=True)
     prompt = html.escape(request.prompt, quote=True)
     label = html.escape(request.primary_label, quote=True)
@@ -138,7 +147,9 @@ def generate_single_file(request: WebProjectRequest, output: Path) -> GeneratedW
         evidence={
             "generated": "verified",
             "browser_interaction": "unverified",
-            "hardware_connectivity": "not_applicable" if request.kind == "classroom-tool" else "unverified",
+            "hardware_connectivity": (
+                "unverified" if request.kind == "hardware-interface" else "not_applicable"
+            ),
         },
     )
 

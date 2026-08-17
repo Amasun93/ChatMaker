@@ -65,6 +65,19 @@ class CreativeBriefPlannerTests(unittest.TestCase):
         self.assertFalse(beginner.advanced)
         self.assertTrue(advanced.advanced)
 
+    def test_game_brief_asks_about_play_loop_in_plain_language(self):
+        result = plan_creative_brief(
+            CreativeBrief(
+                kind="mini-game",
+                idea="做一个小猫接星星的游戏",
+                audience_scene="学生在手机上玩一分钟",
+                desired_feeling="轻松、快速、有成就感",
+            )
+        )
+
+        self.assertEqual(result.status, "clarify")
+        self.assertEqual(result.questions, ("玩家最主要反复做的动作是什么？",))
+
     def test_non_boolean_advanced_values_are_rejected_before_planning(self):
         brief = CreativeBrief(kind="classroom-tool", idea="课堂反馈")
 

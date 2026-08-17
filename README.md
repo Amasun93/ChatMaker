@@ -165,7 +165,8 @@ chatmaker-pack rollback chatmaker-board-arduino-nano-classic-knowledge --version
 | DOIT ESP32 DevKit V1 | 部分验证 | 官方 `esp32:esp32@3.3.11` 已安装；`prepare-environment` 真实 no-op 成功；`esp32:esp32:esp32doit-devkit-v1` 已通过 Blink 和 AP 案例真实编译；烧录、启动、串口、SoftAP、HTTP 和实体效果仍待实板 |
 | 常用模块、库和示例 | 首批已验证 | 12 种元器件、16 个配方通过资料校验；11 个 Nano、2 个 Uno 和 2 个 ESP32 示例真实编译 |
 | ESP32 AP 手机控制案例 | 部分验证 | `examples/chatweb/esp32-ap-control.html` 是唯一页面源，`chatmaker-web-embed` 生成 `examples/chatduino/esp32/ap-led-sensor/page_html.h`，固件用 `send_P` 和显式长度嵌入页面；浏览器模拟和固件真实编译已通过，硬件仍未验证 |
-| ChatWeb 生成和本地预览 | 部分验证 | 支持课堂页、模拟硬件页、ESP32 HTTP 页面，以及按需启用的 Nano/Uno Web Serial 控制台；真实串口网页交互等待实体板测试，模拟预览不代表硬件已连接 |
+| ChatWeb 生成和本地预览 | 部分验证 | 支持课堂页、小游戏、模拟硬件页、ESP32 HTTP 页面，以及按需启用的 Nano/Uno Web Serial 控制台；真实串口网页交互等待实体板测试，模拟预览不代表硬件已连接 |
+| ChatWeb 小游戏 | Alpha 可试玩 | 新增 `mini-game` 路由和反应挑战、躲避收集、拖拽解谜三种单文件模板；默认离线、支持触控，复杂平台与节奏玩法保留为进阶方向 |
 | 可执行路由与创意规划 | 已验证 | `chatmaker-route` 返回硬件、网页、组合或澄清路线；`chatmaker-web-plan` 在信息不足时只提问，在信息充分时给出 2–3 条精选方向 |
 | 高级方向游乐场 | 显式启用 | 额外方向和 `chatmaker-web-playground` 仅在布尔 `advanced=true` / CLI `--advanced` 时开放 |
 | 浏览器自动化 | 已验证 | Chromium 覆盖课堂页、模拟硬件页、ESP32 AP 模拟页和高级游乐场；检查主要交互、390 px 手机布局、至少 44 px 触控目标和零控制台错误 |
@@ -204,8 +205,10 @@ chatmaker-esp32 --request-json '{"action":"prepare-environment"}'
 chatmaker-cad --request-json '{"action":"generate","board_id":"arduino-uno-r3","project_name":"uno-base","output_dir":"uno-base"}'
 chatmaker-nano-examples --root examples/chatduino/nano
 chatmaker-web-plan --brief-json '{"kind":"classroom-tool","idea":"收集课堂反馈","audience_scene":"学生下课前使用","desired_feeling":"清楚而轻松","primary_action":"选择最需要重讲的一步"}'
+chatmaker-web-plan --brief-json '{"kind":"mini-game","idea":"做一个小猫接星星的游戏","audience_scene":"学生用手机玩一分钟","desired_feeling":"轻松、有成就感","primary_action":"左右移动小猫接住星星"}'
 chatmaker-web-embed examples/chatweb/esp32-ap-control.html examples/chatduino/esp32/ap-led-sensor/page_html.h --symbol CHATMAKER_AP_PAGE
 chatmaker-web --request-json '{"kind":"classroom-tool","title":"课堂脉冲","prompt":"今天哪一步最需要再讲一次？","primary_label":"我需要再讲一次","direction_id":"editorial-signal"}' --output examples/chatweb/classroom-pulse.html
+chatmaker-web --request-json '{"kind":"mini-game","title":"星光反应赛","prompt":"二十秒内尽可能多地点亮星星。","primary_label":"开始挑战","direction_id":"reaction-rush"}' --output examples/chatweb/my-game.html
 chatmaker-web-preview examples/chatweb/classroom-pulse.html
 npm ci
 npx playwright install chromium

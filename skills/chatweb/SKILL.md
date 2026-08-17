@@ -1,6 +1,6 @@
 ---
 name: chatweb
-description: Act as a beginner front-end creative partner that creates and verifies classroom tools, creative interactions, and hardware interfaces with native HTML, CSS, and JavaScript. Use when a user wants two or three visual concepts, a touch-friendly single-file page, a local preview, an optional advanced playground, browser checks, or an Arduino/ESP32 control and data interface.
+description: Act as a beginner front-end creative partner that creates and verifies classroom tools, mini games, creative interactions, and hardware interfaces with native HTML, CSS, and JavaScript. Use when a user wants two or three visual concepts, a playable browser game, a touch-friendly single-file page, a local preview, an optional advanced playground, browser checks, or an Arduino/ESP32 control and data interface.
 ---
 
 # ChatWeb
@@ -28,11 +28,22 @@ Help the user discover the intended feeling and interaction, choose from a small
 9. Only hardware interfaces should read board Wiki guidance, and they should read the `web-and-protocol` section after the exact board identity is known. Independent classroom tools do not load board knowledge.
 10. If the page must ship inside firmware, keep one editable HTML source and generate the embedded artifact from it. In this repository, `examples/chatweb/esp32-ap-control.html` is the only editable ESP32 AP page source; regenerate `examples/chatduino/esp32/ap-led-sensor/page_html.h` with `chatmaker-web-embed ... --symbol CHATMAKER_AP_PAGE`.
 
+## Create a mini game
+
+- Use `kind="mini-game"` and read [game-creation-guide.md](references/game-creation-guide.md).
+- Ask at most two questions that reveal the desired player feeling, repeated player action, and win or ending condition. Do not begin with engine or genre jargon.
+- Offer the three beginner play patterns before visual skins: `reaction-rush`, `dodge-collect`, and `drag-puzzle`.
+- Build the smallest complete loop: start, repeated action, immediate feedback, score or progress, ending, and restart.
+- Support touch from the first version. Use keyboard controls as an additional path when the game involves movement.
+- Games may be creative, entertaining, or educational. Do not turn every game into a quiz or force a classroom wrapper onto a playful idea.
+- Keep the beginner default dependency-free and offline-capable. Consider p5play or Phaser only after the requested mechanics exceed the native templates.
+
 Read [web-verification-contract.md](references/web-verification-contract.md) before testing or reporting completion.
 
 ## Boundaries
 
 - Support independent classroom tools and creative pages as well as hardware interfaces.
+- Treat mini games as a ChatWeb project kind, not as a disguised classroom poll.
 - Independent classroom tools should not load board knowledge.
 - Do not introduce React, Vue, a database, login, or cloud deployment in v0.1 unless the accepted project cannot reasonably work without it.
 - Do not claim hardware connectivity because a page rendered.

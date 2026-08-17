@@ -24,6 +24,15 @@ class DirectionCatalogTests(unittest.TestCase):
 
         self.assertIn("连接", result[0].primary_interaction)
 
+    def test_mini_game_request_returns_three_distinct_playable_patterns(self):
+        result = suggest_directions("mini-game")
+
+        self.assertEqual(
+            [item.id for item in result],
+            ["reaction-rush", "dodge-collect", "drag-puzzle"],
+        )
+        self.assertTrue(all(item.primary_interaction and item.tradeoff for item in result))
+
     def test_beginner_catalog_hides_advanced_directions_until_explicitly_requested(self):
         beginner = suggest_directions("classroom-tool")
         advanced = suggest_directions("classroom-tool", advanced=True)
@@ -33,7 +42,7 @@ class DirectionCatalogTests(unittest.TestCase):
         self.assertTrue({item.id for item in beginner}.issubset({item.id for item in advanced}))
 
     def test_each_project_kind_has_two_distinct_advanced_directions(self):
-        for kind in ("classroom-tool", "hardware-interface"):
+        for kind in ("classroom-tool", "hardware-interface", "mini-game"):
             with self.subTest(kind=kind):
                 beginner = suggest_directions(kind)
                 expanded = suggest_directions(kind, advanced=True)

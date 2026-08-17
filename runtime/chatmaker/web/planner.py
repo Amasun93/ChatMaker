@@ -39,7 +39,11 @@ def _missing_questions(brief: CreativeBrief) -> list[str]:
     if not (_clean(brief.desired_feeling) or _clean(brief.core_message)):
         questions.append("你希望它让人感到什么，或最想传达哪句话？")
     if not _clean(brief.primary_action):
-        questions.append("使用者最重要的一次操作是什么？")
+        questions.append(
+            "玩家最主要反复做的动作是什么？"
+            if brief.kind == "mini-game"
+            else "使用者最重要的一次操作是什么？"
+        )
     return questions
 
 

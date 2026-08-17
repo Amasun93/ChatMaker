@@ -67,6 +67,30 @@ class SingleFileGeneratorTests(unittest.TestCase):
         self.assertIn("模拟设备未连接", text)
         self.assertEqual(project.evidence["hardware_connectivity"], "unverified")
 
+    def test_each_beginner_game_pattern_generates_a_playable_single_file(self):
+        for direction_id in ("reaction-rush", "dodge-collect", "drag-puzzle"):
+            with self.subTest(direction_id=direction_id), tempfile.TemporaryDirectory() as directory:
+                output = Path(directory) / f"{direction_id}.html"
+                project = generate_single_file(
+                    WebProjectRequest(
+                        kind="mini-game",
+                        title="星星挑战",
+                        prompt="收集星星，避开干扰。",
+                        primary_label="开始游戏",
+                        direction_id=direction_id,
+                    ),
+                    output,
+                )
+                text = output.read_text(encoding="utf-8")
+
+            self.assertIn('data-kind="mini-game"', text)
+            self.assertIn(f'data-game="{direction_id}"', text)
+            self.assertIn("重新开始", text)
+            self.assertIn("游戏结束", text)
+            self.assertNotIn("https://", text)
+            self.assertEqual(project.evidence["browser_interaction"], "unverified")
+            self.assertEqual(project.evidence["hardware_connectivity"], "not_applicable")
+
 
 if __name__ == "__main__":
     unittest.main()

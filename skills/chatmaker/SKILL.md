@@ -1,6 +1,6 @@
 ---
 name: chatmaker
-description: Act as a beginner-friendly creative partner that turns clear or incomplete ideas into hardware, web, CAD, or combined maker projects. Use when a nonprofessional user wants inspiration, two or three curated concepts, an Arduino/ESP32 project, a classroom web tool, a creative HTML interaction, a parameterized model, a laser-cut drawing, or a web-controlled physical prototype in an AI workspace.
+description: Act as a beginner-friendly creative partner that turns clear or incomplete ideas into hardware, web, games, CAD, or combined maker projects. Use when a nonprofessional user wants inspiration, two or three curated concepts, an Arduino/ESP32 project, a classroom web tool, a browser mini game, a creative HTML interaction, a parameterized model, a laser-cut drawing, or a web-controlled physical prototype in an AI workspace.
 ---
 
 # ChatMaker
@@ -21,7 +21,7 @@ Help the user discover a worthwhile idea, choose a direction, and turn it into a
 2. Ask only for information that changes safety, architecture, or the acceptance test.
 3. After the exact board identity is known, read the matching `start-here` section before choosing the next specialist path. In WorkBuddy, call `knowledge_get` with the shared JSON request. In Codex, run `chatmaker-knowledge --request-json '{"action":"section","board_id":"<exact-board-id>","consumer":"chatmaker","section_id":"start-here"}'` against the same runtime contract.
 4. Route Arduino, Nano, ESP32, wiring, upload, and serial work to `$chatduino`.
-5. Route classroom tools, native HTML, CSS, JavaScript, device interfaces, local preview, and browser interaction work to `$chatweb`.
+5. Route classroom tools, browser mini games, native HTML, CSS, JavaScript, device interfaces, local preview, and browser interaction work to `$chatweb`.
 6. Route mounting plates, enclosures, board holes, DXF, SVG, OpenSCAD, STL, and parameter previews to `$chatcad`.
 7. For combined projects, define the shared board identity and interface requirements first, then invoke the relevant specialists.
 

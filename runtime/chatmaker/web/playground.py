@@ -197,10 +197,10 @@ def generate_playground(request: PlaygroundRequest, output: Path) -> GeneratedPl
             "generated": "verified",
             "browser_interaction": "unverified",
             "hardware_connectivity": (
-                "not_applicable" if request.kind == "classroom-tool" else "unverified"
+                "unverified" if request.kind == "hardware-interface" else "not_applicable"
             ),
             "physical_effect": (
-                "not_applicable" if request.kind == "classroom-tool" else "unverified"
+                "unverified" if request.kind == "hardware-interface" else "not_applicable"
             ),
         },
     )
@@ -210,7 +210,11 @@ def main() -> int:
     parser = argparse.ArgumentParser(
         description="Generate an opt-in advanced ChatWeb direction playground."
     )
-    parser.add_argument("--kind", choices=("classroom-tool", "hardware-interface"), required=True)
+    parser.add_argument(
+        "--kind",
+        choices=("classroom-tool", "hardware-interface", "mini-game"),
+        required=True,
+    )
     parser.add_argument("--title", required=True)
     parser.add_argument("--brief", required=True)
     parser.add_argument("--output", type=Path, required=True)

@@ -87,3 +87,31 @@ test("advanced playground compares and selects an expanded direction", async ({ 
   await expect(page.locator("#selection-status")).toContainText("已选择：野外观察册");
   expect(errors).toEqual([]);
 });
+
+test("three mini-game patterns start, respond, and complete a playable loop", async ({ page }) => {
+  const errors = captureErrors(page);
+
+  await page.goto(pageUrl("examples/chatweb/game-reaction-rush.html"));
+  await page.locator("#start").click();
+  await page.locator(".target").click();
+  await expect(page.locator("#score")).toHaveText("1");
+
+  await page.goto(pageUrl("examples/chatweb/game-dodge-collect.html"));
+  await page.locator("#start").click();
+  await page.locator("#right").dispatchEvent("pointerdown");
+  await page.waitForTimeout(100);
+  await page.locator("#right").dispatchEvent("pointerup");
+  await expect(page.locator("#timer")).not.toHaveText("--");
+
+  await page.goto(pageUrl("examples/chatweb/game-drag-puzzle.html"));
+  await page.locator("#start").click();
+  for (const id of ["sun", "fish", "seed"]) {
+    await page.locator(`[data-piece="${id}"]`).click();
+    await page.locator(`[data-zone="${id}"]`).click();
+  }
+  await expect(page.locator("#stage")).toHaveAttribute("data-state", "ended");
+  await expect(page.locator("#status")).toContainText("游戏结束");
+  await page.locator("#start").click();
+  await expect(page.locator("#score")).toHaveText("0");
+  expect(errors).toEqual([]);
+});
