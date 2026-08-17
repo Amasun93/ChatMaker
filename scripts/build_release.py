@@ -21,8 +21,8 @@ except ImportError:
 
 CORE_PATHS = (
     "LICENSE", "README.md", "README_EN.md", "pyproject.toml", "scripts/bootstrap.py", "scripts/core_release_signature.py",
-    "docs/installation.md", "examples", "packs/boards", "packs/components", "knowledge/boards",
-    "packs/recipes", "packs/schemas", "runtime", "skills/chatduino", "skills/chatmaker", "skills/chatweb",
+    "docs/installation.md", "examples", "packs/boards", "packs/components", "knowledge/boards", "knowledge/mechanical",
+    "packs/recipes", "packs/schemas", "runtime", "skills/chatduino", "skills/chatmaker", "skills/chatweb", "skills/chatcad",
 )
 EXCLUDED_PARTS = {"__pycache__", ".pytest_cache", ".playwright-cli", ".chatmaker-esp32-builds", ".chatmaker-esp32-cache"}
 EXCLUDED_PATH_PREFIXES = {("knowledge_sources",)}

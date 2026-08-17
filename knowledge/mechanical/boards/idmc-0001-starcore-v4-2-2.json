@@ -1,0 +1,27 @@
+{
+  "schema_version": "1.0",
+  "kind": "mechanical-profile",
+  "board_id": "idmc-0001-starcore-v4-2-2",
+  "name": "IDMC-0001 星核板",
+  "revision": "v4.2.2",
+  "units": "mm",
+  "coordinate_system": {"origin": "PCB outline center", "x_positive": "right", "y_positive": "toward USB-C"},
+  "outline": {"shape": "rectangle", "width": 90.021458, "depth": 61.511127},
+  "mounting": {
+    "method": "four-locator-holes",
+    "holes": [
+      {"x": -40.0, "y": -16.255166, "diameter": 4.25},
+      {"x": 40.0, "y": -16.255166, "diameter": 4.25},
+      {"x": 40.0, "y": 25.744834, "diameter": 4.25},
+      {"x": -40.0, "y": 25.744834, "diameter": 4.25}
+    ],
+    "locator_outer_diameter": 5.56,
+    "locator_shank_diameter": 4.09,
+    "note": "Retain the blue board locators. The exact supplied screw specification still requires physical confirmation."
+  },
+  "keepouts": [
+    {"id": "usb-c", "edge": "+y", "opening_width": 8.95, "opening_height": 3.16, "recommended_cutout": [9.75, 3.96]}
+  ],
+  "source_ids": ["starcore-v4-2-2-sanitized-mechanical"],
+  "verification": {"source_reviewed": "measured_from_dxf_step", "physical_fit": "unverified"}
+}

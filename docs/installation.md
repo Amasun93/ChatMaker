@@ -1,4 +1,19 @@
-# ChatMaker v0.1.0-rc5 安装说明 / Installation
+# ChatMaker 安装说明 / Installation
+
+## 当前 Alpha 推荐安装方式
+
+目前优先体验 GitHub `main`，让 AI 在终端执行下面四步即可：
+
+```powershell
+git clone https://github.com/Amasun93/ChatMaker.git
+Set-Location ChatMaker
+python -m pip install -e .
+chatmaker-install auto
+chatmaker-install doctor
+```
+
+`auto` 会根据电脑上实际存在的 AI 工作目录完成接入，安装 ChatMaker、ChatDuino、ChatWeb、ChatCAD 四个 Skill 和通用 MCP。当前是快速迭代版；如需卸载或恢复，可运行 `chatmaker-install uninstall` 或 `chatmaker-install restore <transaction_id>`。下方签名 Core 章节是正式发布流程参考，普通 Alpha 体验不需要先构建发布包。
+Alpha 使用可编辑源码安装，请保留克隆目录；更新时运行 `git pull`，再运行一次 `chatmaker-install auto`。
 
 > rc5 已作为 [GitHub 公开预发布版](https://github.com/Amasun93/ChatMaker/releases/tag/v0.1.0-rc5) 发布。rc1–rc4 仍是独立历史发布；不要把 rc5 的验证结果倒写到旧版本记录中。
 >
@@ -39,9 +54,9 @@ macOS uses the same four evidence arguments with the matching `macos-x86_64` or 
 
 The official signature proves release origin. A trusted-bootstrap rerun provides point-in-time drift detection, quarantine, and repair only. This is not OS secure boot and does not resist an attacker who already has arbitrary same-user writes, can replace the verifier/launcher, or races after verification. The stable launcher fails closed and is repaired by trusted bootstrap, but does not prove its own trustworthiness.
 
-Core 内有运行层、三个 Skill、schema、3/12/14 条规范记录、三个紧凑索引和当前案例。它没有详细 Wiki 正文、`knowledge_sources/`、`tests/`、开发缓存或已构建的可选 `.cmpack`。`chatmaker-doctor` 通过只证明这些内置内容可读，不证明任何硬件效果。
+Core 内有运行层、四个 Skill、schema、4/12/14 条规范记录、三个详细板卡知识索引、首批机械资料和当前案例。它没有扩展知识正文、`knowledge_sources/`、`tests/`、开发缓存或已构建的可选 `.cmpack`。`chatmaker-doctor` 通过只证明这些内置内容可读，不证明任何硬件效果。
 
-The Core contains runtime code, three Skills, schemas, the canonical 3/12/14 records, three compact indexes, and current examples. It excludes detailed Wiki bodies, `knowledge_sources/`, `tests/`, development caches, and built optional `.cmpack` artifacts. A successful doctor proves only that built-in software content is readable.
+The Core contains runtime code, four Skills, schemas, the canonical 4/12/14 records, three detailed board indexes, the first mechanical profiles, and current examples. It excludes extended knowledge bodies, `knowledge_sources/`, `tests/`, development caches, and built optional `.cmpack` artifacts. A successful doctor proves only that built-in software content is readable.
 
 ### 第一次自动读取 / First automatic read
 
@@ -50,8 +65,8 @@ The Core contains runtime code, three Skills, schemas, the canonical 3/12/14 rec
 The detailed section below is absent from Core. On first use, the reader defaults to `auto_install=true` and calls idempotent `ensure(pack_id)`:
 
 ```powershell
-chatmaker-llmwiki --request-json '{"action":"section","board_id":"arduino-nano-classic","consumer":"chatduino","section_id":"identify-and-safety"}'
-chatmaker-pack status chatmaker-board-arduino-nano-classic-wiki
+chatmaker-knowledge --request-json '{"action":"section","board_id":"arduino-nano-classic","consumer":"chatduino","section_id":"identify-and-safety"}'
+chatmaker-pack status chatmaker-board-arduino-nano-classic-knowledge
 ```
 
 只有官方签名注册表允许的只读 `knowledge` 包可以自动安装。ChatMaker 会先验证 Ed25519 签名、单调 sequence、有效期、不可变 commit URL、长度、SHA-256、manifest 和每个文件，再原子激活。第二次读取直接复用，不重复下载。
@@ -60,25 +75,25 @@ Only allowlisted, read-only `knowledge` packs may install automatically. ChatMak
 
 ### 自动动作不会做什么 / What automatic installation never does
 
-它不会安装或修改驱动、Mind+、Arduino Core、Node、Chromium、系统 PATH、安装钩子、管理员软件或 WorkBuddy MCP 配置。需要这些外部环境时，ChatMaker 会停下来说明；用户仍需显式安装或批准。Codex / WorkBuddy 安装器只处理三个 Skill（以及 WorkBuddy 自己的 MCP 条目），不会顺便安装或更新知识包。
+它不会安装或修改驱动、Mind+、Arduino Core、Node、Chromium、系统 PATH、安装钩子或管理员软件。需要这些外部环境时，ChatMaker 会停下来说明；用户仍需显式安装或批准。通用安装器处理四个 Skill 和可用宿主的 MCP 接入，不会顺便安装驱动或硬件工具链。
 
-It never installs or changes drivers, Mind+, Arduino cores, Node, Chromium, PATH, hooks, administrator-level software, or WorkBuddy MCP configuration. External prerequisites remain explicit. Codex and WorkBuddy installers manage only the three Skills (plus WorkBuddy's own MCP entry), never knowledge content.
+It never installs or changes drivers, Mind+, Arduino cores, Node, Chromium, PATH, hooks, or administrator-level software. External prerequisites remain explicit. The generic installer manages four Skills and available host MCP integration, not hardware toolchains.
 
 ### 离线、本地覆盖、更新与回滚 / Offline, overrides, update, and rollback
 
 ```powershell
 chatmaker-pack list
 chatmaker-pack cache
-chatmaker-pack ensure chatmaker-board-arduino-nano-classic-wiki --offline
-chatmaker-pack update chatmaker-board-arduino-nano-classic-wiki
-chatmaker-pack rollback chatmaker-board-arduino-nano-classic-wiki --version 1.0.0
+chatmaker-pack ensure chatmaker-board-arduino-nano-classic-knowledge --offline
+chatmaker-pack update chatmaker-board-arduino-nano-classic-knowledge
+chatmaker-pack rollback chatmaker-board-arduino-nano-classic-knowledge --version 1.0.0
 ```
 
 - 已安装并重新校验通过的版本可以继续离线读取。精确缓存只有在随附的签名注册表 receipt 仍处于有效期内时，才能授权一次新的离线安装；receipt 过期后缓存不能授权新安装。从未下载或已过期的缺包会明确报错，不会猜内容。
 - `update` 只接受注册表中的更高版本；失败时旧版本继续工作。`rollback` 只切换到本机已经完整验证的旧版本。
 - 默认用户数据在 `~/.chatmaker/` 的 cache、store、state 等分区。不要手动修改官方 store；漂移内容会被隔离。
 - 实验知识放在 `~/.chatmaker/overrides/`，或用 `CHATMAKER_PACKS_PATH` 指向独立目录。返回值会显示 `provenance=local_override`，避免把个人内容当成官方事实。
-- 运行这些内容命令不会写 Codex 或 WorkBuddy 配置。只有 `chatmaker-install auto` 会在探测到真实宿主后改动对应的三个 Skill 和 MCP 条目，并继续使用事务备份恢复。
+- 运行这些内容命令不会写 AI 宿主配置。只有 `chatmaker-install auto` 会在探测到真实宿主后接入四个 Skill 和 MCP 条目，并继续使用事务备份恢复。
 
 - An already installed version remains readable offline after full local revalidation. An exact cache can authorize a new offline install only while its signed registry receipt is still unexpired; an expired receipt cannot authorize a new install. Never-downloaded or expired missing content fails clearly instead of guessing.
 - `update` accepts only a newer registry version and preserves the old active version on failure. `rollback` selects only a previously verified local version.
@@ -105,7 +120,7 @@ python .\trusted-bootstrap\bootstrap.py `
 ~\.chatmaker\bin\chatmaker-install.cmd doctor
 ```
 
-两处 SHA-256 必须完全一致。`chatmaker-doctor` 校验资料包和三套 Skill，但不探测或证明真实硬件。
+两处 SHA-256 必须完全一致。`chatmaker-doctor` 校验资料包和四套 Skill，但不探测或证明真实硬件。
 
 The two SHA-256 values must match exactly. `chatmaker-doctor` validates packs and Skills; it does not prove hardware.
 
@@ -171,7 +186,7 @@ chatmaker-install auto
 chatmaker-install doctor
 ```
 
-安装器先只读探测操作系统、Python、终端、浏览器、串口、Mind+、已存在的 Codex / WorkBuddy 线索，以及高级入口提供的显式路径。它不会要求你选择宿主；发现的宿主会一起安装三个 Skill，WorkBuddy 还会登记共享 MCP：`python -m chatmaker.integrations.mcp`。无关 MCP 条目会保留。
+安装器先只读探测操作系统、Python、终端、浏览器、串口、Mind+、已存在的 AI 工作目录线索，以及高级入口提供的显式路径。它不会要求你选择宿主；发现的宿主会一起安装四个 Skill，可用宿主还会登记共享 MCP：`python -m chatmaker.integrations.mcp`。无关 MCP 条目会保留。
 
 每个命令输出一份 JSON，至少包含 `success`、`status`、`environment`、`hosts`、`changes`、`unchanged`、`next_actions` 与 `transaction_id`。先运行 `auto --dry-run` 查看计划；`auto` 执行可逆的用户目录改动；随后重启检测到的宿主应用。
 

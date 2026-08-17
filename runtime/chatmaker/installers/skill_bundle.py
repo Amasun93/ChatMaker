@@ -6,7 +6,7 @@ from typing import Any
 from .transaction import InstallTransaction, canonical_install_path
 
 
-SKILL_NAMES = ("chatmaker", "chatduino", "chatweb")
+SKILL_NAMES = ("chatmaker", "chatduino", "chatweb", "chatcad")
 
 
 def _bundle_transaction(

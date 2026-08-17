@@ -1,4 +1,4 @@
 interface:
   display_name: "ChatMaker"
-  short_description: "Route beginner-friendly hardware and web projects"
-  default_prompt: "Use $chatmaker to turn my idea into a verified maker project."
+  short_description: "引导并实现硬件、网页和参数化 CAD 创客项目"
+  default_prompt: "使用 $chatmaker 把我的想法变成可预览、可调整、可验证的创客项目。"

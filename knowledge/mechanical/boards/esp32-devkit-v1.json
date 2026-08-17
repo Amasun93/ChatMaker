@@ -1,0 +1,21 @@
+{
+  "schema_version": "1.0",
+  "kind": "mechanical-profile",
+  "board_id": "esp32-devkit-v1",
+  "name": "DOIT ESP32 DevKit V1",
+  "revision": "30-pin community reference",
+  "units": "mm",
+  "coordinate_system": {"origin": "board outline center", "x_positive": "right", "y_positive": "back"},
+  "outline": {"shape": "rectangle", "width": 28.2, "depth": 53.0, "tolerance": 1.0},
+  "mounting": {
+    "method": "header-cradle",
+    "holes": [],
+    "note": "This carrier has no standard mounting holes. Clone dimensions vary; measure the actual board before a tight enclosure."
+  },
+  "keepouts": [
+    {"id": "micro-usb", "edge": "-y", "status": "variant_dependent"},
+    {"id": "pcb-antenna", "edge": "+y", "status": "keep_clear"}
+  ],
+  "source_ids": ["wokwi-doit-esp32-devkit-v1"],
+  "verification": {"source_reviewed": "community_reference", "physical_fit": "unverified"}
+}

@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="80.580000mm" height="65.340000mm" viewBox="0 0 80.580000 65.340000">
+  <title>uno-mounting-plate</title>
+  <g fill="none" stroke="#111827" stroke-width="0.3">
+    <rect x="0.15" y="0.15" width="80.280000" height="65.040000" />
+    <rect x="6.000000" y="6.000000" width="68.580000" height="53.340000" stroke-dasharray="1.2 0.8" />
+    <circle cx="72.040000" cy="23.780000" r="1.600000" />
+<circle cx="72.040000" cy="51.720000" r="1.600000" />
+<circle cx="21.240000" cy="8.540000" r="1.600000" />
+<circle cx="19.970000" cy="56.800000" r="1.600000" />
+  </g>
+</svg>

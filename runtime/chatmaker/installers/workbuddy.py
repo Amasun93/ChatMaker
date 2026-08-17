@@ -10,6 +10,7 @@ import sys
 from typing import Any
 
 from chatmaker.installers.skill_bundle import (
+    SKILL_NAMES,
     doctor_bundle,
 )
 from chatmaker.installers.transaction import InstallTransaction, canonical_install_path
@@ -68,7 +69,7 @@ def install(
                 "kind": "skill_bundle",
                 "source": canonical_install_path(source_skills),
                 "path": workbuddy_home / "skills",
-                "names": ["chatmaker", "chatduino", "chatweb"],
+                "names": list(SKILL_NAMES),
             },
             {
                 "kind": "mcp_server",
@@ -93,7 +94,7 @@ def install(
             "config": str(config_path),
             "backup": str(backup) if backup else None,
             "server": SERVER_KEY,
-            "installed_skills": ["chatmaker", "chatduino", "chatweb"],
+            "installed_skills": list(SKILL_NAMES),
             "replaced_existing_entry": previous is not None,
             "preserved_other_servers": len(servers) - (1 if SERVER_KEY in servers else 0),
             "restart_workbuddy": True,

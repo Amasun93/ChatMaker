@@ -1,0 +1,25 @@
+{
+  "schema_version": "1.0",
+  "kind": "mechanical-profile",
+  "board_id": "arduino-uno-r3",
+  "name": "Arduino UNO R3",
+  "revision": "UNO-TH Rev3e / A000066",
+  "units": "mm",
+  "coordinate_system": {"origin": "board bounding-box center", "x_positive": "right", "y_positive": "back"},
+  "outline": {"shape": "uno-r3-outline", "width": 68.58, "depth": 53.34},
+  "mounting": {
+    "method": "four-holes",
+    "holes": [
+      {"x": 31.75, "y": 8.89, "diameter": 3.2},
+      {"x": 31.75, "y": -19.05, "diameter": 3.2},
+      {"x": -19.05, "y": 24.13, "diameter": 3.2},
+      {"x": -20.32, "y": -24.13, "diameter": 3.2}
+    ]
+  },
+  "keepouts": [
+    {"id": "usb-b", "edge": "-x", "status": "connector_envelope_pending"},
+    {"id": "barrel-jack", "edge": "-x", "status": "connector_envelope_pending"}
+  ],
+  "source_ids": ["arduino-uno-a000066-cad"],
+  "verification": {"source_reviewed": "verified", "physical_fit": "unverified"}
+}

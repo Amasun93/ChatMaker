@@ -82,7 +82,7 @@ class CodexInstallerTests(unittest.TestCase):
             health = doctor(codex_home)
 
             self.assertTrue(installed["success"])
-            self.assertEqual(installed["installed_skills"], ["chatmaker", "chatduino", "chatweb"])
+            self.assertEqual(installed["installed_skills"], ["chatmaker", "chatduino", "chatweb", "chatcad"])
             self.assertEqual(installed["content_manager"], "chatmaker-pack")
             self.assertEqual(installed["knowledge_packs_installed"], [])
             self.assertTrue(health["success"], health)

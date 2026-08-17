@@ -32,12 +32,13 @@ https://github.com/Amasun93/ChatMaker
 ```powershell
 git clone https://github.com/Amasun93/ChatMaker.git
 Set-Location ChatMaker
-python -m pip install .
+python -m pip install -e .
 chatmaker-install auto
 chatmaker-install doctor
 ```
 
 安装器会根据本机实际环境选择可用的 Skill 目录和 MCP 配置。当前源码版用于体验和反馈；正式发布包、完整 macOS 验证与硬件实测会在后续阶段补齐。
+Alpha 使用可编辑源码安装，因此体验期间请保留克隆下来的 `ChatMaker` 文件夹；后续更新只需在该目录执行 `git pull`，再运行 `chatmaker-install auto`。
 
 ## 它补上的能力
 
@@ -52,12 +53,13 @@ ChatMaker 补上四件事。
 | 渐进复杂度 | 小白默认看到最少选项，需要更多时才展开样式库和高级游乐场 |
 | 真实验证 | 分开报告资料核对、代码编译、固件烧录、串口或浏览器结果和实物效果 |
 
-## 三个创作伙伴
+## 四个创作伙伴
 
 ```text
 ChatMaker
 ├─ ChatDuino   硬件、接线、固件、编译、烧录、串口
-└─ ChatWeb     前端创作、课堂工具、设备界面、浏览器验证
+├─ ChatWeb     前端创作、课堂工具、设备界面、浏览器验证
+└─ ChatCAD     参数建模、二维图纸、三维模型、预览与导出
 ```
 
 ### ChatMaker
@@ -87,6 +89,16 @@ SVG 和其他图形接线不会默认生成。用户明确需要图片时才作�
 ### ChatWeb
 
 帮助用户选择视觉与交互方向，制作课堂工具、创意页面和硬件控制界面。小白项目默认生成一个可直接打开的 HTML 文件；复杂项目才拆分文件。更多样式和高级游乐场按需出现。
+
+### ChatCAD
+
+先理解用户要固定什么板卡、准备用什么工艺，再从 ChatMaker Knowledge 读取清洗后的机械尺寸。当前 Alpha 支持 Nano、Uno、ESP32 DevKit V1 和星核板，可生成参数化 OpenSCAD、DXF、SVG、STL，以及左侧调参数、右侧即时查看的一页式预览实验室。
+
+```text
+帮我给 Arduino Uno 做一个安装底板，边缘留 6 mm，先生成预览实验室让我调整，确认后导出 DXF 和 OpenSCAD。
+```
+
+生成成功只代表文件可用，不代表真实孔位和外壳一定合适；第一次加工前仍要用实板试装。
 
 ## 可以怎样使用
 
@@ -123,15 +135,15 @@ Skill 负责告诉 AI 应该怎样判断、哪些技术事实不能猜、什么�
 
 ## 板卡知识怎样按需出现
 
-Core 首次安装只带运行层、ChatMaker / ChatDuino / ChatWeb 三个 Skill、3 块板卡、12 种元器件、14 个配方、紧凑索引、schema 和当前案例，不带详细 Wiki 正文。这样基础安装更小，也不会把知识工作区、测试或构建缓存交给普通用户。
+Core 首次安装只带运行层、ChatMaker / ChatDuino / ChatWeb / ChatCAD 四个 Skill、紧凑索引、首批板卡和机械资料、schema 与当前案例，不带体积较大的扩展正文。这样基础安装更小，也不会把测试或构建缓存交给普通用户。
 
-当 AI 第一次读取某块板卡的详细章节时，`chatmaker-llmwiki` 默认执行一次自动安装：它从官方签名注册表找到精确版本，核对签名、下载地址、长度、SHA-256 和包内文件后才激活。再次读取直接复用；已安装版本可以离线重校验后继续读取，但缓存只有在签名 receipt 未过期时才能授权新的离线安装。这个自动动作只安装被动知识页，不会安装驱动、Mind+、Arduino Core、Node、Chromium，不会修改 PATH，也不会改 Codex / WorkBuddy 配置或请求管理员权限。
+当 AI 第一次读取某块板卡的详细章节时，`chatmaker-knowledge` 可以按需取得对应知识包并在之后复用。这个动作只安装知识资料，不会安装驱动、Mind+、Arduino Core、Node 或 Chromium。
 
 ```powershell
-chatmaker-llmwiki --request-json '{"action":"section","board_id":"arduino-nano-classic","consumer":"chatduino","section_id":"identify-and-safety"}'
-chatmaker-pack status chatmaker-board-arduino-nano-classic-wiki
-chatmaker-pack update chatmaker-board-arduino-nano-classic-wiki
-chatmaker-pack rollback chatmaker-board-arduino-nano-classic-wiki --version 1.0.0
+chatmaker-knowledge --request-json '{"action":"section","board_id":"arduino-nano-classic","consumer":"chatduino","section_id":"identify-and-safety"}'
+chatmaker-pack status chatmaker-board-arduino-nano-classic-knowledge
+chatmaker-pack update chatmaker-board-arduino-nano-classic-knowledge
+chatmaker-pack rollback chatmaker-board-arduino-nano-classic-knowledge --version 1.0.0
 ```
 
 本地实验资料可以放入独立 override 目录，并会明确显示 `provenance=local_override`；它不会伪装成官方内容。完整的缓存、离线、更新和回滚说明见 [安装说明](docs/installation.md)。
@@ -141,9 +153,10 @@ chatmaker-pack rollback chatmaker-board-arduino-nano-classic-wiki --version 1.0.
 | 范围 | 状态 | 已有证据 |
 | --- | --- | --- |
 | ChatMaker、ChatDuino、ChatWeb 结构 | 已验证 | 项目校验和 Skill 格式校验通过 |
+| ChatCAD Alpha | 开发版可用 | Nano、Uno、ESP32、星核板机械资料已接入；可生成 SCAD、DXF、SVG、STL 和参数预览实验室；真实试装待用户验证 |
 | 创作伙伴对话规则 | 已写入 | 尚需独立前向测试 |
 | 数据包和证据状态 | 已验证 | 自动测试与项目 doctor 通过 |
-| LLMWiki 渐进知识包 | 本地软件门已验证 | 三个只读包、签名注册表、首次自动获取、缓存复用、更新/回滚和本地 override 已覆盖；公开 GitHub 下载留到合并推送后验证 |
+| ChatMaker Knowledge 渐进知识包 | 本地软件门已验证 | 三个详细板卡知识包、签名注册表、首次自动获取、缓存复用、更新/回滚和本地 override 已覆盖；星核板首批机械资料直接随 Core 提供 |
 | Nano Mind+ 编译和烧录迁移 | 部分验证 | 原 33 项行为测试已迁移；10 个示例从 ChatMaker 路径真实编译；烧录等待有线 Nano |
 | Uno Mind+ 独立适配器 | 部分验证 | 独立 1.x/2.x FQBN、固定 115200 上传规则、Codex/WorkBuddy 入口和 Blink 真实编译已验证；烧录等待有线 Uno |
 | DOIT ESP32 DevKit V1 | 部分验证 | 官方 `esp32:esp32@3.3.11` 已安装；`prepare-environment` 真实 no-op 成功；`esp32:esp32:esp32doit-devkit-v1` 已通过 Blink 和 AP 案例真实编译；烧录、启动、串口、SoftAP、HTTP 和实体效果仍待实板 |
@@ -153,7 +166,7 @@ chatmaker-pack rollback chatmaker-board-arduino-nano-classic-wiki --version 1.0.
 | 可执行路由与创意规划 | 已验证 | `chatmaker-route` 返回硬件、网页、组合或澄清路线；`chatmaker-web-plan` 在信息不足时只提问，在信息充分时给出 2–3 条精选方向 |
 | 高级方向游乐场 | 显式启用 | 额外方向和 `chatmaker-web-playground` 仅在布尔 `advanced=true` / CLI `--advanced` 时开放 |
 | 浏览器自动化 | 已验证 | Chromium 覆盖课堂页、模拟硬件页、ESP32 AP 模拟页和高级游乐场；检查主要交互、390 px 手机布局、至少 44 px 触控目标和零控制台错误 |
-| Codex / WorkBuddy 安装 | 开发版已刷新 | 三个 Skill 可逆安装；WorkBuddy 1.8.0 列出 24 个工具（新增 `llmwiki_get`），无关 MCP 与主机设置保持不变；知识包由独立的 `chatmaker-pack` 管理 |
+| 通用 AI 环境安装 | Alpha 可用 | `chatmaker-install auto` 安装四个 Skill，并接入包含 ChatCAD 的通用 MCP；本阶段由用户在真实 WorkBuddy 中体验反馈 |
 | 串口运行诊断 | 已实现待硬件 | WorkBuddy 6 个串口工具与 Codex JSONL 会话通过自动测试；当前无有线 Nano/Uno，真实日志待现场读取 |
 | v0.1.0-rc1 发布候选 | 历史发布 | [GitHub 预发布](https://github.com/Amasun93/ChatMaker/releases/tag/v0.1.0-rc1)；保留其原始产物与当时验证记录 |
 | v0.1.0-rc2 发布候选 | 已发布 | [GitHub 预发布](https://github.com/Amasun93/ChatMaker/releases/tag/v0.1.0-rc2)；rc1 继续保留，rc2 新增串口运行层 |
@@ -183,6 +196,7 @@ chatmaker-route --request-json '{"hardware":{"board":"arduino-nano-classic"}}'
 chatmaker-nano --request-json '{"action":"doctor"}'
 chatmaker-uno --request-json '{"action":"doctor"}'
 chatmaker-esp32 --request-json '{"action":"prepare-environment"}'
+chatmaker-cad --request-json '{"action":"generate","board_id":"arduino-uno-r3","project_name":"uno-base","output_dir":"uno-base"}'
 chatmaker-nano-examples --root examples/chatduino/nano
 chatmaker-web-plan --brief-json '{"kind":"classroom-tool","idea":"收集课堂反馈","audience_scene":"学生下课前使用","desired_feeling":"清楚而轻松","primary_action":"选择最需要重讲的一步"}'
 chatmaker-web-embed examples/chatweb/esp32-ap-control.html examples/chatduino/esp32/ap-led-sensor/page_html.h --symbol CHATMAKER_AP_PAGE
@@ -196,8 +210,8 @@ npm run test:browser
 ## 项目结构
 
 ```text
-skills/       三个创作伙伴的判断方式与工作流程
-runtime/      编译、烧录、串口、预览等确定性工具
+skills/       四个创作伙伴的判断方式与工作流程
+runtime/      编译、烧录、串口、网页与 CAD 生成等确定性工具
 packs/        板卡、模块、案例和视觉方案知识包
 examples/     经过验证的完整作品
 tests/        自动测试和行为契约

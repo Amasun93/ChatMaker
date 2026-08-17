@@ -34,6 +34,7 @@ chatmaker-web-preview = "chatmaker.web.preview:main"
 chatmaker-web-embed = "chatmaker.web.embed:main"
 chatmaker-pack = "chatmaker.pack_cli:main"
 chatmaker-knowledge = "chatmaker.knowledge:main"
+chatmaker-cad = "chatmaker.cad.generator:main"
 
 [tool.setuptools]
 package-dir = {"" = "runtime"}

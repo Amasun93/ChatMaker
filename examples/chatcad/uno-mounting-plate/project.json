@@ -1,0 +1,36 @@
+{
+  "schema_version": "1.0",
+  "project_name": "uno-mounting-plate",
+  "board_id": "arduino-uno-r3",
+  "model_kind": "mounting-plate",
+  "parameters": {
+    "board_width": 68.58,
+    "board_depth": 53.34,
+    "plate_width": 80.58,
+    "plate_depth": 65.34,
+    "clearance": 6.0,
+    "plate_thickness": 3.0,
+    "standoff_height": 5.0,
+    "hole_diameter": 3.2,
+    "standoff_outer_diameter": 7.0,
+    "holes": [
+      {
+        "x": 31.75,
+        "y": 8.89
+      },
+      {
+        "x": 31.75,
+        "y": -19.05
+      },
+      {
+        "x": -19.05,
+        "y": 24.13
+      },
+      {
+        "x": -20.32,
+        "y": -24.13
+      }
+    ]
+  },
+  "physical_fit": "unverified"
+}

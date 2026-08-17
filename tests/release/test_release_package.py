@@ -336,6 +336,7 @@ class ReleasePackageTests(unittest.TestCase):
         self.assertIn(prefix + "skills/chatmaker/SKILL.md", names)
         self.assertIn(prefix + "skills/chatduino/SKILL.md", names)
         self.assertIn(prefix + "skills/chatweb/SKILL.md", names)
+        self.assertIn(prefix + "skills/chatcad/SKILL.md", names)
         self.assertIn(prefix + "runtime/chatmaker/installers/codex.py", names)
         self.assertIn(prefix + "runtime/chatmaker/installers/workbuddy.py", names)
         self.assertIn(prefix + "runtime/chatmaker/installers/skill_bundle.py", names)
@@ -349,10 +350,11 @@ class ReleasePackageTests(unittest.TestCase):
         self.assertIn(prefix + "examples/chatweb/esp32-ap-control.html", names)
         self.assertIn(prefix + "examples/chatweb/advanced-playground.html", names)
         self.assertIn(prefix + "knowledge/boards/arduino-nano-classic.yaml", names)
+        self.assertIn(prefix + "knowledge/mechanical/boards/arduino-nano-classic.json", names)
         self.assertIn(prefix + "packs/schemas/registry.schema.json", names)
         self.assertEqual(
             len([name for name in names if name.startswith(prefix + "packs/boards/")]),
-            3,
+            4,
         )
         self.assertEqual(
             len([name for name in names if name.startswith(prefix + "packs/components/")]),

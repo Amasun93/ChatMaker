@@ -1,0 +1,23 @@
+{
+  "schema_version": "1.0",
+  "kind": "mechanical-profile",
+  "board_id": "arduino-nano-classic",
+  "name": "Arduino Nano Classic",
+  "revision": "Nano V3.3 / A000005",
+  "units": "mm",
+  "coordinate_system": {"origin": "PCB outline center", "x_positive": "right", "y_positive": "back"},
+  "outline": {"shape": "rectangle", "width": 43.18, "depth": 17.78, "overall_width": 45.0, "overall_depth": 18.0},
+  "mounting": {
+    "method": "small-holes-or-header-cradle",
+    "holes": [
+      {"x": -20.32, "y": 7.62, "diameter": 1.651},
+      {"x": -20.32, "y": -7.62, "diameter": 1.651},
+      {"x": 20.32, "y": -7.62, "diameter": 1.651},
+      {"x": 20.32, "y": 7.62, "diameter": 1.651}
+    ],
+    "note": "The official PCB holes are small. Confirm the intended fastener or use a header cradle before printing."
+  },
+  "keepouts": [{"id": "mini-usb", "edge": "+x", "status": "connector_envelope_pending"}],
+  "source_ids": ["arduino-nano-a000005-cad"],
+  "verification": {"source_reviewed": "verified", "physical_fit": "unverified"}
+}

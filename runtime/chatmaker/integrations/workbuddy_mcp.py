@@ -9,6 +9,7 @@ from typing import Any
 
 from chatmaker import catalog
 from chatmaker import knowledge
+from chatmaker.cad import generator as cad_generator
 from chatmaker.hardware import esp32_devkit_v1 as esp32_bridge
 from chatmaker.hardware import nano_mindplus as bridge
 from chatmaker.hardware import serial_monitor
@@ -16,7 +17,7 @@ from chatmaker.hardware import uno_mindplus as uno_bridge
 
 
 SERVER_NAME = "chatmaker-hardware"
-SERVER_VERSION = "1.9.0"
+SERVER_VERSION = "1.10.0"
 PROTOCOL_VERSION = "2024-11-05"
 
 TOOLS = [
@@ -351,6 +352,59 @@ TOOLS = [
             "additionalProperties": False,
         },
     },
+    {
+        "name": "cad_profile_get",
+        "description": "读取 Nano、Uno、ESP32 或星核板的清洗后机械尺寸、孔位、来源和验证状态。",
+        "inputSchema": {
+            "type": "object",
+            "required": ["board_id"],
+            "properties": {
+                "board_id": {
+                    "type": "string",
+                    "enum": [
+                        "arduino-nano-classic",
+                        "arduino-uno-r3",
+                        "esp32-devkit-v1",
+                        "idmc-0001-starcore-v4-2-2",
+                    ],
+                }
+            },
+            "additionalProperties": False,
+        },
+    },
+    {
+        "name": "cad_generate",
+        "description": "生成可调参数的 ChatCAD 安装底板，并输出 OpenSCAD、DXF、SVG、STL 和浏览器预览实验室。",
+        "inputSchema": {
+            "type": "object",
+            "required": ["board_id", "project_name", "output_dir"],
+            "properties": {
+                "board_id": {
+                    "type": "string",
+                    "enum": [
+                        "arduino-nano-classic",
+                        "arduino-uno-r3",
+                        "esp32-devkit-v1",
+                        "idmc-0001-starcore-v4-2-2",
+                    ],
+                },
+                "project_name": {"type": "string", "minLength": 1},
+                "output_dir": {"type": "string", "minLength": 1},
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "clearance": {"type": "number", "minimum": 1, "maximum": 30},
+                        "plate_thickness": {"type": "number", "minimum": 1, "maximum": 10},
+                        "standoff_height": {"type": "number", "minimum": 0, "maximum": 20},
+                        "hole_diameter": {"type": "number", "minimum": 0.8, "maximum": 10},
+                        "standoff_outer_diameter": {"type": "number", "minimum": 1.8, "maximum": 20},
+                    },
+                    "additionalProperties": False,
+                },
+            },
+            "additionalProperties": False,
+        },
+    },
 ]
 
 
@@ -373,6 +427,12 @@ def _tool_result(name: str, arguments: dict[str, Any]) -> dict[str, Any]:
             request["section_id"] = arguments.get("section_id", "")
             request["auto_install"] = arguments.get("auto_install", True)
         result = knowledge.execute_request(request)
+    elif name == "cad_profile_get":
+        result = cad_generator.execute_request(
+            {"action": "profile", "board_id": arguments.get("board_id", "")}
+        )
+    elif name == "cad_generate":
+        result = cad_generator.execute_request({"action": "generate", **arguments})
     elif name == "serial_list":
         result = serial_monitor.SERIAL_MANAGER.list()
     elif name == "serial_open":
@@ -484,6 +544,8 @@ def handle(request: dict[str, Any]) -> dict[str, Any] | None:
                 "ESP32 调用 esp32_compile_upload；只有精确载板身份和唯一非蓝牙有线端口都明确时才上传，"
                 "上传成功仍不能代替启动、Wi-Fi、HTTP 或实体效果验证。"
                 "需要运行日志时使用 serial_open/read/expect/write/close；空输出不算实物证据。"
+                "需要制作安装底板、激光切割图或三维模型时，先用 cad_profile_get 核对机械资料，"
+                "再用 cad_generate 生成可调参数的 OpenSCAD、DXF、SVG、STL 和右侧预览实验室。"
             ),
         }
     elif method == "tools/list":

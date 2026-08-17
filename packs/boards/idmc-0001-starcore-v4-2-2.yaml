@@ -1,0 +1,40 @@
+schema_version: "1.0"
+kind: board
+id: idmc-0001-starcore-v4-2-2
+name: IDMC-0001 星核板 v4.2.2
+family: esp32
+mcu: ESP32
+logic_voltage: 3.3
+sources:
+  - title: ChatMaker sanitized Starcore mechanical knowledge
+    url: https://github.com/Amasun93/ChatMaker/tree/main/knowledge/mechanical
+verification:
+  source_reviewed:
+    status: verified
+    checked_at: "2026-08-17"
+    evidence: Sanitized dimensions derived from the internal v4.2.2 DXF and STEP evidence.
+  code_compiled:
+    status: unverified
+    checked_at: null
+    evidence: null
+  firmware_uploaded:
+    status: unverified
+    checked_at: null
+    evidence: null
+  physical_effect_verified:
+    status: unverified
+    checked_at: null
+    evidence: null
+pins:
+  - id: P0
+    capabilities: [analog-input, digital]
+  - id: 3V3
+    capabilities: [power]
+  - id: GND
+    capabilities: [ground, shared]
+constraints:
+  - Use the exact v4.2.2 mechanical profile for CAD work.
+  - Physical fit, supplied screws and connector clearance remain unverified.
+toolchains:
+  - id: mindplus-mpython-compatible
+    status: planned

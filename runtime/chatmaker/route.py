@@ -23,6 +23,11 @@ def _has_web_intent(request: dict[str, Any]) -> bool:
     return isinstance(web, dict) and any(web.values())
 
 
+def _has_cad_intent(request: dict[str, Any]) -> bool:
+    cad = request.get("cad")
+    return isinstance(cad, dict) and any(cad.values())
+
+
 def _is_nonempty_string(value: Any) -> bool:
     return isinstance(value, str) and bool(value.strip())
 
@@ -100,6 +105,7 @@ def _planned_knowledge_requests(
 def route_project_intent(request: dict[str, Any]) -> dict[str, Any]:
     has_hardware = _has_hardware_intent(request)
     has_web = _has_web_intent(request)
+    has_cad = _has_cad_intent(request)
 
     if has_hardware and has_web:
         contract = request.get("communication_contract")
@@ -114,7 +120,7 @@ def route_project_intent(request: dict[str, Any]) -> dict[str, Any]:
             "route": "combined",
             "status": "ready" if success else "blocked",
             "stage": "routed" if success else "planning",
-            "specialists": ["chatduino", "chatweb"],
+            "specialists": ["chatduino", "chatweb"] + (["chatcad"] if has_cad else []),
             "contract_requirements": requirements,
             "evidence_boundaries": {
                 "page_rendering_is_web_only": True,
@@ -124,6 +130,22 @@ def route_project_intent(request: dict[str, Any]) -> dict[str, Any]:
         if not success:
             result["missing"] = requirements
         return result
+
+    if has_cad and (has_hardware or has_web):
+        return {
+            "success": True,
+            "route": "combined",
+            "status": "ready",
+            "stage": "routed",
+            "specialists": (["chatduino"] if has_hardware else [])
+            + (["chatweb"] if has_web else [])
+            + ["chatcad"],
+            "contract_requirements": [],
+            "evidence_boundaries": {
+                "generated_geometry_is_software_only": True,
+                "physical_fit_requires_separate_verification": True,
+            },
+        }
 
     if has_hardware:
         return {
@@ -145,6 +167,20 @@ def route_project_intent(request: dict[str, Any]) -> dict[str, Any]:
             "contract_requirements": [],
         }
 
+    if has_cad:
+        return {
+            "success": True,
+            "route": "cad",
+            "status": "ready",
+            "stage": "routed",
+            "specialists": ["chatcad"],
+            "contract_requirements": [],
+            "evidence_boundaries": {
+                "generated_geometry_is_software_only": True,
+                "physical_fit_requires_separate_verification": True,
+            },
+        }
+
     return {
         "success": False,
         "route": "clarify",
@@ -152,7 +188,7 @@ def route_project_intent(request: dict[str, Any]) -> dict[str, Any]:
         "stage": "clarify",
         "specialists": [],
         "contract_requirements": [],
-        "missing": ["hardware_or_web_outcome"],
+        "missing": ["hardware_web_or_cad_outcome"],
     }
 
 

@@ -78,7 +78,17 @@ class RouteTests(unittest.TestCase):
         self.assertFalse(result["success"])
         self.assertEqual(result["route"], "clarify")
         self.assertEqual(result["stage"], "clarify")
-        self.assertIn("hardware_or_web_outcome", result["missing"])
+        self.assertIn("hardware_web_or_cad_outcome", result["missing"])
+
+    def test_cad_intent_routes_to_chatcad(self):
+        result = self.route.execute_request(
+            {"cad": {"board": "arduino-uno-r3", "outcome": "mounting plate"}}
+        )
+
+        self.assertTrue(result["success"])
+        self.assertEqual(result["route"], "cad")
+        self.assertEqual(result["specialists"], ["chatcad"])
+        self.assertTrue(result["evidence_boundaries"]["physical_fit_requires_separate_verification"])
         self.assertEqual(result["knowledge_requests"], [])
 
     def test_combined_intent_without_contract_stays_blocked_in_planning(self):

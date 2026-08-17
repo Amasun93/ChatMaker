@@ -1,0 +1,34 @@
+{
+  "schema_version": "1.0",
+  "updated_at": "2026-08-17",
+  "policy": "Publish normalized mechanical facts and provenance only. Keep proprietary manufacturing files private.",
+  "sources": [
+    {
+      "id": "arduino-nano-a000005-cad",
+      "title": "Arduino Nano official CAD files",
+      "url": "https://docs.arduino.cc/hardware/nano/",
+      "artifact_sha256": "a0c14d7e4d39ec9f032b6220148bc3d0c6c08d116fc7759126d86206cc677832",
+      "evidence_level": "official_cad"
+    },
+    {
+      "id": "arduino-uno-a000066-cad",
+      "title": "Arduino UNO R3 official CAD files",
+      "url": "https://docs.arduino.cc/hardware/uno-rev3/",
+      "artifact_sha256": "532b306cb153846eafc0ca9fe991d7a4dfa0c52dcefafa2efeaebf4b845ec820",
+      "evidence_level": "official_cad"
+    },
+    {
+      "id": "wokwi-doit-esp32-devkit-v1",
+      "title": "Wokwi ESP32 DevKit V1 board definition",
+      "url": "https://github.com/wokwi/wokwi-boards/blob/main/boards/esp32-devkit-v1/board.json",
+      "evidence_level": "community_reference_unverified"
+    },
+    {
+      "id": "starcore-v4-2-2-sanitized-mechanical",
+      "title": "Starcore v4.2.2 sanitized DXF and STEP measurements",
+      "url": "https://github.com/Amasun93/ChatMaker/tree/main/knowledge/mechanical",
+      "artifact_sha256": "bfa157971adc8791d8b47de57c6aabd5f5c076c6f00f982655c2383dca066ea7",
+      "evidence_level": "measured_from_private_dxf_step"
+    }
+  ]
+}

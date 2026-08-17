@@ -51,6 +51,7 @@ EXPECTED_COMMANDS = {
     "chatmaker-web-embed",
     "chatmaker-pack",
     "chatmaker-knowledge",
+    "chatmaker-cad",
 }
 
 
@@ -261,7 +262,7 @@ class CleanCoreIntegrationTests(unittest.TestCase):
 
             self.assertEqual(
                 {path.name for path in (core / "skills").iterdir() if path.is_dir()},
-                {"chatmaker", "chatduino", "chatweb"},
+                {"chatmaker", "chatduino", "chatweb", "chatcad"},
             )
             self.assertFalse(any((core / "knowledge").rglob("*.md")))
             for excluded in (
@@ -344,7 +345,7 @@ class CleanCoreIntegrationTests(unittest.TestCase):
                 ).stdout
             )
             self.assertEqual(mcp["id"], 1)
-            self.assertEqual(len(mcp["result"]["tools"]), 24)
+            self.assertEqual(len(mcp["result"]["tools"]), 26)
 
             doctor = json.loads(
                 self._run(
@@ -355,12 +356,12 @@ class CleanCoreIntegrationTests(unittest.TestCase):
             )
             self.assertEqual(
                 doctor["packs"]["counts"],
-                {"board": 3, "component": 12, "recipe": 14},
+                {"board": 4, "component": 12, "recipe": 14},
             )
             self.assertEqual(doctor["packs"]["knowledge_indexes"], 3)
             self.assertEqual(
                 set(doctor["skills"]["results"]),
-                {"chatmaker", "chatduino", "chatweb"},
+                {"chatmaker", "chatduino", "chatweb", "chatcad"},
             )
 
             catalog = json.loads(

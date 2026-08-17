@@ -32,7 +32,7 @@ class WorkBuddyBridgeTests(unittest.TestCase):
             "runtime/chatmaker/installers/workbuddy.py",
         )
 
-    def test_server_exposes_catalog_esp32_uno_nano_and_serial_tools_only(self):
+    def test_server_exposes_hardware_knowledge_serial_and_cad_tools(self):
         names = {tool["name"] for tool in self.server.TOOLS}
 
         self.assertEqual(
@@ -62,10 +62,12 @@ class WorkBuddyBridgeTests(unittest.TestCase):
                 "catalog_search",
                 "catalog_get",
                 "knowledge_get",
+                "cad_profile_get",
+                "cad_generate",
             },
         )
-        self.assertEqual(self.server.SERVER_VERSION, "1.9.0")
-        self.assertEqual(len(names), 24)
+        self.assertEqual(self.server.SERVER_VERSION, "1.10.0")
+        self.assertEqual(len(names), 26)
         self.assertFalse(any("starcore" in name for name in names))
         upload_tool = next(
             tool for tool in self.server.TOOLS
@@ -392,7 +394,7 @@ class WorkBuddyBridgeTests(unittest.TestCase):
                 self.fail(f"WorkBuddy installer does not support Skill installation: {exc}")
 
             self.assertTrue(installed["success"])
-            self.assertEqual(installed["installed_skills"], ["chatmaker", "chatduino", "chatweb"])
+            self.assertEqual(installed["installed_skills"], ["chatmaker", "chatduino", "chatweb", "chatcad"])
             self.assertEqual(installed["content_manager"], "chatmaker-pack")
             self.assertEqual(installed["knowledge_packs_installed"], [])
             self.assertTrue((workbuddy_home / "skills" / "chatmaker" / "SKILL.md").is_file())
@@ -405,10 +407,10 @@ class WorkBuddyBridgeTests(unittest.TestCase):
                     Path(operation_manifest["skill_manifest"]).read_text(encoding="utf-8")
                 )["entries"]
             }
-            self.assertEqual(installed_skill_names, {"chatmaker", "chatduino", "chatweb"})
+            self.assertEqual(installed_skill_names, {"chatmaker", "chatduino", "chatweb", "chatcad"})
             self.assertEqual(
                 {path.name for path in (workbuddy_home / "skills").iterdir()},
-                {"chatmaker", "chatduino", "chatweb", "teacher-helper"},
+                {"chatmaker", "chatduino", "chatweb", "chatcad", "teacher-helper"},
             )
             self.assertTrue(Path(installed["manifest"]).is_file())
             self.assertEqual(
