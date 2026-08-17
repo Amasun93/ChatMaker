@@ -8,6 +8,7 @@ from pathlib import Path
 import re
 from typing import Any, Iterable
 
+from .fabrication import get_fabrication_profile, list_fabrication_profiles
 from .profiles import get_profile, list_profiles
 
 
@@ -24,11 +25,18 @@ def _number(parameters: dict[str, Any], name: str, default: float, minimum: floa
     return result
 
 
-def _geometry(profile: dict[str, Any], parameters: dict[str, Any]) -> dict[str, Any]:
+def _geometry(
+    profile: dict[str, Any],
+    parameters: dict[str, Any],
+    *,
+    default_plate_thickness: float = 3.0,
+) -> dict[str, Any]:
     outline = profile["outline"]
     holes = profile["mounting"]["holes"]
     clearance = _number(parameters, "clearance", 5.0, 1.0, 30.0)
-    plate_thickness = _number(parameters, "plate_thickness", 3.0, 1.0, 10.0)
+    plate_thickness = _number(
+        parameters, "plate_thickness", default_plate_thickness, 1.0, 10.0
+    )
     standoff_height = _number(parameters, "standoff_height", 5.0, 0.0, 20.0)
     default_hole = max((float(item["diameter"]) for item in holes), default=3.2)
     hole_diameter = _number(parameters, "hole_diameter", default_hole, 0.8, 10.0)
@@ -188,13 +196,24 @@ def generate_project(request: dict[str, Any]) -> dict[str, Any]:
     loaded = get_profile(board_id)
     if not loaded.get("success"):
         return loaded
+    equipment_id = str(request.get("equipment_id", "lasermaker-generic"))
+    material_id = str(request.get("material_id", "wood-sheet-3mm"))
+    fabrication = get_fabrication_profile(equipment_id, material_id)
+    if not fabrication.get("success"):
+        return fabrication
     project_name = _PROJECT_NAME.sub("-", str(request.get("project_name", "chatcad-project")).strip()).strip("-.") or "chatcad-project"
     output_dir = Path(str(request.get("output_dir", project_name))).expanduser().resolve()
     parameters = request.get("parameters", {})
     if not isinstance(parameters, dict):
         return {"success": False, "error": "parameters_must_be_object"}
     try:
-        geometry = _geometry(loaded["profile"], parameters)
+        geometry = _geometry(
+            loaded["profile"],
+            parameters,
+            default_plate_thickness=float(
+                fabrication["material"]["default_thickness_mm"]
+            ),
+        )
         output_dir.mkdir(parents=True, exist_ok=True)
         files = {
             "project": output_dir / "project.json",
@@ -209,11 +228,35 @@ def generate_project(request: dict[str, Any]) -> dict[str, Any]:
         files["svg"].write_text(_svg(project_name, geometry), encoding="utf-8", newline="\n")
         files["stl"].write_text(_stl(project_name, geometry), encoding="ascii", newline="\n")
         files["preview_lab"].write_text(_lab_html(project_name, loaded["profile"], geometry), encoding="utf-8", newline="\n")
-        project = {"schema_version": "1.0", "project_name": project_name, "board_id": board_id, "model_kind": "mounting-plate", "parameters": geometry, "physical_fit": "unverified"}
+        project = {
+            "schema_version": "1.0",
+            "project_name": project_name,
+            "board_id": board_id,
+            "model_kind": "mounting-plate",
+            "equipment_id": equipment_id,
+            "material_id": material_id,
+            "fabrication": {
+                "layer_rules": fabrication["equipment"]["layer_rules"],
+                "process_order": fabrication["equipment"]["process_order"],
+                "parameter_policy": fabrication["equipment"]["parameter_policy"],
+            },
+            "parameters": geometry,
+            "physical_fit": "unverified",
+        }
         files["project"].write_text(json.dumps(project, ensure_ascii=False, indent=2) + "\n", encoding="utf-8", newline="\n")
     except (OSError, ValueError) as exc:
         return {"success": False, "error": "cad_generation_failed", "detail": str(exc)}
-    return {"success": True, "action": "generate", "status": "alpha_generated", "board_id": board_id, "output_dir": str(output_dir), "files": {name: str(path) for name, path in files.items()}, "physical_fit": "unverified"}
+    return {
+        "success": True,
+        "action": "generate",
+        "status": "alpha_generated",
+        "board_id": board_id,
+        "equipment_id": equipment_id,
+        "material_id": material_id,
+        "output_dir": str(output_dir),
+        "files": {name: str(path) for name, path in files.items()},
+        "physical_fit": "unverified",
+    }
 
 
 def execute_request(request: dict[str, Any]) -> dict[str, Any]:
@@ -222,6 +265,13 @@ def execute_request(request: dict[str, Any]) -> dict[str, Any]:
         return list_profiles()
     if action == "profile":
         return get_profile(str(request.get("board_id", "")))
+    if action == "list-fabrication-profiles":
+        return list_fabrication_profiles()
+    if action == "fabrication-profile":
+        return get_fabrication_profile(
+            str(request.get("equipment_id", "lasermaker-generic")),
+            str(request.get("material_id", "wood-sheet-3mm")),
+        )
     if action == "generate":
         return generate_project(request)
     return {"success": False, "error": "unknown_cad_action", "action": action}

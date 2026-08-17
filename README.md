@@ -92,7 +92,7 @@ SVG 和其他图形接线不会默认生成。用户明确需要图片时才作�
 
 ### ChatCAD
 
-先理解用户要固定什么板卡、准备用什么工艺，再从 ChatMaker Knowledge 读取清洗后的机械尺寸。当前 Alpha 支持 Nano、Uno、ESP32 DevKit V1 和星核板，可生成参数化 OpenSCAD、DXF、SVG、STL，以及左侧调参数、右侧即时查看的一页式预览实验室。
+先理解用户要固定什么板卡、准备用什么工艺，再从 ChatMaker Knowledge 读取清洗后的机械尺寸。当前 Alpha 支持 Nano、Uno、ESP32 DevKit V1 和星核板，可生成参数化 OpenSCAD、DXF、SVG、STL，以及左侧调参数、右侧即时查看的一页式预览实验室。首张“设备与工艺卡”提供 LaserMaker 的黑色切透、红色描线、黄色浅雕、蓝色深雕规则，并将 3 mm 木板设为可调整的默认材料；真实功率和速度必须用具体设备与材料测试后再填写。
 
 ```text
 帮我给 Arduino Uno 做一个安装底板，边缘留 6 mm，先生成预览实验室让我调整，确认后导出 DXF 和 OpenSCAD。

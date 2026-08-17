@@ -1,0 +1,55 @@
+{
+  "schema_version": "1.0",
+  "kind": "fabrication-equipment-profile",
+  "equipment_id": "lasermaker-generic",
+  "name": "LaserMaker 通用激光加工流程",
+  "equipment_family": "laser-cutter",
+  "software": {
+    "name": "LaserMaker",
+    "supported_output_formats": ["dxf", "svg"]
+  },
+  "layer_rules": [
+    {
+      "process_id": "cut-through",
+      "label": "切透",
+      "color_name": "black",
+      "color_hex": "#000000"
+    },
+    {
+      "process_id": "line-engrave",
+      "label": "描线 / 线雕",
+      "color_name": "red",
+      "color_hex": "#ff0000"
+    },
+    {
+      "process_id": "shallow-engrave",
+      "label": "浅雕",
+      "color_name": "yellow",
+      "color_hex": "#ffff00"
+    },
+    {
+      "process_id": "deep-engrave",
+      "label": "深雕",
+      "color_name": "blue",
+      "color_hex": "#0000ff"
+    }
+  ],
+  "process_order": {
+    "rule": "engrave-before-cut",
+    "cut_process_id": "cut-through",
+    "cut_layer_must_be_last": true
+  },
+  "parameter_policy": {
+    "status": "calibration-required",
+    "reason": "Power and speed depend on the exact machine, laser source, material batch, focus and lens.",
+    "recommended_action": "Run a material test matrix before the final workpiece."
+  },
+  "source_ids": [
+    "lasermaker-official-layer-rules-2024",
+    "lasermaker-official-product-workflow-2026"
+  ],
+  "verification": {
+    "source_reviewed": "verified",
+    "machine_parameters": "unverified"
+  }
+}

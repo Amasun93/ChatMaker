@@ -63,11 +63,12 @@ class WorkBuddyBridgeTests(unittest.TestCase):
                 "catalog_get",
                 "knowledge_get",
                 "cad_profile_get",
+                "cad_fabrication_get",
                 "cad_generate",
             },
         )
-        self.assertEqual(self.server.SERVER_VERSION, "1.10.0")
-        self.assertEqual(len(names), 26)
+        self.assertEqual(self.server.SERVER_VERSION, "1.11.0")
+        self.assertEqual(len(names), 27)
         self.assertFalse(any("starcore" in name for name in names))
         upload_tool = next(
             tool for tool in self.server.TOOLS

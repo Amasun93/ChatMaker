@@ -15,6 +15,36 @@ from chatmaker.integrations import workbuddy_mcp  # noqa: E402
 
 
 class ChatCadAlphaTests(unittest.TestCase):
+    def test_lasermaker_and_default_wood_cards_are_available(self):
+        result = generator.execute_request(
+            {
+                "action": "fabrication-profile",
+                "equipment_id": "lasermaker-generic",
+                "material_id": "wood-sheet-3mm",
+            }
+        )
+
+        self.assertTrue(result["success"], result)
+        self.assertEqual(result["material"]["default_thickness_mm"], 3.0)
+        self.assertEqual(
+            {
+                item["color_name"]: item["process_id"]
+                for item in result["equipment"]["layer_rules"]
+            },
+            {
+                "black": "cut-through",
+                "red": "line-engrave",
+                "yellow": "shallow-engrave",
+                "blue": "deep-engrave",
+            },
+        )
+        self.assertTrue(result["equipment"]["process_order"]["cut_layer_must_be_last"])
+        self.assertEqual(
+            result["equipment"]["parameter_policy"]["status"],
+            "calibration-required",
+        )
+        self.assertIsNone(result["material"]["machine_parameters"]["power"])
+
     def test_four_board_profiles_are_available(self):
         result = generator.execute_request({"action": "list-profiles"})
 
@@ -38,7 +68,7 @@ class ChatCadAlphaTests(unittest.TestCase):
                     "board_id": "arduino-uno-r3",
                     "project_name": "课堂安装底板",
                     "output_dir": directory,
-                    "parameters": {"clearance": 6, "plate_thickness": 3.5},
+                    "parameters": {"clearance": 6},
                 }
             )
 
@@ -52,6 +82,10 @@ class ChatCadAlphaTests(unittest.TestCase):
             self.assertTrue(paths["stl"].read_text(encoding="ascii").startswith("solid"))
             project = json.loads(paths["project"].read_text(encoding="utf-8"))
             self.assertEqual(project["parameters"]["clearance"], 6.0)
+            self.assertEqual(project["parameters"]["plate_thickness"], 3.0)
+            self.assertEqual(project["equipment_id"], "lasermaker-generic")
+            self.assertEqual(project["material_id"], "wood-sheet-3mm")
+            self.assertEqual(project["fabrication"]["parameter_policy"]["status"], "calibration-required")
 
             preview = paths["preview_lab"].read_text(encoding="utf-8")
             self.assertIn("右侧预览实验室", preview)
@@ -61,6 +95,7 @@ class ChatCadAlphaTests(unittest.TestCase):
     def test_mcp_exposes_and_routes_cad_tools(self):
         names = {tool["name"] for tool in workbuddy_mcp.TOOLS}
         self.assertIn("cad_profile_get", names)
+        self.assertIn("cad_fabrication_get", names)
         self.assertIn("cad_generate", names)
 
         response = workbuddy_mcp._tool_result(
@@ -69,6 +104,11 @@ class ChatCadAlphaTests(unittest.TestCase):
         payload = json.loads(response["content"][0]["text"])
         self.assertFalse(response["isError"])
         self.assertEqual(payload["profile"]["revision"], "v4.2.2")
+
+        fabrication_response = workbuddy_mcp._tool_result("cad_fabrication_get", {})
+        fabrication_payload = json.loads(fabrication_response["content"][0]["text"])
+        self.assertFalse(fabrication_response["isError"])
+        self.assertEqual(fabrication_payload["material"]["default_thickness_mm"], 3.0)
 
 
 if __name__ == "__main__":

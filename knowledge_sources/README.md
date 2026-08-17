@@ -4,6 +4,11 @@ This directory is the publication gate for ChatMaker Knowledge pages. It
 does not change the canonical board, component, recipe, or verification records
 under `packs/`.
 
+Fabrication equipment and material cards live under `knowledge/fabrication/`.
+They follow the same cleaned-knowledge rule: preserve traceable process facts
+and explicit defaults, keep unknown machine parameters unset, and update the
+source registry before publishing a new card.
+
 Use this local sequence:
 
 1. **Collect** a source into `raw/`. This private working copy is ignored by

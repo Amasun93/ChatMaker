@@ -1,0 +1,73 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://chatmaker.dev/schemas/fabrication-equipment-1.0.json",
+  "title": "ChatMaker fabrication equipment profile",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "kind",
+    "equipment_id",
+    "name",
+    "equipment_family",
+    "software",
+    "layer_rules",
+    "process_order",
+    "parameter_policy",
+    "source_ids",
+    "verification"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "kind": {"const": "fabrication-equipment-profile"},
+    "equipment_id": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"},
+    "name": {"type": "string", "minLength": 1},
+    "equipment_family": {"type": "string", "minLength": 1},
+    "software": {
+      "type": "object",
+      "required": ["name", "supported_output_formats"],
+      "properties": {
+        "name": {"type": "string", "minLength": 1},
+        "supported_output_formats": {"type": "array", "minItems": 1, "items": {"type": "string"}, "uniqueItems": true}
+      },
+      "additionalProperties": false
+    },
+    "layer_rules": {
+      "type": "array",
+      "minItems": 2,
+      "items": {
+        "type": "object",
+        "required": ["process_id", "label", "color_name", "color_hex"],
+        "properties": {
+          "process_id": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"},
+          "label": {"type": "string", "minLength": 1},
+          "color_name": {"type": "string", "minLength": 1},
+          "color_hex": {"type": "string", "pattern": "^#[0-9a-f]{6}$"}
+        },
+        "additionalProperties": false
+      }
+    },
+    "process_order": {
+      "type": "object",
+      "required": ["rule", "cut_process_id", "cut_layer_must_be_last"],
+      "properties": {
+        "rule": {"type": "string"},
+        "cut_process_id": {"type": "string"},
+        "cut_layer_must_be_last": {"const": true}
+      },
+      "additionalProperties": false
+    },
+    "parameter_policy": {
+      "type": "object",
+      "required": ["status", "reason", "recommended_action"],
+      "properties": {
+        "status": {"const": "calibration-required"},
+        "reason": {"type": "string", "minLength": 1},
+        "recommended_action": {"type": "string", "minLength": 1}
+      },
+      "additionalProperties": false
+    },
+    "source_ids": {"type": "array", "minItems": 1, "items": {"type": "string"}, "uniqueItems": true},
+    "verification": {"type": "object"}
+  },
+  "additionalProperties": false
+}

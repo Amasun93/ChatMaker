@@ -1,0 +1,25 @@
+{
+  "schema_version": "1.0",
+  "updated_at": "2026-08-17",
+  "policy": "Store normalized fabrication rules and traceable defaults. Do not treat example power or speed values as universal machine settings.",
+  "sources": [
+    {
+      "id": "lasermaker-official-layer-rules-2024",
+      "title": "LaserMaker official layer and process color rules",
+      "url": "https://www.lasermaker.com.cn/thread-756-1-1.html",
+      "evidence_level": "official_process_rule"
+    },
+    {
+      "id": "lasermaker-official-product-workflow-2026",
+      "title": "LaserMaker official material-test and process workflow",
+      "url": "https://software.lasermaker.com.cn/",
+      "evidence_level": "official_product_documentation"
+    },
+    {
+      "id": "chatmaker-default-material-2026-08-17",
+      "title": "ChatMaker Alpha default material decision",
+      "url": "https://github.com/Amasun93/ChatMaker",
+      "evidence_level": "user_confirmed_product_default"
+    }
+  ]
+}

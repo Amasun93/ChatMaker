@@ -17,7 +17,7 @@ from chatmaker.hardware import uno_mindplus as uno_bridge
 
 
 SERVER_NAME = "chatmaker-hardware"
-SERVER_VERSION = "1.10.0"
+SERVER_VERSION = "1.11.0"
 PROTOCOL_VERSION = "2024-11-05"
 
 TOOLS = [
@@ -378,6 +378,26 @@ TOOLS = [
         },
     },
     {
+        "name": "cad_fabrication_get",
+        "description": "读取 ChatCAD 的设备与工艺卡，包括材料默认厚度、LaserMaker 颜色图层、加工顺序和参数校准边界。",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "equipment_id": {
+                    "type": "string",
+                    "default": "lasermaker-generic",
+                    "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+                },
+                "material_id": {
+                    "type": "string",
+                    "default": "wood-sheet-3mm",
+                    "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+                },
+            },
+            "additionalProperties": False,
+        },
+    },
+    {
         "name": "cad_generate",
         "description": "生成可调参数的 ChatCAD 安装底板，并输出 OpenSCAD、DXF、SVG、STL 和浏览器预览实验室。",
         "inputSchema": {
@@ -395,6 +415,16 @@ TOOLS = [
                 },
                 "project_name": {"type": "string", "minLength": 1},
                 "output_dir": {"type": "string", "minLength": 1},
+                "equipment_id": {
+                    "type": "string",
+                    "default": "lasermaker-generic",
+                    "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+                },
+                "material_id": {
+                    "type": "string",
+                    "default": "wood-sheet-3mm",
+                    "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+                },
                 "parameters": {
                     "type": "object",
                     "properties": {
@@ -435,6 +465,14 @@ def _tool_result(name: str, arguments: dict[str, Any]) -> dict[str, Any]:
     elif name == "cad_profile_get":
         result = cad_generator.execute_request(
             {"action": "profile", "board_id": arguments.get("board_id", "")}
+        )
+    elif name == "cad_fabrication_get":
+        result = cad_generator.execute_request(
+            {
+                "action": "fabrication-profile",
+                "equipment_id": arguments.get("equipment_id", "lasermaker-generic"),
+                "material_id": arguments.get("material_id", "wood-sheet-3mm"),
+            }
         )
     elif name == "cad_generate":
         result = cad_generator.execute_request({"action": "generate", **arguments})
@@ -550,7 +588,8 @@ def handle(request: dict[str, Any]) -> dict[str, Any] | None:
                 "上传成功仍不能代替启动、Wi-Fi、HTTP 或实体效果验证。"
                 "需要运行日志时使用 serial_open/read/expect/write/close；空输出不算实物证据。"
                 "需要制作安装底板、激光切割图或三维模型时，先用 cad_profile_get 核对机械资料，"
-                "再用 cad_generate 生成可调参数的 OpenSCAD、DXF、SVG、STL 和右侧预览实验室。"
+                "再用 cad_fabrication_get 读取设备、材料、颜色图层和校准边界，最后用 cad_generate "
+                "生成可调参数的 OpenSCAD、DXF、SVG、STL 和右侧预览实验室。"
             ),
         }
     elif method == "tools/list":

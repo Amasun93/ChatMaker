@@ -1,0 +1,17 @@
+{
+  "schema_version": "1.0",
+  "equipment": [
+    {
+      "equipment_id": "lasermaker-generic",
+      "path": "equipment/lasermaker-generic.json",
+      "summary": "LaserMaker colors, process layers, cut-last order and calibration boundary."
+    }
+  ],
+  "materials": [
+    {
+      "material_id": "wood-sheet-3mm",
+      "path": "materials/wood-sheet-3mm.json",
+      "summary": "Default adjustable 3 mm wood sheet for beginner laser-cut boxes."
+    }
+  ]
+}

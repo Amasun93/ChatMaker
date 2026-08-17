@@ -356,6 +356,8 @@ class ReleasePackageTests(unittest.TestCase):
         self.assertIn(prefix + "examples/chatweb/advanced-playground.html", names)
         self.assertIn(prefix + "knowledge/boards/arduino-nano-classic.yaml", names)
         self.assertIn(prefix + "knowledge/mechanical/boards/arduino-nano-classic.json", names)
+        self.assertIn(prefix + "knowledge/fabrication/equipment/lasermaker-generic.json", names)
+        self.assertIn(prefix + "knowledge/fabrication/materials/wood-sheet-3mm.json", names)
         self.assertIn(prefix + "packs/schemas/registry.schema.json", names)
         self.assertEqual(
             len([name for name in names if name.startswith(prefix + "packs/boards/")]),
