@@ -16,6 +16,11 @@ from chatmaker.installers import capabilities  # noqa: E402
 
 
 class CapabilityProbeTests(unittest.TestCase):
+    def test_windows_probe_includes_common_non_system_drive_installs(self):
+        v1, v2, _ = capabilities._mindplus_roots(Path("C:/Users/teacher"), {}, "windows")
+        self.assertIn(Path(r"E:\Mind+"), v1)
+        self.assertIn(Path(r"E:\Mind+2"), v2)
+
     def test_probe_environment_reports_platform_capabilities_from_a_table(self):
         """Catches regressions that turn an absent optional prerequisite into a failure."""
         cases = (

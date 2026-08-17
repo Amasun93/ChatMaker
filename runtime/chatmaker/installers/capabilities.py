@@ -69,6 +69,9 @@ def _mindplus_roots(home: Path, environ: Mapping[str, str], family: str) -> tupl
     if family == "windows":
         v1.extend([Path(r"C:\Program Files (x86)\Mind+"), Path(r"C:\Program Files\Mind+")])
         v2.extend([Path(r"C:\Program Files (x86)\Mind+2"), Path(r"C:\Program Files\Mind+2")])
+        for drive in "CDE":
+            v1.extend([Path(f"{drive}:\\Mind+"), Path(f"{drive}:\\MindPlus")])
+            v2.extend([Path(f"{drive}:\\Mind+2"), Path(f"{drive}:\\MindPlus2")])
         local = _path_from_environ(environ, "LOCALAPPDATA") or home / "AppData" / "Local"
         configs.append(local / "mind+" / "Arduino" / "arduino-cli.yaml")
     elif family == "macos":
