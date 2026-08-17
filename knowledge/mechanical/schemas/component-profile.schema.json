@@ -1,0 +1,119 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Amasun93/ChatMaker/knowledge/mechanical/schemas/component-profile.schema.json",
+  "title": "ChatMaker component mechanical profile",
+  "type": "object",
+  "required": ["schema_version", "kind", "component_id", "hardware_id", "name", "units", "coordinate_system", "outline", "mounting", "panel_features", "source_ids", "verification"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "kind": {"const": "component-mechanical-profile"},
+    "component_id": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"},
+    "hardware_id": {"type": "string", "pattern": "^IDM[DS]-[0-9]{4}$"},
+    "name": {"type": "string", "minLength": 1},
+    "units": {"const": "mm"},
+    "coordinate_system": {
+      "type": "object",
+      "required": ["origin", "x_positive", "y_positive"],
+      "properties": {
+        "origin": {"const": "PCB outline center"},
+        "x_positive": {"const": "right"},
+        "y_positive": {"const": "up"}
+      },
+      "additionalProperties": false
+    },
+    "outline": {
+      "type": "object",
+      "required": ["shape", "width", "depth", "status"],
+      "properties": {
+        "shape": {"const": "rectangle"},
+        "width": {"type": "number", "exclusiveMinimum": 0},
+        "depth": {"type": "number", "exclusiveMinimum": 0},
+        "status": {"const": "source_reviewed"}
+      },
+      "additionalProperties": false
+    },
+    "mounting": {
+      "type": "object",
+      "required": ["status", "pattern_x", "pattern_y", "holes", "fastener_class", "hole_diameter_status"],
+      "properties": {
+        "status": {"const": "source_reviewed"},
+        "pattern_x": {"type": "number", "exclusiveMinimum": 0},
+        "pattern_y": {"type": "number", "exclusiveMinimum": 0},
+        "holes": {
+          "type": "array",
+          "minItems": 4,
+          "maxItems": 4,
+          "items": {
+            "type": "object",
+            "required": ["x", "y", "status"],
+            "properties": {
+              "x": {"type": "number"},
+              "y": {"type": "number"},
+              "status": {"const": "source_reviewed"}
+            },
+            "additionalProperties": false
+          }
+        },
+        "fastener_class": {"const": "M3"},
+        "hole_diameter_status": {"const": "requires_measurement"}
+      },
+      "additionalProperties": false
+    },
+    "panel_features": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "purpose", "status", "availability", "note"],
+        "properties": {
+          "id": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"},
+          "purpose": {"enum": ["panel_cutout", "ventilation_opening", "functional_clearance"]},
+          "status": {"enum": ["source_reviewed", "unverified", "not_available", "requires_measurement"]},
+          "availability": {"enum": ["available", "not_available"]},
+          "shape": {"enum": ["round", "rect", "dual_round"]},
+          "center": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 2,
+            "items": {"type": "number"}
+          },
+          "diameter": {"type": "number", "exclusiveMinimum": 0},
+          "size": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 2,
+            "items": {"type": "number", "exclusiveMinimum": 0}
+          },
+          "center_spacing": {"type": "number", "exclusiveMinimum": 0},
+          "note": {"type": "string", "minLength": 1}
+        },
+        "additionalProperties": false
+      }
+    },
+    "source_ids": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"}
+    },
+    "verification": {
+      "type": "object",
+      "required": ["source_reviewed", "physical_fit"],
+      "properties": {
+        "source_reviewed": {
+          "type": "object",
+          "required": ["status", "checked_at", "evidence_level"],
+          "properties": {
+            "status": {"const": "verified"},
+            "checked_at": {"type": "string", "format": "date"},
+            "evidence_level": {"const": "sanitized_internal_source"}
+          },
+          "additionalProperties": false
+        },
+        "physical_fit": {"const": "unverified"}
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

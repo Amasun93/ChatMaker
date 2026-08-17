@@ -1,0 +1,28 @@
+{
+  "schema_version": "1.0",
+  "kind": "component-mechanical-profile",
+  "component_id": "idms-0001-starcore-button",
+  "hardware_id": "IDMS-0001",
+  "name": "IDMS-0001 星核板按钮传感器",
+  "units": "mm",
+  "coordinate_system": {"origin": "PCB outline center", "x_positive": "right", "y_positive": "up"},
+  "outline": {"shape": "rectangle", "width": 30, "depth": 30, "status": "source_reviewed"},
+  "mounting": {
+    "status": "source_reviewed",
+    "pattern_x": 20,
+    "pattern_y": 20,
+    "holes": [
+      {"x": -10, "y": -10, "status": "source_reviewed"},
+      {"x": 10, "y": -10, "status": "source_reviewed"},
+      {"x": 10, "y": 10, "status": "source_reviewed"},
+      {"x": -10, "y": 10, "status": "source_reviewed"}
+    ],
+    "fastener_class": "M3",
+    "hole_diameter_status": "requires_measurement"
+  },
+  "panel_features": [
+    {"id": "button-cap", "purpose": "panel_cutout", "status": "requires_measurement", "availability": "not_available", "note": "Button-cap diameter, travel, and center height require measurement from the actual module."}
+  ],
+  "source_ids": ["starcore-module-catalog-snapshot", "starcore-mechanical-facts-snapshot"],
+  "verification": {"source_reviewed": {"status": "verified", "checked_at": "2026-08-17", "evidence_level": "sanitized_internal_source"}, "physical_fit": "unverified"}
+}

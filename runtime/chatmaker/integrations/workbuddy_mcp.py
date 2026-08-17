@@ -19,7 +19,7 @@ from chatmaker.hardware import uno_mindplus as uno_bridge
 
 
 SERVER_NAME = "chatmaker-hardware"
-SERVER_VERSION = "1.13.0"
+SERVER_VERSION = "1.14.0"
 PROTOCOL_VERSION = "2024-11-05"
 
 TOOLS = [
@@ -444,6 +444,29 @@ TOOLS = [
         },
     },
     {
+        "name": "cad_component_profile_get",
+        "description": "按精确组件 ID 读取星核板自研模块的清洗机械尺寸、孔位、开口资料和实体适配状态；缺失尺寸必须先测量。",
+        "inputSchema": {
+            "type": "object",
+            "required": ["component_id"],
+            "properties": {
+                "component_id": {
+                    "type": "string",
+                    "enum": [
+                        "idmd-0001-starcore-rgb-light",
+                        "idmd-0002-starcore-serial-mp3",
+                        "idmd-0021-starcore-oled-1-3",
+                        "idms-0001-starcore-button",
+                        "idms-0003-starcore-potentiometer",
+                        "idms-0008-starcore-dht11",
+                        "idms-0009-starcore-ultrasonic",
+                    ],
+                }
+            },
+            "additionalProperties": False,
+        },
+    },
+    {
         "name": "cad_fabrication_get",
         "description": "读取 ChatCAD 的设备与工艺卡，包括材料默认厚度、LaserMaker 颜色图层、加工顺序和参数校准边界。",
         "inputSchema": {
@@ -547,6 +570,13 @@ def _tool_result(name: str, arguments: dict[str, Any]) -> dict[str, Any]:
     elif name == "cad_profile_get":
         result = cad_generator.execute_request(
             {"action": "profile", "board_id": arguments.get("board_id", "")}
+        )
+    elif name == "cad_component_profile_get":
+        result = cad_generator.execute_request(
+            {
+                "action": "component-profile",
+                "component_id": arguments.get("component_id", ""),
+            }
         )
     elif name == "cad_fabrication_get":
         result = cad_generator.execute_request(
@@ -697,7 +727,8 @@ def handle(request: dict[str, Any]) -> dict[str, Any] | None:
                 "ESP32 调用 esp32_compile_upload；只有精确载板身份和唯一非蓝牙有线端口都明确时才上传，"
                 "上传成功仍不能代替启动、Wi-Fi、HTTP 或实体效果验证。"
                 "需要运行日志时使用 serial_open/read/expect/write/close；空输出不算实物证据。"
-                "需要制作安装底板、激光切割图或三维模型时，先用 cad_profile_get 核对机械资料，"
+                "需要制作安装底板、激光切割图或三维模型时，先用 cad_profile_get 核对板卡机械资料；"
+                "涉及星核板自研模块时再用 cad_component_profile_get 按精确 ID 读取组件机械资料，缺失尺寸不得猜测。"
                 "再用 cad_fabrication_get 读取设备、材料、颜色图层和校准边界，最后用 cad_generate "
                 "生成可调参数的 OpenSCAD、DXF、SVG、STL 和右侧预览实验室。"
             ),

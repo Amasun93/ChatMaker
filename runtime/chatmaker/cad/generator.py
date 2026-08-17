@@ -9,7 +9,7 @@ import re
 from typing import Any, Iterable
 
 from .fabrication import get_fabrication_profile, list_fabrication_profiles
-from .profiles import get_profile, list_profiles
+from .profiles import get_component_profile, get_profile, list_profiles
 
 
 _PROJECT_NAME = re.compile(r"[^A-Za-z0-9\u4e00-\u9fff._-]+")
@@ -280,6 +280,8 @@ def execute_request(request: dict[str, Any]) -> dict[str, Any]:
         return list_profiles()
     if action == "profile":
         return get_profile(str(request.get("board_id", "")))
+    if action == "component-profile":
+        return get_component_profile(str(request.get("component_id", "")))
     if action == "list-fabrication-profiles":
         return list_fabrication_profiles()
     if action == "fabrication-profile":

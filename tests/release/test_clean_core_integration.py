@@ -347,7 +347,7 @@ class CleanCoreIntegrationTests(unittest.TestCase):
                 ).stdout
             )
             self.assertEqual(mcp["id"], 1)
-            self.assertEqual(len(mcp["result"]["tools"]), 32)
+            self.assertEqual(len(mcp["result"]["tools"]), 33)
 
             doctor = json.loads(
                 self._run(

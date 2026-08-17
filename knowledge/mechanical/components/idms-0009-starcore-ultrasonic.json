@@ -1,0 +1,28 @@
+{
+  "schema_version": "1.0",
+  "kind": "component-mechanical-profile",
+  "component_id": "idms-0009-starcore-ultrasonic",
+  "hardware_id": "IDMS-0009",
+  "name": "IDMS-0009 星核板 GPIO 超声波模块",
+  "units": "mm",
+  "coordinate_system": {"origin": "PCB outline center", "x_positive": "right", "y_positive": "up"},
+  "outline": {"shape": "rectangle", "width": 55.021, "depth": 30.021, "status": "source_reviewed"},
+  "mounting": {
+    "status": "source_reviewed",
+    "pattern_x": 45,
+    "pattern_y": 20,
+    "holes": [
+      {"x": -22.5, "y": -10, "status": "source_reviewed"},
+      {"x": 22.5, "y": -10, "status": "source_reviewed"},
+      {"x": 22.5, "y": 10, "status": "source_reviewed"},
+      {"x": -22.5, "y": 10, "status": "source_reviewed"}
+    ],
+    "fastener_class": "M3",
+    "hole_diameter_status": "requires_measurement"
+  },
+  "panel_features": [
+    {"id": "ultrasonic-transducers", "purpose": "panel_cutout", "status": "source_reviewed", "availability": "available", "shape": "dual_round", "center": [0, 0], "diameter": 15.8, "center_spacing": 25.525, "note": "Nominal twin transducer openings; transducer height and connector clearance remain physically unverified."}
+  ],
+  "source_ids": ["starcore-module-catalog-snapshot", "starcore-mechanical-facts-snapshot"],
+  "verification": {"source_reviewed": {"status": "verified", "checked_at": "2026-08-17", "evidence_level": "sanitized_internal_source"}, "physical_fit": "unverified"}
+}

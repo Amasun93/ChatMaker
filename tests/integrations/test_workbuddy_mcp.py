@@ -68,12 +68,13 @@ class WorkBuddyBridgeTests(unittest.TestCase):
                 "catalog_get",
                 "knowledge_get",
                 "cad_profile_get",
+                "cad_component_profile_get",
                 "cad_fabrication_get",
                 "cad_generate",
             },
         )
-        self.assertEqual(self.server.SERVER_VERSION, "1.13.0")
-        self.assertEqual(len(names), 32)
+        self.assertEqual(self.server.SERVER_VERSION, "1.14.0")
+        self.assertEqual(len(names), 33)
         upload_tool = next(
             tool for tool in self.server.TOOLS
             if tool["name"] == "nano_compile_upload"

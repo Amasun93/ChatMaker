@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0",
-  "updated_at": "2026-08-17",
+  "updated_at": "2026-08-18",
   "policy": "Publish normalized mechanical facts and provenance only. Keep proprietary manufacturing files private.",
   "sources": [
     {
@@ -29,6 +29,20 @@
       "url": "https://github.com/Amasun93/ChatMaker/tree/main/knowledge/mechanical",
       "artifact_sha256": "bfa157971adc8791d8b47de57c6aabd5f5c076c6f00f982655c2383dca066ea7",
       "evidence_level": "measured_from_private_dxf_step"
+    },
+    {
+      "id": "starcore-module-catalog-snapshot",
+      "title": "Starcore governed module catalog snapshot",
+      "url": "https://github.com/Amasun93/ChatMaker/tree/main/knowledge_sources",
+      "artifact_sha256": "fffa9a46d791820c6224ca82507fc7e7e732edf6e920b115e2394698081402f4",
+      "evidence_level": "normalized_internal_catalog"
+    },
+    {
+      "id": "starcore-mechanical-facts-snapshot",
+      "title": "Starcore sanitized component mechanical facts snapshot",
+      "url": "https://github.com/Amasun93/ChatMaker/tree/main/knowledge/mechanical/components",
+      "artifact_sha256": "68553ec917d9aead498618db1da4189a8d697e707630c733437dfaddac594620",
+      "evidence_level": "sanitized_internal_source"
     }
   ]
 }

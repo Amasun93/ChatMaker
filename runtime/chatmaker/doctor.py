@@ -7,9 +7,11 @@ import sys
 
 if __package__ in {None, ""}:  # Allow direct execution from a checked-out release folder.
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    from chatmaker.cad.profiles import validate_component_profiles
     from chatmaker.packs import canonical_verification_snapshot, validate_repository
     from chatmaker.skills import validate_skill_directory
 else:
+    from .cad.profiles import validate_component_profiles
     from .packs import canonical_verification_snapshot, validate_repository
     from .skills import validate_skill_directory
 
@@ -31,6 +33,7 @@ def main(argv: list[str] | None = None) -> int:
 
     if run_packs:
         report = validate_repository(root / "packs", root / "packs" / "schemas")
+        component_mechanics = validate_component_profiles()
         snapshot, digest = canonical_verification_snapshot(root / "packs")
         payload["packs"] = {
             "ok": report.ok,
@@ -41,6 +44,8 @@ def main(argv: list[str] | None = None) -> int:
             "verification_snapshot_sha256": digest,
         }
         errors.extend(report.errors)
+        payload["component_mechanics"] = component_mechanics
+        errors.extend(component_mechanics["errors"])
     if run_skills:
         skill_results: dict[str, list[str]] = {}
         for skill_dir in sorted(path for path in (root / "skills").iterdir() if path.is_dir()):
