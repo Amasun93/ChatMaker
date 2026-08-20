@@ -17,3 +17,4 @@ playwright-report/
 test-results/
 knowledge_sources/raw/
 knowledge_sources/cleaned/
+.workbuddy/

@@ -12,6 +12,7 @@ license = {text = "Apache-2.0"}
 dependencies = [
   "PyYAML>=6.0,<7",
   "cryptography>=45,<49",
+  "fonttools>=4.47,<5",
   "jsonschema>=4.20,<5",
   "pyserial>=3.5,<4",
 ]
