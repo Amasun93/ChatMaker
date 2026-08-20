@@ -49,6 +49,7 @@ class KnowledgePublicationPipelineTests(unittest.TestCase):
         "IDMS-0003",
         "IDMS-0008",
         "IDMS-0009",
+        "IDMM-0007",
     }
 
     def make_workspace(self, root: Path) -> Path:
@@ -153,7 +154,7 @@ class KnowledgePublicationPipelineTests(unittest.TestCase):
                 self.assertEqual(manifest["source_reviewed"]["status"], "unverified")
         self.assertEqual(actual_boards, expected_boards)
 
-    def test_starcore_manifest_governs_exact_seven_module_rewrites(self):
+    def test_starcore_manifest_governs_exact_approved_module_rewrites(self):
         manifest = yaml.safe_load(
             (
                 ROOT

@@ -9,6 +9,7 @@ from typing import Any
 
 from .directions import DesignDirection, suggest_directions
 from .game_templates import render_game
+from .premium_templates import render_mission_console, render_spatial_glass
 
 
 @dataclass(frozen=True)
@@ -17,7 +18,7 @@ class WebProjectRequest:
     title: str
     prompt: str
     primary_label: str
-    direction_id: str
+    direction_id: str = "auto"
 
 
 @dataclass(frozen=True)
@@ -28,6 +29,8 @@ class GeneratedWebProject:
 
 
 def _direction_for(request: WebProjectRequest) -> DesignDirection:
+    if not request.direction_id or request.direction_id == "auto":
+        return suggest_directions(request.kind, limit=1)[0]
     for direction in suggest_directions(request.kind):
         if direction.id == request.direction_id:
             return direction
@@ -42,6 +45,22 @@ def _render(request: WebProjectRequest, direction: DesignDirection) -> str:
             title=request.title,
             prompt=request.prompt,
             start_label=request.primary_label,
+            direction=direction,
+        )
+
+    if request.kind == "classroom-tool" and direction.id == "editorial-signal":
+        return render_spatial_glass(
+            title=request.title,
+            prompt=request.prompt,
+            label=request.primary_label,
+            direction=direction,
+        )
+
+    if request.kind == "hardware-interface" and direction.id == "device-console":
+        return render_mission_console(
+            title=request.title,
+            prompt=request.prompt,
+            label=request.primary_label,
             direction=direction,
         )
 

@@ -32,6 +32,14 @@ The default first preview combines three restrained layers:
 2. one immediate response to the user's primary action;
 3. one result, success or state-transition effect.
 
+ChatWeb ships three flagship one-file treatments for the most common beginner scenes:
+
+- `editorial-signal`: a spatial-glass classroom poll with ambient depth, spring press feedback and a count halo/burst.
+- `device-console`: a mission-console hardware simulation with a signal scope, physical control feedback and a disconnected/connected state lock.
+- `reaction-rush`: a stage-like timed interaction with spotlight atmosphere, target feedback and a score/end-state change.
+
+When `direction_id` is omitted or set to `auto`, `chatmaker-web` chooses the first curated flagship for the requested project kind. Existing direction IDs remain valid. The output stays native, offline and single-file; these treatments are methods learned from premium micro-interactions, not copied React components.
+
 Choose them from the content. A classroom draw can use a card shuffle, spring selection and brief celebration. A hardware controller can use a live glow, physical press and clear state morph. A presentation page can use layered depth, text reveal and a focused section transition.
 
 For a beginner, classroom tool or one-file hardware page, recreate the selected interaction with native HTML, CSS and JavaScript so the result opens directly and remains offline-capable.

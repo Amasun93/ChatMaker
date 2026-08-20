@@ -32,3 +32,12 @@ starcore-idms-0009-ultrasonic-distance
 ```
 
 这七个示例已在当前 Mind+ 1.8 目标下真实编译通过（7/7）。编译通过只证明源码、板型和库组合能够生成固件；由于目前没有实体板，烧录、串口、重启和物理效果仍为 `unverified`。
+
+另外提供两个课堂 Recipe，继续复用 canonical 通用组件和同一 Mind+ 目标：
+
+```text
+starcore-ws2812-classroom-strip        通用 WS2812，P8，低亮度测试
+starcore-sg90-safe-position            通用 SG90，P9，小范围测试
+```
+
+这两个新增配方的 `code_compiled` 以各自 Recipe 当前状态为准，不沿用上面的 7/7 结论。I2C 扫描、IDMM-0007 只读诊断和 OLED 中文完整模板位于 ChatDuino 聚焦参考卡，不再各建一个 Recipe。IDMD-0021 中文必须使用 `MPython.h` 的全局 `display`。Mind+ 需要另把 `Noto_Sans_CJK_SC_Light16.xbf` 写入 Flash `0x400000`；普通应用上传不证明字库已存在，U8g2 也不是星核板的修复方案。

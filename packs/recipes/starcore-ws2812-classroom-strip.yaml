@@ -1,0 +1,31 @@
+schema_version: "1.0"
+kind: recipe
+id: starcore-ws2812-classroom-strip
+name: 星核板 WS2812 低亮度课堂测试
+summary: 用 P8 经过 3.3V 到 5V 电平转换，安全驱动独立 5V 供电的通用 WS2812 灯带。
+sources:
+  - title: ChatMaker governed Starcore source manifest
+    url: https://github.com/Amasun93/ChatMaker/tree/main/knowledge_sources
+  - title: Adafruit NeoPixel best practices
+    url: https://learn.adafruit.com/adafruit-neopixel-uberguide/best-practices
+verification:
+  source_reviewed:
+    status: verified
+    checked_at: "2026-08-20"
+    evidence: Governed Starcore wiring guidance and the canonical WS2812 component card confirm P8, DIN direction, level shifting, external 5 V power and shared ground.
+  code_compiled:
+    status: verified
+    checked_at: "2026-08-21"
+    evidence: docs/verification/2026-08-21-starcore-classroom-recipes.md records exit code 0 for this exact checked-in source and Starcore FQBN.
+  firmware_uploaded: &unverified
+    status: unverified
+    checked_at: null
+    evidence: null
+  physical_effect_verified: *unverified
+boards: [idmc-0001-starcore-v4-2-2]
+components: [ws2812b-addressable-rgb]
+wiring:
+  - {component: ws2812b-addressable-rgb, component_pin: DIN, board_pin: P8}
+  - {component: ws2812b-addressable-rgb, component_pin: GND, board_pin: GND, shared: true}
+source_file: examples/chatduino/starcore/starcore-ws2812-classroom-strip/starcore-ws2812-classroom-strip.ino
+expected_effect: 串口显示 STARCORE_WS2812_READY，已确认数量的灯珠以低亮度依次显示暗红、暗绿、暗蓝和熄灭；灯带供电与实物效果仍需接板确认。

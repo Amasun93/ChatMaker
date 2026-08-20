@@ -41,6 +41,7 @@ test("classroom example records the primary signal on a phone", async ({ page })
   await primary.click();
   await expect(page.locator("#count")).toHaveText("1");
   await expect(page.locator("#status")).toHaveText("已收到第 1 条信号");
+  await expect(page.locator("main")).toHaveAttribute("data-template", "spatial-glass");
   expect(errors).toEqual([]);
 });
 
@@ -54,6 +55,7 @@ test("simulated hardware example labels its browser-only connection", async ({ p
   await primary.click();
   await expect(page.locator("#status")).toHaveText("模拟设备已连接（仅浏览器演示）");
   await expect(page.locator(".card")).toHaveAttribute("data-mode", "simulation");
+  await expect(page.locator("main")).toHaveAttribute("data-template", "mission-console");
   expect(errors).toEqual([]);
 });
 
@@ -95,6 +97,7 @@ test("three mini-game patterns start, respond, and complete a playable loop", as
   await page.locator("#start").click();
   await page.locator(".target").click();
   await expect(page.locator("#score")).toHaveText("1");
+  await expect(page.locator("main")).toHaveAttribute("data-game", "reaction-rush");
 
   await page.goto(pageUrl("examples/chatweb/game-dodge-collect.html"));
   await page.locator("#start").click();

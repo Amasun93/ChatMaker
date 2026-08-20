@@ -43,6 +43,7 @@ pins:
 supported_boards: [idmc-0001-starcore-v4-2-2]
 constraints:
   - Use the MPython.h global display object; do not add U8g2 or a second SSD1306 driver.
+  - Chinese text uses Noto_Sans_CJK_SC_Light16.xbf at Flash address 0x400000; an application-only upload does not prove that the font asset is present.
   - Scan or confirm 0x3C versus 0x3D rather than guessing when the screen stays blank.
   - The source-reviewed card does not authorize drawPixel, clear, or clearDisplay APIs.
 identification:
@@ -61,5 +62,6 @@ example_files:
 common_failures:
   - Using an SH1106, SPI, or generic 0.96-inch module recipe can select the wrong driver, pinout, or dimensions.
   - A wrong address or mismatched-voltage I2C bank leaves the display blank or risks the ESP32 bus.
+  - English working while Chinese is blank or garbled usually points to the separate Mind+ font asset at 0x400000, not to a need for U8g2.
 board_notes:
   idmc-0001-starcore-v4-2-2: Use a matching-voltage I2C connector; P19 is SCL and P20 is SDA on the shared bus.

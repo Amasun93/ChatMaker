@@ -46,7 +46,7 @@ supported_boards:
 constraints:
   - Confirm the DIN arrow direction; data must enter DIN rather than DOUT.
   - Use a 300 to 500 ohm series resistor near DIN and follow the documented power-input capacitor guidance.
-  - Power more than a minimal low-brightness test from a suitable external 5 V supply and connect its ground to Nano GND.
+  - Power more than a minimal low-brightness test from a suitable external 5 V supply and connect its ground to the controller ground.
   - Never power a strip from a GPIO pin, and calculate the supply for the number of pixels and intended brightness.
 identification:
   - Confirm a WS2812B-compatible 5 V pixel or strip, the DIN/DOUT arrows, the number of pixels, and whether the color order is GRB or another documented order.
@@ -68,6 +68,7 @@ example_files:
   - examples/chatduino/uno/ws2812-one-pixel/ws2812-one-pixel.ino
   - examples/chatduino/esp32/ws2812-one-pixel/ws2812-one-pixel.ino
   - examples/chatduino/starcore/ws2812-strip/ws2812-strip.ino
+  - examples/chatduino/starcore/starcore-ws2812-classroom-strip/starcore-ws2812-classroom-strip.ino
 common_failures:
   - Reversing DIN and DOUT prevents the strip from responding.
   - Missing shared ground causes random or absent data even when the 5 V supply is present.
@@ -77,4 +78,4 @@ board_notes:
   arduino-nano-classic: The example uses D6, one pixel, and brightness 32; use an external 5 V supply with shared ground before expanding the pixel count.
   arduino-uno-r3: Use D6 for DIN in the example; power a strip from a suitable external 5 V supply and share GND.
   esp32-devkit-v1: Use GPIO27 for DIN; a 3.3 V to 5 V logic-level shifter is the reliable classroom choice when the strip runs at 5 V.
-  idmc-0001-starcore-v4-2-2: Use DIN P8, external 5 V power and shared GND; MPython.h already exposes the NeoPixel type.
+  idmc-0001-starcore-v4-2-2: Use DIN P8 through a 3.3 V to 5 V 74AHCT125-class level shifter, external 5 V power and shared GND; MPython.h already exposes the NeoPixel type.

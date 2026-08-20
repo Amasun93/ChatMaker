@@ -82,6 +82,10 @@ Read [esp32-doit-devkit-v1.md](references/esp32-doit-devkit-v1.md) before accept
 - Upload only after the user has confirmed the physical board is Starcore v4.2.2 and one unambiguous non-Bluetooth wired port remains.
 - A successful compile or upload does not verify restart, serial output, connected modules, browser exchange, or physical effects.
 
+Read [starcore-classroom-modules.md](references/starcore-classroom-modules.md) before using a WS2812 strip, a three-wire PWM servo, or the IDMM-0007 serial-servo driver with Starcore. WS2812 and SG90 remain canonical common components; do not invent Starcore-owned replacements for them. IDMM-0007 is a different UART driver, and unknown protocol details permit identification and receive-only diagnosis only—never a movement command.
+
+Read [oled-i2c-troubleshooting.md](references/oled-i2c-troubleshooting.md) when an I2C display is blank or Chinese text is requested. Nano and Uno may use a suitable U8g2 font after an address scan and memory check. Starcore IDMC-0001 with Mind+ mPython must instead use the `MPython.h` global `display` object and the Mind+ font-write path documented there; U8g2 is not a Starcore repair.
+
 ## Safety boundaries
 
 - Keep USB and external power disconnected while wiring.

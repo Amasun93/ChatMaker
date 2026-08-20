@@ -140,7 +140,7 @@ V1.0 采用渐进创作流程：先帮助用户跑通最小硬件作品，再按
 
 ## 板卡知识怎样按需出现
 
-Core 首次安装只带运行层、ChatMaker / ChatDuino / ChatWeb / ChatCAD 四个 Skill、4 块板卡、20 种元器件、23 个配方、四个紧凑索引、首批机械资料、schema 与当前案例，不带体积较大的扩展正文。这样基础安装更小，也不会把测试或构建缓存交给普通用户。
+Core 首次安装只带运行层、ChatMaker / ChatDuino / ChatWeb / ChatCAD 四个 Skill、4 块板卡、21 种元器件、25 个配方、四个紧凑索引、首批机械资料、schema 与当前案例，不带体积较大的扩展正文。这样基础安装更小，也不会把测试或构建缓存交给普通用户。
 
 当 AI 第一次读取某块板卡的详细章节时，`chatmaker-knowledge` 可以按需取得对应知识包并在之后复用。这个动作只安装知识资料，不会安装驱动、Mind+、Arduino Core、Node 或 Chromium。
 
@@ -166,9 +166,9 @@ chatmaker-pack rollback chatmaker-board-arduino-nano-classic-knowledge --version
 | Nano/Uno Mind+ 项目流程 | 部分验证 | 独立板型规则、Blink 和 OLED 仪表盘已真实编译；新增连续入口自动检查环境、编译并在有唯一有线端口时烧录，实体板效果等待用户测试 |
 | 星核板 Mind+ 适配器 | 编译已验证 | 使用 Mind+ 1.8 当前 mPython 兼容目标完成基础示例和七个自研模块示例真实编译；安全烧录入口已接入，等待实体星核板测试 |
 | DOIT ESP32 DevKit V1 | 部分验证 | 官方 `esp32:esp32@3.3.11` 已安装；`prepare-environment` 真实 no-op 成功；`esp32:esp32:esp32doit-devkit-v1` 已通过 Blink 和 AP 案例真实编译；烧录、启动、串口、SoftAP、HTTP 和实体效果仍待实板 |
-| 常用模块、库和示例 | 首批已验证 | 20 种元器件、23 个配方通过资料校验；12 个 Nano、2 个 Uno、2 个 ESP32 和 7 个星核板自研模块示例真实编译 |
+| 常用模块、库和示例 | 继续扩充 | 21 种元器件、25 个配方已接入；新增星核板 WS2812 与 SG90 课堂示例并真实编译，IDMM-0007 只读诊断、I²C 排错和 OLED 中文分板卡引导已加入 |
 | ESP32 AP 手机控制案例 | 部分验证 | `examples/chatweb/esp32-ap-control.html` 是唯一页面源，`chatmaker-web-embed` 生成 `examples/chatduino/esp32/ap-led-sensor/page_html.h`，固件用 `send_P` 和显式长度嵌入页面；浏览器模拟和固件真实编译已通过，硬件仍未验证 |
-| ChatWeb 生成和本地预览 | 部分验证 | 支持课堂页、小游戏、模拟硬件页、ESP32 HTTP 页面，以及按需启用的 Nano/Uno Web Serial 控制台；真实串口网页交互等待实体板测试，模拟预览不代表硬件已连接 |
+| ChatWeb 生成和本地预览 | 部分验证 | 一句话可自动获得空间玻璃课堂页、科幻模拟设备台或舞台闪光挑战；仍支持小游戏、ESP32 HTTP 页面和 Nano/Uno Web Serial 控制台，模拟预览不代表硬件已连接 |
 | ChatWeb 小游戏 | Alpha 可试玩 | 新增 `mini-game` 路由和反应挑战、躲避收集、拖拽解谜三种单文件模板；默认离线、支持触控，复杂平台与节奏玩法保留为进阶方向 |
 | 可执行路由与创意规划 | 已验证 | `chatmaker-route` 返回硬件、网页、组合或澄清路线；`chatmaker-web-plan` 在信息不足时只提问，在信息充分时给出 2–3 条精选方向 |
 | 高级方向游乐场 | 显式启用 | 额外方向和 `chatmaker-web-playground` 仅在布尔 `advanced=true` / CLI `--advanced` 时开放 |

@@ -62,6 +62,7 @@ example_files:
   - examples/chatduino/uno/servo-button/servo-button.ino
   - examples/chatduino/esp32/servo-button/servo-button.ino
   - examples/chatduino/starcore/servo-position/servo-position.ino
+  - examples/chatduino/starcore/starcore-sg90-safe-position/starcore-sg90-safe-position.ino
 common_failures:
   - Powering the servo from an undersized USB or board rail can reset the Nano or cause jitter.
   - Sending angles beyond the mechanism limits can stall and overheat the servo.
@@ -69,4 +70,4 @@ board_notes:
   arduino-nano-classic: The compiled example uses D9 for the signal; use an adequate 5 V supply and a shared ground for loaded motion.
   arduino-uno-r3: Use D9 for signal and a separate adequate 5 V supply with shared GND.
   esp32-devkit-v1: Use GPIO18 for signal; never feed 5 V into an ESP32 GPIO and power the servo separately with shared GND.
-  idmc-0001-starcore-v4-2-2: Use P9 for signal and an external 5 V supply with shared GND; do not use the board 3V3 rail for servo power.
+  idmc-0001-starcore-v4-2-2: Use P9 for signal and an external 5 V supply with shared GND; do not use the board 3V3 rail for servo power, and begin with a mechanically clear 60/90/120 degree test range.

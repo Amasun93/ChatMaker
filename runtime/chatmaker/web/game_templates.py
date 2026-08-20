@@ -45,6 +45,29 @@ _GAME_SHELL = r'''<!doctype html>
     button:focus-visible { outline:4px solid var(--accent); outline-offset:4px; }
     #status { min-height:1.5em; margin:0; font-weight:850; }
     .hint { margin:14px 0 0; font-size:.86rem; opacity:.72; }
+    body.game-reaction-rush { background:
+      radial-gradient(circle at 15% 10%,rgba(77,238,234,.16),transparent 30rem),
+      radial-gradient(circle at 90% 0,rgba(255,79,163,.2),transparent 32rem),#080716; }
+    main[data-game="reaction-rush"] { color:#f9f6ff; }
+    main[data-game="reaction-rush"] .eyebrow { color:#4deeea; }
+    main[data-game="reaction-rush"] .hud span { border-color:rgba(255,255,255,.2); color:#f9f6ff; background:rgba(255,255,255,.08); backdrop-filter:blur(14px); }
+    main[data-game="reaction-rush"] .game-stage { isolation:isolate; border-color:rgba(255,255,255,.18); background:
+      radial-gradient(circle at 50% -10%,rgba(255,79,163,.45),transparent 42%),
+      radial-gradient(circle at 10% 110%,rgba(77,238,234,.28),transparent 42%),#0d0c21;
+      box-shadow:0 30px 80px rgba(8,5,28,.5),inset 0 0 70px rgba(142,80,255,.14); }
+    main[data-game="reaction-rush"] .game-stage::before,
+    main[data-game="reaction-rush"] .game-stage::after { content:""; position:absolute; z-index:-1; top:-35%; width:34%; height:150%; pointer-events:none; opacity:.38; filter:blur(8px); }
+    main[data-game="reaction-rush"] .game-stage::before { left:7%; background:linear-gradient(to bottom,rgba(77,238,234,.9),transparent 68%); transform:rotate(-18deg); transform-origin:top; }
+    main[data-game="reaction-rush"] .game-stage::after { right:7%; background:linear-gradient(to bottom,rgba(255,79,163,.9),transparent 68%); transform:rotate(18deg); transform-origin:top; }
+    main[data-game="reaction-rush"] .target { border-color:#fff; color:#111024; background:linear-gradient(145deg,#fff,#ffe169); box-shadow:0 0 0 8px rgba(255,255,255,.07),0 0 38px #ff4fa3; transition:transform .14s cubic-bezier(.2,.8,.2,1); }
+    main[data-game="reaction-rush"] .target:active { transform:scale(.84); }
+    main[data-game="reaction-rush"] #start { border-color:#4deeea; color:#0b1020; background:#4deeea; box-shadow:0 10px 30px rgba(77,238,234,.18); transition:transform .16s,box-shadow .16s; }
+    main[data-game="reaction-rush"] #start:active { transform:scale(.97); }
+    main[data-game="reaction-rush"] .game-stage[data-state="hit"] { animation:stage-hit .32s ease-out; }
+    main[data-game="reaction-rush"] .game-stage[data-state="hit"]::before { opacity:.72; }
+    main[data-game="reaction-rush"] .hud output[data-pop="true"] { display:inline-block; animation:score-pop .34s ease-out; }
+    @keyframes stage-hit { 50% { box-shadow:0 0 0 4px rgba(77,238,234,.28),0 30px 90px rgba(255,79,163,.28),inset 0 0 90px rgba(77,238,234,.18); } }
+    @keyframes score-pop { 50% { color:#4deeea; transform:scale(1.35); } }
     @media (max-width:680px) {
       header { grid-template-columns:1fr; } .hud { justify-content:flex-start; }
       .game-stage { min-height:390px; } .puzzle-board { grid-template-columns:1fr; }
@@ -53,7 +76,7 @@ _GAME_SHELL = r'''<!doctype html>
     @media (prefers-reduced-motion:reduce) { *,*::before,*::after { animation:none!important; transition:none!important; } }
   </style>
 </head>
-<body>
+<body class="game-__GAME_ID__">
   <main data-kind="mini-game" data-game="__GAME_ID__">
     <header>
       <div>
@@ -101,7 +124,8 @@ _REACTION_SCRIPT = r'''
       resetShell(); stage.replaceChildren(); start.disabled=true; status.textContent='看到星星就点它！';
       let remaining=20;
       const target=document.createElement('button'); target.className='target'; target.type='button'; target.textContent='★'; target.setAttribute('aria-label','点击得分');
-      target.addEventListener('click',()=>{ score.value=String(Number(score.value)+1); placeTarget(target); status.textContent=`命中！当前 ${score.value} 分`; });
+      target.addEventListener('click',()=>{ score.value=String(Number(score.value)+1); placeTarget(target); status.textContent=`命中！当前 ${score.value} 分`;
+        stage.dataset.state='hit'; score.dataset.pop='true'; window.setTimeout(()=>{ if(stage.dataset.state==='hit') stage.dataset.state='playing'; score.dataset.pop='false'; },340); });
       stage.append(target); placeTarget(target); timer.value=String(remaining);
       reactionTimer=window.setInterval(()=>{ remaining-=1; timer.value=String(remaining); if(remaining<=0) finish(`游戏结束，你获得了 ${score.value} 分。`); },1000);
       cleanup=()=>window.clearInterval(reactionTimer);

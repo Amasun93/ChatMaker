@@ -1,0 +1,60 @@
+schema_version: "1.0"
+kind: component
+id: idmm-0007-starcore-serial-servo-driver
+hardware_id: IDMM-0007
+name: IDMM-0007 星核板串口舵机驱动
+aliases: [星核串口舵机驱动, 串口舵机控制板]
+category: actuator-driver
+interface: uart-protocol-unknown
+supply_voltage:
+  minimum: null
+  maximum: null
+  status: unverified
+logic_boundary: Supply voltage, servo power, UART logic level, baud rate, IDs and command frames must come from the exact matched driver and servo documentation; unknown values do not authorize power or transmission.
+source_ids: [starcore-module-catalog-snapshot, starcore-classroom-module-cards-snapshot, starcore-code-patterns-snapshot, starcore-board-pin-map-snapshot]
+sources:
+  - title: ChatMaker governed Starcore source manifest
+    url: https://github.com/Amasun93/ChatMaker/tree/main/knowledge_sources
+verification:
+  source_reviewed:
+    status: verified
+    checked_at: "2026-08-20"
+    evidence: Governed Starcore sources identify IDMM-0007 as a UART servo driver and document the P26 receive/P23 transmit classroom route while leaving the attached-servo protocol unspecified.
+  code_compiled: &unverified
+    status: unverified
+    checked_at: null
+    evidence: null
+  firmware_uploaded: *unverified
+  physical_effect_verified: *unverified
+pins:
+  - id: VCC
+    role: logic-power-unconfirmed
+  - id: GND
+    role: ground
+  - id: TXD
+    role: uart-output
+  - id: RXD
+    role: uart-input
+  - id: SERVO_BUS
+    role: matched-servo-power-and-data
+supported_boards: [idmc-0001-starcore-v4-2-2]
+constraints:
+  - Do not power the module until its exact logic and servo supply requirements are confirmed.
+  - When protocol, baud, servo model, ID or frame format is unknown, leave RXD disconnected and do not send bytes.
+  - A receive-only monitor may observe TXD only after confirming that its logic level does not exceed the Starcore 3.3 V input limit.
+  - Never infer a movement command from another serial-servo brand or a generic UART example.
+identification:
+  - Confirm the IDMM-0007 marking, connector labels, attached servo brand/model, supply requirements and matching protocol document; do not confuse it with a three-wire PWM SG90.
+libraries:
+  - name: ESP32 HardwareSerial receive-only diagnostic
+    headers: [MPython.h]
+    status: unverified
+    notes: The checked-in receive-only diagnostic opens UART1 and reads bytes only; 9600 is an adjustable observation starting point, not a verified command protocol.
+example_files:
+  - examples/chatduino/starcore/starcore-idmm-0007-read-only-diagnostic/starcore-idmm-0007-read-only-diagnostic.ino
+common_failures:
+  - A silent receive-only monitor is inconclusive because many servo buses transmit only after a valid request.
+  - Guessing another brand's voltage, baud rate, frame or servo ID can move hardware unexpectedly or damage the driver.
+  - Connecting module RXD invites accidental transmission; keep it disconnected during unknown-protocol diagnosis.
+board_notes:
+  idmc-0001-starcore-v4-2-2: For receive-only diagnosis connect module TXD to P26 and share GND; leave module RXD/P23 disconnected until the exact protocol is reviewed.

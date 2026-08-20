@@ -1,0 +1,31 @@
+schema_version: "1.0"
+kind: recipe
+id: starcore-sg90-safe-position
+name: 星核板 SG90 小范围安全测试
+summary: 用 P9 控制独立 5V 供电并与星核板共地的通用三线 SG90 舵机，在小范围角度间缓慢测试。
+sources:
+  - title: ChatMaker governed Starcore source manifest
+    url: https://github.com/Amasun93/ChatMaker/tree/main/knowledge_sources
+  - title: Arduino Servo library reference
+    url: https://docs.arduino.cc/libraries/servo/
+verification:
+  source_reviewed:
+    status: verified
+    checked_at: "2026-08-20"
+    evidence: Governed Starcore classroom guidance and the canonical SG90 component card confirm P9 control, external 5 V power, shared ground and conservative first motion.
+  code_compiled:
+    status: verified
+    checked_at: "2026-08-21"
+    evidence: docs/verification/2026-08-21-starcore-classroom-recipes.md records exit code 0 for this exact checked-in source and Starcore FQBN.
+  firmware_uploaded: &unverified
+    status: unverified
+    checked_at: null
+    evidence: null
+  physical_effect_verified: *unverified
+boards: [idmc-0001-starcore-v4-2-2]
+components: [sg90-micro-servo]
+wiring:
+  - {component: sg90-micro-servo, component_pin: SIGNAL, board_pin: P9}
+  - {component: sg90-micro-servo, component_pin: GND, board_pin: GND, shared: true}
+source_file: examples/chatduino/starcore/starcore-sg90-safe-position/starcore-sg90-safe-position.ino
+expected_effect: 串口显示 STARCORE_SG90_READY，机构在确认无碰撞后依次到达 60、90、120、90 度；独立供电、上传和真实运动仍需接板确认。

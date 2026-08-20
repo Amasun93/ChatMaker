@@ -22,15 +22,15 @@ _DIRECTIONS: dict[str, tuple[DesignDirection, ...]] = {
     "classroom-tool": (
         DesignDirection(
             id="editorial-signal",
-            name="编辑部信号板",
-            feeling="清醒、有观点，像一张会回应的课堂海报",
+            name="空间玻璃信号台",
+            feeling="轻盈、精致，像一块悬浮在光影中的互动玻璃",
             primary_interaction="学生轻触主按钮，数字与状态立即回应",
-            best_for="投票、反馈、提问收集和大屏展示",
+            best_for="课堂投票、即时反馈、提问收集和大屏展示",
             tradeoff="强调一件核心事情，不适合同时堆很多统计卡片",
             palette=("#f3ead8", "#18201c", "#e5482e", "#f5b942"),
             typography="serif-display",
-            motion="staggered-reveal",
-            aesthetic="editorial-signal",
+            motion="glass-halo",
+            aesthetic="spatial-glass",
         ),
         DesignDirection(
             id="tactile-spark",
@@ -86,15 +86,15 @@ _DIRECTIONS: dict[str, tuple[DesignDirection, ...]] = {
     "hardware-interface": (
         DesignDirection(
             id="device-console",
-            name="设备状态台",
-            feeling="可靠、清楚，像一台经过设计的科学仪器",
+            name="星舰设备舱",
+            feeling="可靠、精确，像一台正在等待接入的未来科学仪器",
             primary_interaction="先看清连接状态，再发送控制命令并等待设备回执",
             best_for="传感器看板、灯光控制和课堂硬件演示",
             tradeoff="状态信息优先，装饰性会主动让位给可读性",
             palette=("#e7ece8", "#101714", "#2e7d62", "#f0a43c"),
             typography="technical-editorial",
-            motion="state-transition",
-            aesthetic="device-console",
+            motion="signal-lock",
+            aesthetic="mission-console",
         ),
         DesignDirection(
             id="tactile-control",
@@ -150,8 +150,8 @@ _DIRECTIONS: dict[str, tuple[DesignDirection, ...]] = {
     "mini-game": (
         DesignDirection(
             id="reaction-rush",
-            name="闪光反应赛",
-            feeling="轻快、直接，每次命中都有立刻得到奖励的感觉",
+            name="舞台闪光挑战",
+            feeling="像走进一场迷你灯光秀，每次命中都有舞台回应",
             primary_interaction="在倒计时内不断点击或轻触随机出现的目标",
             best_for="反应训练、课堂热身、找目标和限时收集",
             tradeoff="上手最快，但玩法深度主要来自节奏、连击和目标变化",

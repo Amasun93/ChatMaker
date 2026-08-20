@@ -22,6 +22,7 @@ ChatWeb is an internal specialist under the ChatMaker parent entry. Keep this Sk
 2. Define the primary user action and the visible success, loading, disconnected, and failure states.
 3. Select the direction that best fits the idea, scene and desired feeling. Build it before presenting alternatives; record the selection or assumptions internally.
 4. Generate one self-contained HTML file with `chatmaker-web`, with CSS and JavaScript embedded. Split into multiple files only when reuse or project size makes that simpler for the user.
+   Omit `direction_id` or use `"auto"` for the strongest default treatment. The three flagship defaults are spatial-glass classroom interaction, mission-console hardware atmosphere, and stage-like timed play; the user never needs to choose React, a CLI package, or an animation library.
 5. Design for phone and classroom use: at least 44 px touch targets, strong contrast, concise labels, visible focus, reduced-motion support, and visible feedback.
    For every clear build, read [premium-micro-interactions.md](references/premium-micro-interactions.md) and choose content-matched signature effects. “Beginner” changes how little the user must configure, not how ordinary the result should look.
 6. Start the selected file with `chatmaker-web-preview`. Keep the default `127.0.0.1` binding; use network access only after an explicit request.

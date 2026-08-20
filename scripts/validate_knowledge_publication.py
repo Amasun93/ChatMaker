@@ -31,6 +31,7 @@ STARCORE_MODULE_IDS = {
     "IDMS-0003",
     "IDMS-0008",
     "IDMS-0009",
+    "IDMM-0007",
 }
 MANUFACTURING_SOURCE_EXTENSIONS = (
     "step",
@@ -163,7 +164,7 @@ def _validate_starcore_migrations(
         item.get("hardware_id") for item in migrations if isinstance(item, dict)
     ]
     if len(hardware_ids) != len(set(hardware_ids)) or set(hardware_ids) != STARCORE_MODULE_IDS:
-        errors.append(f"{manifest_path}: module_migrations must contain the exact seven approved hardware IDs")
+        errors.append(f"{manifest_path}: module_migrations must contain the exact approved hardware IDs")
     for item in migrations:
         if not isinstance(item, dict):
             continue

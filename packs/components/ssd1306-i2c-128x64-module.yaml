@@ -54,6 +54,10 @@ libraries:
     headers: [Adafruit_GFX.h, Adafruit_SSD1306.h]
     status: compile_verified
     notes: ESP32 example compiled with Arduino-ESP32 3.3.11, Adafruit SSD1306 2.5.17 and its resolved GFX dependency.
+  - name: U8g2 UTF-8 font route for AVR
+    headers: [U8g2lib.h]
+    status: unverified
+    notes: Nano and Uno may use a page-buffer U8g2 constructor plus a verified glyph subset for Chinese; check library availability, target glyph coverage, Flash and RAM by compiling the exact program.
 example_files:
   - examples/chatduino/nano/oled-light/oled-light.ino
   - examples/chatduino/nano/oled-dashboard/oled-dashboard.ino
@@ -62,6 +66,7 @@ example_files:
 common_failures:
   - A screen sold only as 0.96-inch OLED may use SH1106, SPI, another resolution, or another address.
   - Swapped SDA and SCL or the wrong 0x3C versus 0x3D address leaves the screen blank.
+  - A U8g2 font that omits the requested glyphs cannot display them; a full CJK font may exceed Nano or Uno memory, so prefer a project-specific subset.
 board_notes:
   arduino-nano-classic: Use SDA A4 and SCL A5; confirm module 5 V compatibility before connecting VCC to 5V.
   arduino-uno-r3: Use SDA A4 and SCL A5; confirm module 5 V compatibility before connecting VCC to 5V.

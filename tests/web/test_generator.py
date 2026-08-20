@@ -36,6 +36,8 @@ class SingleFileGeneratorTests(unittest.TestCase):
         self.assertNotIn("https://", text)
         self.assertIn('data-state="ready"', text)
         self.assertIn('aria-live="polite"', text)
+        self.assertIn('data-template="spatial-glass"', text)
+        self.assertIn("prefers-reduced-motion", text)
 
     def test_generator_escapes_user_text(self):
         request = replace(self.request(), title='<script id="attack">bad()</script>')
@@ -65,7 +67,33 @@ class SingleFileGeneratorTests(unittest.TestCase):
         self.assertIn('data-state="disconnected"', text)
         self.assertIn('data-mode="simulation"', text)
         self.assertIn("模拟设备未连接", text)
+        self.assertIn('data-template="mission-console"', text)
+        self.assertIn("LIVE SIGNAL", text)
         self.assertEqual(project.evidence["hardware_connectivity"], "unverified")
+
+    def test_omitted_direction_selects_the_flagship_for_each_kind(self):
+        cases = (
+            ("classroom-tool", "spatial-glass", "editorial-signal"),
+            ("hardware-interface", "mission-console", "device-console"),
+            ("mini-game", 'data-game="reaction-rush"', "reaction-rush"),
+        )
+        for kind, marker, direction_id in cases:
+            with self.subTest(kind=kind), tempfile.TemporaryDirectory() as directory:
+                output = Path(directory) / "auto.html"
+                project = generate_single_file(
+                    WebProjectRequest(
+                        kind=kind,
+                        title="一句话作品",
+                        prompt="自动选择最合适的高级效果。",
+                        primary_label="开始体验",
+                    ),
+                    output,
+                )
+                text = output.read_text(encoding="utf-8")
+
+            self.assertIn(marker, text)
+            self.assertEqual(project.direction_id, direction_id)
+            self.assertNotIn("https://", text)
 
     def test_each_beginner_game_pattern_generates_a_playable_single_file(self):
         for direction_id in ("reaction-rush", "dodge-collect", "drag-puzzle"):

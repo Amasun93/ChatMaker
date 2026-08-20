@@ -60,6 +60,14 @@ pins:
     capabilities: [i2c-scl, shared]
   - id: P20
     capabilities: [i2c-sda, spi-mosi, shared]
+  - id: P23
+    kind: gpio
+    capabilities: [digital, uart-tx]
+    source_ids: [starcore-board-pin-map-snapshot, starcore-code-patterns-snapshot]
+  - id: P26
+    kind: gpio
+    capabilities: [digital, uart-rx]
+    source_ids: [starcore-board-pin-map-snapshot, starcore-code-patterns-snapshot]
   - id: P_H
     capabilities: [digital, ultrasonic-trigger, silkscreen-h]
   - id: P_O
@@ -81,6 +89,7 @@ pins:
 constraints:
   - ESP32 input signals must remain at or below 3.3V; a 5V-powered module does not guarantee a safe signal level.
   - P2 and P3 are input-only; P5, P11, P16, P25, P27 and P28 require startup-state caution.
+  - P23/P26 are the reviewed classroom UART pair for IDMM-0007 diagnosis; protocol uncertainty does not authorize transmitting motion commands.
   - In Mind+ choose the mPython-compatible target, but use Starcore physical wiring rather than copying another board image.
   - Use the exact v4.2.2 mechanical profile for CAD work.
   - Physical fit, supplied screws and connector clearance remain unverified.

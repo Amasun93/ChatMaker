@@ -5,63 +5,62 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>灯光控制台</title>
   <style>
-    :root { --paper:#e7ece8; --ink:#101714; --accent:#2e7d62; --glow:#f0a43c; }
+    :root { color-scheme:dark; --cyan:#57f6da; --amber:#ffb74d; --panel:#111a22; --line:#263947; }
     * { box-sizing:border-box; }
-    body { margin:0; min-height:100vh; color:var(--ink); background:
-      radial-gradient(circle at 14% 8%, color-mix(in srgb,var(--glow) 42%,transparent), transparent 28rem),
-      repeating-linear-gradient(104deg,transparent 0 19px,color-mix(in srgb,var(--ink) 4%,transparent) 20px),var(--paper);
-      font-family:"Avenir Next","Trebuchet MS",sans-serif; }
-    main { width:min(1080px,100%); min-height:100vh; margin:auto; padding:clamp(22px,5vw,72px); display:grid;
-      grid-template-columns:minmax(0,1.25fr) minmax(250px,.75fr); gap:clamp(28px,6vw,88px); align-items:center; }
-    .eyebrow { display:inline-flex; align-items:center; gap:10px; font-size:.78rem; font-weight:800; letter-spacing:.16em; text-transform:uppercase; }
-    .eyebrow::before { content:""; width:34px; height:4px; background:var(--accent); transform:rotate(-4deg); }
-    h1 { max-width:9ch; margin:.35em 0 .28em; font-family:"Iowan Old Style","Palatino Linotype",Georgia,serif;
-      font-size:clamp(3.4rem,10vw,8.8rem); line-height:.82; letter-spacing:-.065em; text-wrap:balance; }
-    .prompt { max-width:34rem; font-size:clamp(1.15rem,2.2vw,1.65rem); line-height:1.45; }
-    .card { position:relative; padding:clamp(24px,4vw,44px); border:2px solid var(--ink); border-radius:30px 8px 30px 8px;
-      background:color-mix(in srgb,var(--paper) 82%,white); box-shadow:14px 16px 0 var(--ink); transform:rotate(1.2deg); }
-    .count { display:block; font-family:"Iowan Old Style",Georgia,serif; font-size:clamp(5rem,15vw,9rem); line-height:.82; color:var(--accent); }
-    .caption { margin:12px 0 24px; font-weight:800; }
-    button { width:100%; min-height:56px; padding:14px 18px; border:2px solid var(--ink); border-radius:999px; color:var(--paper);
-      background:var(--ink); font:inherit; font-weight:900; cursor:pointer; box-shadow:0 7px 0 var(--accent); transition:transform .16s,box-shadow .16s; }
-    button:hover { transform:translateY(-2px); box-shadow:0 9px 0 var(--accent); }
-    button:active { transform:translateY(5px); box-shadow:0 2px 0 var(--accent); }
-    button:focus-visible { outline:4px solid var(--glow); outline-offset:5px; }
-    .status { min-height:1.5em; margin:22px 0 0; font-weight:750; }
-    .note { grid-column:1/-1; margin:0; padding-top:20px; border-top:1px solid color-mix(in srgb,var(--ink) 28%,transparent); font-size:.86rem; }
-    [data-state="active"] .count { animation:stamp .34s ease-out; }
-    @keyframes stamp { 45% { transform:scale(1.12) rotate(-3deg); } }
-    @media (max-width:720px) { main { grid-template-columns:1fr; align-content:center; } h1 { font-size:clamp(3.7rem,20vw,6.3rem); } .card { transform:none; } }
+    body { margin:0; min-height:100vh; color:#edf7f5; background:#070d12; font-family:"IBM Plex Mono","SFMono-Regular",Consolas,monospace; }
+    body::before { content:""; position:fixed; inset:0; pointer-events:none; opacity:.2; background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px); background-size:32px 32px; }
+    main { position:relative; width:min(1180px,100%); min-height:100vh; margin:auto; padding:clamp(20px,4vw,54px); display:grid; align-content:center; gap:22px; }
+    header { display:grid; grid-template-columns:1fr auto; gap:20px; align-items:end; }
+    .eyebrow { margin:0 0 9px; color:var(--cyan); font-size:.72rem; font-weight:900; letter-spacing:.18em; text-transform:uppercase; }
+    h1 { margin:0; font-family:Inter,"PingFang SC",system-ui,sans-serif; font-size:clamp(2.8rem,7vw,6.5rem); line-height:.9; letter-spacing:-.06em; }
+    .prompt { max-width:44rem; margin:14px 0 0; color:#91a8b5; line-height:1.55; }
+    .signal { display:flex; align-items:center; gap:10px; min-height:44px; padding:10px 15px; border:1px solid var(--line); border-radius:999px; background:rgba(11,21,28,.88); font-size:.78rem; font-weight:800; }
+    .signal::before { content:""; width:9px; height:9px; border-radius:50%; background:#6c7f88; box-shadow:0 0 0 5px rgba(108,127,136,.12); }
+    .console { position:relative; overflow:hidden; display:grid; grid-template-columns:minmax(0,1.15fr) minmax(250px,.85fr); border:1px solid #304654; border-radius:24px; background:linear-gradient(145deg,rgba(20,32,41,.97),rgba(8,16,22,.98)); box-shadow:0 28px 80px rgba(0,0,0,.48); }
+    .console::after { content:""; position:absolute; inset:0; pointer-events:none; background:linear-gradient(transparent 50%,rgba(87,246,218,.025) 50%); background-size:100% 4px; }
+    .scope { min-height:330px; padding:clamp(22px,4vw,40px); border-right:1px solid var(--line); }
+    .scope-head { display:flex; justify-content:space-between; color:#76909c; font-size:.72rem; letter-spacing:.12em; }
+    .wave { position:relative; height:190px; margin-top:25px; overflow:hidden; border-block:1px solid var(--line); background:repeating-linear-gradient(90deg,transparent 0 39px,rgba(87,246,218,.08) 40px); }
+    .wave svg { width:100%; height:100%; overflow:visible; }
+    .wave path { fill:none; stroke:#627681; stroke-width:3; vector-effect:non-scaling-stroke; transition:stroke .3s,filter .3s; }
+    .readings { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-top:18px; }
+    .reading { padding:12px; border:1px solid var(--line); border-radius:12px; color:#8199a4; font-size:.7rem; }
+    .reading strong { display:block; margin-top:5px; color:#eaf4f1; font-size:1.15rem; }
+    .control { display:grid; align-content:center; gap:18px; padding:clamp(24px,4vw,42px); }
+    .count { font-family:Inter,system-ui,sans-serif; font-size:clamp(4.7rem,11vw,8rem); font-weight:800; line-height:.8; letter-spacing:-.08em; color:#778b95; }
+    .caption { margin:0; color:#8ba0aa; font-size:.78rem; font-weight:800; text-transform:uppercase; letter-spacing:.12em; }
+    button { min-height:58px; padding:14px 18px; border:1px solid var(--cyan); border-radius:10px; color:var(--cyan); background:rgba(87,246,218,.07); font:900 .9rem/1.2 inherit; cursor:pointer; text-transform:uppercase; letter-spacing:.06em; transition:transform .15s,background .2s,box-shadow .2s; touch-action:manipulation; }
+    button:hover { background:rgba(87,246,218,.13); box-shadow:0 0 25px rgba(87,246,218,.13); } button:active { transform:scale(.97); }
+    button:focus-visible { outline:4px solid var(--amber); outline-offset:4px; }
+    .status { min-height:2.5em; margin:0; color:#a5b7bf; font-size:.8rem; line-height:1.5; }
+    .note { margin:0; color:#70848e; font-size:.76rem; }
+    [data-state="connected"] .signal::before { background:var(--cyan); box-shadow:0 0 18px var(--cyan),0 0 0 5px rgba(87,246,218,.12); }
+    [data-state="connected"] .wave path { stroke:var(--cyan); filter:drop-shadow(0 0 8px rgba(87,246,218,.55)); animation:scan 2.2s linear infinite; }
+    [data-state="connected"] .count { color:var(--cyan); text-shadow:0 0 24px rgba(87,246,218,.28); animation:lock .45s ease-out; }
+    [data-state="connected"] button { color:#07110f; background:var(--cyan); }
+    @keyframes scan { 50% { transform:translateY(-5px); } } @keyframes lock { 50% { transform:scale(1.06); } }
+    @media (max-width:760px) { header,.console { grid-template-columns:1fr; } .signal { justify-self:start; } .scope { min-height:270px; border-right:0; border-bottom:1px solid var(--line); } .wave { height:130px; } }
     @media (prefers-reduced-motion:reduce) { *,*::before,*::after { animation:none!important; transition:none!important; } }
   </style>
 </head>
 <body>
-  <main>
-    <section>
-      <span class="eyebrow">ChatWeb · 设备状态台</span>
-      <h1>灯光控制台</h1>
-      <p class="prompt">先连接模拟设备，再测试控制状态。</p>
-    </section>
-    <section class="card" data-state="disconnected" data-mode="simulation" aria-label="互动区">
-      <output class="count" id="count">0</output>
-      <p class="caption">模拟设备连接状态</p>
-      <button id="primary" type="button">连接模拟设备</button>
-      <p class="status" id="status" aria-live="polite">模拟设备未连接</p>
+  <main data-template="mission-console">
+    <header><div><p class="eyebrow">ChatWeb · 星舰设备舱</p><h1>灯光控制台</h1><p class="prompt">先连接模拟设备，再测试开关。</p></div><div class="signal">SIMULATION LINK</div></header>
+    <section class="console card" data-state="disconnected" data-mode="simulation" aria-label="模拟设备控制台">
+      <div class="scope"><div class="scope-head"><span>LIVE SIGNAL</span><span>CH-01</span></div>
+        <div class="wave" aria-hidden="true"><svg viewBox="0 0 700 190" preserveAspectRatio="none"><path d="M0 115 C70 115 75 72 135 72 S205 132 270 108 S345 52 410 78 S480 142 545 104 S630 62 700 88"/></svg></div>
+        <div class="readings"><div class="reading">MODE<strong>SIM</strong></div><div class="reading">SIGNAL<strong id="signal">--</strong></div><div class="reading">LATENCY<strong>LOCAL</strong></div></div>
+      </div>
+      <div class="control"><output class="count" id="count">0</output><p class="caption">connected channels</p><button id="primary" type="button">连接模拟设备</button><p class="status" id="status" aria-live="polite">模拟设备未连接</p></div>
     </section>
     <p class="note">本页只演示浏览器交互，不代表任何硬件已经连接。</p>
   </main>
   <script>
-    const card=document.querySelector('.card');
-    const count=document.querySelector('#count');
-    const status=document.querySelector('#status');
-    const primary=document.querySelector('#primary');
-    document.querySelector('#primary').addEventListener('click',()=>{
-      const connected=card.dataset.state==='connected';
-      card.dataset.state=connected?'disconnected':'connected';
-      count.value=connected?'0':'1';
-      status.textContent=connected?'模拟设备未连接':'模拟设备已连接（仅浏览器演示）';
-      primary.textContent=connected?'连接模拟设备':'断开模拟设备';
-    });
+    const card=document.querySelector('.card'); const count=document.querySelector('#count'); const signal=document.querySelector('#signal');
+    const status=document.querySelector('#status'); const primary=document.querySelector('#primary');
+    primary.addEventListener('click',()=>{ const connected=card.dataset.state==='connected'; card.dataset.state=connected?'disconnected':'connected';
+      count.value=connected?'0':'1'; signal.textContent=connected?'--':'OK'; status.textContent=connected?'模拟设备未连接':'模拟设备已连接（仅浏览器演示）';
+      primary.textContent=connected?'连接模拟设备':'断开模拟设备'; });
   </script>
 </body>
 </html>

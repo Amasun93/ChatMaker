@@ -65,6 +65,9 @@ module_migrations:
   - hardware_id: IDMS-0009
     approved_rewritten_uses: [normalized-facts, beginner-wiring-guidance, library-api-guidance, derivative-examples, sanitized-mechanical-facts]
     source_ids: [starcore-module-catalog-snapshot, starcore-classroom-module-cards-snapshot, starcore-code-patterns-snapshot, starcore-mechanical-facts-snapshot]
+  - hardware_id: IDMM-0007
+    approved_rewritten_uses: [normalized-facts, beginner-wiring-guidance, library-api-guidance, derivative-examples]
+    source_ids: [starcore-module-catalog-snapshot, starcore-classroom-module-cards-snapshot, starcore-code-patterns-snapshot, starcore-board-pin-map-snapshot]
 publication_boundary:
   public:
     - normalized facts

@@ -73,7 +73,7 @@ class StarcoreOwnedExampleTests(unittest.TestCase):
                 component = load_yaml(
                     ROOT / "packs" / "components" / f"{component_id}.yaml"
                 )
-                self.assertEqual(component["example_files"], [expected_source])
+                self.assertIn(expected_source, component["example_files"])
                 component_compiled = component["verification"]["code_compiled"]
                 self.assertEqual(component_compiled["status"], "verified")
                 self.assertEqual(component_compiled["checked_at"], "2026-08-18")
@@ -166,9 +166,8 @@ class StarcoreOwnedExampleTests(unittest.TestCase):
         ).read_text(encoding="utf-8")
         self.assertNotIn("isnan", dht_code)
 
-    def test_recipe_total_moves_to_twenty_three_only_with_all_seven_files(self):
+    def test_owned_recipes_remain_discoverable_as_classroom_recipes_grow(self):
         recipe_paths = sorted((ROOT / "packs" / "recipes").glob("*.yaml"))
-        self.assertEqual(len(recipe_paths), 23)
         self.assertTrue(
             set(RECIPES).issubset({load_yaml(path)["id"] for path in recipe_paths})
         )

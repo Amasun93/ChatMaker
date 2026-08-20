@@ -89,3 +89,10 @@ ChatMaker 面向国内零基础开发者分发。用户用 ChatCAD 生成 3D 打
 - 本地浏览器实际打开“星核创客”示例，右侧模型已显示中文轮廓且没有豆腐方块。
 - OpenSCAD 2021.01 对同一 SCAD 完整渲染成功：1195 facets、7 volumes、零错误。
 - MakerWorld Parametric Model Maker 需要登录；当前 Chrome 未开启远程调试，因此在线导入仍保持待验收，不能写成已通过。
+
+## 2026-08-21 接续进展：OLED 中文引导已完成
+
+- Nano / Uno 的普通 SSD1306 项目增加了 I²C 扫描、U8g2 UTF-8 字体路线和内存边界说明。
+- 星核板 IDMC-0001 + IDMD-0021 保持 `MPython.h` 全局 `display` 路线，不使用 U8g2。
+- 星核板中文依赖 Mind+ 将 `Noto_Sans_CJK_SC_Light16.xbf` 写入 Flash `0x400000`；普通应用上传不能证明字库已经写入。
+- 编译、应用上传、字库写入和亲眼看到中文仍是四个独立状态。当前没有实体板，因此中文实屏效果保持未验证。
