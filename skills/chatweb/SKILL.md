@@ -23,6 +23,7 @@ ChatWeb is an internal specialist under the ChatMaker parent entry. Keep this Sk
 3. Present only the planner's two or three beginner directions unless the user explicitly requests the expanded catalog. Record the selected direction or the assumptions used for a direct build.
 4. Generate one self-contained HTML file with `chatmaker-web`, with CSS and JavaScript embedded. Split into multiple files only when reuse or project size makes that simpler for the user.
 5. Design for phone and classroom use: at least 44 px touch targets, strong contrast, concise labels, visible focus, reduced-motion support, and visible feedback.
+   When the user asks for premium, Apple-like or richer motion, read [premium-micro-interactions.md](references/premium-micro-interactions.md). Absorb the interaction pattern into the smallest suitable stack; do not add React or run a component CLI merely to obtain an animation.
 6. Start the selected file with `chatmaker-web-preview`. Keep the default `127.0.0.1` binding; use network access only after an explicit request.
 7. Verify file loading, browser console errors, the primary interaction, state transitions, and phone-size layout in a real browser.
 8. For hardware pages, label simulation visibly. Define the HTTP, serial, Bluetooth, or message contract with `$chatduino` before implementing a real connection.
