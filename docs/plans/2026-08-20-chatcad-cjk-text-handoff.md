@@ -71,3 +71,14 @@ ChatMaker 面向国内零基础开发者分发。用户用 ChatCAD 生成 3D 打
 1. 用户在 Bambu Studio 实切一件验证实际打印效果
 2. 确认后 commit（本轮改动仍在工作区未提交）
 3. Codex 接手时从"待优化项"第 3 项（随包字体）开始，收益最大且独立
+
+## 2026-08-20 接续进展：待优化项 3 已完成
+
+- 已从 Adobe 官方 `source-han-sans` 仓库的固定提交生成字体子集。
+- 子集覆盖可打印 ASCII 与 GB2312 定义的全部 7540 个字符/符号，适合常见简体中文姓名、班级和作品铭牌。
+- 子集内部名称已改为 `ChatMaker CJK Sans`，遵守 SIL OFL 1.1 的 Reserved Font Name 条款。
+- 默认查找顺序已改为：用户显式字体 → 随包字体 → 系统字体。
+- 字体、OFL 许可证和可复现来源/哈希说明均位于 `runtime/chatmaker/cad/assets/`，并声明为 Python package data。
+- 子集约 3.37 MiB；不追求覆盖生僻扩展汉字。需要范围外字符时，用户仍可通过 `engrave_font` 指定完整字体。
+
+下一项仍是 OLED 中文字库引导；它属于 ChatDuino，不在本次 ChatCAD 字体打包范围内。

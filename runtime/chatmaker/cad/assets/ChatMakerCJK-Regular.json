@@ -1,0 +1,20 @@
+{
+  "asset": {
+    "filename": "ChatMakerCJK-Regular.otf",
+    "sha256": "afc6a5d4c077b7d307f8890744adce5a17532b929723654111ecd57a39cedeed",
+    "size": 3531760
+  },
+  "coverage": "Printable ASCII and all characters defined by GB2312",
+  "family_name": "ChatMaker CJK Sans",
+  "license": "SIL Open Font License 1.1",
+  "license_file": "OFL-1.1.txt",
+  "schema_version": 1,
+  "unicode_count": 7540,
+  "upstream": {
+    "commit": "a4f7cf94edfb9d7ffbdfc4841de276358bd7e0f2",
+    "filename": "SourceHanSansSC-Regular.otf",
+    "repository": "adobe-fonts/source-han-sans",
+    "sha256": "f1d8611151880c6c336aabeac4640ef434fa13cbfbf1ffe82d0a71b2a5637256",
+    "url": "https://raw.githubusercontent.com/adobe-fonts/source-han-sans/a4f7cf94edfb9d7ffbdfc4841de276358bd7e0f2/OTF/SimplifiedChinese/SourceHanSansSC-Regular.otf"
+  }
+}

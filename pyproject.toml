@@ -44,3 +44,6 @@ package-dir = {"" = "runtime"}
 
 [tool.setuptools.packages.find]
 where = ["runtime"]
+
+[tool.setuptools.package-data]
+chatmaker = ["cad/assets/*.otf", "cad/assets/*.txt", "cad/assets/*.json"]

@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+import hashlib
+import json
 from pathlib import Path
 import sys
 import tempfile
+import tomllib
 import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -23,6 +26,52 @@ def _cjk_font_available() -> bool:
 
 
 class TextEngineUnitTests(unittest.TestCase):
+    def test_bundled_font_is_default_and_covers_gb2312(self):
+        from fontTools.ttLib import TTFont
+
+        self.assertEqual(text_engine.find_cjk_font(), text_engine.BUNDLED_CJK_FONT)
+        font = TTFont(text_engine.BUNDLED_CJK_FONT, recalcTimestamp=False)
+        try:
+            cmap = font.getBestCmap()
+            expected = set(range(0x20, 0x7F))
+            for lead in range(0xA1, 0xF8):
+                for trail in range(0xA1, 0xFF):
+                    try:
+                        value = bytes((lead, trail)).decode("gb2312")
+                    except UnicodeDecodeError:
+                        continue
+                    expected.update(ord(character) for character in value)
+            self.assertEqual(expected - set(cmap), set())
+            primary_name_ids = {1, 3, 4, 6, 16, 18, 21, 25}
+            primary_names = {
+                record.toUnicode()
+                for record in font["name"].names
+                if record.nameID in primary_name_ids
+            }
+            self.assertIn("ChatMaker CJK Sans", primary_names)
+            self.assertFalse(any("Source" in name for name in primary_names))
+        finally:
+            font.close()
+
+    def test_bundled_font_provenance_and_package_data(self):
+        assets = text_engine.BUNDLED_CJK_FONT.parent
+        metadata = json.loads((assets / "ChatMakerCJK-Regular.json").read_text(encoding="utf-8"))
+        digest = hashlib.sha256(text_engine.BUNDLED_CJK_FONT.read_bytes()).hexdigest()
+        self.assertEqual(metadata["asset"]["sha256"], digest)
+        self.assertEqual(metadata["asset"]["size"], text_engine.BUNDLED_CJK_FONT.stat().st_size)
+        self.assertEqual(metadata["license"], "SIL Open Font License 1.1")
+        self.assertIn("SIL OPEN FONT LICENSE Version 1.1", (assets / "OFL-1.1.txt").read_text(encoding="utf-8"))
+
+        project = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
+        package_data = project["tool"]["setuptools"]["package-data"]["chatmaker"]
+        self.assertIn("cad/assets/*.otf", package_data)
+        self.assertIn("cad/assets/*.txt", package_data)
+        self.assertIn("cad/assets/*.json", package_data)
+
+    def test_explicit_font_path_still_overrides_bundle(self):
+        with tempfile.NamedTemporaryFile(suffix=".otf") as handle:
+            self.assertEqual(text_engine.find_cjk_font(handle.name), Path(handle.name))
+
     def test_signed_area_and_triangle_helpers(self):
         square = [(0.0, 0.0), (1.0, 0.0), (1.0, 1.0), (0.0, 1.0)]
         self.assertAlmostEqual(text_engine._signed_area(square), 1.0)
@@ -74,6 +123,11 @@ class TextEngineUnitTests(unittest.TestCase):
 
 @unittest.skipUnless(_cjk_font_available(), "no CJK font / fontTools on this machine")
 class CjkEngravingTests(unittest.TestCase):
+    def test_common_label_uses_bundled_font(self):
+        layout = text_engine.glyph_layout("中文姓名班级作品2026", 10.0)
+        self.assertEqual(Path(layout["font"]), text_engine.BUNDLED_CJK_FONT)
+        self.assertEqual(len(layout["glyphs"]), 12)
+
     def test_layout_and_groups_for_common_name_characters(self):
         layout = text_engine.glyph_layout("孙大卫", 10.0)
         self.assertEqual(len(layout["glyphs"]), 3)

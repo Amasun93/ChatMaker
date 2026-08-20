@@ -9,8 +9,10 @@ reads glyph outlines directly via fontTools and emits geometry instead:
 - ``.stl`` output is triangulated in pure Python (ear clipping with hole
   bridging), independent of any desktop font configuration.
 
-Font resolution order: caller-supplied file, then platform system fonts
-(Windows Microsoft YaHei/SimHei, macOS PingFang, Linux Noto CJK / WenQuanYi).
+Font resolution order: caller-supplied file, the bundled ChatMaker CJK Sans
+subset, then platform system fonts.  The bundle covers printable ASCII and
+all GB2312 characters, so common Simplified Chinese names and labels work on
+a clean Windows, macOS, or Linux computer without desktop fonts.
 """
 
 from __future__ import annotations
@@ -20,6 +22,7 @@ from pathlib import Path
 from typing import Any
 
 CURVE_SEGMENTS = 8
+BUNDLED_CJK_FONT = Path(__file__).with_name("assets") / "ChatMakerCJK-Regular.otf"
 
 _FONT_CANDIDATES: dict[str, list[str]] = {
     "win32": [
@@ -47,13 +50,15 @@ def find_cjk_font(explicit: str | None = None) -> Path:
         if not candidate.is_file():
             raise ValueError(f"font_file_not_found: {explicit}")
         return candidate
+    if BUNDLED_CJK_FONT.is_file():
+        return BUNDLED_CJK_FONT
     platform = "win32" if sys.platform.startswith("win") else sys.platform if sys.platform in _FONT_CANDIDATES else "linux"
     for name in _FONT_CANDIDATES.get(platform, []):
         candidate = Path(name)
         if candidate.is_file():
             return candidate
     raise ValueError(
-        "no_cjk_font_found: install Microsoft YaHei/SimHei (Windows), "
+        "no_cjk_font_found: bundled ChatMaker CJK Sans is missing; install Microsoft YaHei/SimHei (Windows), "
         "PingFang (macOS) or Noto Sans CJK (Linux), or pass parameters.engrave_font"
     )
 
