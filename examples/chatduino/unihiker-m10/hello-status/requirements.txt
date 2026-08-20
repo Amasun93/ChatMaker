@@ -1,0 +1,2 @@
+# The M10 image normally provides the unihiker package.
+# Check the active board interpreter before installing or upgrading it.

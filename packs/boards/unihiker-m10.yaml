@@ -1,0 +1,70 @@
+schema_version: "1.0"
+kind: board
+id: unihiker-m10
+name: UNIHIKER M10 行空板
+family: linux-sbc
+mcu: Quad-core ARM Cortex-A35 with GD32VF103 co-processor
+logic_voltage: 3.3
+identity:
+  model: UNIHIKER M10
+  operating_system: Debian 10
+  forbidden_aliases: [UNIHIKER K10]
+  physical_confirmation_required: true
+sources:
+  - title: DFRobot UNIHIKER M10 product specification
+    url: https://www.dfrobot.com/product-2691.html
+  - title: UNIHIKER M10 official getting started documentation
+    url: https://www.unihiker.com/wiki/get-started
+  - title: UNIHIKER M10 official Python version guidance
+    url: https://www.unihiker.com/wiki/Troubleshooting/How_to_Install_Multiple_Python_Versions_on_Unihiker
+  - title: UNIHIKER K10 official getting started documentation
+    url: https://www.unihiker.com/wiki/K10/get-started
+verification:
+  source_reviewed:
+    status: verified
+    checked_at: "2026-08-21"
+    evidence: Official M10 product and documentation pages confirm the Linux/Python route; the K10 page confirms a separate MCU route.
+  code_compiled:
+    status: unverified
+    checked_at: null
+    evidence: null
+  firmware_uploaded:
+    status: not_applicable
+    checked_at: "2026-08-21"
+    evidence: M10 projects are synchronized to and run on Debian rather than flashed as MCU firmware.
+  physical_effect_verified:
+    status: unverified
+    checked_at: null
+    evidence: null
+pins:
+  - id: USB-C-5V
+    kind: power-rail
+    capabilities: [power-input, data]
+  - id: USB-A
+    kind: connector-signal
+    capabilities: [usb-host, external-device]
+  - id: GRAVITY-3P
+    kind: connector-signal
+    capabilities: [external-sensor, gpio]
+  - id: GRAVITY-4P
+    kind: connector-signal
+    capabilities: [external-sensor, i2c]
+  - id: EDGE
+    kind: connector-signal
+    capabilities: [gpio, i2c, spi, uart]
+  - id: GND
+    kind: ground
+    capabilities: [ground, shared]
+constraints:
+  - Confirm the printed M10 identity; K10 is an MCU board and cannot run this Debian project workflow.
+  - Power the board from a stable 5V/2A USB-C supply for projects with USB peripherals.
+  - Treat external signal levels and connector pin assignments as unverified until the exact official pin page or physical labeling is checked.
+  - Keep Python projects compatible with the active board interpreter; the Debian 10 system interpreter is Python 3.7 by default.
+  - Do not claim screen, camera, audio, network, sensor or GPIO behavior until it is observed on the physical board.
+toolchains:
+  - id: unihiker-built-in-jupyter-python
+    status: source_reviewed_current
+  - id: mindplus-python
+    status: source_reviewed_current
+  - id: vscode-thonny-idle-ssh-python
+    status: source_reviewed_current

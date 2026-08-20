@@ -365,6 +365,7 @@ class ReleasePackageTests(unittest.TestCase):
         self.assertIn(prefix + "runtime/chatmaker/installers/workbuddy.py", names)
         self.assertIn(prefix + "runtime/chatmaker/installers/skill_bundle.py", names)
         self.assertIn(prefix + "runtime/chatmaker/hardware/esp32_devkit_v1.py", names)
+        self.assertIn(prefix + "runtime/chatmaker/hardware/unihiker_m10.py", names)
         self.assertIn(prefix + "runtime/chatmaker/route.py", names)
         self.assertIn(prefix + "runtime/chatmaker/web/embed.py", names)
         self.assertIn(prefix + "runtime/chatmaker/web/planner.py", names)
@@ -373,6 +374,7 @@ class ReleasePackageTests(unittest.TestCase):
         self.assertIn(prefix + "examples/chatduino/esp32/ap-led-sensor/page_html.h", names)
         self.assertIn(prefix + "examples/chatweb/esp32-ap-control.html", names)
         self.assertIn(prefix + "examples/chatweb/advanced-playground.html", names)
+        self.assertIn(prefix + "examples/chatduino/unihiker-m10/hello-status/main.py", names)
         self.assertIn(prefix + "knowledge/boards/arduino-nano-classic.yaml", names)
         self.assertIn(prefix + "knowledge/mechanical/boards/arduino-nano-classic.json", names)
         self.assertIn(prefix + "knowledge/fabrication/equipment/lasermaker-generic.json", names)
@@ -380,15 +382,15 @@ class ReleasePackageTests(unittest.TestCase):
         self.assertIn(prefix + "packs/schemas/registry.schema.json", names)
         self.assertEqual(
             len([name for name in names if name.startswith(prefix + "packs/boards/")]),
-            4,
+            5,
         )
         self.assertEqual(
             len([name for name in names if name.startswith(prefix + "packs/components/")]),
-            20,
+            21,
         )
         self.assertEqual(
             len([name for name in names if name.startswith(prefix + "packs/recipes/")]),
-            23,
+            25,
         )
         self.assertEqual(
             len([name for name in names if name.startswith(prefix + "knowledge/boards/")]),

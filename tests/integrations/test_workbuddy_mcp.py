@@ -67,20 +67,44 @@ class WorkBuddyBridgeTests(unittest.TestCase):
                 "catalog_search",
                 "catalog_get",
                 "knowledge_get",
+                "unihiker_project_check",
+                "unihiker_credential_help",
                 "cad_profile_get",
                 "cad_component_profile_get",
                 "cad_fabrication_get",
                 "cad_generate",
             },
         )
-        self.assertEqual(self.server.SERVER_VERSION, "1.14.0")
-        self.assertEqual(len(names), 33)
+        self.assertEqual(self.server.SERVER_VERSION, "1.16.0")
+        self.assertEqual(len(names), 35)
         upload_tool = next(
             tool for tool in self.server.TOOLS
             if tool["name"] == "nano_compile_upload"
         )
         self.assertIn("自动", upload_tool["description"])
         self.assertIn("接入", upload_tool["description"])
+
+    def test_unihiker_project_check_routes_to_static_preflight(self):
+        project = ROOT / "examples" / "chatduino" / "unihiker-m10" / "hello-status"
+        result = self.server._tool_result(
+            "unihiker_project_check", {"project": str(project)}
+        )
+
+        self.assertFalse(result["isError"])
+        payload = json.loads(result["content"][0]["text"])
+        self.assertEqual(payload["board_id"], "unihiker-m10")
+        self.assertEqual(payload["stage"], "source_checked")
+
+    def test_unihiker_credential_help_returns_public_instructions_not_a_key(self):
+        result = self.server._tool_result(
+            "unihiker_credential_help", {"provider": "aliyun-dashscope"}
+        )
+
+        self.assertFalse(result["isError"])
+        payload = json.loads(result["content"][0]["text"])
+        self.assertEqual(payload["fields"], ["aliyun.dashscope.api_key"])
+        self.assertEqual(payload["public_example_value"], "")
+        self.assertFalse(payload["share_secret_with_chat"])
 
     def test_avr_project_run_routes_to_continuous_flow(self):
         captured = None

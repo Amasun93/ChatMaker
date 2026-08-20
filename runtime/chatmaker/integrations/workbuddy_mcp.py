@@ -16,10 +16,11 @@ from chatmaker.hardware import project_flow
 from chatmaker.hardware import serial_monitor
 from chatmaker.hardware import starcore
 from chatmaker.hardware import uno_mindplus as uno_bridge
+from chatmaker.hardware import unihiker_m10
 
 
 SERVER_NAME = "chatmaker-hardware"
-SERVER_VERSION = "1.14.0"
+SERVER_VERSION = "1.16.0"
 PROTOCOL_VERSION = "2024-11-05"
 
 TOOLS = [
@@ -81,6 +82,40 @@ TOOLS = [
                     ],
                 },
                 "auto_install": {"type": "boolean", "default": True},
+            },
+            "additionalProperties": False,
+        },
+    },
+    {
+        "name": "unihiker_project_check",
+        "description": (
+            "检查已确认的 UNIHIKER M10 Python 项目：Python 3.7 语法、密钥、资源路径、"
+            "桌面 OpenCV 交互、摄像头释放和依赖文件。只证明源码门，不代表已同步或上板运行。"
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["project"],
+            "properties": {"project": {"type": "string", "minLength": 1}},
+            "additionalProperties": False,
+        },
+    },
+    {
+        "name": "unihiker_credential_help",
+        "description": "按项目实际使用的云服务，返回应替换的私有配置字段、凭据类型和官方获取入口；不读取或保存真实密钥。",
+        "inputSchema": {
+            "type": "object",
+            "required": ["provider"],
+            "properties": {
+                "provider": {
+                    "type": "string",
+                    "enum": [
+                        "aliyun-dashscope",
+                        "aliyun-qwen-omni",
+                        "volcengine-ark",
+                        "volcengine-openspeech",
+                        "baidu-tts",
+                    ],
+                }
             },
             "additionalProperties": False,
         },
@@ -571,6 +606,14 @@ def _tool_result(name: str, arguments: dict[str, Any]) -> dict[str, Any]:
             request["section_id"] = arguments.get("section_id", "")
             request["auto_install"] = arguments.get("auto_install", True)
         result = knowledge.execute_request(request)
+    elif name == "unihiker_project_check":
+        result = unihiker_m10.execute_request(
+            {"action": "check_project", "project": arguments.get("project", "")}
+        )
+    elif name == "unihiker_credential_help":
+        result = unihiker_m10.execute_request(
+            {"action": "credential_help", "provider": arguments.get("provider", "")}
+        )
     elif name == "cad_profile_get":
         result = cad_generator.execute_request(
             {"action": "profile", "board_id": arguments.get("board_id", "")}
@@ -720,12 +763,14 @@ def handle(request: dict[str, Any]) -> dict[str, Any] | None:
             "capabilities": {"tools": {"listChanged": False}},
             "serverInfo": {"name": SERVER_NAME, "version": SERVER_VERSION},
             "instructions": (
-                "处理 Arduino Uno Rev3、经典 Nano ATmega328P、星核板 v4.2.2、精确确认的 DOIT ESP32 DEVKIT V1 和杜邦线通用模块。"
+                "处理 Arduino Uno Rev3、经典 Nano ATmega328P、星核板 v4.2.2、精确确认的 DOIT ESP32 DEVKIT V1、UNIHIKER M10 和杜邦线通用模块。"
                 "先用 catalog_search/get 读取匹配资料，确认精确板卡身份后用 knowledge_get 读取 start-here 索引或指定章节，"
                 "再按板型调用对应 doctor。ESP32 只接受官方 3.3.11 core "
                 "和精确 DOIT FQBN；先调用 esp32_prepare_environment 自动检查，并且只安装 ChatMaker 验证的锁定版本。"
                 "ESP-WROOM-32 模块丝印本身不算载板确认，也不会替换成 FireBeetle。"
                 "星核板使用 Mind+ 1.8 的 dfrobot:mpython 当前目标；Mind+ 2.0 目标只保留为历史资料。"
+                "M10 与 K10 必须分开；M10 先用 catalog_get 读取板卡记录，再调用 unihiker_project_check，源码通过不代表已同步、运行或产生实体效果。"
+                "使用云端模型或语音服务时调用 unihiker_credential_help，明确告诉用户替换字段和官方获取入口；不得复用内部 Key。"
                 "编程前核对板卡、模块型号/丝印和引脚；Nano/Uno 默认调用 avr_project_run 连续完成"
                 "环境检查、编译、可用时烧录和串口观察，独立工具用于诊断；"
                 "ESP32 调用 esp32_compile_upload；只有精确载板身份和唯一非蓝牙有线端口都明确时才上传，"

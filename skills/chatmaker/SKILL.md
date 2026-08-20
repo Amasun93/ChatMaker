@@ -24,7 +24,7 @@ In an installed bundle, load those specialists from `internal_skills/chatduino/S
 
 1. Restate the intended effect in everyday language.
 2. Ask only for information that changes safety, architecture, or the acceptance test.
-3. After the exact board identity is known, read the matching `start-here` section before choosing the next specialist path. In WorkBuddy, call `knowledge_get` with the shared JSON request. In Codex, run `chatmaker-knowledge --request-json '{"action":"section","board_id":"<exact-board-id>","consumer":"chatmaker","section_id":"start-here"}'` against the same runtime contract.
+3. After the exact board identity is known, read the matching `start-here` section before choosing the next specialist path. In WorkBuddy, call `knowledge_get` with the shared JSON request. In Codex, run `chatmaker-knowledge --request-json '{"action":"section","board_id":"<exact-board-id>","consumer":"chatmaker","section_id":"start-here"}'` against the same runtime contract. The current UNIHIKER M10 alpha has a canonical board record but no signed Knowledge pack; route it to ChatDuino's `unihiker-m10.md` reference and project checker instead of inventing a `knowledge_get` result.
 4. Route Arduino, Nano, ESP32, wiring, upload, and serial work to `$chatduino`.
 5. Route classroom tools, browser mini games, native HTML, CSS, JavaScript, device interfaces, local preview, and browser interaction work to `$chatweb`.
 6. Route mounting plates, enclosures, board holes, DXF, SVG, OpenSCAD, STL, and parameter previews to `$chatcad`.

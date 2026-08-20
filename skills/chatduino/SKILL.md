@@ -1,6 +1,6 @@
 ---
 name: chatduino
-description: Act as a beginner hardware creative partner that designs, wires, compiles, uploads, observes, and troubleshoots Arduino Uno, classic Arduino Nano ATmega328P, and ESP32 projects from an AI workspace. Use for idea development, board or component identification, plain-text wiring, complete Arduino/C++ code, Mind+ environment discovery, serial monitoring, and evidence-based physical verification. Do not use for 3D modeling or unsupported board variants.
+description: Act as a beginner hardware creative partner for Arduino Uno, classic Nano, ESP32, Starcore, and UNIHIKER M10 projects from an AI workspace. Use for board identification, wiring, complete Arduino/C++ or M10 Python projects, Mind+ environment discovery, compile/upload or M10 source checks, serial/runtime observation, and evidence-based physical verification. Do not use for 3D modeling or unsupported board variants.
 ---
 
 # ChatDuino
@@ -21,19 +21,31 @@ ChatDuino is an internal specialist under the ChatMaker parent entry. Keep this 
 
 1. Identify the exact board variant, controller, USB interface, component labels, supply voltage, and desired effect.
 2. Read the matching records under `packs/boards`, `packs/components`, and `packs/recipes` through the shared runtime. In WorkBuddy, call `catalog_search` and then `catalog_get`; in Codex, use `chatmaker-catalog` with `search` and `get` requests. Treat unverified records as leads, not facts.
-3. After the exact board identity is confirmed, read `identify-and-safety`, `pins-and-electrical`, and `toolchains-and-upload` for that board. In WorkBuddy, call `knowledge_get`; in Codex, run `chatmaker-knowledge --request-json '{"action":"section","board_id":"<exact-board-id>","consumer":"chatduino","section_id":"identify-and-safety"}'` and substitute the requested section. Keep those pages paired with canonical facts rather than replacing them.
+3. After the exact board identity is confirmed, read `identify-and-safety`, `pins-and-electrical`, and `toolchains-and-upload` for a board with a ChatMaker Knowledge index. In WorkBuddy, call `knowledge_get`; in Codex, run `chatmaker-knowledge --request-json '{"action":"section","board_id":"<exact-board-id>","consumer":"chatduino","section_id":"identify-and-safety"}'` and substitute the requested section. Keep those pages paired with canonical facts rather than replacing them. The current M10 alpha instead uses [unihiker-m10.md](references/unihiker-m10.md) plus canonical board `unihiker-m10`; do not invent an unavailable Knowledge pack.
 4. Resolve pin, voltage, current, boot, serial, and shared-ground constraints before writing code.
 5. Present one visible disconnected-power `text` wiring block, then a complete `cpp` block. Do not generate SVG or another wiring graphic unless the user explicitly asks for an image.
 6. In the first release, discover and reuse an existing Mind+ 1.x or 2.x toolchain. Do not install or switch toolchains silently. Treat a managed standalone toolchain as a later development phase.
-7. Compile with the selected board identity and record the command, exit code, and artifact path.
-8. Upload only when one high-confidence wired port remains. Close serial handles before upload.
-9. Reopen serial after the board returns. Use `serial_read` or `serial_expect` to inspect expected markers, empty output, malformed text, and restart loops; use `serial_write` only when the project defines an input command. Ask for physical confirmation separately.
+7. For MCU boards, compile with the selected board identity and record the command, exit code, and artifact path. For M10, run the Python 3.7 source preflight, then synchronize the complete project and observe a board-side run as separate gates.
+8. Upload MCU firmware only when one high-confidence wired port remains. Close serial handles before upload. Do not describe M10 file synchronization as firmware upload.
+9. Reopen serial after an MCU board returns, or read the M10 process log after launch. Use `serial_read` or `serial_expect` only for a defined serial workflow; use `serial_write` only when the project defines an input command. Ask for physical confirmation separately.
 
 For a complete Nano or Uno program, prefer the continuous project entry: WorkBuddy calls `avr_project_run`; Codex runs `chatmaker-avr-project --request-json '<request>'`. It checks the existing Mind+ environment, compiles, uploads only when the wired port is unambiguous, and optionally looks for an expected serial marker. Use the individual board tools only when diagnosing one stage.
 
 ChatMaker Knowledge is shared board guidance, not a second catalog. Use it to read safety, pin, toolchain, and troubleshooting context while preserving canonical facts, IDs, wiring, and verification objects from the checked-in packs.
 
 Read [beginner-hardware-contract.md](references/beginner-hardware-contract.md) whenever producing wiring or code. Read [verification-gates.md](references/verification-gates.md) before any success claim.
+
+## UNIHIKER M10
+
+Read [unihiker-m10.md](references/unihiker-m10.md) before generating or checking an M10 project.
+
+- Confirm the printed model is M10. K10 is a separate MCU board and is not supported by this route yet.
+- Deliver a complete Python project folder and keep it compatible with the active board interpreter; Debian 10 uses Python 3.7 by default.
+- In Codex, run `chatmaker-unihiker --request-json '{"action":"check_project","project":"<project-folder>"}'` before any board-side run.
+- In WorkBuddy, call `unihiker_project_check` with the project folder.
+- When the M10 project uses a cloud model or speech API, query `credential_help` / `unihiker_credential_help` for the selected provider and tell the user the exact private field, credential type, and official acquisition page. Public examples stay empty and real keys never enter chat or Git.
+- The source checker does not prove synchronization, imports on the board, process start, screen output, camera/audio behavior, network access, GPIO behavior, or physical effect.
+- Do not install packages, change Python versions, configure auto-start, or use stored SSH credentials without an explicit user choice.
 
 ## Classic Nano with Mind+
 

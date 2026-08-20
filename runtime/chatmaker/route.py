@@ -9,8 +9,10 @@ from typing import Any
 if __package__ in {None, ""}:  # Allow direct execution from a checked-out release folder.
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
     from chatmaker.catalog import get_catalog_record
+    from chatmaker.knowledge_semantics import BOARD_IDS as KNOWLEDGE_BOARD_IDS
 else:
     from .catalog import get_catalog_record
+    from .knowledge_semantics import BOARD_IDS as KNOWLEDGE_BOARD_IDS
 
 
 def _has_hardware_intent(request: dict[str, Any]) -> bool:
@@ -97,7 +99,7 @@ def _planned_knowledge_requests(
     if route_result.get("route") != "combined":
         return []
     board_id = _exact_board_id(request)
-    if board_id is None:
+    if board_id is None or board_id not in KNOWLEDGE_BOARD_IDS:
         return []
     return chatweb_knowledge_requests_for_intent(request, board_id=board_id)
 
