@@ -82,3 +82,10 @@ ChatMaker 面向国内零基础开发者分发。用户用 ChatCAD 生成 3D 打
 - 子集约 3.37 MiB；不追求覆盖生僻扩展汉字。需要范围外字符时，用户仍可通过 `engrave_font` 指定完整字体。
 
 下一项仍是 OLED 中文字库引导；它属于 ChatDuino，不在本次 ChatCAD 字体打包范围内。
+
+## 2026-08-20 接续进展：右侧预览中文轮廓已显示
+
+- `preview-lab.html` 的右侧 Canvas 现在使用与 SCAD/STL 相同的字形轮廓绘制盖面中文，不调用 `fillText()`，因此不依赖浏览器中文字体。
+- 本地浏览器实际打开“星核创客”示例，右侧模型已显示中文轮廓且没有豆腐方块。
+- OpenSCAD 2021.01 对同一 SCAD 完整渲染成功：1195 facets、7 volumes、零错误。
+- MakerWorld Parametric Model Maker 需要登录；当前 Chrome 未开启远程调试，因此在线导入仍保持待验收，不能写成已通过。

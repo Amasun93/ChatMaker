@@ -193,6 +193,10 @@ class CjkEngravingTests(unittest.TestCase):
             # The lab page embeds glyph contours so its own SCAD export keeps them.
             self.assertIn("label_depth", lab)
             self.assertIn("label_glyphs", lab)
+            self.assertIn("function labelContours", lab)
+            self.assertIn("ctx.fill('evenodd')", lab)
+            self.assertIn("labelContours(s.inner_height+s.floor+8+s.lid+.02)", lab)
+            self.assertNotIn("fillText(", lab)
 
     def test_chat3d_without_text_stays_plain(self):
         with tempfile.TemporaryDirectory() as directory:
