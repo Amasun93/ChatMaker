@@ -11,19 +11,19 @@ ChatWeb is an internal specialist under the ChatMaker parent entry. Keep this Sk
 
 ## Guide the creative choice
 
-- If the request is clear, confirm the desired effect and build without a long interview.
+- If the request is clear, automatically select the strongest content-matched direction and build a polished interactive preview without a style questionnaire.
 - Start with `chatmaker-web-plan --brief-json '<json>'`. If it returns `clarify`, ask only its one or two plain-language questions and do not recommend styles yet.
-- When the planner returns `directions`, recommend its two or three curated beginner directions. For each, describe the visual feeling, primary interaction, suitable scene, and one meaningful tradeoff.
+- When the planner returns `directions`, choose the best match from its curated directions and build it first. Keep the other two as short follow-up alternatives after the user has tried the preview.
 - Only after the user explicitly asks for more, rerun the planner with `--advanced`. Offer `chatmaker-web-playground --advanced ...` only at that point; never create or show the playground as part of the beginner default.
 
 ## Workflow
 
 1. Turn the idea, audience/scene, desired feeling or core message, and primary action into the planner brief. Do not move to style selection while the planner still returns `clarify`.
 2. Define the primary user action and the visible success, loading, disconnected, and failure states.
-3. Present only the planner's two or three beginner directions unless the user explicitly requests the expanded catalog. Record the selected direction or the assumptions used for a direct build.
+3. Select the direction that best fits the idea, scene and desired feeling. Build it before presenting alternatives; record the selection or assumptions internally.
 4. Generate one self-contained HTML file with `chatmaker-web`, with CSS and JavaScript embedded. Split into multiple files only when reuse or project size makes that simpler for the user.
 5. Design for phone and classroom use: at least 44 px touch targets, strong contrast, concise labels, visible focus, reduced-motion support, and visible feedback.
-   When the user asks for premium, Apple-like or richer motion, read [premium-micro-interactions.md](references/premium-micro-interactions.md). Absorb the interaction pattern into the smallest suitable stack; do not add React or run a component CLI merely to obtain an animation.
+   For every clear build, read [premium-micro-interactions.md](references/premium-micro-interactions.md) and choose content-matched signature effects. “Beginner” changes how little the user must configure, not how ordinary the result should look.
 6. Start the selected file with `chatmaker-web-preview`. Keep the default `127.0.0.1` binding; use network access only after an explicit request.
 7. Verify file loading, browser console errors, the primary interaction, state transitions, and phone-size layout in a real browser.
 8. For hardware pages, label simulation visibly. Define the HTTP, serial, Bluetooth, or message contract with `$chatduino` before implementing a real connection.
@@ -48,7 +48,7 @@ Read [web-verification-contract.md](references/web-verification-contract.md) bef
 - Support independent classroom tools and creative pages as well as hardware interfaces.
 - Treat mini games as a ChatWeb project kind, not as a disguised classroom poll.
 - Independent classroom tools should not load board knowledge.
-- Do not introduce React, Vue, a database, login, or cloud deployment in v0.1 unless the accepted project cannot reasonably work without it.
+- Prefer native HTML, CSS and JavaScript for a direct one-file result. React and Motion are allowed when they materially improve the accepted interaction and the project environment supports them; keep the stack invisible to the beginner. Do not add a database, login or cloud deployment unless the accepted project needs it.
 - Do not claim hardware connectivity because a page rendered.
 - Do not claim hardware connectivity because the simulation changed to a connected state.
 - Do not claim an interaction works from source inspection alone; exercise it in a browser.

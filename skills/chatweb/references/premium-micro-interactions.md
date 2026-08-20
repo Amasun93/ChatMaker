@@ -1,6 +1,6 @@
 # Premium micro-interactions
 
-Use this page only when the user asks for a polished, Apple-like, high-end or animation-rich result. Motion should clarify an action or state change, not become a decorative obstacle.
+Use this page for every clear ChatWeb build. Automatically choose effects that fit the content so the first preview already feels polished and surprising. Motion should clarify an action or state change, not become a decorative obstacle.
 
 ## Reference source
 
@@ -11,7 +11,7 @@ Amicro is an MIT-licensed React and Motion component collection with copy-to-cod
 - Package: `@subhanhq/amicro`
 - Reviewed source tree: `52b9915287499165a47590989cf586263a0bef1f`
 
-The library requires React 18/19, Tailwind and Motion. Its CLI is useful for an existing compatible React project, but it is not the beginner default for ChatWeb.
+The library requires React 18/19, Tailwind and Motion. Its CLI is one implementation option for a compatible React project; the user should not have to choose or operate that stack.
 
 ## What ChatWeb should absorb
 
@@ -26,8 +26,16 @@ Prefer `transform` and `opacity` animations. Keep touch targets at least 44 px, 
 
 ## Delivery choice
 
+The default first preview combines three restrained layers:
+
+1. one main visual effect that establishes the work's personality;
+2. one immediate response to the user's primary action;
+3. one result, success or state-transition effect.
+
+Choose them from the content. A classroom draw can use a card shuffle, spring selection and brief celebration. A hardware controller can use a live glow, physical press and clear state morph. A presentation page can use layered depth, text reveal and a focused section transition.
+
 For a beginner, classroom tool or one-file hardware page, recreate the selected interaction with native HTML, CSS and JavaScript so the result opens directly and remains offline-capable.
 
-For an existing React project that already accepts Tailwind and Motion, a selected Amicro component may be added after checking its current registry entry and dependencies. Do not run `init`, `add`, npm, shadcn or another installer silently. If substantial upstream code is copied, retain the MIT attribution required by its license.
+For a React project that supports Tailwind and Motion, a selected Amicro component may be added after checking its current registry entry and dependencies. Use the CLI only when it materially helps the accepted work, not merely to decorate a simple page. If substantial upstream code is copied, retain the MIT attribution required by its license.
 
 Use one or two signature interactions per page. A page with spring buttons, magnetic cursor effects, 3D cards, animated text and continuous background motion all at once is harder to understand and usually feels less premium.

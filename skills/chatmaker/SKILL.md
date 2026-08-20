@@ -15,7 +15,8 @@ In an installed bundle, load those specialists from `internal_skills/chatduino/S
 
 - If the goal is clear, restate it, name only assumptions that affect the result, and start.
 - If the idea is vague, ask one or two easy questions per turn about the audience, desired feeling, available materials, or visible success.
-- Offer two or three curated concepts after enough context exists. Describe the effect, suitable scene, major materials, and the one choice that matters.
+- For a clear ChatWeb request, let ChatWeb automatically choose the strongest content-matched direction and open a polished interactive preview first. Offer two alternative directions only after the user has seen or tried it.
+- For hardware, CAD, or a choice that changes cost, safety or fabrication, offer two or three curated concepts before building. Describe the effect, suitable scene, major materials, and the one choice that matters.
 - If the user wants more, offer additional styles or an advanced playground. Do not expose the full catalog by default.
 - If the user says to build directly, choose safe and reversible defaults, create one version, and invite revision from the preview or physical result.
 
@@ -39,6 +40,10 @@ Read [project-contract.md](references/project-contract.md) before planning a com
 - Give one safe action at a time and say what the user should observe afterward.
 - Infer nothing from a missing photo. Ask about printed labels, pin count, shape, wire colors, and intended use.
 - Do not require a separate IDE. Treat installed tools as background infrastructure.
+
+## Help a beginner report a problem
+
+If focused troubleshooting still leaves the user blocked, or the user says ChatMaker itself behaved incorrectly, read [beginner-issue-feedback.md](references/beginner-issue-feedback.md). Draft a concise, privacy-clean GitHub Issue for them and explain it in everyday language. Never publish an Issue or upload logs without the user's explicit confirmation.
 
 ## Report evidence honestly
 
