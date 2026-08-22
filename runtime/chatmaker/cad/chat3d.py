@@ -219,6 +219,11 @@ function scad(){const L=label,ow=s.inner_width+2*s.wall,od=s.inner_depth+2*s.wal
 
 def generate(request: dict[str, Any], profile: dict[str, Any], output: Path, name: str) -> dict[str, Any]:
     values=request.get("parameters",{})
+    design_kind = str(values.get("design_kind", "enclosure")).strip() or "enclosure"
+    if design_kind != "enclosure":
+        from . import mechanics
+
+        return mechanics.generate(request, profile, output, name)
     g=geometry(profile,values)
     engrave=_engrave_plan(values,g)
     output.mkdir(parents=True,exist_ok=True)

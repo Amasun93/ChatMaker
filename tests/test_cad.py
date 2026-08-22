@@ -110,6 +110,24 @@ class ChatCadAlphaTests(unittest.TestCase):
         self.assertFalse(fabrication_response["isError"])
         self.assertEqual(fabrication_payload["material"]["default_thickness_mm"], 3.0)
 
+    def test_mcp_exposes_bounded_basic_mechanical_parameters(self):
+        tool = next(item for item in workbuddy_mcp.TOOLS if item["name"] == "cad_generate")
+        parameters = tool["inputSchema"]["properties"]["parameters"]
+        properties = parameters["properties"]
+
+        self.assertEqual(tool["inputSchema"]["required"], ["project_name", "output_dir"])
+        self.assertFalse(parameters["additionalProperties"])
+        self.assertEqual(
+            properties["design_kind"]["enum"],
+            ["enclosure", "gear_pair", "rack_and_pinion"],
+        )
+        self.assertEqual(properties["gear_module"], {"type": "number", "minimum": 0.5, "maximum": 5})
+        self.assertEqual(properties["driver_teeth"], {"type": "integer", "minimum": 8, "maximum": 80})
+        self.assertEqual(properties["driven_teeth"], {"type": "integer", "minimum": 8, "maximum": 120})
+        self.assertEqual(properties["pinion_teeth"], {"type": "integer", "minimum": 8, "maximum": 80})
+        self.assertEqual(properties["rack_teeth"], {"type": "integer", "minimum": 4, "maximum": 80})
+        self.assertEqual(properties["pressure_angle"], {"type": "number", "minimum": 14.5, "maximum": 30})
+
 
 if __name__ == "__main__":
     unittest.main()

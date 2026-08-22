@@ -523,13 +523,14 @@ TOOLS = [
     },
     {
         "name": "cad_generate",
-        "description": "按制作方式生成 Chat2D 激光切割盒子或 Chat3D 打印外壳；输出参数文件、对应图纸/模型和白底预览实验室。",
+        "description": "按制作方式生成 Chat2D 激光切割盒子、Chat3D 打印外壳或基础齿轮机构；输出参数文件、对应图纸/模型和白底预览实验室。",
         "inputSchema": {
             "type": "object",
-            "required": ["board_id", "project_name", "output_dir"],
+            "required": ["project_name", "output_dir"],
             "properties": {
                 "board_id": {
                     "type": "string",
+                    "description": "板卡相关外壳、安装板或模块项目必填；独立齿轮机构可省略。",
                     "enum": [
                         "arduino-nano-classic",
                         "arduino-uno-r3",
@@ -577,6 +578,23 @@ TOOLS = [
                         "text_size": {"type": "number", "minimum": 3, "maximum": 60},
                         "text_depth": {"type": "number", "minimum": 0.4, "maximum": 5},
                         "engrave_font": {"type": "string", "description": "Optional CJK font file path; defaults to the system font"},
+                        "design_kind": {
+                            "type": "string",
+                            "enum": ["enclosure", "gear_pair", "rack_and_pinion"],
+                            "default": "enclosure",
+                        },
+                        "gear_module": {"type": "number", "minimum": 0.5, "maximum": 5},
+                        "driver_teeth": {"type": "integer", "minimum": 8, "maximum": 80},
+                        "driven_teeth": {"type": "integer", "minimum": 8, "maximum": 120},
+                        "pinion_teeth": {"type": "integer", "minimum": 8, "maximum": 80},
+                        "rack_teeth": {"type": "integer", "minimum": 4, "maximum": 80},
+                        "pressure_angle": {"type": "number", "minimum": 14.5, "maximum": 30},
+                        "gear_thickness": {"type": "number", "minimum": 2, "maximum": 20},
+                        "shaft_diameter": {"type": "number", "minimum": 2, "maximum": 20},
+                        "shaft_clearance": {"type": "number", "minimum": 0.05, "maximum": 1},
+                        "backlash": {"type": "number", "minimum": 0, "maximum": 0.8},
+                        "bracket_thickness": {"type": "number", "minimum": 2, "maximum": 10},
+                        "rack_body_height": {"type": "number", "minimum": 3, "maximum": 30},
                     },
                     "additionalProperties": False,
                 },
