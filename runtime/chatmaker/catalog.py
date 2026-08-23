@@ -153,6 +153,13 @@ def _knowledge_search_text(
 def _search_text(
     record: dict[str, Any], project_root: Path | None = None
 ) -> list[str]:
+    identity = record.get("identity", {})
+    if isinstance(identity, dict):
+        identity = {
+            key: value
+            for key, value in identity.items()
+            if not key.endswith("_is_not") and "compatibility" not in key
+        }
     values: list[Any] = [
         record.get("id"),
         record.get("name"),
@@ -163,14 +170,28 @@ def _search_text(
         record.get("boards", []),
         record.get("supported_boards", []),
         record.get("components", []),
-        record.get("identity", {}),
+        identity,
         record.get("onboard_hardware", []),
-        record.get("software_compatibility", {}),
     ]
     flattened: list[str] = []
     for value in values:
         flattened.extend(_flatten_search_values(value))
     flattened.extend(_knowledge_search_text(record, project_root))
+    return flattened
+
+
+def _board_identity_search_text(record: dict[str, Any]) -> list[str]:
+    identity = record.get("identity", {})
+    if isinstance(identity, dict):
+        identity = {
+            key: value
+            for key, value in identity.items()
+            if not key.endswith("_is_not") and "compatibility" not in key
+        }
+    values = [record.get("id"), record.get("name"), record.get("aliases", []), identity]
+    flattened: list[str] = []
+    for value in values:
+        flattened.extend(_flatten_search_values(value))
     return flattened
 
 
@@ -207,6 +228,13 @@ def _score(
 
     terms = [term for term in normalized.split() if term]
     if len(terms) > 1:
+        if record.get("kind") == "board":
+            identity_candidates = _search_candidates(_board_identity_search_text(record))
+            if not any(
+                any(term in candidate or candidate in term for candidate in identity_candidates)
+                for term in terms
+            ):
+                return 0
         if all(any(term in candidate for candidate in candidates) for term in terms):
             score = max(score, 50)
         return score

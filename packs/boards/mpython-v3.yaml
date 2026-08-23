@@ -1,0 +1,111 @@
+schema_version: "1.0"
+kind: board
+id: mpython-v3
+name: 掌控板 3.0
+aliases: [mPython 3.0, mPython V3, 掌控板3.0, 掌控板 Pro]
+summary: ESP32-S3 掌控板，带 320×172 彩色屏、六轴、磁场、数字光线、双麦克风和扬声器。
+family: mpython-v3
+mcu: ESP32-S3
+logic_voltage: 3.3
+identity:
+  product_line: mPython 掌控板 3.0
+  historical_source_name: mpython_pro
+  physical_board_is_not: 经典掌控板 V2.x 或 IDMC-0001 星核板
+display:
+  type: st7789-color-lcd
+  size_inches: 1.47
+  resolution: 320x172
+  color_format: RGB565
+  api_object: display
+automatic_identification:
+  safe_clues: [esp32-s3-chip-family, firmware-marker, verified-board-device-signatures]
+  exact_revision_may_require_silkscreen: true
+  temporary_probe_requires_backup_and_restore: true
+memory:
+  psram_mb: 8
+  flash_mb: 16
+gpio_map:
+  P0: 1
+  P1: 2
+  P2: 3
+  P3: 4
+  P4: 5
+  P5: 0
+  P6: 7
+  P7: 8
+  P8: 15
+  P9: 16
+  P10: 6
+  P11: 46
+  P12: 21
+  P13: 17
+  P14: 18
+  P15: 48
+  P16: 47
+  P19: 43
+  P20: 44
+  P23: 9
+  P24: 10
+  P25: 11
+  P26: 12
+  P27: 13
+  P28: 14
+sources:
+  - title: 掌控板 3.0 技术参数
+    url: https://mpython-esp32s3-doc.readthedocs.io/zh-cn/latest/1_hardware/1_2_Technical_parameters.html
+  - title: 掌控板 3.0 引脚排布
+    url: https://mpython-esp32s3-doc.readthedocs.io/zh-cn/latest/1_hardware/1_3_IO.html
+  - title: mPython ESP32-S3 official source
+    url: https://github.com/labplus-cn/mpython_esp32s3
+verification:
+  source_reviewed:
+    status: verified
+    checked_at: "2026-08-23"
+    evidence: Official hardware, IO, API, source, license and local Mind+ package-index facts were reviewed; the local 3.0 toolchain is not installed.
+  code_compiled: {status: unverified, checked_at: null, evidence: null}
+  firmware_uploaded: {status: unverified, checked_at: null, evidence: null}
+  physical_effect_verified: {status: unverified, checked_at: null, evidence: null}
+pins:
+  - {id: P0, kind: gpio, capabilities: [gpio-1, analog-input, digital-input, digital-output, pwm], source_ids: [mpython-v3-official-io]}
+  - {id: P1, kind: gpio, capabilities: [gpio-2, analog-input, digital-input, digital-output, pwm], source_ids: [mpython-v3-official-io]}
+  - {id: P2, kind: gpio, capabilities: [gpio-3, analog-input, digital-input, digital-output, pwm], source_ids: [mpython-v3-official-io]}
+  - {id: P3, kind: gpio, capabilities: [gpio-4, analog-input, digital-input, digital-output, pwm], source_ids: [mpython-v3-official-io]}
+  - {id: P4, kind: gpio, capabilities: [gpio-5, analog-input, digital-input, digital-output, pwm], source_ids: [mpython-v3-official-io]}
+  - {id: P5, kind: gpio, capabilities: [gpio-0, onboard-button-a, boot-related], source_ids: [mpython-v3-official-io]}
+  - {id: P6, kind: gpio, capabilities: [gpio-7, analog-input, digital-input, digital-output, pwm], source_ids: [mpython-v3-official-io]}
+  - {id: P7, kind: gpio, capabilities: [gpio-8, onboard-ws2812], source_ids: [mpython-v3-official-io]}
+  - {id: P10, kind: gpio, capabilities: [gpio-6, analog-input, onboard-microphone], source_ids: [mpython-v3-official-io]}
+  - {id: P11, kind: gpio, capabilities: [gpio-46, onboard-button-b], source_ids: [mpython-v3-official-io]}
+  - {id: P12, kind: gpio, capabilities: [gpio-21, onboard-audio-output], source_ids: [mpython-v3-official-io]}
+  - {id: P19, kind: gpio, capabilities: [gpio-43, i2c-scl, shared], source_ids: [mpython-v3-official-io]}
+  - {id: P20, kind: gpio, capabilities: [gpio-44, i2c-sda, shared], source_ids: [mpython-v3-official-io]}
+  - {id: P23, kind: gpio, capabilities: [gpio-9, touch], source_ids: [mpython-v3-official-io]}
+  - {id: P24, kind: gpio, capabilities: [gpio-10, touch], source_ids: [mpython-v3-official-io]}
+  - {id: P25, kind: gpio, capabilities: [gpio-11, touch], source_ids: [mpython-v3-official-io]}
+  - {id: P26, kind: gpio, capabilities: [gpio-12, touch], source_ids: [mpython-v3-official-io]}
+  - {id: P27, kind: gpio, capabilities: [gpio-13, touch], source_ids: [mpython-v3-official-io]}
+  - {id: P28, kind: gpio, capabilities: [gpio-14, touch], source_ids: [mpython-v3-official-io]}
+onboard_hardware:
+  - {id: st7789-lcd, name: 1.47-inch ST7789 color LCD, category: display, interface: {type: spi}, source_ids: [mpython-v3-official-hardware]}
+  - {id: qmi8658c, name: QMI8658C six-axis inertial sensor, category: motion-sensor, interface: {type: i2c, sda_pin: P20, scl_pin: P19}, source_ids: [mpython-v3-official-hardware]}
+  - {id: mmc5603nj, name: MMC5603NJ magnetic sensor, category: magnetic-sensor, interface: {type: i2c, sda_pin: P20, scl_pin: P19}, source_ids: [mpython-v3-official-hardware]}
+  - {id: ltr-308als-01, name: LTR-308ALS-01 digital light sensor, category: light-input, interface: {type: i2c, sda_pin: P20, scl_pin: P19}, source_ids: [mpython-v3-official-hardware]}
+  - {id: dual-microphone, name: Dual onboard microphones, category: audio-input, interface: {type: audio-codec}, source_ids: [mpython-v3-official-hardware]}
+  - {id: speaker, name: 1W onboard speaker with ES8388 and NS4150, category: audio-output, interface: {type: audio-codec}, source_ids: [mpython-v3-official-hardware]}
+  - {id: ws2812-three-pixel, name: Three onboard RGB pixels, category: light-output, interface: {type: gpio, interrupt_gpio: 8}, source_ids: [mpython-v3-official-hardware]}
+sensor_semantics:
+  light_read_unit: lux
+  sound_read_unit: raw-12-bit-0-to-4095
+constraints:
+  - Do not reuse classic mPython GPIO numbers, display API or upload target.
+  - All GPIO logic is 3.3V.
+  - P19/P20 are GPIO43/GPIO44 and share the onboard I2C bus.
+  - Official documentation is still evolving; documentation presence is not compile or hardware evidence.
+constraint_pin_refs: [P5, P7, P10, P11, P12, P19, P20]
+toolchains:
+  - id: mindplus-mpython-v3-3.0.0
+    status: source_indexed_toolchain_not_installed
+    package: mpython:esp32@3.0.0
+  - id: micropython-mpython-v3
+    status: official_source_available_hardware_unverified
+

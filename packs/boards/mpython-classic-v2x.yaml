@@ -1,0 +1,126 @@
+schema_version: "1.0"
+kind: board
+id: mpython-classic-v2x
+name: 经典掌控板 V2.x
+aliases: [掌控板, mPython 掌控板, 掌控板 V2, DFRobot DFR0608]
+summary: ESP32 经典掌控板，带 128×64 OLED、按键、触摸、声光输入、RGB、蜂鸣器和随修订版本变化的运动传感器。
+family: mpython-classic
+mcu: ESP32
+logic_voltage: 3.3
+identity:
+  product_line: mPython 掌控板
+  sku: DFR0608
+  revisions: [V2.0, V2.1, V2.2, V2.3]
+  physical_board_is_not: IDMC-0001 星核板
+display:
+  type: monochrome-oled
+  size_inches: 1.3
+  resolution: 128x64
+  api_object: oled
+hardware_revisions:
+  - revision: V2.0
+    accelerometer: MSA300
+    magnetometer: MMC5983MA
+    usb_uart: CP2104
+  - revision: V2.1
+    accelerometer: QMI8658C
+    magnetometer: MMC5983MA
+    usb_uart: CH9102
+  - revision: V2.2
+    accelerometer: QMI8658C
+    magnetometer: MMC5603NJ
+    usb_uart: CH9102
+  - revision: V2.3
+    accelerometer: QMI8658C
+    magnetometer: MMC5603NJ
+    usb_uart: CH9102
+    note: Official API pages describe behavior changes; an independently readable PCB revision field is not confirmed.
+automatic_identification:
+  safe_clues: [usb-uart-family, esp-chip-family, firmware-marker, verified-i2c-device-identity]
+  exact_revision_may_require_silkscreen: true
+  temporary_probe_requires_backup_and_restore: true
+gpio_map:
+  P0: 33
+  P1: 32
+  P2: 35
+  P3: 34
+  P4: 39
+  P5: 0
+  P6: 16
+  P7: 17
+  P8: 26
+  P9: 25
+  P10: 36
+  P11: 2
+  P13: 18
+  P14: 19
+  P15: 21
+  P16: 5
+  P19: 22
+  P20: 23
+  P23: 27
+  P24: 14
+  P25: 12
+  P26: 13
+  P27: 15
+  P28: 4
+sources:
+  - title: mPython 掌控板硬件与版本记录
+    url: https://mpython.readthedocs.io/zh-cn/master/board/hardware.html
+  - title: mPython 掌控板 API
+    url: https://mpython.readthedocs.io/zh-cn/master/library/mPython/mpython.html
+  - title: mPython official source
+    url: https://github.com/labplus-cn/mpython
+verification:
+  source_reviewed:
+    status: verified
+    checked_at: "2026-08-23"
+    evidence: Official hardware, version, API, OSHWA and local Mind+ 1.8/2.0 package facts were reviewed; revision contradictions remain explicit.
+  code_compiled: {status: unverified, checked_at: null, evidence: null}
+  firmware_uploaded: {status: unverified, checked_at: null, evidence: null}
+  physical_effect_verified: {status: unverified, checked_at: null, evidence: null}
+pins:
+  - {id: P0, kind: gpio, capabilities: [gpio-33, analog-input, digital-input, digital-output, pwm, touch], source_ids: [mpython-classic-official-hardware]}
+  - {id: P1, kind: gpio, capabilities: [gpio-32, analog-input, digital-input, digital-output, pwm, touch], source_ids: [mpython-classic-official-hardware]}
+  - {id: P2, kind: gpio, capabilities: [gpio-35, analog-input, digital-input, input-only], source_ids: [mpython-classic-official-hardware]}
+  - {id: P3, kind: gpio, capabilities: [gpio-34, analog-input, digital-input, input-only, onboard-ext], source_ids: [mpython-classic-official-hardware]}
+  - {id: P4, kind: gpio, capabilities: [gpio-39, analog-input, digital-input, input-only, onboard-light], source_ids: [mpython-classic-official-hardware]}
+  - {id: P5, kind: gpio, capabilities: [gpio-0, digital-input, digital-output, pwm, onboard-button-a, boot-related], source_ids: [mpython-classic-official-hardware]}
+  - {id: P6, kind: gpio, capabilities: [gpio-16, digital-output, pwm, onboard-passive-buzzer], source_ids: [mpython-classic-official-hardware]}
+  - {id: P7, kind: gpio, capabilities: [gpio-17, digital-output, onboard-ws2812], source_ids: [mpython-classic-official-hardware]}
+  - {id: P10, kind: gpio, capabilities: [gpio-36, analog-input, digital-input, input-only, onboard-microphone], source_ids: [mpython-classic-official-hardware]}
+  - {id: P11, kind: gpio, capabilities: [gpio-2, digital-input, digital-output, onboard-button-b, boot-related], source_ids: [mpython-classic-official-hardware]}
+  - {id: P19, kind: gpio, capabilities: [gpio-22, i2c-scl, shared], source_ids: [mpython-classic-official-hardware]}
+  - {id: P20, kind: gpio, capabilities: [gpio-23, i2c-sda, shared], source_ids: [mpython-classic-official-hardware]}
+  - {id: P23, kind: gpio, capabilities: [gpio-27, touch], source_ids: [mpython-classic-official-hardware]}
+  - {id: P24, kind: gpio, capabilities: [gpio-14, touch], source_ids: [mpython-classic-official-hardware]}
+  - {id: P25, kind: gpio, capabilities: [gpio-12, touch, boot-related], source_ids: [mpython-classic-official-hardware]}
+  - {id: P26, kind: gpio, capabilities: [gpio-13, touch], source_ids: [mpython-classic-official-hardware]}
+  - {id: P27, kind: gpio, capabilities: [gpio-15, touch, boot-related], source_ids: [mpython-classic-official-hardware]}
+  - {id: P28, kind: gpio, capabilities: [gpio-4, touch, boot-related], source_ids: [mpython-classic-official-hardware]}
+onboard_hardware:
+  - {id: oled-128x64, name: 1.3-inch 128x64 monochrome OLED, category: display, interface: {type: i2c, address: "0x3C", sda_pin: P20, scl_pin: P19}, source_ids: [mpython-classic-official-hardware]}
+  - {id: ws2812-three-pixel, name: Three onboard WS2812 RGB pixels, category: light-output, interface: {type: gpio, interrupt_gpio: 17}, source_ids: [mpython-classic-official-hardware]}
+  - {id: passive-buzzer, name: Onboard passive buzzer, category: audio-output, interface: {type: pwm-gpio, interrupt_gpio: 16}, source_ids: [mpython-classic-official-hardware]}
+  - {id: analog-light, name: ALS-PT19 analog light sensor, category: light-input, interface: {type: analog-gpio, interrupt_gpio: 39}, source_ids: [mpython-classic-official-hardware]}
+  - {id: analog-microphone, name: EM4013 analog microphone, category: audio-input, interface: {type: analog-gpio, interrupt_gpio: 36}, source_ids: [mpython-classic-official-hardware]}
+  - {id: revision-motion-sensor, name: MSA300 or QMI8658C according to hardware revision, category: motion-sensor, interface: {type: i2c, sda_pin: P20, scl_pin: P19}, source_ids: [mpython-classic-official-hardware]}
+  - {id: revision-magnetometer, name: MMC5983MA or MMC5603NJ according to hardware revision, category: magnetic-sensor, interface: {type: i2c, sda_pin: P20, scl_pin: P19}, source_ids: [mpython-classic-official-hardware]}
+sensor_semantics:
+  light_read_unit: raw-12-bit-0-to-4095
+  sound_read_unit: raw-12-bit-0-to-4095
+constraints:
+  - All GPIO logic is 3.3V; do not apply 5V logic to an input.
+  - P2, P3, P4 and P10 are input-only.
+  - P19/P20 share the onboard I2C bus; scan for address conflicts before adding devices.
+  - Identify the printed hardware revision before relying on one fixed motion or magnetic sensor model.
+  - A mPython-compatible compile target does not prove the physical board is a classic mPython board or Starcore.
+constraint_pin_refs: [P2, P3, P4, P5, P10, P11, P19, P20, P25, P27, P28]
+toolchains:
+  - id: mindplus-1.8-mpython
+    status: locally_discovered
+    fqbn: dfrobot:mpython:mpython:FlashMode=dio,FlashFreq=80,UploadSpeed=1500000,DebugLevel=none
+  - id: mindplus-2.0-mpython
+    status: locally_discovered
+    fqbn: mindplus:esp32:mpython:FlashMode=dio,FlashFreq=80,UploadSpeed=1500000,DebugLevel=none
+

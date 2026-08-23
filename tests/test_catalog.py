@@ -76,6 +76,19 @@ class CatalogTests(unittest.TestCase):
         self.assertEqual(result["match_count"], 1)
         self.assertEqual(result["matches"][0]["id"], STARCORE_BOARD_ID)
 
+    def test_search_for_mpython_board_prefers_real_boards_over_starcore_compatibility(self):
+        result = self.catalog.search_catalog(
+            "掌控板", kind="board", project_root=ROOT
+        )
+
+        self.assertTrue(result["success"], result)
+        self.assertGreaterEqual(result["match_count"], 2)
+        first_two = [item["id"] for item in result["matches"][:2]]
+        self.assertEqual(first_two, ["mpython-classic-v2x", "mpython-v3"])
+        starcore_ids = [item["id"] for item in result["matches"]]
+        if STARCORE_BOARD_ID in starcore_ids:
+            self.assertGreater(starcore_ids.index(STARCORE_BOARD_ID), 1)
+
     def test_get_returns_the_full_record_and_evidence_gates(self):
         self.assertIsNotNone(self.catalog, "catalog runtime is missing")
 

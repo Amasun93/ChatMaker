@@ -1,0 +1,33 @@
+schema_version: "1.0"
+id: source-mpython-v3-official
+title: 掌控板 3.0 官方开放资料
+board_id: mpython-v3
+source_type: canonical-board-documentation
+canonical_url: https://mpython-esp32s3-doc.readthedocs.io/zh-cn/latest/
+license_use_boundary: >-
+  Official documentation declares CC0. Hardware follows CERN-OHL-S-2.0 and
+  project software follows GPL-3.0-or-later unless a source file states another
+  license. Product-page text and third-party datasheets are linked, not copied.
+cleaning_version: chatmaker-mpython-v3-v1
+review_date: "2026-08-23"
+cleaning_verified:
+  status: verified
+  date: "2026-08-23"
+  evidence: Official hardware, IO, examples, license, OSHWA and source pages were reviewed with the local Mind+ package index.
+source_reviewed:
+  status: verified
+  date: "2026-08-23"
+  evidence: ESP32-S3 identity, display, sensors, audio, pin mapping and API differences were reviewed; evolving-document defects remain noted.
+publication_approved:
+  status: verified
+  date: "2026-08-24"
+  evidence: Approved normalized facts and original beginner guidance while keeping compile, upload and hardware evidence unverified.
+page_declarations:
+  - {stable_id: mpython-v3-start-here, path: published/boards/mpython-v3/start-here.md}
+  - {stable_id: mpython-v3-identify-and-safety, path: published/boards/mpython-v3/identify-and-safety.md}
+  - {stable_id: mpython-v3-pins-and-electrical, path: published/boards/mpython-v3/pins-and-electrical.md}
+  - {stable_id: mpython-v3-toolchains-and-upload, path: published/boards/mpython-v3/toolchains-and-upload.md}
+  - {stable_id: mpython-v3-components-and-wiring, path: published/boards/mpython-v3/components-and-wiring.md}
+  - {stable_id: mpython-v3-libraries-and-examples, path: published/boards/mpython-v3/libraries-and-examples.md}
+  - {stable_id: mpython-v3-web-and-protocol, path: published/boards/mpython-v3/web-and-protocol.md}
+  - {stable_id: mpython-v3-troubleshooting, path: published/boards/mpython-v3/troubleshooting.md}

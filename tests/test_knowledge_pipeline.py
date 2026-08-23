@@ -131,12 +131,14 @@ class KnowledgePublicationPipelineTests(unittest.TestCase):
         result = self.validate(ROOT)
 
         self.assertTrue(result["success"], result["errors"])
-        self.assertEqual(result["counts"], {"manifests": 4, "pages": 32})
+        self.assertEqual(result["counts"], {"manifests": 6, "pages": 48})
         expected_boards = {
             "arduino-nano-classic",
             "arduino-uno-r3",
             "esp32-devkit-v1",
             "idmc-0001-starcore-v4-2-2",
+            "mpython-classic-v2x",
+            "mpython-v3",
         }
         actual_boards = set()
         for path in (ROOT / "knowledge_sources" / "manifests").glob("*.yaml"):
@@ -144,7 +146,11 @@ class KnowledgePublicationPipelineTests(unittest.TestCase):
             actual_boards.add(manifest["board_id"])
             expected_cleaning = (
                 "verified"
-                if manifest["board_id"] == "idmc-0001-starcore-v4-2-2"
+                if manifest["board_id"] in {
+                    "idmc-0001-starcore-v4-2-2",
+                    "mpython-classic-v2x",
+                    "mpython-v3",
+                }
                 else "unverified"
             )
             self.assertEqual(manifest["cleaning_verified"]["status"], expected_cleaning)
@@ -246,7 +252,7 @@ class KnowledgePublicationPipelineTests(unittest.TestCase):
             result = self.validate(Path(directory))
 
         self.assertTrue(result["success"], result["errors"])
-        self.assertEqual(result["counts"], {"manifests": 4, "pages": 1})
+        self.assertEqual(result["counts"], {"manifests": 6, "pages": 1})
 
     def test_page_uses_exact_six_fields_and_a_nonempty_body(self):
         for body, extra_frontmatter in (

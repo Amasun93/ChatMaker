@@ -1,0 +1,14 @@
+schema_version: "1.0"
+kind: knowledge-index
+board_id: mpython-classic-v2x
+max_section_bytes: 65536
+sections:
+  - {section_id: start-here, title: 经典掌控板从这里开始, summary: 先确认经典 V2.x 与背面修订版本，再选择 Arduino 或 MicroPython 路线。, consumers: [chatmaker, chatduino, chatweb, chatcad], topics: [掌控板, identity, workflow, revision], pack_id: chatmaker-board-mpython-classic-v2x-knowledge}
+  - {section_id: identify-and-safety, title: 识别与安全, summary: 用自动探测、丝印或照片区分经典掌控板、3.0 与星核板。, consumers: [chatmaker, chatduino, chatweb, chatcad], topics: [掌控板, identity, safety, automatic-identification], pack_id: chatmaker-board-mpython-classic-v2x-knowledge}
+  - {section_id: pins-and-electrical, title: 引脚与电气规则, summary: 使用经典 P/GPIO 映射、3.3V 逻辑和共享 I2C 规则。, consumers: [chatmaker, chatduino, chatweb], topics: [掌控板, pins, electrical, i2c], pack_id: chatmaker-board-mpython-classic-v2x-knowledge}
+  - {section_id: toolchains-and-upload, title: Mind+、编译与上传, summary: 分开使用 Mind+ 1.8 和 2.0 的目标，并保留各验证阶段。, consumers: [chatmaker, chatduino], topics: [掌控板, mindplus, compile, upload], pack_id: chatmaker-board-mpython-classic-v2x-knowledge}
+  - {section_id: components-and-wiring, title: 板载器件与接线, summary: 先使用真实板载器件，再安全连接外部模块。, consumers: [chatmaker, chatduino, chatweb, chatcad], topics: [掌控板, components, wiring, onboard-hardware], pack_id: chatmaker-board-mpython-classic-v2x-knowledge}
+  - {section_id: libraries-and-examples, title: 库、API 与示例, summary: 区分 Arduino MPython.h 与 MicroPython API 及版本差异。, consumers: [chatmaker, chatduino], topics: [掌控板, libraries, api, examples], pack_id: chatmaker-board-mpython-classic-v2x-knowledge}
+  - {section_id: web-and-protocol, title: 网页与通信, summary: 为串口、Wi-Fi 与网页项目先定义协议和证据。, consumers: [chatmaker, chatduino, chatweb], topics: [掌控板, web, protocol, serial, wifi], pack_id: chatmaker-board-mpython-classic-v2x-knowledge}
+  - {section_id: troubleshooting, title: 排错与证据状态, summary: 按身份、版本、工具链、上传和物理效果逐层排查。, consumers: [chatmaker, chatduino, chatweb, chatcad], topics: [掌控板, diagnosis, revision, evidence], pack_id: chatmaker-board-mpython-classic-v2x-knowledge}
+
