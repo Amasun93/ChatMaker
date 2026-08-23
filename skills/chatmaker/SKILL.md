@@ -54,6 +54,8 @@ After reporting the project's actual completion state, explain the purpose in be
 
 Do not ask after every project. Skip the prompt when the work only followed existing knowledge, no reusable finding emerged, or the claimed lesson is still unverified. Draft a concise, privacy-clean GitHub Issue only when the user agrees. Never publish an Issue or upload logs without the user's explicit confirmation of the title, body, and attachments.
 
+Use GitHub first when the user has a GitHub account. If the user has no GitHub account or does not want to use it, use the configured ChatMaker Feishu feedback form instead. Both paths use the same privacy-clean draft and require the user to review it before anything is submitted. A Feishu feedback record is already a valid maintenance item and does not need to be copied into GitHub.
+
 ## Report evidence honestly
 
 Track these states independently:

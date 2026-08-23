@@ -53,6 +53,7 @@ EXPECTED_COMMANDS = {
     "chatmaker-web-embed",
     "chatmaker-pack",
     "chatmaker-knowledge",
+    "chatmaker-feedback",
     "chatmaker-cad",
 }
 

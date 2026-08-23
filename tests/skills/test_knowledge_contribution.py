@@ -32,6 +32,25 @@ class KnowledgeContributionContractTests(unittest.TestCase):
         self.assertIn("Never turn an unverified guess into shared knowledge", reference)
         self.assertIn("Amasun93/ChatMaker/issues/new", reference)
 
+    def test_feedback_uses_github_first_and_feishu_without_github(self):
+        router = (ROOT / "skills" / "chatmaker" / "SKILL.md").read_text(
+            encoding="utf-8"
+        )
+        reference = (
+            ROOT
+            / "skills"
+            / "chatmaker"
+            / "references"
+            / "beginner-issue-feedback.md"
+        ).read_text(encoding="utf-8")
+
+        self.assertIn("GitHub first", router)
+        self.assertIn("chatmaker-feedback --request-json", reference)
+        self.assertIn("CHATMAKER_FEEDBACK_FORM_URL", reference)
+        self.assertIn("联系邮箱（可选）", reference)
+        self.assertIn("show the finished draft", reference)
+        self.assertIn("does not need to become a GitHub Issue", reference)
+
     def test_chatduino_surfaces_new_module_learning_to_chatmaker(self):
         specialist = (ROOT / "skills" / "chatduino" / "SKILL.md").read_text(
             encoding="utf-8"

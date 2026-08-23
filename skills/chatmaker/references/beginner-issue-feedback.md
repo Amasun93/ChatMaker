@@ -30,7 +30,7 @@ For either path, collect only what another person needs to understand or reprodu
 
 Do not ask the user to reconstruct data that was never observed. Remove account names, home-directory names, tokens, passwords, Wi-Fi credentials, private URLs, faces, student information and unrelated logs. Do not gather a whole machine report when one excerpt and one reproducer are enough.
 
-## Draft the Issue
+## Draft the feedback
 
 Use one of these clear titles:
 
@@ -54,9 +54,29 @@ Draft the body in this beginner-readable shape:
 
 For a blocked defect, replace “最终跑通的方法” with “怎样可以再次出现” and record that the physical effect is not verified. Do not turn compilation success into a claim that hardware worked.
 
-Show the finished title, body and proposed attachments to the user. Submit publicly only after the user explicitly confirms all three. If direct GitHub submission is unavailable, use the matching repository page:
+Before choosing a destination, show the finished draft, proposed attachments and any optional contact email to the user. Remove secrets and personal information, then ask the user to confirm what will be sent. The contact field is `联系邮箱（可选）`; never make it required.
+
+Use GitHub first when the user has an account and is willing to use it. Submit publicly only after the user explicitly confirms the title, body and attachments. If direct GitHub submission is unavailable, use the matching repository page:
 
 - Successful knowledge contribution: `https://github.com/Amasun93/ChatMaker/issues/new?template=knowledge-contribution.yml`
 - Problem report: `https://github.com/Amasun93/ChatMaker/issues/new`
 
 The user can paste the same reviewed text there later.
+
+If the user has no GitHub account or does not want to use GitHub, use the ChatMaker Feishu form. In a local ChatMaker installation, create a reviewable prefilled link with `chatmaker-feedback --request-json '<json>'`, using action `draft_url` and the evidence fields collected above. The runtime reads the destination from `CHATMAKER_FEEDBACK_FORM_URL`; do not hard-code a private form URL in the Skill or repository.
+
+The Feishu form fields are:
+
+- `反馈类型`
+- `问题标题`
+- `我做了什么`
+- `板卡、模块和环境`
+- `预期结果`
+- `实际结果或知识缺口`
+- `怎样可以再次出现或最终跑通`
+- `已经验证到哪一步`
+- `最小错误摘录`
+- `联系邮箱（可选）`
+- hidden routing fields `提交来源` and `处理状态`
+
+Open the prefilled link for the user, let them check it, and let the user perform or explicitly confirm the final submission. Do not upload arbitrary attachments through this fallback. If the configured command or form is unavailable, preserve the reviewed draft and explain that the fallback inbox is not configured; do not invent an email address. A Feishu submission does not need to become a GitHub Issue. Maintainers can read open records with action `list`; that action is read-only and takes its app credentials, app token and table ID from environment variables.
