@@ -11,7 +11,7 @@ Do not confuse these paths. A blocked attempt is not a successful recipe, and on
 
 For a likely defect, start with: “这可能不是你操作错了，我可以帮你把问题整理给开发者。”
 
-For a successful contribution, first finish the project report, then ask once: “这次我们跑通了一个知识库里还没有的新模块或新经验。要不要我帮你整理成一个 Issue？你确认后再提交。” Do not ask after ordinary projects that only used existing guidance, and do not repeat the invitation after the user declines.
+For a successful contribution, first finish the project report. Explain what an Issue is and why it helps before asking: “这次我们跑通了一个知识库里还没有的新模块或新经验。Issue 可以理解成一张给 ChatMaker 开发者的改进建议单：我会帮你把模块型号、最终跑通的方法和踩过的坑整理好，你不需要懂 GitHub。提交后，开发者可以把这段经验补进 Skill 和知识库，让以后使用的人少走弯路。你愿意让我先整理一份给你确认吗？确认后再公开提交。” Do not ask after ordinary projects that only used existing guidance, and do not repeat the invitation after the user declines.
 
 If the user already wrote a retrospective, treat it as source material. Extract only reusable facts; keep observations, interpretations and still-unverified guesses separate. Never turn an unverified guess into shared knowledge.
 

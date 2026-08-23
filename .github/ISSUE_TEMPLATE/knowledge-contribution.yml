@@ -5,7 +5,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        谢谢你把真实开发经验贡献给 ChatMaker。请只填写你实际观察到的内容；不确定的地方可以直接写“未验证”。
+        这是一张给 ChatMaker 开发者的改进建议单。你分享的真实开发经验，会帮助开发者补充 Skill 和知识库，也能帮助后来使用 ChatMaker 的人少走弯路。请只填写你实际观察到的内容；不确定的地方可以直接写“未验证”。
 
   - type: textarea
     id: project

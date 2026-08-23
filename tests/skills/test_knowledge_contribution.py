@@ -25,6 +25,9 @@ class KnowledgeContributionContractTests(unittest.TestCase):
         self.assertIn("successful knowledge contribution", router)
         self.assertIn("ask once", router.casefold())
         self.assertIn("Do not ask after every project", router)
+        self.assertIn("改进建议单", router)
+        self.assertIn("你不需要懂 GitHub", router)
+        self.assertIn("让以后使用的人少走弯路", router)
         self.assertIn("highest evidence state", reference)
         self.assertIn("Never turn an unverified guess into shared knowledge", reference)
         self.assertIn("Amasun93/ChatMaker/issues/new", reference)
@@ -64,6 +67,10 @@ class KnowledgeContributionContractTests(unittest.TestCase):
             }.issubset(fields)
         )
         self.assertTrue(fields["privacy_confirmation"]["attributes"]["options"][0]["required"])
+        introduction = form["body"][0]["attributes"]["value"]
+        self.assertIn("改进建议单", introduction)
+        self.assertIn("补充 Skill 和知识库", introduction)
+        self.assertIn("帮助后来使用 ChatMaker 的人少走弯路", introduction)
 
 
 if __name__ == "__main__":

@@ -50,7 +50,7 @@ Read [beginner-issue-feedback.md](references/beginner-issue-feedback.md) in eith
 - focused troubleshooting leaves the user blocked, or ChatMaker itself behaved incorrectly;
 - a completed project creates a successful knowledge contribution: a new or previously unsupported module was run, missing guidance was supplied, existing guidance proved wrong, or a reusable toolchain, library, wiring, or hardware pitfall was solved with evidence.
 
-After reporting the project's actual completion state, ask once whether the user wants to contribute a reusable new finding. A natural prompt is: “这次我们跑通了一个知识库里还没有的新模块或新经验。要不要我帮你整理成一个 Issue？你确认后再提交。” If the user already has a retrospective, use it as source material and preserve the difference between observations and guesses.
+After reporting the project's actual completion state, explain the purpose in beginner language and ask once whether the user wants to contribute a reusable new finding. A natural prompt is: “这次我们跑通了一个知识库里还没有的新模块或新经验。Issue 可以理解成一张给 ChatMaker 开发者的改进建议单：我会帮你把模块型号、最终跑通的方法和踩过的坑整理好，你不需要懂 GitHub。提交后，开发者可以把这段经验补进 Skill 和知识库，让以后使用的人少走弯路。你愿意让我先整理一份给你确认吗？确认后再公开提交。” If the user already has a retrospective, use it as source material and preserve the difference between observations and guesses.
 
 Do not ask after every project. Skip the prompt when the work only followed existing knowledge, no reusable finding emerged, or the claimed lesson is still unverified. Draft a concise, privacy-clean GitHub Issue only when the user agrees. Never publish an Issue or upload logs without the user's explicit confirmation of the title, body, and attachments.
 
