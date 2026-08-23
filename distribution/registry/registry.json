@@ -1,8 +1,8 @@
 {
   "schema_version": "1.0",
-  "sequence": 6,
-  "generated_at": "2026-08-23T10:21:00Z",
-  "expires_at": "2026-09-22T10:21:00Z",
+  "sequence": 7,
+  "generated_at": "2026-08-23T17:52:08Z",
+  "expires_at": "2026-09-22T17:52:08Z",
   "packs": [
     {
       "pack_id": "chatmaker-board-arduino-nano-classic-knowledge",
@@ -54,6 +54,34 @@
       "url": "https://raw.githubusercontent.com/Amasun93/ChatMaker/b519e6fbb67f2dd51508282603332a811ce5de15/distribution/packs/chatmaker-board-idmc-0001-starcore-v4-2-2-knowledge-1.4.0.cmpack",
       "length": 36560,
       "sha256": "17694c42f09f29ec9e9ce07863fbd82863b5ba870f64c2ad5dd8b106c7653e30",
+      "compatibility": {
+        "core": {"minimum": "0.1.0", "maximum_exclusive": "0.2.0"},
+        "pack_manifest_schema": ["1.0"],
+        "knowledge_index_schema": ["1.0"]
+      }
+    },
+    {
+      "pack_id": "chatmaker-board-mpython-classic-v2x-knowledge",
+      "pack_type": "knowledge",
+      "version": "1.0.0",
+      "board_id": "mpython-classic-v2x",
+      "url": "https://raw.githubusercontent.com/Amasun93/ChatMaker/0579d277abc667b71b060da124647623d54b6901/distribution/packs/chatmaker-board-mpython-classic-v2x-knowledge-1.0.0.cmpack",
+      "length": 11395,
+      "sha256": "9fabd16b9f7f5907e4954c2d4b596e6e87ab39b8f084f501b996883cb52dc4cd",
+      "compatibility": {
+        "core": {"minimum": "0.1.0", "maximum_exclusive": "0.2.0"},
+        "pack_manifest_schema": ["1.0"],
+        "knowledge_index_schema": ["1.0"]
+      }
+    },
+    {
+      "pack_id": "chatmaker-board-mpython-v3-knowledge",
+      "pack_type": "knowledge",
+      "version": "1.0.0",
+      "board_id": "mpython-v3",
+      "url": "https://raw.githubusercontent.com/Amasun93/ChatMaker/0579d277abc667b71b060da124647623d54b6901/distribution/packs/chatmaker-board-mpython-v3-knowledge-1.0.0.cmpack",
+      "length": 10693,
+      "sha256": "fd8073a0a020482174e6f5484ffbcc3352b241f8b80b2a8f62c5b2d6c22b254b",
       "compatibility": {
         "core": {"minimum": "0.1.0", "maximum_exclusive": "0.2.0"},
         "pack_manifest_schema": ["1.0"],

@@ -103,20 +103,31 @@ class ReleasePackageTests(unittest.TestCase):
                 36560,
                 "17694c42f09f29ec9e9ce07863fbd82863b5ba870f64c2ad5dd8b106c7653e30",
             ),
+            "chatmaker-board-mpython-classic-v2x-knowledge": (
+                "chatmaker-board-mpython-classic-v2x-knowledge-1.0.0.cmpack",
+                11395,
+                "9fabd16b9f7f5907e4954c2d4b596e6e87ab39b8f084f501b996883cb52dc4cd",
+            ),
+            "chatmaker-board-mpython-v3-knowledge": (
+                "chatmaker-board-mpython-v3-knowledge-1.0.0.cmpack",
+                10693,
+                "fd8073a0a020482174e6f5484ffbcc3352b241f8b80b2a8f62c5b2d6c22b254b",
+            ),
         }
-        self.assertEqual(registry["sequence"], 6)
+        self.assertEqual(registry["sequence"], 7)
         generated_at = datetime.fromisoformat(registry["generated_at"].replace("Z", "+00:00"))
         expires_at = datetime.fromisoformat(registry["expires_at"].replace("Z", "+00:00"))
         self.assertLessEqual((expires_at - generated_at).days, 31)
-        self.assertEqual(len(registry["packs"]), 4)
+        self.assertEqual(len(registry["packs"]), 6)
         for item in registry["packs"]:
             filename, length, digest = expected[item["pack_id"]]
             artifact = ROOT / "distribution" / "packs" / filename
-            pinned_commit = (
-                "b519e6fbb67f2dd51508282603332a811ce5de15"
-                if item["board_id"] == "idmc-0001-starcore-v4-2-2"
-                else "1556a055d9625409e9380f4e6abdf7c0e95778fc"
-            )
+            if item["board_id"] in {"mpython-classic-v2x", "mpython-v3"}:
+                pinned_commit = "0579d277abc667b71b060da124647623d54b6901"
+            elif item["board_id"] == "idmc-0001-starcore-v4-2-2":
+                pinned_commit = "b519e6fbb67f2dd51508282603332a811ce5de15"
+            else:
+                pinned_commit = "1556a055d9625409e9380f4e6abdf7c0e95778fc"
             self.assertEqual(item["url"], (
                 "https://raw.githubusercontent.com/Amasun93/ChatMaker/"
                 + pinned_commit
@@ -365,6 +376,7 @@ class ReleasePackageTests(unittest.TestCase):
         self.assertIn(prefix + "runtime/chatmaker/installers/workbuddy.py", names)
         self.assertIn(prefix + "runtime/chatmaker/installers/skill_bundle.py", names)
         self.assertIn(prefix + "runtime/chatmaker/hardware/esp32_devkit_v1.py", names)
+        self.assertIn(prefix + "runtime/chatmaker/hardware/board_identification.py", names)
         self.assertIn(prefix + "runtime/chatmaker/hardware/unihiker_m10.py", names)
         self.assertIn(prefix + "runtime/chatmaker/route.py", names)
         self.assertIn(prefix + "runtime/chatmaker/web/embed.py", names)
@@ -376,13 +388,15 @@ class ReleasePackageTests(unittest.TestCase):
         self.assertIn(prefix + "examples/chatweb/advanced-playground.html", names)
         self.assertIn(prefix + "examples/chatduino/unihiker-m10/hello-status/main.py", names)
         self.assertIn(prefix + "knowledge/boards/arduino-nano-classic.yaml", names)
+        self.assertIn(prefix + "knowledge/boards/mpython-classic-v2x.yaml", names)
+        self.assertIn(prefix + "knowledge/boards/mpython-v3.yaml", names)
         self.assertIn(prefix + "knowledge/mechanical/boards/arduino-nano-classic.json", names)
         self.assertIn(prefix + "knowledge/fabrication/equipment/lasermaker-generic.json", names)
         self.assertIn(prefix + "knowledge/fabrication/materials/wood-sheet-3mm.json", names)
         self.assertIn(prefix + "packs/schemas/registry.schema.json", names)
         self.assertEqual(
             len([name for name in names if name.startswith(prefix + "packs/boards/")]),
-            5,
+            7,
         )
         self.assertEqual(
             len([name for name in names if name.startswith(prefix + "packs/components/")]),
@@ -394,7 +408,7 @@ class ReleasePackageTests(unittest.TestCase):
         )
         self.assertEqual(
             len([name for name in names if name.startswith(prefix + "knowledge/boards/")]),
-            4,
+            6,
         )
         forbidden_parts = {
             ".git",
