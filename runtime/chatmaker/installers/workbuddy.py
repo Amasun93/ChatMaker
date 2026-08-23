@@ -34,7 +34,12 @@ def _with_content_boundary(result: dict[str, Any]) -> dict[str, Any]:
 
 
 def default_config_path() -> Path:
-    return Path.home() / ".workbuddy" / "mcp.json"
+    workbuddy_home = Path.home() / ".workbuddy"
+    current = workbuddy_home / ".mcp.json"
+    legacy = workbuddy_home / "mcp.json"
+    if current.is_file() or not legacy.is_file():
+        return current
+    return legacy
 
 
 def install(

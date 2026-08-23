@@ -204,7 +204,16 @@ def _candidate_skill_roots(home: Path, environ: Mapping[str, str], family: str) 
 
 
 def _mcp_configs(home: Path, environ: Mapping[str, str]) -> list[dict[str, Any]]:
-    workbuddy = _path_from_environ(environ, "WORKBUDDY_CONFIG") or home / ".workbuddy" / "mcp.json"
+    workbuddy_home = _path_from_environ(environ, "WORKBUDDY_HOME") or home / ".workbuddy"
+    current_workbuddy = workbuddy_home / ".mcp.json"
+    legacy_workbuddy = workbuddy_home / "mcp.json"
+    workbuddy = _path_from_environ(environ, "WORKBUDDY_CONFIG")
+    if workbuddy is None:
+        workbuddy = (
+            current_workbuddy
+            if _safe_is_file(current_workbuddy) or not _safe_is_file(legacy_workbuddy)
+            else legacy_workbuddy
+        )
     codex_home = _path_from_environ(environ, "CODEX_HOME") or home / ".codex"
     configs: list[tuple[str, Path, bool]] = [
         ("workbuddy", workbuddy, "WORKBUDDY_CONFIG" in environ),

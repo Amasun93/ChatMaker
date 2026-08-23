@@ -139,7 +139,7 @@ class CapabilityProbeTests(unittest.TestCase):
         """Catches permission errors escaping from a merely optional host configuration."""
         with tempfile.TemporaryDirectory() as temporary:
             home = Path(temporary)
-            blocked = home / ".workbuddy" / "mcp.json"
+            blocked = home / ".workbuddy" / ".mcp.json"
             original_is_file = Path.is_file
 
             def unreadable(path: Path) -> bool:
@@ -159,6 +159,27 @@ class CapabilityProbeTests(unittest.TestCase):
             self.assertTrue(report["success"])
             self.assertFalse(workbuddy["available"])
             self.assertEqual(workbuddy["path"], str(blocked))
+
+    def test_probe_prefers_current_workbuddy_dot_mcp_config_and_keeps_legacy_compatible(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            home = Path(temporary)
+            workbuddy_home = home / ".workbuddy"
+            workbuddy_home.mkdir()
+            current = workbuddy_home / ".mcp.json"
+            legacy = workbuddy_home / "mcp.json"
+            current.write_text('{"mcpServers": {}}\n', encoding="utf-8")
+
+            current_report = capabilities._mcp_configs(home, {})
+            current_value = next(item for item in current_report if item["host"] == "workbuddy")
+            self.assertEqual(current_value["path"], str(current))
+            self.assertTrue(current_value["available"])
+
+            current.unlink()
+            legacy.write_text('{"mcpServers": {}}\n', encoding="utf-8")
+            legacy_report = capabilities._mcp_configs(home, {})
+            legacy_value = next(item for item in legacy_report if item["host"] == "workbuddy")
+            self.assertEqual(legacy_value["path"], str(legacy))
+            self.assertTrue(legacy_value["available"])
 
     def test_macos_probe_enumerates_serial_and_mindplus_app_without_windows_helpers(self):
         """Catches macOS capability detection silently delegating to Windows-only helpers."""
