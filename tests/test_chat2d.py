@@ -125,6 +125,44 @@ class Chat2DTests(unittest.TestCase):
         self.assertEqual(result["file_opened"], "unverified")
         self.assertEqual(result["physical_fit"], "unverified")
 
+    def test_library_uses_beginner_names_and_series_filters(self):
+        library = chat2d._library()
+        by_id = {item["id"]: item for item in library}
+
+        self.assertEqual(by_id["arduino-uno-r3"]["name"], "Arduino UNO")
+        self.assertEqual(by_id["arduino-nano-classic"]["name"], "Arduino Nano")
+        self.assertEqual(by_id["esp32-devkit-v1"]["name"], "ESP32 开发板")
+        self.assertEqual(by_id["idmc-0001-starcore-v4-2-2"]["name"], "星核板")
+        self.assertEqual(
+            by_id["idms-0008-starcore-dht11"]["name"],
+            "DHT11 温湿度传感器",
+        )
+        self.assertIn("open-hardware", by_id["arduino-uno-r3"]["series"])
+        self.assertIn("starcore", by_id["idmc-0001-starcore-v4-2-2"]["series"])
+        self.assertIn("starcore", by_id["idms-0008-starcore-dht11"]["series"])
+        self.assertIn("sensor", by_id["idms-0008-starcore-dht11"]["series"])
+        self.assertTrue(
+            all(not re.search(r"\bIDM[A-Z]-\d+\b", item["name"]) for item in library)
+        )
+
+        with tempfile.TemporaryDirectory() as folder:
+            result = generator.generate_project(
+                {
+                    "mode": "chat2d",
+                    "board_id": "arduino-uno-r3",
+                    "project_name": "friendly-library",
+                    "output_dir": folder,
+                }
+            )
+            self.assertTrue(result["success"], result)
+            preview = Path(result["files"]["preview_lab"]).read_text(encoding="utf-8")
+
+        self.assertIn('id="librarySeries"', preview)
+        self.assertIn('<option value="open-hardware"', preview)
+        self.assertIn('<option value="starcore"', preview)
+        self.assertIn('<option value="sensor"', preview)
+        self.assertNotIn('id="libraryKind"', preview)
+
     def test_label_toggle_removes_text_from_initial_exports(self):
         with tempfile.TemporaryDirectory() as folder:
             result = generator.generate_project(
