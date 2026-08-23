@@ -314,6 +314,18 @@ class WorkBuddyBridgeTests(unittest.TestCase):
         self.assertTrue(payload["success"], payload)
         self.assertEqual(payload["matches"][0]["id"], "one-channel-relay-module-5v")
 
+    def test_catalog_search_routes_starcore_onboard_buzzer_question_to_board(self):
+        result = self.server._tool_result(
+            "catalog_search", {"query": "星核板有板载蜂鸣器吗"}
+        )
+
+        payload = json.loads(result["content"][0]["text"])
+        self.assertFalse(result["isError"])
+        self.assertTrue(payload["success"], payload)
+        self.assertEqual(
+            payload["matches"][0]["id"], "idmc-0001-starcore-v4-2-2"
+        )
+
     def test_stdio_server_answers_ping_in_a_real_subprocess(self):
         environment = dict(os.environ)
         environment["PYTHONPATH"] = str(ROOT / "runtime")

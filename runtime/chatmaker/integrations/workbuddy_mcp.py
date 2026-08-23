@@ -782,7 +782,7 @@ def handle(request: dict[str, Any]) -> dict[str, Any] | None:
             "serverInfo": {"name": SERVER_NAME, "version": SERVER_VERSION},
             "instructions": (
                 "处理 Arduino Uno Rev3、经典 Nano ATmega328P、星核板 v4.2.2、精确确认的 DOIT ESP32 DEVKIT V1、UNIHIKER M10 和杜邦线通用模块。"
-                "先用 catalog_search/get 读取匹配资料，确认精确板卡身份后用 knowledge_get 读取 start-here 索引或指定章节，"
+                "先用 catalog_search/get 读取匹配资料；询问板载器件时把板卡名和器件名一起搜索，命中板卡后继续用 knowledge_get 读取 start-here 索引或相关章节，"
                 "再按板型调用对应 doctor。ESP32 只接受官方 3.3.11 core "
                 "和精确 DOIT FQBN；先调用 esp32_prepare_environment 自动检查，并且只安装 ChatMaker 验证的锁定版本。"
                 "ESP-WROOM-32 模块丝印本身不算载板确认，也不会替换成 FireBeetle。"

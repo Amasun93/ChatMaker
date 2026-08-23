@@ -54,6 +54,28 @@ class CatalogTests(unittest.TestCase):
         self.assertEqual(result["matches"][0]["id"], "one-channel-relay-module-5v")
         self.assertEqual(result["matches"][0]["kind"], "component")
 
+    def test_search_finds_board_from_board_name_and_knowledge_topic(self):
+        self.assertIsNotNone(self.catalog, "catalog runtime is missing")
+
+        result = self.catalog.search_catalog(
+            "星核板 蜂鸣器", kind="board", project_root=ROOT
+        )
+
+        self.assertTrue(result["success"], result)
+        self.assertEqual(result["match_count"], 1)
+        self.assertEqual(result["matches"][0]["id"], STARCORE_BOARD_ID)
+
+    def test_search_finds_board_from_natural_chinese_hardware_question(self):
+        self.assertIsNotNone(self.catalog, "catalog runtime is missing")
+
+        result = self.catalog.search_catalog(
+            "星核板有板载蜂鸣器吗", project_root=ROOT
+        )
+
+        self.assertTrue(result["success"], result)
+        self.assertEqual(result["match_count"], 1)
+        self.assertEqual(result["matches"][0]["id"], STARCORE_BOARD_ID)
+
     def test_get_returns_the_full_record_and_evidence_gates(self):
         self.assertIsNotNone(self.catalog, "catalog runtime is missing")
 

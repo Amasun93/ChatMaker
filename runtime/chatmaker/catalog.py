@@ -23,6 +23,7 @@ CATALOG_FOLDERS = {
 }
 _ID_INDEX_CACHE: dict[Path, tuple[tuple[tuple[str, int, int], ...], dict[str, Path]]] = {}
 _TOP_LEVEL_ID_PATTERN = re.compile(r"^id\s*:\s*(?P<value>.*)$")
+_SEARCH_FRAGMENT_PATTERN = re.compile(r"[\s,，、。；;：:!?！？/|()（）\[\]{}]+")
 
 
 def _root(project_root: Path | None = None) -> Path:
@@ -103,7 +104,55 @@ def _record_path(record_id: str, project_root: Path | None = None) -> Path | Non
     return _id_index(project_root).get(record_id)
 
 
-def _search_text(record: dict[str, Any]) -> list[str]:
+def _flatten_search_values(value: Any) -> list[str]:
+    if isinstance(value, str):
+        return [value]
+    if isinstance(value, list):
+        flattened: list[str] = []
+        for item in value:
+            flattened.extend(_flatten_search_values(item))
+        return flattened
+    if isinstance(value, dict):
+        flattened = []
+        for item in value.values():
+            flattened.extend(_flatten_search_values(item))
+        return flattened
+    return []
+
+
+def _knowledge_search_text(
+    record: dict[str, Any], project_root: Path | None = None
+) -> list[str]:
+    if record.get("kind") != "board" or not record.get("id"):
+        return []
+    path = _root(project_root) / "knowledge" / "boards" / f"{record['id']}.yaml"
+    if not path.is_file():
+        return []
+    value = yaml.safe_load(path.read_text(encoding="utf-8"))
+    if not isinstance(value, dict):
+        return []
+    sections = value.get("sections", [])
+    if not isinstance(sections, list):
+        return []
+    searchable: list[str] = []
+    for section in sections:
+        if not isinstance(section, dict):
+            continue
+        searchable.extend(
+            _flatten_search_values(
+                {
+                    "title": section.get("title"),
+                    "summary": section.get("summary"),
+                    "topics": section.get("topics", []),
+                }
+            )
+        )
+    return searchable
+
+
+def _search_text(
+    record: dict[str, Any], project_root: Path | None = None
+) -> list[str]:
     values: list[Any] = [
         record.get("id"),
         record.get("name"),
@@ -114,29 +163,61 @@ def _search_text(record: dict[str, Any]) -> list[str]:
         record.get("boards", []),
         record.get("supported_boards", []),
         record.get("components", []),
+        record.get("identity", {}),
+        record.get("onboard_hardware", []),
+        record.get("software_compatibility", {}),
     ]
     flattened: list[str] = []
     for value in values:
-        if isinstance(value, str):
-            flattened.append(value)
-        elif isinstance(value, list):
-            flattened.extend(str(item) for item in value)
+        flattened.extend(_flatten_search_values(value))
+    flattened.extend(_knowledge_search_text(record, project_root))
     return flattened
 
 
-def _score(record: dict[str, Any], query: str) -> int:
+def _search_candidates(texts: list[str]) -> list[str]:
+    candidates: list[str] = []
+    for text in texts:
+        normalized = text.casefold().strip()
+        if not normalized:
+            continue
+        candidates.append(normalized)
+        candidates.extend(
+            fragment
+            for fragment in _SEARCH_FRAGMENT_PATTERN.split(normalized)
+            if fragment and fragment != normalized
+        )
+    return candidates
+
+
+def _score(
+    record: dict[str, Any], query: str, project_root: Path | None = None
+) -> int:
     if not query:
         return 1
     normalized = query.casefold().strip()
+    candidates = _search_candidates(_search_text(record, project_root))
     score = 0
-    for text in _search_text(record):
-        candidate = text.casefold()
+    for candidate in candidates:
         if candidate == normalized:
             score = max(score, 100)
         elif candidate.startswith(normalized):
             score = max(score, 60)
         elif normalized in candidate:
             score = max(score, 30)
+
+    terms = [term for term in normalized.split() if term]
+    if len(terms) > 1:
+        if all(any(term in candidate for candidate in candidates) for term in terms):
+            score = max(score, 50)
+        return score
+
+    embedded = {
+        candidate
+        for candidate in candidates
+        if 2 <= len(candidate) <= 64 and candidate in normalized
+    }
+    if len(embedded) >= 2:
+        score = max(score, min(40, len(embedded) * 12))
     return score
 
 
@@ -172,7 +253,7 @@ def search_catalog(
     for _, record in _records(project_root):
         if kind is not None and record.get("kind") != kind:
             continue
-        score = _score(record, query)
+        score = _score(record, query, project_root)
         if score:
             matches.append((score, record))
     matches.sort(key=lambda item: (-item[0], str(item[1].get("id", ""))))
