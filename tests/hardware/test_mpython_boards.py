@@ -4,6 +4,7 @@ from pathlib import Path
 
 import jsonschema
 import yaml
+from chatmaker.installers.pack_manager import ALLOWED_PACKS
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -81,3 +82,14 @@ def test_both_boards_publish_the_standard_knowledge_sections():
             page = _frontmatter(pages / f"{section_id}.md")
             assert page["board_id"] == board_id
             assert page["section_id"] == section_id
+
+
+def test_both_boards_are_allowlisted_as_installable_passive_knowledge_packs():
+    assert ALLOWED_PACKS["chatmaker-board-mpython-classic-v2x-knowledge"] == CLASSIC_ID
+    assert ALLOWED_PACKS["chatmaker-board-mpython-v3-knowledge"] == V3_ID
+
+    registry_schema = __import__("json").loads(
+        (ROOT / "packs" / "schemas" / "registry.schema.json").read_text(encoding="utf-8")
+    )
+    assert registry_schema["properties"]["packs"]["maxItems"] == 6
+    assert "chatmaker-board-mpython-v3-knowledge" in registry_schema["$defs"]["packId"]["enum"]

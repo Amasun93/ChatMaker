@@ -80,6 +80,21 @@ class TeacherExperienceContractTests(unittest.TestCase):
         self.assertIn("【按顺序接线】", contract)
         self.assertIn("Do not create SVG", contract)
 
+    def test_unknown_board_flow_uses_automatic_detection_then_silkscreen_or_photo(self):
+        chatmaker = (ROOT / "skills" / "chatmaker" / "SKILL.md").read_text(
+            encoding="utf-8"
+        )
+        chatduino = (SKILL / "SKILL.md").read_text(encoding="utf-8")
+
+        for text in (chatmaker, chatduino):
+            self.assertIn("board_identify", text)
+            self.assertIn("临时识别程序", text)
+            self.assertIn("完整备份", text)
+            self.assertIn("正反面照片", text)
+        self.assertIn("经典掌控板 V2.x", chatduino)
+        self.assertIn("掌控板 3.0", chatduino)
+        self.assertIn("恢复", chatduino)
+
 
 if __name__ == "__main__":
     unittest.main()

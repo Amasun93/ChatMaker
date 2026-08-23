@@ -4,6 +4,7 @@ from chatmaker.hardware.board_identification import (
     BoardEvidence,
     beginner_next_step,
     classify_evidence,
+    execute_request,
 )
 from pathlib import Path
 
@@ -148,3 +149,65 @@ def test_starcore_wiki_explains_automatic_detection_without_treating_compatibili
     assert "临时识别程序" in text
     assert "完整备份" in text
     assert "不能" in text and "掌控板" in text
+
+
+def test_connected_identification_returns_simple_no_hardware_guidance():
+    result = execute_request(
+        {"action": "identify"},
+        port_provider=lambda: [],
+    )
+
+    assert result["success"] is False
+    assert result["identification"]["status"] == "unavailable"
+    assert "USB" in result["beginner_message"]
+
+
+def test_connected_s3_without_probe_toolchain_is_a_photo_fallback_not_a_guess():
+    result = execute_request(
+        {"action": "identify", "port": "COM8", "allow_temporary_firmware": True},
+        port_provider=lambda: [
+            {"address": "COM8", "eligible_for_upload": True, "label": "USB Serial"}
+        ],
+        chip_inspector=lambda port: {
+            "success": True,
+            "chip_family": "esp32-s3",
+            "flash_size": 16 * 1024 * 1024,
+        },
+        probe_runner=lambda request: (_ for _ in ()).throw(AssertionError("must not flash v3")),
+    )
+
+    assert result["success"] is False
+    assert result["identification"]["status"] == "probable"
+    assert result["identification"]["candidates"] == (V3,)
+    assert "照片" in result["beginner_message"]
+
+
+def test_connected_esp32_uses_allowed_temporary_probe_when_evidence_is_ambiguous():
+    captured = []
+
+    def probe(request):
+        captured.append(request)
+        return {
+            "success": True,
+            "stage": "complete",
+            "identification": {"status": "confirmed", "board_id": CLASSIC},
+            "beginner_message": "我已经识别出这是经典掌控板。",
+        }
+
+    result = execute_request(
+        {"action": "identify", "port": "COM9", "allow_temporary_firmware": True},
+        port_provider=lambda: [
+            {"address": "COM9", "eligible_for_upload": True, "label": "CH9102"}
+        ],
+        chip_inspector=lambda port: {
+            "success": True,
+            "chip_family": "esp32",
+            "flash_size": 4 * 1024 * 1024,
+        },
+        probe_runner=probe,
+    )
+
+    assert result["success"] is True
+    assert result["identification"]["board_id"] == CLASSIC
+    assert captured[0]["port"] == "COM9"
+    assert captured[0]["allow_temporary_firmware"] is True

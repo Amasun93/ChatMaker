@@ -3,12 +3,11 @@ kind: knowledge-index
 board_id: mpython-v3
 max_section_bytes: 65536
 sections:
-  - {section_id: start-here, title: 掌控板 3.0 从这里开始, summary: 确认 ESP32-S3 彩屏板型，再选择对应的 3.0 工具链。, consumers: [chatmaker, chatduino, chatweb, chatcad], topics: [掌控板, 3.0, identity, workflow], pack_id: chatmaker-board-mpython-v3-knowledge}
-  - {section_id: identify-and-safety, title: 识别与安全, summary: 用芯片、彩屏、板载器件、丝印或照片确认 3.0。, consumers: [chatmaker, chatduino, chatweb, chatcad], topics: [掌控板, 3.0, identity, safety, automatic-identification], pack_id: chatmaker-board-mpython-v3-knowledge}
-  - {section_id: pins-and-electrical, title: 引脚与电气规则, summary: 使用 3.0 独立的 P/GPIO 映射和 3.3V 边界。, consumers: [chatmaker, chatduino, chatweb], topics: [掌控板, 3.0, pins, electrical, i2c], pack_id: chatmaker-board-mpython-v3-knowledge}
-  - {section_id: toolchains-and-upload, title: 3.0 工具链与上传, summary: 只使用 ESP32-S3 对应工具链；本机包未安装时不冒充已可编译。, consumers: [chatmaker, chatduino], topics: [掌控板, 3.0, toolchain, compile, upload], pack_id: chatmaker-board-mpython-v3-knowledge}
-  - {section_id: components-and-wiring, title: 板载器件与接线, summary: 使用彩屏、六轴、磁场、数字光线和音频硬件。, consumers: [chatmaker, chatduino, chatweb, chatcad], topics: [掌控板, 3.0, components, wiring, onboard-hardware], pack_id: chatmaker-board-mpython-v3-knowledge}
-  - {section_id: libraries-and-examples, title: 库、API 与示例, summary: 使用 display 和 3.0 API，不沿用经典 oled 代码。, consumers: [chatmaker, chatduino], topics: [掌控板, 3.0, libraries, api, examples], pack_id: chatmaker-board-mpython-v3-knowledge}
-  - {section_id: web-and-protocol, title: 网页与通信, summary: 为 Wi-Fi、蓝牙、串口和网页交互定义协议与验证。, consumers: [chatmaker, chatduino, chatweb], topics: [掌控板, 3.0, web, protocol, wifi, bluetooth], pack_id: chatmaker-board-mpython-v3-knowledge}
-  - {section_id: troubleshooting, title: 排错与证据状态, summary: 区分资料存在、本机工具链、编译、上传和实物效果。, consumers: [chatmaker, chatduino, chatweb, chatcad], topics: [掌控板, 3.0, diagnosis, evidence], pack_id: chatmaker-board-mpython-v3-knowledge}
-
+  - {section_id: start-here, title: 掌控板 3.0 从这里开始, summary: 确认 ESP32-S3 彩屏板型，再选择对应的 3.0 工具链。, consumers: [chatmaker, chatduino, chatweb, chatcad], topics: [mpython, v3, identity, workflow], pack_id: chatmaker-board-mpython-v3-knowledge}
+  - {section_id: identify-and-safety, title: 识别与安全, summary: 用芯片、彩屏、板载器件、丝印或照片确认 3.0。, consumers: [chatmaker, chatduino, chatweb, chatcad], topics: [mpython, v3, identity, safety, automatic-identification], pack_id: chatmaker-board-mpython-v3-knowledge}
+  - {section_id: pins-and-electrical, title: 引脚与电气规则, summary: 使用 3.0 独立的 P/GPIO 映射和 3.3V 边界。, consumers: [chatmaker, chatduino, chatweb], topics: [mpython, v3, pins, electrical, i2c], pack_id: chatmaker-board-mpython-v3-knowledge}
+  - {section_id: toolchains-and-upload, title: 3.0 工具链与上传, summary: 只使用 ESP32-S3 对应工具链；本机包未安装时不冒充已可编译。, consumers: [chatmaker, chatduino], topics: [mpython, v3, toolchain, compile, upload], pack_id: chatmaker-board-mpython-v3-knowledge}
+  - {section_id: components-and-wiring, title: 板载器件与接线, summary: 使用彩屏、六轴、磁场、数字光线和音频硬件。, consumers: [chatmaker, chatduino, chatweb, chatcad], topics: [mpython, v3, components, wiring, onboard-hardware], pack_id: chatmaker-board-mpython-v3-knowledge}
+  - {section_id: libraries-and-examples, title: 库、API 与示例, summary: 使用 display 和 3.0 API，不沿用经典 oled 代码。, consumers: [chatmaker, chatduino], topics: [mpython, v3, libraries, api, examples], pack_id: chatmaker-board-mpython-v3-knowledge}
+  - {section_id: web-and-protocol, title: 网页与通信, summary: 为 Wi-Fi、蓝牙、串口和网页交互定义协议与验证。, consumers: [chatmaker, chatduino, chatweb], topics: [mpython, v3, web, protocol, wifi, bluetooth], pack_id: chatmaker-board-mpython-v3-knowledge}
+  - {section_id: troubleshooting, title: 排错与证据状态, summary: 区分资料存在、本机工具链、编译、上传和实物效果。, consumers: [chatmaker, chatduino, chatweb, chatcad], topics: [mpython, v3, diagnosis, evidence], pack_id: chatmaker-board-mpython-v3-knowledge}

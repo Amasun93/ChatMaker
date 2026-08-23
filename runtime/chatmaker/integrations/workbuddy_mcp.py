@@ -11,6 +11,7 @@ from chatmaker import catalog
 from chatmaker import knowledge
 from chatmaker.cad import generator as cad_generator
 from chatmaker.hardware import esp32_devkit_v1 as esp32_bridge
+from chatmaker.hardware import board_identification
 from chatmaker.hardware import nano_mindplus as bridge
 from chatmaker.hardware import project_flow
 from chatmaker.hardware import serial_monitor
@@ -20,10 +21,27 @@ from chatmaker.hardware import unihiker_m10
 
 
 SERVER_NAME = "chatmaker-hardware"
-SERVER_VERSION = "1.16.0"
+SERVER_VERSION = "1.17.0"
 PROTOCOL_VERSION = "2024-11-05"
 
 TOOLS = [
+    {
+        "name": "board_identify",
+        "description": (
+            "接上主控板后自动识别星核板、经典掌控板 V2.x 或掌控板 3.0。"
+            "先做安全读取；允许时会先完整备份原程序，再运行临时识别程序并恢复。"
+            "仍无法确定时会告诉用户去哪里看型号，并建议拍正反面照片。"
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "port": {"type": "string", "pattern": "^COM[0-9]+$"},
+                "allow_temporary_firmware": {"type": "boolean", "default": True},
+                "backup_dir": {"type": "string"},
+            },
+            "additionalProperties": False,
+        },
+    },
     {
         "name": "catalog_search",
         "description": "用中文或英文搜索 ChatMaker 的板卡、常用模块和项目配方，先找到候选，再读取完整资料。",
@@ -65,6 +83,8 @@ TOOLS = [
                         "arduino-uno-r3",
                         "esp32-devkit-v1",
                         "idmc-0001-starcore-v4-2-2",
+                        "mpython-classic-v2x",
+                        "mpython-v3",
                     ],
                 },
                 "consumer": {"type": "string", "enum": ["chatmaker", "chatduino", "chatweb", "chatcad"]},
@@ -624,6 +644,18 @@ def _tool_result(name: str, arguments: dict[str, Any]) -> dict[str, Any]:
             request["section_id"] = arguments.get("section_id", "")
             request["auto_install"] = arguments.get("auto_install", True)
         result = knowledge.execute_request(request)
+    elif name == "board_identify":
+        suspended = serial_monitor.SERIAL_MANAGER.suspend_all()
+        try:
+            result = board_identification.execute_request(
+                {"action": "identify", **arguments}
+            )
+        finally:
+            resumed = serial_monitor.SERIAL_MANAGER.resume_all(suspended)
+        result["serial_sessions"] = {
+            "closed_before_identification": suspended,
+            "reopened_after_identification": resumed,
+        }
     elif name == "unihiker_project_check":
         result = unihiker_m10.execute_request(
             {"action": "check_project", "project": arguments.get("project", "")}
@@ -705,12 +737,19 @@ def _tool_result(name: str, arguments: dict[str, Any]) -> dict[str, Any]:
             "uploaded-awaiting-observation",
             "physical-confirmation-needed",
         }
+        expected_identification_pause = result.get("identification", {}).get("status") in {
+            "probable",
+            "ambiguous",
+            "unavailable",
+            "recovery-required",
+        }
         return {
             "content": [{"type": "text", "text": json.dumps(result, ensure_ascii=False)}],
             "isError": (
                 not bool(result.get("success"))
                 and not expected_empty
                 and not expected_project_pause
+                and not expected_identification_pause
             ),
         }
 
@@ -782,6 +821,8 @@ def handle(request: dict[str, Any]) -> dict[str, Any] | None:
             "serverInfo": {"name": SERVER_NAME, "version": SERVER_VERSION},
             "instructions": (
                 "处理 Arduino Uno Rev3、经典 Nano ATmega328P、星核板 v4.2.2、精确确认的 DOIT ESP32 DEVKIT V1、UNIHIKER M10 和杜邦线通用模块。"
+                "用户接入未知主控板时先调用 board_identify；它会优先自动识别，必要时在完整备份后运行临时程序并恢复，"
+                "仍不确定就用简单语言引导查看板上型号，用户看不懂时请其拍正反面照片。"
                 "先用 catalog_search/get 读取匹配资料；询问板载器件时把板卡名和器件名一起搜索，命中板卡后继续用 knowledge_get 读取 start-here 索引或相关章节，"
                 "再按板型调用对应 doctor。ESP32 只接受官方 3.3.11 core "
                 "和精确 DOIT FQBN；先调用 esp32_prepare_environment 自动检查，并且只安装 ChatMaker 验证的锁定版本。"

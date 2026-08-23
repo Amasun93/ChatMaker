@@ -4,19 +4,19 @@
 
 ## rc5 之后的当前源码 / Current source after rc5
 
-这次源码更新没有创建新的 GitHub Release，也没有改写 rc1–rc5 的历史证据。它新增确定性的最小 `ChatMaker-Core-<version>.zip`：只包含运行层、四个 Skill 目录、schema、4/20/23 规范记录、四个紧凑索引、当前案例、最小文档、Python 元数据和许可证；不包含详细 Knowledge 正文、知识工作区、测试、缓存或可选 `.cmpack` 成品。ChatMaker 是唯一用户入口，ChatDuino、ChatWeb、ChatCAD 只作为内部专业模块。
+这次源码更新没有创建新的 GitHub Release，也没有改写 rc1–rc5 的历史证据。当前 Core 源码包含运行层、四个 Skill 目录、schema、七块板卡记录、六个紧凑索引、当前案例、最小文档、Python 元数据和许可证；详细 Knowledge 正文继续以只读知识包提供。ChatMaker 是唯一用户入口，ChatDuino、ChatWeb、ChatCAD 只作为内部专业模块。
 
-Nano、Uno、DOIT ESP32 DevKit V1 和星核板各有一个只读 ChatMaker Knowledge 知识包。首次读取缺少的详细章节时，reader 默认从签名注册表自动验证、下载并激活；第二次复用。已安装版本可离线重校验后读取；缓存只有在签名 receipt 未过期时才能授权新的离线安装。更新和回滚只由 `chatmaker-pack` 处理，不会修改 Codex/WorkBuddy 配置。自动安装范围不包括驱动、Mind+、Arduino Core、Node、Chromium、PATH、安装钩子或管理员操作。
+Nano、Uno、DOIT ESP32 DevKit V1、星核板、经典掌控板 V2.x 和掌控板 3.0 各有一个只读 ChatMaker Knowledge 知识包。两代掌控板按芯片、屏幕、引脚、传感器和 API 分开维护。首次读取缺少的详细章节时，reader 默认从签名注册表自动验证、下载并激活；第二次复用。
 
-WorkBuddy 当前源码服务版本为 `1.14.0`，共有 33 个工具，使用共用的 `knowledge_get`，并包含 `cad_component_profile_get` 和另外三个 ChatCAD 工具。这条说明描述 rc5 之后的源码，不改变下面 rc5 发布物当时的 `1.7.0` / 23 工具事实。
+WorkBuddy 当前源码服务版本为 `1.17.0`，共有 36 个工具。新增 `board_identify`：先做无损读取；允许时在完整备份后刷入临时识别程序并恢复；仍不确定时引导用户查看型号或拍正反面照片。这条说明不改变下面 rc5 发布物当时的 `1.7.0` / 23 工具事实。
 
 星核板 v4.2.2 Knowledge 1.4.0 现已按完整开发资料重做板级审计：补齐 42 个 GPIO/别名/电源/CAN 信号记录，板载 A/B 按键、无源蜂鸣器、QMI8658、CH9102F、SIT3051TK、四类电源入口和 3.3V/5V I2C 接口；并明确掌控板兼容目标中的 `display/rgb/light/sound` 不是星核板板载实物，QMI8658 的当前公开对象只验证加速度与手势，不把芯片内陀螺仪误写成可直接调用。板载按键/蜂鸣器与 CAN 监听代表程序已在 Mind+ 1.8 编译通过，上传、总线通信和物理效果仍未验证。ChatMaker 在 WorkBuddy 缺少内部 Skill 或 `knowledge_get` 时会报告安装不完整，不再把未执行的知识查询描述成“已经查过”。安装器同时识别新版 WorkBuddy 的 `.mcp.json` 和旧版 `mcp.json`。
 
-This source update creates no new GitHub Release and does not rewrite rc1–rc5 evidence. It adds a deterministic minimal `ChatMaker-Core-<version>.zip` containing runtime code, four Skill directories, schemas, canonical 4/20/23 records, four compact indexes, current examples, minimal documentation, Python metadata, and the license. Detailed Knowledge bodies, the knowledge workspace, tests, caches, and optional built `.cmpack` artifacts are excluded. ChatMaker is the only user entry; ChatDuino, ChatWeb, and ChatCAD are internal specialists.
+This source update creates no new GitHub Release and does not rewrite rc1–rc5 evidence. The current Core source contains runtime code, four Skill directories, schemas, seven board records, six compact indexes, current examples, minimal documentation, Python metadata, and the license. Detailed Knowledge bodies remain read-only optional packs. ChatMaker is the only user entry; ChatDuino, ChatWeb, and ChatCAD are internal specialists.
 
-Nano, Uno, DOIT ESP32 DevKit V1, and Starcore each have one read-only ChatMaker Knowledge pack. A first detailed-section read verifies, downloads, and activates an absent pack from the signed registry; later reads reuse it. Installed content remains readable after offline revalidation, while cached content can authorize a new offline install only before its signed receipt expires. Only `chatmaker-pack` performs content update and rollback, without editing Codex/WorkBuddy configuration. Automatic content installation never includes drivers, Mind+, Arduino cores, Node, Chromium, PATH changes, hooks, or administrator actions.
+Nano, Uno, DOIT ESP32 DevKit V1, Starcore, classic mPython V2.x, and mPython 3.0 each have one read-only ChatMaker Knowledge pack. The two mPython generations keep separate chip, display, pin, sensor, and API facts.
 
-Current source uses WorkBuddy server `1.14.0` with 33 tools, including shared `knowledge_get`, `cad_component_profile_get`, and the other three ChatCAD tools. The rc5 section below remains an accurate historical description of the rc5 artifact's `1.7.0` / 23 tools.
+Current source uses WorkBuddy server `1.17.0` with 36 tools. The new `board_identify` tool performs safe reads first, may use a backed-up and restored temporary probe, and falls back to markings or front/back photos. The rc5 section below remains an accurate historical description of the rc5 artifact's `1.7.0` / 23 tools.
 
 Starcore v4.2.2 Knowledge 1.4.0 now reflects a full board-level audit of the owned development sources. It records 42 GPIO, alias, power, and CAN signals; onboard A/B buttons, passive buzzer, QMI8658, CH9102F, SIT3051TK, four power-input paths, and both 3.3 V and level-shifted 5 V I2C banks. It also states that the mPython-compatible `display/rgb/light/sound` objects do not prove onboard Starcore hardware, and that the reviewed QMI8658 public object exposes acceleration and gestures rather than gyroscope readings. Representative onboard-button/buzzer and CAN-listen sketches compile with Mind+ 1.8; upload, bus traffic, and physical effects remain unverified. ChatMaker reports an incomplete WorkBuddy installation when internal Skills or `knowledge_get` are unavailable instead of claiming that an unperformed Knowledge search succeeded. The installer recognizes both current WorkBuddy `.mcp.json` and legacy `mcp.json` configurations.
 

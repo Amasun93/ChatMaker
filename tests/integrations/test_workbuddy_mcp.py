@@ -69,14 +69,15 @@ class WorkBuddyBridgeTests(unittest.TestCase):
                 "knowledge_get",
                 "unihiker_project_check",
                 "unihiker_credential_help",
+                "board_identify",
                 "cad_profile_get",
                 "cad_component_profile_get",
                 "cad_fabrication_get",
                 "cad_generate",
             },
         )
-        self.assertEqual(self.server.SERVER_VERSION, "1.16.0")
-        self.assertEqual(len(names), 35)
+        self.assertEqual(self.server.SERVER_VERSION, "1.17.0")
+        self.assertEqual(len(names), 36)
         upload_tool = next(
             tool for tool in self.server.TOOLS
             if tool["name"] == "nano_compile_upload"
@@ -152,6 +153,43 @@ class WorkBuddyBridgeTests(unittest.TestCase):
         self.assertIn("start-here", instructions)
         self.assertIn("avr_project_run", instructions)
         self.assertIn("星核板", instructions)
+        self.assertIn("board_identify", instructions)
+        self.assertIn("照片", instructions)
+
+    def test_board_identify_routes_permission_and_preserves_beginner_guidance(self):
+        captured = None
+        original = self.server.board_identification.execute_request
+        original_suspend = self.server.serial_monitor.SERIAL_MANAGER.suspend_all
+        original_resume = self.server.serial_monitor.SERIAL_MANAGER.resume_all
+
+        def fake(request):
+            nonlocal captured
+            captured = request
+            return {
+                "success": False,
+                "identification": {"status": "ambiguous"},
+                "beginner_message": "请看板子上的型号；看不懂就拍正反面照片。",
+            }
+
+        self.server.board_identification.execute_request = fake
+        self.server.serial_monitor.SERIAL_MANAGER.suspend_all = lambda: []
+        self.server.serial_monitor.SERIAL_MANAGER.resume_all = lambda sessions: []
+        try:
+            result = self.server._tool_result(
+                "board_identify",
+                {"port": "COM7", "allow_temporary_firmware": True},
+            )
+        finally:
+            self.server.board_identification.execute_request = original
+            self.server.serial_monitor.SERIAL_MANAGER.suspend_all = original_suspend
+            self.server.serial_monitor.SERIAL_MANAGER.resume_all = original_resume
+
+        self.assertFalse(result["isError"])
+        self.assertEqual(captured["action"], "identify")
+        self.assertEqual(captured["port"], "COM7")
+        self.assertTrue(captured["allow_temporary_firmware"])
+        payload = json.loads(result["content"][0]["text"])
+        self.assertIn("照片", payload["beginner_message"])
 
     def test_knowledge_get_routes_index_or_section_to_shared_reader(self):
         original = self.server.knowledge.execute_request

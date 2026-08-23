@@ -1,6 +1,14 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+import argparse
+from dataclasses import asdict, dataclass
+import json
+from pathlib import Path
+import re
+import time
+from typing import Any, Callable
+
+from . import nano_mindplus as shared
 
 
 STARCORE_BOARD_ID = "idmc-0001-starcore-v4-2-2"
@@ -10,6 +18,11 @@ SUPPORTED_BOARD_IDS = (
     STARCORE_BOARD_ID,
     MPYTHON_CLASSIC_BOARD_ID,
     MPYTHON_V3_BOARD_ID,
+)
+_CHIP_PATTERN = re.compile(r"Chip is\s+(ESP32-S3|ESP32)(?:\b|[^A-Za-z0-9-])", re.IGNORECASE)
+_FLASH_SIZE_PATTERN = re.compile(r"Detected flash size:\s*(\d+)\s*(KB|MB)", re.IGNORECASE)
+_FIRMWARE_MARKER_PATTERN = re.compile(
+    r"CHATMAKER_BOARD_ID:([a-z0-9][a-z0-9-]+)", re.IGNORECASE
 )
 
 
@@ -210,3 +223,238 @@ def beginner_next_step(result: IdentificationResult) -> str:
         "“掌控板”、版本号或 3.0；如果还是看不明白，请拍一张正面和一张背面照片，我来帮你识别。"
     )
 
+
+def _esptool_candidates() -> list[Path]:
+    paths: list[Path] = []
+    for installation in shared.discover_installations():
+        root = Path(str(installation.get("root", ""))) / "Arduino" / "hardware" / "tools"
+        paths.extend(
+            [
+                root / "esp32s3" / "esptool" / "esptool.exe",
+                root / "mpython" / "esptool.exe",
+            ]
+        )
+    local = Path.home() / "AppData" / "Local" / "mind+" / "Arduino" / "packages"
+    paths.extend(sorted(local.glob("**/esptool.exe"), reverse=True))
+    unique: list[Path] = []
+    for path in paths:
+        if path.is_file() and path not in unique:
+            unique.append(path)
+    return unique
+
+
+def inspect_chip_family(port: str) -> dict[str, Any]:
+    candidates = _esptool_candidates()
+    if not candidates:
+        return {"success": False, "error": "esptool-not-found"}
+    last_execution: dict[str, Any] | None = None
+    for tool in candidates:
+        execution = shared._run(
+            [
+                str(tool),
+                "--chip", "auto",
+                "--port", port,
+                "--baud", "115200",
+                "--before", "default_reset",
+                "--after", "hard_reset",
+                "flash_id",
+            ],
+            timeout=45,
+        )
+        last_execution = execution
+        if execution.get("returncode") != 0:
+            continue
+        text = "\n".join(str(execution.get(key, "")) for key in ("stdout", "stderr"))
+        chip_match = _CHIP_PATTERN.search(text)
+        size_match = _FLASH_SIZE_PATTERN.search(text)
+        if chip_match is None:
+            continue
+        chip = chip_match.group(1).casefold()
+        flash_size = None
+        if size_match is not None:
+            multiplier = 1024 if size_match.group(2).upper() == "KB" else 1024 * 1024
+            flash_size = int(size_match.group(1)) * multiplier
+        return {
+            "success": True,
+            "chip_family": chip,
+            "flash_size": flash_size,
+            "tool": str(tool),
+            "execution": execution,
+        }
+    return {
+        "success": False,
+        "error": "connected-chip-not-readable",
+        "execution": last_execution,
+    }
+
+
+def read_firmware_marker(port: str, *, timeout: float = 1.5) -> str | None:
+    try:
+        import serial
+
+        handle = serial.Serial(port=port, baudrate=115200, timeout=0.2)
+    except Exception:
+        return None
+    deadline = time.monotonic() + max(0.2, min(float(timeout), 3.0))
+    try:
+        while time.monotonic() < deadline:
+            raw = handle.readline()
+            if not raw:
+                continue
+            match = _FIRMWARE_MARKER_PATTERN.search(
+                raw.decode("utf-8", errors="replace")
+            )
+            if match and match.group(1) in SUPPORTED_BOARD_IDS:
+                return match.group(1)
+    except OSError:
+        return None
+    finally:
+        handle.close()
+    return None
+
+
+def _selected_port(
+    request: dict[str, Any], ports: list[dict[str, Any]]
+) -> tuple[dict[str, Any] | None, str | None]:
+    eligible = [item for item in ports if item.get("eligible_for_upload")]
+    requested = str(request.get("port", "")).upper()
+    if requested:
+        item = next(
+            (row for row in eligible if str(row.get("address", "")).upper() == requested),
+            None,
+        )
+        return item, None if item else "requested-wired-port-not-found"
+    if len(eligible) == 1:
+        return eligible[0], None
+    if not eligible:
+        return None, "no-wired-board-found"
+    return None, "multiple-wired-ports-require-selection"
+
+
+def execute_request(
+    request: dict[str, Any],
+    *,
+    port_provider: Callable[[], list[dict[str, Any]]] = shared.scan_ports,
+    chip_inspector: Callable[[str], dict[str, Any]] = inspect_chip_family,
+    marker_reader: Callable[[str], str | None] = read_firmware_marker,
+    probe_runner: Callable[[dict[str, Any]], dict[str, Any]] | None = None,
+) -> dict[str, Any]:
+    if request.get("action") != "identify":
+        return {"success": False, "error": "action-must-be-identify"}
+    ports = port_provider()
+    selected, selection_error = _selected_port(request, ports)
+    if selected is None:
+        if selection_error == "no-wired-board-found":
+            result = classify_evidence(BoardEvidence())
+            message = beginner_next_step(result)
+        else:
+            result = IdentificationResult(
+                status="ambiguous",
+                board_id=None,
+                candidates=SUPPORTED_BOARD_IDS,
+                reasons=("检测到多块有线设备，需要先选择正在使用的板子。",),
+                needs_photo=False,
+            )
+            message = "我发现了不止一块有线设备。请只保留要开发的那块板子，或告诉我它对应哪个端口。"
+        return {
+            "success": False,
+            "action": "identify",
+            "error": selection_error,
+            "ports": ports,
+            "identification": asdict(result),
+            "beginner_message": message,
+        }
+
+    port = str(selected["address"]).upper()
+    marker = marker_reader(port)
+    usb_labels = tuple(
+        str(value)
+        for value in (
+            selected.get("label"),
+            selected.get("device_name"),
+            selected.get("pnp_device_id"),
+        )
+        if value
+    )
+    if marker:
+        result = classify_evidence(
+            BoardEvidence(port=port, usb_labels=usb_labels, firmware_board_id=marker)
+        )
+        return {
+            "success": True,
+            "action": "identify",
+            "port": port,
+            "identification": asdict(result),
+            "beginner_message": beginner_next_step(result),
+        }
+
+    chip = chip_inspector(port)
+    if not chip.get("success"):
+        result = IdentificationResult(
+            status="ambiguous",
+            board_id=None,
+            candidates=SUPPORTED_BOARD_IDS,
+            reasons=("板卡已连接，但当前工具没有读出足够身份信息。",),
+            needs_photo=True,
+        )
+        return {
+            "success": False,
+            "action": "identify",
+            "error": chip.get("error", "chip-inspection-failed"),
+            "port": port,
+            "identification": asdict(result),
+            "beginner_message": beginner_next_step(result),
+        }
+
+    evidence = BoardEvidence(
+        port=port,
+        usb_labels=usb_labels,
+        chip_family=str(chip.get("chip_family", "")),
+    )
+    result = classify_evidence(evidence)
+    if (
+        request.get("allow_temporary_firmware") is True
+        and result.needs_temporary_probe
+        and evidence.chip_family.casefold() == "esp32"
+    ):
+        if probe_runner is None:
+            from .temporary_probe import MindPlusEsp32ProbeAdapter, run_temporary_probe
+
+            adapter = MindPlusEsp32ProbeAdapter()
+            probe_runner = lambda probe_request: run_temporary_probe(probe_request, adapter)
+        return probe_runner({**request, "port": port, "action": "identify"})
+
+    return {
+        "success": result.status == "confirmed",
+        "action": "identify",
+        "port": port,
+        "chip": {
+            "family": chip.get("chip_family"),
+            "flash_size": chip.get("flash_size"),
+        },
+        "identification": asdict(result),
+        "beginner_message": beginner_next_step(result),
+    }
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description="Identify a connected ChatMaker board.")
+    parser.add_argument("--request-json", required=True)
+    args = parser.parse_args(argv)
+    try:
+        request = json.loads(args.request_json)
+        if not isinstance(request, dict):
+            raise ValueError("request must be an object")
+        result = execute_request(request)
+    except Exception as exc:
+        result = {
+            "success": False,
+            "error": "board-identification-request-failed",
+            "detail": f"{type(exc).__name__}: {exc}",
+        }
+    print(json.dumps(result, ensure_ascii=False))
+    return 1 if result.get("error") == "board-identification-request-failed" else 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

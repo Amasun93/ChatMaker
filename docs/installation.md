@@ -54,9 +54,9 @@ macOS uses the same four evidence arguments with the matching `macos-x86_64` or 
 
 The official signature proves release origin. A trusted-bootstrap rerun provides point-in-time drift detection, quarantine, and repair only. This is not OS secure boot and does not resist an attacker who already has arbitrary same-user writes, can replace the verifier/launcher, or races after verification. The stable launcher fails closed and is repaired by trusted bootstrap, but does not prove its own trustworthiness.
 
-Core 内有运行层、四个 Skill、schema、4/20/23 条规范记录、四个详细板卡知识索引、首批机械资料和当前案例。它没有扩展知识正文、`knowledge_sources/`、`tests/`、开发缓存或已构建的可选 `.cmpack`。`chatmaker-doctor` 通过只证明这些内置内容可读，不证明任何硬件效果。
+Core 内有运行层、四个 Skill、schema、七块板卡记录、六个详细板卡知识索引、首批机械资料和当前案例。它没有扩展知识正文、`knowledge_sources/`、`tests/` 或开发缓存。`chatmaker-doctor` 通过只证明这些内置内容可读，不证明任何硬件效果。
 
-The Core contains runtime code, four Skills, schemas, the canonical 4/20/23 records, four detailed board indexes, the first mechanical profiles, and current examples. It excludes extended knowledge bodies, `knowledge_sources/`, `tests/`, development caches, and built optional `.cmpack` artifacts. A successful doctor proves only that built-in software content is readable.
+The Core contains runtime code, four Skills, schemas, seven board records, six detailed board indexes, the first mechanical profiles, and current examples. It excludes extended knowledge bodies, `knowledge_sources/`, tests, and development caches. A successful doctor proves only that built-in software content is readable.
 
 ### 第一次自动读取 / First automatic read
 
@@ -156,6 +156,14 @@ chatmaker-starcore --request-json '{"action":"compile","sketch":"examples/chatdu
 
 烧录前必须确认实体板为星核板 v4.2.2，并且只剩一个合格的非蓝牙有线串口。没有实体板时上传、重启、串口和实物效果保持 `unverified`。
 
+### 自动识别星核板和两代掌控板
+
+```powershell
+chatmaker-board-identify --request-json '{"action":"identify","allow_temporary_firmware":true}'
+```
+
+识别会先读取安全线索。仍无法区分时，它可以在完整备份后写入临时识别程序，并在读取后恢复原 Flash；恢复没有验证成功时会停止并保留备份。电子证据仍重叠时，AI 会告诉用户去哪里看型号，最后请用户拍正反面照片。经典掌控板和掌控板 3.0 使用不同知识索引与工具链；不得互相替代。
+
 ## 3. ESP32：官方 Arduino CLI 前置条件 / ESP32: official Arduino CLI prerequisite
 
 ESP32 不使用 Mind+ CLI。请安装 Arduino IDE 2（包含官方 Arduino CLI）或独立的官方 Arduino CLI。rc5 只接受 `DOIT ESP32 DEVKIT V1 + ESP-WROOM-32`、官方 Core `esp32:esp32@3.3.11` 和 FQBN `esp32:esp32:esp32doit-devkit-v1`。
@@ -247,7 +255,7 @@ npx playwright install chromium
 npm run test:browser
 ```
 
-需要查看普通 CLI 参数时，可对这些命令分别传入 `--help`：`chatmaker-doctor`、`chatmaker-catalog`、`chatmaker-route`、`chatmaker-nano`、`chatmaker-uno`、`chatmaker-avr-project`、`chatmaker-starcore`、`chatmaker-esp32`、`chatmaker-nano-examples`、`chatmaker-serial`、`chatmaker-cad`、`chatmaker-install`、`chatmaker-pack`、`chatmaker-knowledge`、`chatmaker-web`、`chatmaker-web-plan`、`chatmaker-web-playground`、`chatmaker-web-preview`、`chatmaker-web-embed`。
+需要查看普通 CLI 参数时，可对这些命令分别传入 `--help`：`chatmaker-doctor`、`chatmaker-catalog`、`chatmaker-route`、`chatmaker-board-identify`、`chatmaker-nano`、`chatmaker-uno`、`chatmaker-avr-project`、`chatmaker-starcore`、`chatmaker-esp32`、`chatmaker-nano-examples`、`chatmaker-serial`、`chatmaker-cad`、`chatmaker-install`、`chatmaker-pack`、`chatmaker-knowledge`、`chatmaker-web`、`chatmaker-web-plan`、`chatmaker-web-playground`、`chatmaker-web-preview`、`chatmaker-web-embed`。
 
 For ordinary CLI usage, pass `--help` to the commands listed above. `chatmaker-workbuddy-mcp` is different: it is a JSON-RPC stdio service that waits for input and must not be invoked with `--help`. Run `chatmaker-install doctor` to inspect detected integrations safely.
 

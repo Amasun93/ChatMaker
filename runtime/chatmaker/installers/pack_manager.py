@@ -55,6 +55,8 @@ ALLOWED_PACKS = {
     "chatmaker-board-arduino-uno-r3-knowledge": "arduino-uno-r3",
     "chatmaker-board-esp32-devkit-v1-knowledge": "esp32-devkit-v1",
     "chatmaker-board-idmc-0001-starcore-v4-2-2-knowledge": "idmc-0001-starcore-v4-2-2",
+    "chatmaker-board-mpython-classic-v2x-knowledge": "mpython-classic-v2x",
+    "chatmaker-board-mpython-v3-knowledge": "mpython-v3",
 }
 _VERSION_PATTERN = re.compile(
     r"^(?P<major>0|[1-9][0-9]*)\.(?P<minor>0|[1-9][0-9]*)\."

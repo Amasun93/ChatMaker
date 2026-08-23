@@ -19,7 +19,7 @@ ChatDuino is an internal specialist under the ChatMaker parent entry. Keep this 
 
 ## Workflow
 
-1. Identify the exact board variant, controller, USB interface, component labels, supply voltage, and desired effect.
+1. When a connected MCU board is not already exact, call WorkBuddy `board_identify` or Codex `chatmaker-board-identify`. A 临时识别程序 is allowed only after a 完整备份 is verified; always restore and verify the original program afterward. If electronic evidence still overlaps, tell the user where to look for the model/version and then request 正反面照片 if they cannot tell. Keep USB IDs, I2C addresses and registers out of the beginner-facing explanation.
 2. Read the matching records under `packs/boards`, `packs/components`, and `packs/recipes` through the shared runtime. In WorkBuddy, call `catalog_search` and then `catalog_get`; in Codex, use `chatmaker-catalog` with `search` and `get` requests. For an onboard-hardware question, search the board name together with the hardware term (for example, `星核板 蜂鸣器`), keep a matching board result ahead of generic external modules, and continue to its Knowledge index. Treat unverified records as leads, not facts.
 3. After the exact board identity is confirmed, read `identify-and-safety`, `pins-and-electrical`, and `toolchains-and-upload` for a board with a ChatMaker Knowledge index. In WorkBuddy, call `knowledge_get`; in Codex, run `chatmaker-knowledge --request-json '{"action":"section","board_id":"<exact-board-id>","consumer":"chatduino","section_id":"identify-and-safety"}'` and substitute the requested section. Keep those pages paired with canonical facts rather than replacing them. The current M10 alpha instead uses [unihiker-m10.md](references/unihiker-m10.md) plus canonical board `unihiker-m10`; do not invent an unavailable Knowledge pack.
 4. Resolve pin, voltage, current, boot, serial, and shared-ground constraints before writing code.
@@ -94,6 +94,7 @@ Read [esp32-doit-devkit-v1.md](references/esp32-doit-devkit-v1.md) before accept
 
 ## IDMC-0001 Starcore v4.2.2
 
+- Automatic recognition must keep Starcore separate from classic mPython boards. ESP32, CH9102F, QMI8658, or an mPython-compatible target cannot confirm Starcore alone; require the exact firmware marker, verified Starcore combination, or the `星核板` and `V4.2.2` markings. If still ambiguous, use the model-location and photo fallback rather than guessing.
 - Use `starcore_doctor`, `starcore_ports`, `starcore_compile`, and `starcore_compile_upload` in WorkBuddy; use `chatmaker-starcore` in Codex.
 - Always read Starcore `start-here` before choosing a board feature, then read `identify-and-safety` and `pins-and-electrical` for wiring, power, CAN, or multi-module work. v4.2.2 physically includes A/B buttons, a passive buzzer, QMI8658, CH9102F and a CAN transceiver. The mPython-compatible target also exposes `display/rgb/light/sound`, but those are not onboard Starcore hardware; do not promise a screen, RGB pixels, light sensor or microphone without explicit external wiring.
 - For onboard acceleration, tilt, shake, motion control, or gesture projects, read Starcore `start-here` and `libraries-and-examples` before asking hardware questions or writing code. The onboard QMI8658 uses Mind+ built-in acceleration blocks, while `MPython.h` provides `mPython.begin()` plus the global `accelerometer`. Do not ask the user to identify the accelerometer, add a LIS2DH12 extension, connect another sensor, or handwrite I2C unless the checked knowledge explicitly reports a different board revision. QMI8658 contains a gyroscope, but the reviewed public object does not expose gyroscope readings; do not label acceleration as angular velocity or invent a gyro API.
@@ -107,6 +108,20 @@ Read [esp32-doit-devkit-v1.md](references/esp32-doit-devkit-v1.md) before accept
 Read [starcore-classroom-modules.md](references/starcore-classroom-modules.md) before using a WS2812 strip, a three-wire PWM servo, or the IDMM-0007 serial-servo driver with Starcore. WS2812 and SG90 remain canonical common components; do not invent Starcore-owned replacements for them. IDMM-0007 is a different UART driver, and unknown protocol details permit identification and receive-only diagnosis only—never a movement command.
 
 Read [oled-i2c-troubleshooting.md](references/oled-i2c-troubleshooting.md) when an I2C display is blank or Chinese text is requested. Nano and Uno may use a suitable U8g2 font after an address scan and memory check. Starcore IDMC-0001 with Mind+ mPython must instead use the `MPython.h` global `display` object and the Mind+ font-write path documented there; U8g2 is not a Starcore repair.
+
+## 经典掌控板 V2.x
+
+- Use canonical board `mpython-classic-v2x` and read its `start-here`, `identify-and-safety`, and `toolchains-and-upload` pages.
+- V2.0, V2.1, V2.2 and V2.3 do not have one universal sensor combination. Use verified probe identities or printed revision markings; never turn an address clue into a chip model.
+- Mind+ 1.8 uses `dfrobot:mpython:mpython:...`; Mind+ 2.0 uses `mindplus:esp32:mpython:...`. Keep their paths and reset settings separate.
+- Arduino `MPython.h` and MicroPython `from mpython import *` expose different APIs. The classic MicroPython display object is `oled`; do not copy the 3.0 `display`/RGB565 examples.
+
+## 掌控板 3.0
+
+- Use canonical board `mpython-v3`. It is an ESP32-S3 board with a 320×172 color LCD and a different GPIO map; never compile it as classic mPython or Starcore.
+- The local Mind+ index knows the 3.0 package, but the exact package is not currently installed or hardware-verified. Report the missing toolchain and use markings/正反面照片 rather than silently substituting a classic target.
+- Its MicroPython display object is `display`, and `light.read()` reports lux. Preserve these semantic differences when generating web or hardware code.
+- A temporary probe remains subject to the same backup, restore, and verification gates; no restored program means no completed identification.
 
 ## Safety boundaries
 
