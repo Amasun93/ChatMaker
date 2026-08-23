@@ -35,6 +35,12 @@ ChatMaker Knowledge is shared board guidance, not a second catalog. Use it to re
 
 Read [beginner-hardware-contract.md](references/beginner-hardware-contract.md) whenever producing wiring or code. Read [verification-gates.md](references/verification-gates.md) before any success claim.
 
+## Surface reusable field learning
+
+When an evidence-backed project runs a new or previously unsupported module, corrects missing or wrong guidance, or proves a reusable wiring, library, toolchain, or hardware workaround, return a `knowledge-contribution candidate` to the ChatMaker parent. Include the exact board and module markings, the final working method, the pitfall, and the highest evidence state reached. Do not mark a guess, compilation-only assumption, or unexplained one-off success as reusable knowledge.
+
+Do not publish the Issue from the internal specialist. ChatMaker asks the user once, drafts a privacy-clean contribution only if they agree, and requires explicit confirmation before any public submission or attachment upload.
+
 ## UNIHIKER M10
 
 Read [unihiker-m10.md](references/unihiker-m10.md) before generating or checking an M10 project.

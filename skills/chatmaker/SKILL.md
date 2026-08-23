@@ -43,9 +43,16 @@ Read [project-contract.md](references/project-contract.md) before planning a com
 - Infer nothing from a missing photo. Ask about printed labels, pin count, shape, wire colors, and intended use.
 - Do not require a separate IDE. Treat installed tools as background infrastructure.
 
-## Help a beginner report a problem
+## Help beginners report problems and contribute learning
 
-If focused troubleshooting still leaves the user blocked, or the user says ChatMaker itself behaved incorrectly, read [beginner-issue-feedback.md](references/beginner-issue-feedback.md). Draft a concise, privacy-clean GitHub Issue for them and explain it in everyday language. Never publish an Issue or upload logs without the user's explicit confirmation.
+Read [beginner-issue-feedback.md](references/beginner-issue-feedback.md) in either of these situations:
+
+- focused troubleshooting leaves the user blocked, or ChatMaker itself behaved incorrectly;
+- a completed project creates a successful knowledge contribution: a new or previously unsupported module was run, missing guidance was supplied, existing guidance proved wrong, or a reusable toolchain, library, wiring, or hardware pitfall was solved with evidence.
+
+After reporting the project's actual completion state, ask once whether the user wants to contribute a reusable new finding. A natural prompt is: “这次我们跑通了一个知识库里还没有的新模块或新经验。要不要我帮你整理成一个 Issue？你确认后再提交。” If the user already has a retrospective, use it as source material and preserve the difference between observations and guesses.
+
+Do not ask after every project. Skip the prompt when the work only followed existing knowledge, no reusable finding emerged, or the claimed lesson is still unverified. Draft a concise, privacy-clean GitHub Issue only when the user agrees. Never publish an Issue or upload logs without the user's explicit confirmation of the title, body, and attachments.
 
 ## Report evidence honestly
 

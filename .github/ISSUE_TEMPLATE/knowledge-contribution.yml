@@ -1,0 +1,88 @@
+name: 知识贡献与踩坑复盘
+description: 分享已跑通的新模块、新方法或知识库缺失内容，帮助 ChatMaker 继续改进
+title: "[知识贡献] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        谢谢你把真实开发经验贡献给 ChatMaker。请只填写你实际观察到的内容；不确定的地方可以直接写“未验证”。
+
+  - type: textarea
+    id: project
+    attributes:
+      label: 你做了什么
+      description: 用一两句话说明项目目标和最终效果。
+      placeholder: 例如：用星核板和一个新模块完成……
+    validations:
+      required: true
+
+  - type: input
+    id: hardware
+    attributes:
+      label: 板卡和模块
+      description: 请填写板卡版本，以及模块的名称、型号或可见丝印。
+      placeholder: 例如：星核板 v4.2.2；模块丝印 XXX
+    validations:
+      required: true
+
+  - type: textarea
+    id: knowledge_gap
+    attributes:
+      label: 知识库缺少或写错了什么
+      description: 说明原来找不到、容易误解或需要更正的内容。
+    validations:
+      required: true
+
+  - type: textarea
+    id: working_method
+    attributes:
+      label: 最终跑通的方法
+      description: 请写最小可复现的接线、设置、API、代码位置或操作步骤。
+    validations:
+      required: true
+
+  - type: textarea
+    id: pitfalls
+    attributes:
+      label: 踩过的坑
+      description: 哪种做法没有成功，后来为什么需要调整？不确定原因时请写“原因未验证”。
+
+  - type: dropdown
+    id: evidence_state
+    attributes:
+      label: 已经验证到哪一步
+      description: 请选择目前真正观察到的最高状态。
+      options:
+        - 只生成了源码或文件
+        - 已通过编译或源码检查
+        - 已上传固件或打开页面
+        - 已观察到串口或浏览器交互
+        - 已由用户确认实体效果
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: 使用环境
+      description: ChatMaker 版本、AI 工具、操作系统、开发工具和相关库版本；不知道的可以留空。
+
+  - type: textarea
+    id: suggested_update
+    attributes:
+      label: 建议怎样更新 ChatMaker
+      description: 可以建议补充板卡、模块、示例、排错说明或搜索关键词。
+
+  - type: textarea
+    id: attachments
+    attributes:
+      label: 最小必要附件
+      description: 可附最小代码、短日志或不含隐私的照片/截图，请勿上传整份机器日志。
+
+  - type: checkboxes
+    id: privacy_confirmation
+    attributes:
+      label: 公开与隐私确认
+      options:
+        - label: 我确认以上内容可以公开，并已移除密钥、密码、Wi-Fi 信息、私人网址和个人隐私。
+          required: true
