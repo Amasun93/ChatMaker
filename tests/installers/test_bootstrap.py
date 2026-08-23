@@ -244,13 +244,16 @@ class BootstrapTests(unittest.TestCase):
             self.assertTrue(launcher.is_file())
             python = venv / ("Scripts" if os.name == "nt" else "bin") / ("python.exe" if os.name == "nt" else "python")
             imported = subprocess.run(
-                [str(python), "-B", "-c", "import chatmaker; print(chatmaker.__file__)"],
+                [
+                    str(python), "-B", "-c",
+                    "import chatmaker,json; print(json.dumps(str(chatmaker.__file__)))",
+                ],
                 text=True,
                 capture_output=True,
                 check=False,
             )
             self.assertEqual(imported.returncode, 0, imported.stderr)
-            self.assertTrue(Path(imported.stdout.strip()).resolve().is_relative_to(venv.resolve()))
+            self.assertTrue(Path(json.loads(imported.stdout)).resolve().is_relative_to(venv.resolve()))
             inherited = subprocess.run(
                 [
                     str(python), "-I", "-S", "-B", "-c",

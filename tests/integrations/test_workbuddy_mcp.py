@@ -381,6 +381,25 @@ class WorkBuddyBridgeTests(unittest.TestCase):
         response = json.loads(completed.stdout)
         self.assertEqual(response, {"jsonrpc": "2.0", "id": 1, "result": {}})
 
+    def test_stdio_server_emits_portable_json_on_cp1252_windows_console(self):
+        environment = dict(os.environ)
+        environment["PYTHONPATH"] = str(ROOT / "runtime")
+        environment["PYTHONIOENCODING"] = "cp1252"
+        completed = subprocess.run(
+            [sys.executable, str(ROOT / "runtime/chatmaker/integrations/workbuddy_mcp.py")],
+            input='{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}\n',
+            text=True,
+            capture_output=True,
+            cwd=ROOT,
+            env=environment,
+            timeout=10,
+        )
+
+        self.assertEqual(completed.returncode, 0, completed.stderr)
+        response = json.loads(completed.stdout)
+        self.assertEqual(response["id"], 1)
+        self.assertEqual(len(response["result"]["tools"]), 36)
+
     def test_installer_preserves_existing_servers(self):
         with tempfile.TemporaryDirectory() as temporary:
             config = Path(temporary) / "mcp.json"

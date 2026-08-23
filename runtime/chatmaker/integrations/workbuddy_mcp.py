@@ -870,7 +870,7 @@ def main() -> int:
                 "error": {"code": -32603, "message": "Internal error", "data": f"{type(exc).__name__}: {exc}"},
             }
         if response is not None:
-            sys.stdout.write(json.dumps(response, ensure_ascii=False, separators=(",", ":")) + "\n")
+            sys.stdout.write(json.dumps(response, ensure_ascii=True, separators=(",", ":")) + "\n")
             sys.stdout.flush()
     return 0
 
