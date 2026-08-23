@@ -13,12 +13,12 @@ sources:
 verification:
   source_reviewed:
     status: verified
-    checked_at: "2026-08-17"
-    evidence: Sanitized dimensions derived from the internal v4.2.2 DXF and STEP evidence.
+    checked_at: "2026-08-23"
+    evidence: v4.2.2 schematic, QMI8658 datasheet, Mind+ MPython API and implementation, project corpus, and sanitized mechanical evidence were reviewed.
   code_compiled:
-    status: unverified
-    checked_at: null
-    evidence: null
+    status: verified
+    checked_at: "2026-08-23"
+    evidence: A minimal MPython.h program using mPython.begin(), accelerometer axis reads, and getStrength() compiled with the current Mind+ 1.8 Starcore target.
   firmware_uploaded:
     status: unverified
     checked_at: null
@@ -58,8 +58,10 @@ pins:
     source_ids: [starcore-board-pin-map-snapshot, starcore-code-patterns-snapshot]
   - id: P19
     capabilities: [i2c-scl, shared]
+    source_ids: [starcore-board-schematic-v4-2-2]
   - id: P20
     capabilities: [i2c-sda, spi-mosi, shared]
+    source_ids: [starcore-board-schematic-v4-2-2]
   - id: P23
     kind: gpio
     capabilities: [digital, uart-tx]
@@ -86,11 +88,34 @@ pins:
     source_ids: [starcore-board-pin-map-snapshot]
   - id: GND
     capabilities: [ground, shared]
+onboard_hardware:
+  - id: qmi8658
+    name: QMI8658 six-axis inertial sensor
+    category: motion-sensor
+    interface:
+      type: i2c
+      address: "0x6B"
+      sda_pin: P20
+      scl_pin: P19
+      interrupt_gpio: 37
+    library:
+      header: MPython.h
+      initialization: mPython.begin()
+      object: accelerometer
+      read_methods: [getX(), getY(), getZ(), getStrength()]
+      gesture_methods: [isGesture(), onGesture()]
+      gesture_values: [Shake, TiltLeft, TiltRight, TiltForward, TiltBack]
+    source_ids:
+      - starcore-board-schematic-v4-2-2
+      - starcore-qmi8658-datasheet
+      - starcore-mpython-public-api-snapshot
+      - starcore-mpython-implementation-snapshot
 constraints:
   - ESP32 input signals must remain at or below 3.3V; a 5V-powered module does not guarantee a safe signal level.
   - P2 and P3 are input-only; P5, P11, P16, P25, P27 and P28 require startup-state caution.
   - P23/P26 are the reviewed classroom UART pair for IDMM-0007 diagnosis; protocol uncertainty does not authorize transmitting motion commands.
   - In Mind+ choose the mPython-compatible target, but use Starcore physical wiring rather than copying another board image.
+  - The onboard QMI8658 already occupies the shared P20/P19 I2C bus at address 0x6B; do not add external wiring or reuse that address.
   - Use the exact v4.2.2 mechanical profile for CAD work.
   - Physical fit, supplied screws and connector clearance remain unverified.
 constraint_pin_refs: [P2, P3, P5, P11, P16, P25, P27, P28]

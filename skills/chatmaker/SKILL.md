@@ -11,6 +11,8 @@ ChatMaker is the only user entry. ChatDuino, ChatWeb, and ChatCAD are internal s
 
 In an installed bundle, load those specialists from `internal_skills/chatduino/SKILL.md`, `internal_skills/chatweb/SKILL.md`, and `internal_skills/chatcad/SKILL.md`. The `$chatduino`, `$chatweb`, and `$chatcad` labels below describe internal routes; they are not additional host-level Skill entries. Never search another global Skill root for them.
 
+Treat the installed bundle as incomplete if any internal specialist is missing, or if WorkBuddy does not expose `catalog_search`, `catalog_get`, and `knowledge_get`. When local execution is available, run `chatmaker-install doctor`, then repair with `chatmaker-install auto` and tell the user to restart WorkBuddy. Until the tools are present, never claim that ChatMaker Knowledge was searched or that a missing fact is absent from the knowledge base.
+
 ## Adapt to the user's idea
 
 - If the goal is clear, restate it, name only assumptions that affect the result, and start.

@@ -5,21 +5,21 @@ max_section_bytes: 65536
 sections:
   - section_id: start-here
     title: 星核板从这里开始
-    summary: 确认 v4.2.2 板型，按编程、网页或 CAD 目标读取对应资料。
+    summary: 确认 v4.2.2 板型和板载 QMI8658，按编程、体感、网页或 CAD 目标读取对应资料。
     consumers: [chatmaker, chatduino, chatweb, chatcad]
-    topics: [identity, workflow, mechanical]
+    topics: [identity, workflow, onboard-accelerometer, mechanical]
     pack_id: chatmaker-board-idmc-0001-starcore-v4-2-2-knowledge
   - section_id: identify-and-safety
     title: 识别与安全
-    summary: 核对星核板、S/V/G 接口、3.3V 逻辑和供电边界。
+    summary: 核对星核板、板载 QMI8658、S/V/G 接口、3.3V 逻辑和供电边界。
     consumers: [chatmaker, chatduino, chatweb, chatcad]
-    topics: [identity, safety, power]
+    topics: [identity, onboard-accelerometer, safety, power]
     pack_id: chatmaker-board-idmc-0001-starcore-v4-2-2-knowledge
   - section_id: pins-and-electrical
     title: 引脚与电气规则
-    summary: 使用 P 引脚映射、I2C 接口和启动敏感引脚规则。
+    summary: 使用 P 引脚映射、板载 QMI8658 共享 I2C 和启动敏感引脚规则。
     consumers: [chatmaker, chatduino, chatweb]
-    topics: [pins, electrical, i2c]
+    topics: [pins, electrical, i2c, onboard-accelerometer]
     pack_id: chatmaker-board-idmc-0001-starcore-v4-2-2-knowledge
   - section_id: toolchains-and-upload
     title: Mind+、编译与上传
@@ -35,9 +35,9 @@ sections:
     pack_id: chatmaker-board-idmc-0001-starcore-v4-2-2-knowledge
   - section_id: libraries-and-examples
     title: 扩展、库与示例模式
-    summary: 查找七个自研模块的 Mind+ 扩展、准确 API、完整示例和编译证据。
+    summary: 查找板载加速度、七个自研模块的 Mind+ 扩展、准确 API、完整示例和编译证据。
     consumers: [chatmaker, chatduino]
-    topics: [libraries, examples, extensions]
+    topics: [libraries, examples, extensions, accelerometer, gestures]
     pack_id: chatmaker-board-idmc-0001-starcore-v4-2-2-knowledge
   - section_id: web-and-protocol
     title: 网页与通信协议

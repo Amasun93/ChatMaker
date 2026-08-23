@@ -5,28 +5,28 @@ board_id: idmc-0001-starcore-v4-2-2
 source_type: owned-local-source
 owned_local_source:
   description: >-
-    Six owned and reviewed Starcore board, wiring, code-pattern, extension,
-    classroom-module, and sanitized mechanical source files. Original source
-    bytes and manufacturing files remain outside this repository.
-  sha256: 1129ceb24d3b1997a8991a12b70936667cf98672870f6d8f44f41735a369218e
+    Owned Starcore board sources plus locally reviewed Mind+ library and
+    project-corpus evidence snapshots. Original source bytes and manufacturing
+    files remain outside this repository.
+  sha256: 962d21bf291359b7ac8f8623d6f3c6ae7e76ed33a06d2c660ee89f7e43e797ee
 license_use_boundary: >-
   Publish original rewritten usage guidance and normalized facts only. Do not
   publish STEP, complete DXF, Gerber, schematic, PCB, production archives,
   private paths, or source-document bodies.
-cleaning_version: chatmaker-starcore-knowledge-v1
-review_date: "2026-08-17"
+cleaning_version: chatmaker-starcore-knowledge-v2
+review_date: "2026-08-23"
 cleaning_verified:
   status: verified
-  date: "2026-08-17"
-  evidence: Six selected source files were framed deterministically and hashed before writing derivative pages.
+  date: "2026-08-23"
+  evidence: Ten selected evidence snapshots were identified by source ID and SHA-256 before writing derivative pages.
 source_reviewed:
   status: verified
-  date: "2026-08-17"
-  evidence: Board, wiring, Mind+ extension, module evidence, code patterns, and sanitized mechanical facts were reviewed together.
+  date: "2026-08-23"
+  evidence: Board schematic, QMI8658 datasheet, Mind+ public API and implementation, graphical-project corpus, wiring, module, code-pattern, and sanitized mechanical facts were reviewed together.
 publication_approved:
   status: verified
-  date: "2026-08-17"
-  evidence: Approved these eight rewritten passive Knowledge pages; manufacturing assets and private paths remain excluded.
+  date: "2026-08-23"
+  evidence: Approved the eight rewritten passive Knowledge pages including board-level acceleration guidance; manufacturing assets, source bodies, and private paths remain excluded.
 source_evidence:
   - source_id: starcore-module-catalog-snapshot
     description: Reviewed normalized board and module catalog snapshot.
@@ -43,6 +43,21 @@ source_evidence:
   - source_id: starcore-mechanical-facts-snapshot
     description: Reviewed sanitized module dimensions and opening facts snapshot.
     sha256: 68553ec917d9aead498618db1da4189a8d697e707630c733437dfaddac594620
+  - source_id: starcore-board-schematic-v4-2-2
+    description: Reviewed v4.2.2 board schematic identity and onboard sensor wiring facts.
+    sha256: 0dd93c5a1ab77e3a7a0d9dd2465e41c9b4d31dc186ed9c3dd68e77fa502e730d
+  - source_id: starcore-qmi8658-datasheet
+    description: Reviewed QMI8658 device identity and I2C address facts.
+    sha256: 1b0fcdfcce6ee4cc1c4e46a242d4d29c5df5d77156cc6f9840393df37ac7d8dc
+  - source_id: starcore-mpython-public-api-snapshot
+    description: Reviewed Mind+ MPython public accelerometer and gesture API snapshot.
+    sha256: 41c6ca224c089b6a8b70090fcec6dd84d674d37741db427efb761543611f3359
+  - source_id: starcore-mpython-implementation-snapshot
+    description: Reviewed Mind+ MPython QMI8658 auto-detection and unit-conversion implementation snapshot.
+    sha256: 114f6912f838ca474980ac1d00ebe67da0ddc5176771a6c0ba81f153591ce89a
+  - source_id: starcore-mindplus-acceleration-corpus-snapshot
+    description: Reviewed normalized Mind+ graphical acceleration and gesture usage evidence snapshot.
+    sha256: 10f353372798928b4e53c1cf94acdc3849047d58d017d6af025b3523c91d91d8
 module_migrations:
   - hardware_id: IDMD-0001
     approved_rewritten_uses: [normalized-facts, beginner-wiring-guidance, derivative-examples, sanitized-mechanical-facts]

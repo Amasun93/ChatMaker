@@ -9,6 +9,32 @@ source_refs:
 ---
 # 扩展、库和示例模式
 
+## 板载 QMI8658 加速度与手势
+
+星核板 v4.2.2 的加速度传感器已经焊在板上。在 Mind+ 上传模式选择“掌控板”后，可直接使用控制器分类中的三轴加速度、合加速度、校准和倾斜/摇晃手势积木；底层积木标识包括 `esp32.esp32_acceleration`、`esp32.esp32_accelerationCalibration`、`esp32.isGesture` 和 `esp32.onGesture`。这不是外接 LIS2DH12，不需要添加 `sen0224` 扩展。
+
+Arduino/C++ 只需要 `MPython.h`。`mPython.begin()` 会初始化板载对象并自动探测 QMI8658（I2C `0x6B`）；之后使用全局对象 `accelerometer`：
+
+```cpp
+#include <MPython.h>
+
+void setup() {
+  Serial.begin(115200);
+  mPython.begin();
+}
+
+void loop() {
+  Serial.printf("x=%.0f y=%.0f z=%.0f strength=%.0f mg\n",
+                accelerometer.getX(), accelerometer.getY(),
+                accelerometer.getZ(), accelerometer.getStrength());
+  delay(100);
+}
+```
+
+`getX()`、`getY()`、`getZ()` 和 `getStrength()` 的单位是 mg（约 1000 mg 等于 1 g）。手势接口为 `isGesture()` / `onGesture()`，可使用 `MSA300::Shake`、`MSA300::TiltLeft`、`MSA300::TiltRight`、`MSA300::TiltForward` 和 `MSA300::TiltBack`。`MSA300` 是库为了兼容旧硬件保留的类名；v4.2.2 的实物仍是 QMI8658。安装方向会改变 X/Y 轴和“前后左右”的含义，体感游戏应先显示原始值，再让用户按实际握持方向校准阈值。
+
+上面的最小程序已使用当前 Mind+ 1.8 星核板目标真实编译通过。它尚未证明当前板卡上传、串口数值、安装方向或体感效果，连接实物后仍要分别验证。
+
 七个自研模块都先包含 `MPython.h`。在 Mind+ 中按下面的模块编号准备扩展，不要因为外形相似就换成另一套库：
 
 - IDMD-0001 RGB：内置 `ledcSetup`、`ledcAttachPin`、`ledcWrite`；共阳模块需要反相 PWM。

@@ -10,11 +10,15 @@ Nano、Uno、DOIT ESP32 DevKit V1 和星核板各有一个只读 ChatMaker Knowl
 
 WorkBuddy 当前源码服务版本为 `1.14.0`，共有 33 个工具，使用共用的 `knowledge_get`，并包含 `cad_component_profile_get` 和另外三个 ChatCAD 工具。这条说明描述 rc5 之后的源码，不改变下面 rc5 发布物当时的 `1.7.0` / 23 工具事实。
 
+星核板 v4.2.2 知识现已明确板载 QMI8658、共享 I2C 地址、Mind+ 内置加速度积木，以及 `MPython.h` 的 `accelerometer` API。ChatMaker 在 WorkBuddy 缺少内部 Skill 或 `knowledge_get` 时会报告安装不完整，不再把未执行的知识查询描述成“已经查过”。
+
 This source update creates no new GitHub Release and does not rewrite rc1–rc5 evidence. It adds a deterministic minimal `ChatMaker-Core-<version>.zip` containing runtime code, four Skill directories, schemas, canonical 4/20/23 records, four compact indexes, current examples, minimal documentation, Python metadata, and the license. Detailed Knowledge bodies, the knowledge workspace, tests, caches, and optional built `.cmpack` artifacts are excluded. ChatMaker is the only user entry; ChatDuino, ChatWeb, and ChatCAD are internal specialists.
 
 Nano, Uno, DOIT ESP32 DevKit V1, and Starcore each have one read-only ChatMaker Knowledge pack. A first detailed-section read verifies, downloads, and activates an absent pack from the signed registry; later reads reuse it. Installed content remains readable after offline revalidation, while cached content can authorize a new offline install only before its signed receipt expires. Only `chatmaker-pack` performs content update and rollback, without editing Codex/WorkBuddy configuration. Automatic content installation never includes drivers, Mind+, Arduino cores, Node, Chromium, PATH changes, hooks, or administrator actions.
 
 Current source uses WorkBuddy server `1.14.0` with 33 tools, including shared `knowledge_get`, `cad_component_profile_get`, and the other three ChatCAD tools. The rc5 section below remains an accurate historical description of the rc5 artifact's `1.7.0` / 23 tools.
+
+Starcore v4.2.2 Knowledge now identifies the onboard QMI8658, its shared I2C address, Mind+ built-in acceleration blocks, and the `MPython.h` `accelerometer` API. ChatMaker reports an incomplete WorkBuddy installation when internal Skills or `knowledge_get` are unavailable instead of claiming that an unperformed Knowledge search succeeded.
 
 ## 中文
 

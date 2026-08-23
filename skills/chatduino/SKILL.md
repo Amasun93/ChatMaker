@@ -89,6 +89,7 @@ Read [esp32-doit-devkit-v1.md](references/esp32-doit-devkit-v1.md) before accept
 ## IDMC-0001 Starcore v4.2.2
 
 - Use `starcore_doctor`, `starcore_ports`, `starcore_compile`, and `starcore_compile_upload` in WorkBuddy; use `chatmaker-starcore` in Codex.
+- For onboard acceleration, tilt, shake, motion control, or gesture projects, read Starcore `start-here` and `libraries-and-examples` before asking hardware questions or writing code. v4.2.2 already has an onboard QMI8658; Mind+ provides built-in acceleration blocks and `MPython.h` provides `mPython.begin()` plus the global `accelerometer`. Do not ask the user to identify the accelerometer, add a LIS2DH12 extension, connect another sensor, or handwrite I2C unless the checked knowledge explicitly reports a different board revision.
 - Compile with the current Mind+ 1.8 target `dfrobot:mpython:mpython:FlashMode=dio,FlashFreq=80,UploadSpeed=1500000,DebugLevel=none`.
 - Keep the Mind+ 2.0 `mindplus:esp32:mpython:...` target as historical knowledge; do not silently mix the two targets.
 - Upload only after the user has confirmed the physical board is Starcore v4.2.2 and one unambiguous non-Bluetooth wired port remains.
