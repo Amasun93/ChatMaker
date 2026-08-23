@@ -276,7 +276,9 @@ class BootstrapTests(unittest.TestCase):
             launched = subprocess.run(launcher_command, env=environment, text=True, capture_output=True)
             self.assertEqual(launched.returncode, 0, launched.stderr)
             self.assertEqual(auto_log.read_text(encoding="utf-8"), "auto\nauto\nauto\n")
-            self.assertEqual((home / "argv.log").read_text(encoding="utf-8").splitlines()[-1], f"doctor --home {home}")
+            argv_line = (home / "argv.log").read_text(encoding="utf-8").splitlines()[-1]
+            self.assertTrue(argv_line.startswith("doctor --home "), argv_line)
+            self.assertTrue(os.path.samefile(Path(argv_line.removeprefix("doctor --home ")), home))
             self.assertEqual((home / "env.log").read_text(encoding="utf-8"), "|||")
             self.assertFalse(any((base / name).exists() for name in ("wrong-codex", "wrong-workbuddy", "wrong-skills")))
 
