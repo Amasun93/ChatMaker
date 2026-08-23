@@ -99,9 +99,9 @@ class ReleasePackageTests(unittest.TestCase):
                 "c02249952c827244ce1273f20760a36d266ab17ecc7bd87ef67a8cc4a1fc8a2c",
             ),
             "chatmaker-board-idmc-0001-starcore-v4-2-2-knowledge": (
-                "chatmaker-board-idmc-0001-starcore-v4-2-2-knowledge-1.4.0.cmpack",
-                36560,
-                "17694c42f09f29ec9e9ce07863fbd82863b5ba870f64c2ad5dd8b106c7653e30",
+                "chatmaker-board-idmc-0001-starcore-v4-2-2-knowledge-1.5.0.cmpack",
+                38142,
+                "b320b21bb36e31cb3ae10ce62f2e3e1ff23a46a369f90bb8be5f18eac9129277",
             ),
             "chatmaker-board-mpython-classic-v2x-knowledge": (
                 "chatmaker-board-mpython-classic-v2x-knowledge-1.0.0.cmpack",
@@ -114,7 +114,7 @@ class ReleasePackageTests(unittest.TestCase):
                 "fd8073a0a020482174e6f5484ffbcc3352b241f8b80b2a8f62c5b2d6c22b254b",
             ),
         }
-        self.assertEqual(registry["sequence"], 7)
+        self.assertEqual(registry["sequence"], 8)
         generated_at = datetime.fromisoformat(registry["generated_at"].replace("Z", "+00:00"))
         expires_at = datetime.fromisoformat(registry["expires_at"].replace("Z", "+00:00"))
         self.assertLessEqual((expires_at - generated_at).days, 31)
@@ -125,7 +125,7 @@ class ReleasePackageTests(unittest.TestCase):
             if item["board_id"] in {"mpython-classic-v2x", "mpython-v3"}:
                 pinned_commit = "0579d277abc667b71b060da124647623d54b6901"
             elif item["board_id"] == "idmc-0001-starcore-v4-2-2":
-                pinned_commit = "b519e6fbb67f2dd51508282603332a811ce5de15"
+                pinned_commit = "0031187dcff89ffdcbe50a7825fe88f153c2ad68"
             else:
                 pinned_commit = "1556a055d9625409e9380f4e6abdf7c0e95778fc"
             self.assertEqual(item["url"], (
