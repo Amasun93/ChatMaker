@@ -5,29 +5,38 @@ board_id: idmc-0001-starcore-v4-2-2
 source_type: owned-local-source
 owned_local_source:
   description: >-
-    Owned Starcore board sources plus locally reviewed Mind+ library and
-    project-corpus evidence snapshots. Original source bytes and manufacturing
-    files remain outside this repository.
-  sha256: 962d21bf291359b7ac8f8623d6f3c6ae7e76ed33a06d2c660ee89f7e43e797ee
+    Owned Starcore board description, schematic, IO Mapping workbook, locally
+    reviewed Mind+ library/variant files, and project-corpus evidence snapshots.
+    Original source bytes and manufacturing files remain outside this repository.
+  sha256: c507cdb9e1233042c2aeb1827d8c4026f5e9f2417e91da6c15e24278935d0a0d
 license_use_boundary: >-
   Publish original rewritten usage guidance and normalized facts only. Do not
   publish STEP, complete DXF, Gerber, schematic, PCB, production archives,
   private paths, or source-document bodies.
-cleaning_version: chatmaker-starcore-knowledge-v2
+cleaning_version: chatmaker-starcore-knowledge-v3
 review_date: "2026-08-23"
 cleaning_verified:
   status: verified
   date: "2026-08-23"
-  evidence: Ten selected evidence snapshots were identified by source ID and SHA-256 before writing derivative pages.
+  evidence: Thirteen selected evidence sources were identified by source ID and SHA-256 before writing derivative pages.
 source_reviewed:
   status: verified
   date: "2026-08-23"
-  evidence: Board schematic, QMI8658 datasheet, Mind+ public API and implementation, graphical-project corpus, wiring, module, code-pattern, and sanitized mechanical facts were reviewed together.
+  evidence: Board description, schematic, IO Mapping workbook, QMI8658 datasheet, Mind+ public API, implementation and pin variant, graphical-project corpus, wiring, module, code-pattern, and sanitized mechanical facts were reviewed together.
 publication_approved:
   status: verified
   date: "2026-08-23"
-  evidence: Approved the eight rewritten passive Knowledge pages including board-level acceleration guidance; manufacturing assets, source bodies, and private paths remain excluded.
+  evidence: Approved the eight rewritten passive Knowledge pages including full pin mapping, onboard hardware, power/CAN guidance, and software-model boundaries; manufacturing assets, source bodies, and private paths remain excluded.
 source_evidence:
+  - source_id: starcore-board-description-doc
+    description: Reviewed v4.2.2 identity, dimensions, onboard peripherals, connectivity, power ranges, and interface protection summary.
+    sha256: 2071034f362cfba107b16cdafec609bf4b210b22eb40661e51604dcd62f83969
+  - source_id: starcore-io-mapping-workbook
+    description: Reviewed the complete ESP32 GPIO, Starcore/Mind+ alias, input/output, PWM, touch, DAC, boot, and software-reservation mapping.
+    sha256: 2a3723c318f3e130dba9202cb993410c3868a51c58c09a914debbae8d66554b6
+  - source_id: starcore-mpython-pin-variant
+    description: Reviewed the active Mind+ P0-P28 and P_P/P_Y/P_T/P_H/P_O/P_N constant mapping.
+    sha256: 26587b51cf41575d6ae6305750483d3dc03f885ecf8747dd0af9d5a70cd1da8a
   - source_id: starcore-module-catalog-snapshot
     description: Reviewed normalized board and module catalog snapshot.
     sha256: fffa9a46d791820c6224ca82507fc7e7e732edf6e920b115e2394698081402f4
@@ -53,7 +62,7 @@ source_evidence:
     description: Reviewed Mind+ MPython public accelerometer and gesture API snapshot.
     sha256: 41c6ca224c089b6a8b70090fcec6dd84d674d37741db427efb761543611f3359
   - source_id: starcore-mpython-implementation-snapshot
-    description: Reviewed Mind+ MPython QMI8658 auto-detection and unit-conversion implementation snapshot.
+    description: Reviewed Mind+ MPython QMI8658 auto-detection, unit conversion, buttons, buzzer, software-only display/RGB/light/sound mappings, and initialization side effects.
     sha256: 114f6912f838ca474980ac1d00ebe67da0ddc5176771a6c0ba81f153591ce89a
   - source_id: starcore-mindplus-acceleration-corpus-snapshot
     description: Reviewed normalized Mind+ graphical acceleration and gesture usage evidence snapshot.

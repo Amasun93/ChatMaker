@@ -3,8 +3,21 @@ kind: board
 id: idmc-0001-starcore-v4-2-2
 name: IDMC-0001 星核板 v4.2.2
 family: esp32
-mcu: ESP32
+mcu: ESP32-D0WDQ6-V3
 logic_voltage: 3.3
+identity:
+  board_revision: v4.2.2
+  pcb_markings: [星核板, V4.2.2, 斯坦星球, IDEALAB]
+  dimensions_mm: {width: 90.0, height: 61.5}
+  software_compatibility_target: mPython-compatible controller
+  physical_board_is_not: DFRobot mPython controller
+processor:
+  architecture: Xtensa LX6 dual-core
+  maximum_clock_mhz: 240
+  external_flash: W25Q128, 128 Mbit (16 MiB)
+wireless:
+  wifi: IEEE 802.11 b/g/n
+  bluetooth: Bluetooth 4.2 BR/EDR and BLE
 sources:
   - title: Starcore owned board and Mind+ documentation
     url: https://github.com/Amasun93/ChatMaker/tree/main/knowledge_sources
@@ -14,11 +27,11 @@ verification:
   source_reviewed:
     status: verified
     checked_at: "2026-08-23"
-    evidence: v4.2.2 schematic, QMI8658 datasheet, Mind+ MPython API and implementation, project corpus, and sanitized mechanical evidence were reviewed.
+    evidence: v4.2.2 schematic, board description, IO Mapping workbook, QMI8658 datasheet, Mind+ MPython API and implementation, pin variant, project corpus, and sanitized mechanical evidence were reviewed together.
   code_compiled:
     status: verified
     checked_at: "2026-08-23"
-    evidence: A minimal MPython.h program using mPython.begin(), accelerometer axis reads, and getStrength() compiled with the current Mind+ 1.8 Starcore target.
+    evidence: Mind+ 1.8 compiled representative programs for the onboard QMI8658, A/B buttons, passive buzzer, and the current ESP32 CAN driver interface; see docs/verification/2026-08-23-starcore-complete-board-knowledge.md. No firmware was uploaded.
   firmware_uploaded:
     status: unverified
     checked_at: null
@@ -27,67 +40,211 @@ verification:
     status: unverified
     checked_at: null
     evidence: null
+gpio_map:
+  R: 3
+  T: 1
+  IO37: 37
+  IO38: 38
+  P23: 27
+  P24: 14
+  P25: 12
+  P26: 13
+  P27: 15
+  P28: 4
+  P0: 33
+  P1: 32
+  P2: 35
+  P3: 34
+  P4: 39
+  P5: 0
+  P6: 16
+  P7: 17
+  P8: 26
+  P9: 25
+  P10: 36
+  P11: 2
+  P13: 18
+  P14: 19
+  P15: 21
+  P16: 5
+  P19: 22
+  P20: 23
+code_aliases:
+  P_P: P23
+  P_Y: P24
+  P_T: P25
+  P_H: P26
+  P_O: P27
+  P_N: P28
 pins:
-  - id: P0
-    capabilities: [analog-input, digital]
-  - id: P1
-    capabilities: [analog-input, digital]
-  - id: P2
-    capabilities: [analog-input, input-only]
-  - id: P3
-    capabilities: [analog-input, input-only]
-  - id: P5
-    capabilities: [digital, onboard-button-a, boot-related]
-  - id: P11
-    capabilities: [digital, onboard-button-b, boot-related]
-  - id: P8
-    capabilities: [digital, analog-input, pwm, dac]
-  - id: P9
-    capabilities: [digital, analog-input, pwm, dac]
-  - id: P13
-    capabilities: [digital, pwm, spi-sck]
-  - id: P14
-    capabilities: [digital, pwm, spi-miso]
-  - id: P15
+  - id: R
     kind: gpio
-    capabilities: [digital, pwm, uart-rx]
-    source_ids: [starcore-board-pin-map-snapshot, starcore-code-patterns-snapshot]
-  - id: P16
+    capabilities: [gpio-3, digital-input, digital-output, pwm, uart0-rx, serial-console]
+    source_ids: [starcore-io-mapping-workbook, starcore-mpython-pin-variant]
+  - id: T
     kind: gpio
-    capabilities: [digital, pwm, uart-tx, boot-related]
-    source_ids: [starcore-board-pin-map-snapshot, starcore-code-patterns-snapshot]
-  - id: P19
-    capabilities: [i2c-scl, shared]
-    source_ids: [starcore-board-schematic-v4-2-2]
-  - id: P20
-    capabilities: [i2c-sda, spi-mosi, shared]
-    source_ids: [starcore-board-schematic-v4-2-2]
+    capabilities: [gpio-1, digital-input, digital-output, pwm, uart0-tx, serial-console]
+    source_ids: [starcore-io-mapping-workbook, starcore-mpython-pin-variant]
+  - id: IO37
+    kind: gpio
+    capabilities: [gpio-37, analog-input, digital-input, input-only, onboard-qmi8658-interrupt, shared]
+    source_ids: [starcore-board-schematic-v4-2-2, starcore-io-mapping-workbook]
+  - id: IO38
+    kind: gpio
+    capabilities: [gpio-38, analog-input, digital-input, input-only]
+    source_ids: [starcore-board-schematic-v4-2-2, starcore-io-mapping-workbook]
   - id: P23
     kind: gpio
-    capabilities: [digital, uart-tx]
-    source_ids: [starcore-board-pin-map-snapshot, starcore-code-patterns-snapshot]
+    capabilities: [gpio-27, digital-input, digital-output, pwm, touch, code-alias-p-p, classroom-uart-tx]
+    source_ids: [starcore-io-mapping-workbook, starcore-mpython-pin-variant, starcore-code-patterns-snapshot]
+  - id: P24
+    kind: gpio
+    capabilities: [gpio-14, digital-input, digital-output, pwm, touch, code-alias-p-y]
+    source_ids: [starcore-io-mapping-workbook, starcore-mpython-pin-variant]
+  - id: P25
+    kind: gpio
+    capabilities: [gpio-12, digital-input, digital-output, pwm, touch, boot-related, code-alias-p-t]
+    source_ids: [starcore-io-mapping-workbook, starcore-mpython-pin-variant]
   - id: P26
     kind: gpio
-    capabilities: [digital, uart-rx]
-    source_ids: [starcore-board-pin-map-snapshot, starcore-code-patterns-snapshot]
-  - id: P_H
-    capabilities: [digital, ultrasonic-trigger, silkscreen-h]
-  - id: P_O
-    capabilities: [digital, ultrasonic-echo, silkscreen-o]
-  - id: P25
-    capabilities: [digital, analog-input, touch, boot-related]
+    capabilities: [gpio-13, digital-input, digital-output, pwm, touch, code-alias-p-h, ultrasonic-trigger, classroom-uart-rx]
+    source_ids: [starcore-io-mapping-workbook, starcore-mpython-pin-variant, starcore-code-patterns-snapshot]
   - id: P27
-    capabilities: [digital, analog-input, touch, boot-related]
+    kind: gpio
+    capabilities: [gpio-15, digital-input, digital-output, pwm, touch, boot-related, code-alias-p-o, ultrasonic-echo]
+    source_ids: [starcore-io-mapping-workbook, starcore-mpython-pin-variant]
   - id: P28
-    capabilities: [digital, analog-input, touch, boot-related]
+    kind: gpio
+    capabilities: [gpio-4, digital-input, digital-output, pwm, touch, boot-related, code-alias-p-n]
+    source_ids: [starcore-io-mapping-workbook, starcore-mpython-pin-variant]
+  - id: P0
+    kind: gpio
+    capabilities: [gpio-33, analog-input, digital-input, digital-output, pwm, touch]
+    source_ids: [starcore-io-mapping-workbook, starcore-mpython-pin-variant]
+  - id: P1
+    kind: gpio
+    capabilities: [gpio-32, analog-input, digital-input, digital-output, pwm, touch]
+    source_ids: [starcore-io-mapping-workbook, starcore-mpython-pin-variant]
+  - id: P2
+    kind: gpio
+    capabilities: [gpio-35, analog-input, digital-input, input-only]
+    source_ids: [starcore-io-mapping-workbook, starcore-mpython-pin-variant]
+  - id: P3
+    kind: gpio
+    capabilities: [gpio-34, analog-input, digital-input, input-only]
+    source_ids: [starcore-io-mapping-workbook, starcore-mpython-pin-variant]
+  - id: P4
+    kind: gpio
+    capabilities: [gpio-39, analog-input, digital-input, input-only, mpython-light-object-source]
+    source_ids: [starcore-io-mapping-workbook, starcore-mpython-public-api-snapshot, starcore-mpython-pin-variant]
+  - id: P5
+    kind: gpio
+    capabilities: [gpio-0, digital-input, digital-output, pwm, touch, onboard-button-a, active-low, boot-related]
+    source_ids: [starcore-board-schematic-v4-2-2, starcore-io-mapping-workbook, starcore-mpython-pin-variant]
+  - id: P6
+    kind: gpio
+    capabilities: [gpio-16, digital-input, digital-output, pwm, onboard-passive-buzzer]
+    source_ids: [starcore-board-schematic-v4-2-2, starcore-io-mapping-workbook, starcore-mpython-pin-variant]
+  - id: P7
+    kind: gpio
+    capabilities: [gpio-17, digital-input, digital-output, pwm, mpython-ws2812-software-reservation, shared]
+    source_ids: [starcore-io-mapping-workbook, starcore-mpython-implementation-snapshot, starcore-mpython-pin-variant]
+  - id: P8
+    kind: gpio
+    capabilities: [gpio-26, digital-input, digital-output, pwm, dac]
+    source_ids: [starcore-io-mapping-workbook, starcore-mpython-pin-variant]
+  - id: P9
+    kind: gpio
+    capabilities: [gpio-25, digital-input, digital-output, pwm, dac]
+    source_ids: [starcore-io-mapping-workbook, starcore-mpython-pin-variant]
+  - id: P10
+    kind: gpio
+    capabilities: [gpio-36, analog-input, digital-input, input-only, mpython-sound-object-source]
+    source_ids: [starcore-io-mapping-workbook, starcore-mpython-public-api-snapshot, starcore-mpython-pin-variant]
+  - id: P11
+    kind: gpio
+    capabilities: [gpio-2, digital-input, digital-output, pwm, touch, onboard-button-b, active-low, boot-related]
+    source_ids: [starcore-board-schematic-v4-2-2, starcore-io-mapping-workbook, starcore-mpython-pin-variant]
+  - id: P13
+    kind: gpio
+    capabilities: [gpio-18, digital-input, digital-output, pwm, spi-sck, onboard-can-tx, shared]
+    source_ids: [starcore-board-schematic-v4-2-2, starcore-io-mapping-workbook, starcore-mpython-pin-variant]
+  - id: P14
+    kind: gpio
+    capabilities: [gpio-19, digital-input, digital-output, pwm, spi-miso, onboard-can-rx, shared]
+    source_ids: [starcore-board-schematic-v4-2-2, starcore-io-mapping-workbook, starcore-mpython-pin-variant]
+  - id: P15
+    kind: gpio
+    capabilities: [gpio-21, digital-input, digital-output, pwm, uart-rx, classroom-uart-rx]
+    source_ids: [starcore-io-mapping-workbook, starcore-code-patterns-snapshot, starcore-mpython-pin-variant]
+  - id: P16
+    kind: gpio
+    capabilities: [gpio-5, digital-input, digital-output, pwm, uart-tx, classroom-uart-tx, boot-related]
+    source_ids: [starcore-io-mapping-workbook, starcore-code-patterns-snapshot, starcore-mpython-pin-variant]
+  - id: P19
+    kind: gpio
+    capabilities: [gpio-22, digital-input, digital-output, pwm, i2c-scl, shared]
+    source_ids: [starcore-board-schematic-v4-2-2, starcore-io-mapping-workbook, starcore-mpython-pin-variant]
+  - id: P20
+    kind: gpio
+    capabilities: [gpio-23, digital-input, digital-output, pwm, i2c-sda, spi-mosi, shared]
+    source_ids: [starcore-board-schematic-v4-2-2, starcore-io-mapping-workbook, starcore-mpython-pin-variant]
+  - id: P_P
+    kind: connector-signal
+    capabilities: [code-alias, alias-of-p23]
+    source_ids: [starcore-mpython-pin-variant]
+  - id: P_Y
+    kind: connector-signal
+    capabilities: [code-alias, alias-of-p24]
+    source_ids: [starcore-mpython-pin-variant]
+  - id: P_T
+    kind: connector-signal
+    capabilities: [code-alias, alias-of-p25]
+    source_ids: [starcore-mpython-pin-variant]
+  - id: P_H
+    kind: connector-signal
+    capabilities: [code-alias, alias-of-p26, ultrasonic-trigger]
+    source_ids: [starcore-mpython-pin-variant]
+  - id: P_O
+    kind: connector-signal
+    capabilities: [code-alias, alias-of-p27, ultrasonic-echo]
+    source_ids: [starcore-mpython-pin-variant]
+  - id: P_N
+    kind: connector-signal
+    capabilities: [code-alias, alias-of-p28]
+    source_ids: [starcore-mpython-pin-variant]
+  - id: CAN_H
+    kind: connector-signal
+    capabilities: [can-high, onboard-transceiver, protected]
+    source_ids: [starcore-board-schematic-v4-2-2, starcore-board-description-doc]
+  - id: CAN_L
+    kind: connector-signal
+    capabilities: [can-low, onboard-transceiver, protected]
+    source_ids: [starcore-board-schematic-v4-2-2, starcore-board-description-doc]
+  - id: VIN
+    kind: power-rail
+    capabilities: [power-input, 6-to-24v, buck-input]
+    source_ids: [starcore-board-schematic-v4-2-2, starcore-board-description-doc]
+  - id: 5V_IN
+    kind: power-rail
+    capabilities: [power-input, 3.8-to-5.5v, ldo-input]
+    source_ids: [starcore-board-schematic-v4-2-2, starcore-board-description-doc]
+  - id: 3V3_IN
+    kind: power-rail
+    capabilities: [power-input, regulated-3.3v-only]
+    source_ids: [starcore-board-schematic-v4-2-2]
   - id: 3V3
-    capabilities: [power]
+    kind: power-rail
+    capabilities: [power, connector-bank, 3.3v]
+    source_ids: [starcore-board-schematic-v4-2-2, starcore-io-mapping-workbook]
   - id: 5V
     kind: power-rail
-    capabilities: [power, connector-bank]
-    source_ids: [starcore-board-pin-map-snapshot]
+    capabilities: [power, connector-bank, 5v]
+    source_ids: [starcore-board-schematic-v4-2-2, starcore-board-pin-map-snapshot]
   - id: GND
+    kind: ground
     capabilities: [ground, shared]
+    source_ids: [starcore-board-schematic-v4-2-2]
 onboard_hardware:
   - id: qmi8658
     name: QMI8658 six-axis inertial sensor
@@ -104,21 +261,106 @@ onboard_hardware:
       object: accelerometer
       read_methods: [getX(), getY(), getZ(), getStrength()]
       gesture_methods: [isGesture(), onGesture()]
-      gesture_values: [Shake, TiltLeft, TiltRight, TiltForward, TiltBack]
-    source_ids:
-      - starcore-board-schematic-v4-2-2
-      - starcore-qmi8658-datasheet
-      - starcore-mpython-public-api-snapshot
-      - starcore-mpython-implementation-snapshot
+      gesture_values: [Shake, ScreenUp, ScreenDown, TiltLeft, TiltRight, TiltForward, TiltBack]
+    source_ids: [starcore-board-schematic-v4-2-2, starcore-qmi8658-datasheet, starcore-mpython-public-api-snapshot, starcore-mpython-implementation-snapshot]
+  - id: button-a
+    name: Active-low onboard button A
+    category: user-input
+    interface:
+      type: gpio-active-low
+    library:
+      header: MPython.h
+      initialization: global object; no explicit begin required
+      object: buttonA
+      read_methods: [isPressed(), setPressedCallback(), setUnPressedCallback()]
+    source_ids: [starcore-board-schematic-v4-2-2, starcore-board-description-doc, starcore-mpython-public-api-snapshot, starcore-mpython-implementation-snapshot]
+  - id: button-b
+    name: Active-low onboard button B
+    category: user-input
+    interface:
+      type: gpio-active-low
+    library:
+      header: MPython.h
+      initialization: global object; no explicit begin required
+      object: buttonB
+      read_methods: [isPressed(), setPressedCallback(), setUnPressedCallback()]
+    source_ids: [starcore-board-schematic-v4-2-2, starcore-board-description-doc, starcore-mpython-public-api-snapshot, starcore-mpython-implementation-snapshot]
+  - id: passive-buzzer
+    name: Onboard passive buzzer
+    category: audio-output
+    interface:
+      type: pwm-gpio
+    library:
+      header: MPython.h
+      initialization: mPython.begin()
+      object: buzz
+      read_methods: [freq(), off(), stop(), isOn()]
+    source_ids: [starcore-board-schematic-v4-2-2, starcore-board-description-doc, starcore-mpython-public-api-snapshot, starcore-mpython-implementation-snapshot]
+  - id: ch9102f
+    name: CH9102F USB-to-UART bridge with automatic download control
+    category: usb-uart
+    interface:
+      type: usb-uart
+    source_ids: [starcore-board-schematic-v4-2-2, starcore-board-description-doc]
+  - id: sit3051tk
+    name: SIT3051TK CAN transceiver
+    category: can-physical-layer
+    interface:
+      type: can-transceiver
+    source_ids: [starcore-board-schematic-v4-2-2, starcore-board-description-doc]
+interfaces:
+  - id: usb-c
+    purpose: 5V power, programming, serial diagnostics, and automatic boot/download control
+    controller: CH9102F
+  - id: can-bus
+    physical_layer: SIT3051TK
+    controller_tx: P13/GPIO18
+    controller_rx: P14/GPIO19
+    connector_signals: [VIN, GND, CAN_L, CAN_H]
+  - id: i2c-3v3-bank
+    count: 3
+    signals: [3V3, GND, P19/SCL, P20/SDA]
+  - id: i2c-5v-bank
+    count: 3
+    signals: [5V, GND, level-shifted-SCL, level-shifted-SDA]
+    level_shifter: 2N7002-based bidirectional level shifting
+  - id: svg-gpio-bank
+    layout: three-row signal-voltage-ground connector bank
+power_inputs:
+  - id: usb-c-5v
+    range: regulated 5V only
+    path: protected USB power path
+  - id: vin-6-24v
+    range: 6-24V DC
+    regulator: MP28373 buck to approximately 5.09V
+  - id: d5v-3.8-5.5v
+    range: 3.8-5.5V DC
+    regulator: RT9059 to 3.3V
+  - id: direct-3v3
+    range: regulated 3.3V only
+    regulator: none
+software_compatibility:
+  physically_present_mpython_objects: [buttonA, buttonB, buttonAB, buzz, accelerometer]
+  exposed_but_not_onboard_hardware: [display, rgb, light, sound]
+  pin_objects_without_dedicated_touch_pads: [touchPadP, touchPadY, touchPadT, touchPadH, touchPadO, touchPadN]
+  initialization_side_effects:
+    - mPython.begin() initializes a display object at I2C address 0x3C even though no display is onboard.
+    - mPython.begin() initializes the mPython three-pixel WS2812 model on P7/GPIO17 even though no WS2812 is onboard.
+    - light.read() reads P4/GPIO39 and sound.read() reads P10/GPIO36; without external sensors these are not real light or sound measurements.
 constraints:
   - ESP32 input signals must remain at or below 3.3V; a 5V-powered module does not guarantee a safe signal level.
-  - P2 and P3 are input-only; P5, P11, P16, P25, P27 and P28 require startup-state caution.
+  - P2, P3, P4, P10, IO37 and IO38 are input-only; do not use them to drive LEDs, trigger outputs or actuators.
+  - P5, P11, P16, P25, P27 and P28 require startup-state caution; A/B button presses also change boot-related pins.
+  - P13 and P14 are shared with the onboard CAN transceiver. Do not assign them to another peripheral while CAN is active.
   - P23/P26 are the reviewed classroom UART pair for IDMM-0007 diagnosis; protocol uncertainty does not authorize transmitting motion commands.
-  - In Mind+ choose the mPython-compatible target, but use Starcore physical wiring rather than copying another board image.
   - The onboard QMI8658 already occupies the shared P20/P19 I2C bus at address 0x6B; do not add external wiring or reuse that address.
-  - Use the exact v4.2.2 mechanical profile for CAD work.
-  - Physical fit, supplied screws and connector clearance remain unverified.
-constraint_pin_refs: [P2, P3, P5, P11, P16, P25, P27, P28]
+  - QMI8658 contains a gyroscope, but the reviewed MPython public object exposes acceleration and gestures only; gyroscope values require a separately reviewed driver path.
+  - The mPython software target does not prove that display, RGB pixels, a light sensor or a microphone are physically onboard Starcore.
+  - Use one verified power input path at a time. Do not parallel USB, VIN, 5V-input and direct-3.3V sources unless an electrical design has been reviewed.
+  - The onboard CAN transceiver is only the physical layer. Bit rate, node IDs, termination, cable and protocol must still match the actual CAN network.
+  - In Mind+ choose the mPython-compatible target, but use Starcore physical wiring rather than copying another board image.
+  - Use the exact v4.2.2 mechanical profile for CAD work; physical fit, supplied screws and connector clearance remain unverified.
+constraint_pin_refs: [IO37, IO38, P2, P3, P4, P5, P10, P11, P13, P14, P16, P19, P20, P25, P27, P28]
 toolchains:
   - id: mindplus-1.8-mpython
     status: source_reviewed_current

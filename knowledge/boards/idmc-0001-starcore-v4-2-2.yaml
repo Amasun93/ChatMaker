@@ -5,25 +5,25 @@ max_section_bytes: 65536
 sections:
   - section_id: start-here
     title: 星核板从这里开始
-    summary: 确认 v4.2.2 板型和板载 QMI8658，按编程、体感、网页或 CAD 目标读取对应资料。
+    summary: 确认 v4.2.2 板型、真实板载硬件和掌控板兼容边界，再按编程、体感、网页或 CAD 目标继续。
     consumers: [chatmaker, chatduino, chatweb, chatcad]
-    topics: [identity, workflow, onboard-accelerometer, mechanical]
+    topics: [identity, workflow, onboard-hardware, onboard-accelerometer, software-compatibility, mechanical]
     pack_id: chatmaker-board-idmc-0001-starcore-v4-2-2-knowledge
   - section_id: identify-and-safety
     title: 识别与安全
-    summary: 核对星核板、板载 QMI8658、S/V/G 接口、3.3V 逻辑和供电边界。
+    summary: 核对板载按键、蜂鸣器、QMI8658、USB/CAN/I2C 接口、3.3V 逻辑和四种供电入口。
     consumers: [chatmaker, chatduino, chatweb, chatcad]
-    topics: [identity, onboard-accelerometer, safety, power]
+    topics: [identity, onboard-hardware, safety, power, usb, can]
     pack_id: chatmaker-board-idmc-0001-starcore-v4-2-2-knowledge
   - section_id: pins-and-electrical
     title: 引脚与电气规则
-    summary: 使用 P 引脚映射、板载 QMI8658 共享 I2C 和启动敏感引脚规则。
+    summary: 使用完整 P/GPIO 映射，处理输入专用脚、启动脚、板载功能、CAN 和共享 I2C。
     consumers: [chatmaker, chatduino, chatweb]
-    topics: [pins, electrical, i2c, onboard-accelerometer]
+    topics: [pins, electrical, i2c, can, onboard-hardware, software-reservations]
     pack_id: chatmaker-board-idmc-0001-starcore-v4-2-2-knowledge
   - section_id: toolchains-and-upload
     title: Mind+、编译与上传
-    summary: 使用 Mind+ 1.8 当前目标；七个自研模块示例已编译，上传和实物效果待验证。
+    summary: 使用 Mind+ 1.8 当前目标；板载输入输出、CAN 接口和七个模块示例可编译，上传和实物效果待验证。
     consumers: [chatmaker, chatduino]
     topics: [mindplus, compile, upload]
     pack_id: chatmaker-board-idmc-0001-starcore-v4-2-2-knowledge
@@ -35,9 +35,9 @@ sections:
     pack_id: chatmaker-board-idmc-0001-starcore-v4-2-2-knowledge
   - section_id: libraries-and-examples
     title: 扩展、库与示例模式
-    summary: 查找板载加速度、七个自研模块的 Mind+ 扩展、准确 API、完整示例和编译证据。
+    summary: 查找板载按键、蜂鸣器、加速度、CAN、七个自研模块的准确 API、示例和兼容陷阱。
     consumers: [chatmaker, chatduino]
-    topics: [libraries, examples, extensions, accelerometer, gestures]
+    topics: [libraries, examples, extensions, buttons, buzzer, accelerometer, gestures, can, compatibility]
     pack_id: chatmaker-board-idmc-0001-starcore-v4-2-2-knowledge
   - section_id: web-and-protocol
     title: 网页与通信协议
@@ -47,7 +47,7 @@ sections:
     pack_id: chatmaker-board-idmc-0001-starcore-v4-2-2-knowledge
   - section_id: troubleshooting
     title: 排错与证据状态
-    summary: 按板型、扩展、编译、串口和实物结果逐层定位问题。
+    summary: 按板型、供电、软件对象与实物差异、扩展、编译、串口/CAN 和物理结果逐层定位。
     consumers: [chatmaker, chatduino, chatweb, chatcad]
-    topics: [diagnosis, evidence, physical-fit]
+    topics: [diagnosis, power, compatibility, can, evidence, physical-fit]
     pack_id: chatmaker-board-idmc-0001-starcore-v4-2-2-knowledge
