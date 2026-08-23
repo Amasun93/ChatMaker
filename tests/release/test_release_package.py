@@ -99,12 +99,12 @@ class ReleasePackageTests(unittest.TestCase):
                 "c02249952c827244ce1273f20760a36d266ab17ecc7bd87ef67a8cc4a1fc8a2c",
             ),
             "chatmaker-board-idmc-0001-starcore-v4-2-2-knowledge": (
-                "chatmaker-board-idmc-0001-starcore-v4-2-2-knowledge-1.3.0.cmpack",
-                22555,
-                "062050ffe4c3fbe887d4f566d5419c463d945d3d3fe568d42ef8506052426638",
+                "chatmaker-board-idmc-0001-starcore-v4-2-2-knowledge-1.4.0.cmpack",
+                36560,
+                "17694c42f09f29ec9e9ce07863fbd82863b5ba870f64c2ad5dd8b106c7653e30",
             ),
         }
-        self.assertEqual(registry["sequence"], 5)
+        self.assertEqual(registry["sequence"], 6)
         generated_at = datetime.fromisoformat(registry["generated_at"].replace("Z", "+00:00"))
         expires_at = datetime.fromisoformat(registry["expires_at"].replace("Z", "+00:00"))
         self.assertLessEqual((expires_at - generated_at).days, 31)
@@ -113,7 +113,7 @@ class ReleasePackageTests(unittest.TestCase):
             filename, length, digest = expected[item["pack_id"]]
             artifact = ROOT / "distribution" / "packs" / filename
             pinned_commit = (
-                "eb75fc74d038335c701eb5255e568270a9dc4b9e"
+                "b519e6fbb67f2dd51508282603332a811ce5de15"
                 if item["board_id"] == "idmc-0001-starcore-v4-2-2"
                 else "1556a055d9625409e9380f4e6abdf7c0e95778fc"
             )
