@@ -224,6 +224,7 @@ class BootstrapTests(unittest.TestCase):
                     "PIP_INDEX_URL": "http://127.0.0.1:1/forbidden",
                     "PIP_EXTRA_INDEX_URL": "http://127.0.0.1:1/also-forbidden",
                     "PIP_DISABLE_PIP_VERSION_CHECK": "1",
+                    "PYTHONIOENCODING": "cp1252",
                     "CODEX_HOME": str(base / "wrong-codex"),
                     "WORKBUDDY_HOME": str(base / "wrong-workbuddy"),
                     "CHATMAKER_SKILL_ROOT": str(base / "wrong-skills"),
@@ -246,8 +247,9 @@ class BootstrapTests(unittest.TestCase):
                 [str(python), "-B", "-c", "import chatmaker; print(chatmaker.__file__)"],
                 text=True,
                 capture_output=True,
-                check=True,
+                check=False,
             )
+            self.assertEqual(imported.returncode, 0, imported.stderr)
             self.assertTrue(Path(imported.stdout.strip()).resolve().is_relative_to(venv.resolve()))
             inherited = subprocess.run(
                 [

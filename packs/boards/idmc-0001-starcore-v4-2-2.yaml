@@ -33,13 +33,13 @@ verification:
     checked_at: "2026-08-23"
     evidence: Mind+ 1.8 compiled representative programs for the onboard QMI8658, A/B buttons, passive buzzer, and the current ESP32 CAN driver interface; see docs/verification/2026-08-23-starcore-complete-board-knowledge.md. No firmware was uploaded.
   firmware_uploaded:
-    status: unverified
-    checked_at: null
-    evidence: null
+    status: verified
+    checked_at: "2026-08-24"
+    evidence: The temporary identification probe and onboard self-test were compiled and uploaded to one user-confirmed Starcore v4.2.2 on the only eligible wired port; the original 16 MiB Flash was restored and verified after each test. See docs/verification/2026-08-24-starcore-physical-board.md.
   physical_effect_verified:
-    status: unverified
-    checked_at: null
-    evidence: null
+    status: verified
+    checked_at: "2026-08-24"
+    evidence: The onboard QMI8658 returned eight static samples with 1047-1050 mg total acceleration, and A/B idle states were read over serial. Audible buzzer output, pressed-button events, CAN, external modules, and power-cycle recovery remain unverified. See docs/verification/2026-08-24-starcore-physical-board.md.
 gpio_map:
   R: 3
   T: 1

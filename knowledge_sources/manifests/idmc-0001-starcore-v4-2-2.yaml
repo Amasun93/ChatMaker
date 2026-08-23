@@ -14,15 +14,15 @@ license_use_boundary: >-
   publish STEP, complete DXF, Gerber, schematic, PCB, production archives,
   private paths, or source-document bodies.
 cleaning_version: chatmaker-starcore-knowledge-v3
-review_date: "2026-08-23"
+review_date: "2026-08-24"
 cleaning_verified:
   status: verified
   date: "2026-08-23"
-  evidence: Thirteen selected evidence sources were identified by source ID and SHA-256 before writing derivative pages.
+  evidence: Fourteen selected source and physical-verification records were identified by source ID and SHA-256 before writing derivative pages.
 source_reviewed:
   status: verified
   date: "2026-08-23"
-  evidence: Board description, schematic, IO Mapping workbook, QMI8658 datasheet, Mind+ public API, implementation and pin variant, graphical-project corpus, wiring, module, code-pattern, and sanitized mechanical facts were reviewed together.
+  evidence: Board description, schematic, IO Mapping workbook, QMI8658 datasheet, Mind+ public API, implementation and pin variant, graphical-project corpus, wiring, module, code-pattern, sanitized mechanical facts, and the 2026-08-24 physical-board verification were reviewed together.
 publication_approved:
   status: verified
   date: "2026-08-23"
@@ -67,6 +67,9 @@ source_evidence:
   - source_id: starcore-mindplus-acceleration-corpus-snapshot
     description: Reviewed normalized Mind+ graphical acceleration and gesture usage evidence snapshot.
     sha256: 10f353372798928b4e53c1cf94acdc3849047d58d017d6af025b3523c91d91d8
+  - source_id: starcore-physical-board-verification-2026-08-24
+    description: Recorded one user-confirmed v4.2.2 board upload, serial, QMI8658, full-Flash backup and verified restore result, with unverified hardware boundaries preserved.
+    sha256: 686118df7ec7a32cf40d3dbfcd18fb3eda1f1bbfe2be6c79f4e4a95c8b485e26
 module_migrations:
   - hardware_id: IDMD-0001
     approved_rewritten_uses: [normalized-facts, beginner-wiring-guidance, derivative-examples, sanitized-mechanical-facts]

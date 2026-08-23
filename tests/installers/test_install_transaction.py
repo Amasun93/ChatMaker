@@ -400,7 +400,13 @@ class InstallTransactionTests(unittest.TestCase):
         def mutate_chatduino_after_backup(source, destination, source_guards=None):
             nonlocal raced
             real_backup(source, destination, source_guards=source_guards)
-            if Path(source) == self.skills_root / "chatduino" and not raced:
+            if (
+                transaction_module.canonical_install_path(source)
+                == transaction_module.canonical_install_path(
+                    self.skills_root / "chatduino"
+                )
+                and not raced
+            ):
                 raced = True
                 (Path(source) / "owner.txt").write_text(
                     "teacher concurrent edit", encoding="utf-8"
@@ -436,7 +442,13 @@ class InstallTransactionTests(unittest.TestCase):
         def corrupt_chatweb_backup(source, destination, source_guards=None):
             nonlocal corrupted
             real_backup(source, destination, source_guards=source_guards)
-            if Path(source) == self.skills_root / "chatweb" and not corrupted:
+            if (
+                transaction_module.canonical_install_path(source)
+                == transaction_module.canonical_install_path(
+                    self.skills_root / "chatweb"
+                )
+                and not corrupted
+            ):
                 corrupted = True
                 (Path(destination) / "owner.txt").write_text(
                     "partial copy", encoding="utf-8"
@@ -1262,16 +1274,29 @@ class InstallTransactionTests(unittest.TestCase):
             self.fail("transaction has no directory durability primitive")
 
         def record_sync(path, *args, **kwargs):
-            synced.append(Path(path))
+            synced.append(transaction_module.canonical_install_path(path))
             return real_sync(path, *args, **kwargs)
 
         with mock.patch.object(transaction_module, "_fsync_directory", side_effect=record_sync):
             installed = self._transaction().apply(self._changes())
 
         self.assertEqual(installed.status, "installed")
-        self.assertIn(self.management_root / "transactions", synced)
-        self.assertIn(self.management_root / "state", synced)
-        self.assertIn(self.management_root / "backups" / installed.transaction_id, synced)
+        self.assertIn(
+            transaction_module.canonical_install_path(
+                self.management_root / "transactions"
+            ),
+            synced,
+        )
+        self.assertIn(
+            transaction_module.canonical_install_path(self.management_root / "state"),
+            synced,
+        )
+        self.assertIn(
+            transaction_module.canonical_install_path(
+                self.management_root / "backups" / installed.transaction_id
+            ),
+            synced,
+        )
 
     def test_staging_failure_leaves_targets_and_active_state_untouched(self):
         self._seed_existing_state()

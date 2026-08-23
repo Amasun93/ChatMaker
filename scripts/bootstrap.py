@@ -1075,7 +1075,7 @@ def main(argv: list[str] | None = None) -> int:
         )
     except Exception as exc:
         result = {"success": False, "status": "failed", "error": type(exc).__name__, "detail": str(exc)}
-    print(json.dumps(result, ensure_ascii=False, sort_keys=True))
+    print(json.dumps(result, ensure_ascii=True, sort_keys=True))
     return 0 if result["success"] else 1
 
 

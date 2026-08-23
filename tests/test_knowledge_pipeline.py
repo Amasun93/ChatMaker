@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import shutil
 import subprocess
 import sys
@@ -14,6 +15,13 @@ import yaml
 
 
 ROOT = Path(__file__).resolve().parents[1]
+
+
+def same_existing_path(first: Path, second: Path) -> bool:
+    try:
+        return os.path.samefile(first, second)
+    except OSError:
+        return Path(first).resolve(strict=False) == Path(second).resolve(strict=False)
 
 
 def load_validator():
@@ -399,7 +407,10 @@ class KnowledgePublicationPipelineTests(unittest.TestCase):
             with patch.object(
                 validator,
                 "_is_link_or_reparse",
-                side_effect=lambda candidate: Path(candidate) in reparse_paths,
+                side_effect=lambda candidate: any(
+                    same_existing_path(Path(candidate), expected)
+                    for expected in reparse_paths
+                ),
             ):
                 result = validator.validate_knowledge_publication(root)
 
@@ -416,7 +427,9 @@ class KnowledgePublicationPipelineTests(unittest.TestCase):
             with patch.object(
                 validator,
                 "_is_link_or_reparse",
-                side_effect=lambda candidate: Path(candidate) == schema_path,
+                side_effect=lambda candidate: same_existing_path(
+                    Path(candidate), schema_path
+                ),
             ):
                 result = validator.validate_knowledge_publication(root)
 

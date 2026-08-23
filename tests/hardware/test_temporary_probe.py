@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 from chatmaker.hardware.temporary_probe import (
+    MindPlusEsp32ProbeAdapter,
     esp32_security_safe,
     parse_flash_size,
     parse_read_mem_value,
@@ -172,3 +175,27 @@ def test_mindplus_adapter_parses_flash_size_and_efuse_security_without_guessing(
     assert esp32_security_safe(0, 0) is True
     assert esp32_security_safe(1 << 20, 0) is False
     assert esp32_security_safe(0, 1 << 4) is False
+
+
+def test_full_flash_backup_uses_460800_baud_by_default(tmp_path):
+    commands = []
+
+    def runner(command, timeout):
+        commands.append(command)
+        Path(command[-1]).write_bytes(b"full-flash")
+        return {"returncode": 0, "stdout": "", "stderr": ""}
+
+    adapter = MindPlusEsp32ProbeAdapter(runner=runner)
+    adapter._tool = lambda context: Path("esptool.exe")
+    result = adapter.backup(
+        {
+            "flash_size": len(b"full-flash"),
+            "port": "COM4",
+            "context": {},
+        },
+        {"backup_dir": str(tmp_path)},
+    )
+
+    assert result["success"] is True
+    baud_index = commands[0].index("--baud")
+    assert commands[0][baud_index + 1] == "460800"

@@ -37,6 +37,7 @@ EXPECTED_COMMANDS = {
     "chatmaker-doctor",
     "chatmaker-catalog",
     "chatmaker-route",
+    "chatmaker-board-identify",
     "chatmaker-nano",
     "chatmaker-uno",
     "chatmaker-esp32",
@@ -44,6 +45,7 @@ EXPECTED_COMMANDS = {
     "chatmaker-serial",
     "chatmaker-avr-project",
     "chatmaker-starcore",
+    "chatmaker-unihiker",
     "chatmaker-workbuddy-mcp",
     "chatmaker-install",
     "chatmaker-web",
@@ -348,7 +350,7 @@ class CleanCoreIntegrationTests(unittest.TestCase):
                 ).stdout
             )
             self.assertEqual(mcp["id"], 1)
-            self.assertEqual(len(mcp["result"]["tools"]), 33)
+            self.assertEqual(len(mcp["result"]["tools"]), 36)
 
             doctor = json.loads(
                 self._run(
@@ -359,9 +361,9 @@ class CleanCoreIntegrationTests(unittest.TestCase):
             )
             self.assertEqual(
                 doctor["packs"]["counts"],
-                {"board": 4, "component": 20, "recipe": 23},
+                {"board": 7, "component": 21, "recipe": 25},
             )
-            self.assertEqual(doctor["packs"]["knowledge_indexes"], 4)
+            self.assertEqual(doctor["packs"]["knowledge_indexes"], 6)
             self.assertEqual(
                 set(doctor["skills"]["results"]),
                 {"chatmaker", "chatduino", "chatweb", "chatcad"},

@@ -165,7 +165,7 @@ chatmaker-pack rollback chatmaker-board-arduino-nano-classic-knowledge --version
 | 主控板自动识别 | 软件流程已实现，待实板 | WorkBuddy/Codex 可读取芯片和固件标记；允许时先完整备份，再刷入临时探针并恢复。仍不确定时引导查看丝印或拍正反面照片；三种实体板尚待验收 |
 | Nano Mind+ 编译和烧录迁移 | 部分验证 | 原 33 项行为测试已迁移；当前共有 12 个示例从 ChatMaker 路径真实编译；烧录等待有线 Nano |
 | Nano/Uno Mind+ 项目流程 | 部分验证 | 独立板型规则、Blink 和 OLED 仪表盘已真实编译；新增连续入口自动检查环境、编译并在有唯一有线端口时烧录，实体板效果等待用户测试 |
-| 星核板 Mind+ 适配器 | 编译已验证 | 使用 Mind+ 1.8 当前 mPython 兼容目标完成基础示例和七个自研模块示例真实编译；安全烧录入口已接入，等待实体星核板测试 |
+| 星核板 Mind+ 适配器 | 主板实测 | 使用 Mind+ 1.8 当前 mPython 兼容目标完成实板上传、串口、QMI8658 静止数据、完整 Flash 备份和恢复；按键按下、可听蜂鸣、CAN、断电重启和七个外接模块仍待实测 |
 | DOIT ESP32 DevKit V1 | 部分验证 | 官方 `esp32:esp32@3.3.11` 已安装；`prepare-environment` 真实 no-op 成功；`esp32:esp32:esp32doit-devkit-v1` 已通过 Blink 和 AP 案例真实编译；烧录、启动、串口、SoftAP、HTTP 和实体效果仍待实板 |
 | UNIHIKER M10 | Alpha 源码检查可用 | 官方页面已核对 M10 为 Debian/Python 路线、K10 为独立 MCU 路线；板卡记录、完整项目示例、Codex CLI 与 WorkBuddy 项目检查入口已接入，尚未同步到实板或验证屏幕/外设效果 |
 | 常用模块、库和示例 | 继续扩充 | 21 种元器件、25 个配方已接入；新增星核板 WS2812 与 SG90 课堂示例并真实编译，IDMM-0007 只读诊断、I²C 排错和 OLED 中文分板卡引导已加入 |

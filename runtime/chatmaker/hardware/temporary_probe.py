@@ -62,12 +62,18 @@ class MindPlusEsp32ProbeAdapter:
         return Path(str(context["arduino"])) / "hardware" / "tools" / "mpython" / "esptool.exe"
 
     @staticmethod
-    def _base(tool: Path, port: str, *, after: str = "hard_reset") -> list[str]:
+    def _base(
+        tool: Path,
+        port: str,
+        *,
+        after: str = "hard_reset",
+        baud: int = 115200,
+    ) -> list[str]:
         return [
             str(tool),
             "--chip", "esp32",
             "--port", port,
-            "--baud", "115200",
+            "--baud", str(baud),
             "--before", "default_reset",
             "--after", after,
         ]
@@ -163,7 +169,7 @@ class MindPlusEsp32ProbeAdapter:
         partial_path = final_path.with_suffix(".bin.part")
         tool = self._tool(inspection["context"])
         execution = self.runner(
-            self._base(tool, str(inspection["port"]))
+            self._base(tool, str(inspection["port"]), baud=460800)
             + ["read_flash", "0x0", hex(flash_size), str(partial_path)],
             timeout=int(request.get("backup_timeout", 900)),
         )
@@ -175,6 +181,7 @@ class MindPlusEsp32ProbeAdapter:
             "success": True,
             "path": str(final_path),
             "size": final_path.stat().st_size,
+            "baud": 460800,
             "execution": execution,
         }
 

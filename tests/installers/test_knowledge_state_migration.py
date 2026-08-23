@@ -163,7 +163,10 @@ class KnowledgeStateMigrationTests(unittest.TestCase):
 
         self.assertTrue(first.changed)
         self.assertFalse(second.changed)
-        self.assertEqual(second.backup_dir, first.backup_dir)
+        self.assertTrue(
+            os.path.samefile(second.backup_dir, first.backup_dir),
+            (first.backup_dir, second.backup_dir),
+        )
         self.assertEqual(second.deactivated_pack_ids, first.deactivated_pack_ids)
         self.assertEqual(self.paths.active.read_bytes(), migrated_bytes)
 

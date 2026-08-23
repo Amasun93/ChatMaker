@@ -10,7 +10,7 @@ Nano、Uno、DOIT ESP32 DevKit V1、星核板、经典掌控板 V2.x 和掌控�
 
 WorkBuddy 当前源码服务版本为 `1.17.0`，共有 36 个工具。新增 `board_identify`：先做无损读取；允许时在完整备份后刷入临时识别程序并恢复；仍不确定时引导用户查看型号或拍正反面照片。这条说明不改变下面 rc5 发布物当时的 `1.7.0` / 23 工具事实。
 
-星核板 v4.2.2 Knowledge 1.4.0 现已按完整开发资料重做板级审计：补齐 42 个 GPIO/别名/电源/CAN 信号记录，板载 A/B 按键、无源蜂鸣器、QMI8658、CH9102F、SIT3051TK、四类电源入口和 3.3V/5V I2C 接口；并明确掌控板兼容目标中的 `display/rgb/light/sound` 不是星核板板载实物，QMI8658 的当前公开对象只验证加速度与手势，不把芯片内陀螺仪误写成可直接调用。板载按键/蜂鸣器与 CAN 监听代表程序已在 Mind+ 1.8 编译通过，上传、总线通信和物理效果仍未验证。ChatMaker 在 WorkBuddy 缺少内部 Skill 或 `knowledge_get` 时会报告安装不完整，不再把未执行的知识查询描述成“已经查过”。安装器同时识别新版 WorkBuddy 的 `.mcp.json` 和旧版 `mcp.json`。
+星核板 v4.2.2 Knowledge 1.5.0 在 1.4.0 完整板级审计上补入实板证据：一块用户确认的 v4.2.2 已完成 Mind+ 1.8 编译、上传、115200 串口、QMI8658 静止数据、16 MiB 全量备份和逐字节恢复验证；新增 `onboard-self-test` 示例。完整备份读取从 115200 提升到经实板验证的 460800，完整识别事务从约 28 分钟降至约 11 分钟，恢复仍保持 115200。电子探针仍不能只凭 ESP32、CH9102F 或 QMI8658 区分星核板与经典掌控板，因此继续要求固件精确标记、丝印或照片。按键按下、实际可听蜂鸣、CAN、断电重启和七个外接模块仍未验证。
 
 This source update creates no new GitHub Release and does not rewrite rc1–rc5 evidence. The current Core source contains runtime code, four Skill directories, schemas, seven board records, six compact indexes, current examples, minimal documentation, Python metadata, and the license. Detailed Knowledge bodies remain read-only optional packs. ChatMaker is the only user entry; ChatDuino, ChatWeb, and ChatCAD are internal specialists.
 
@@ -18,7 +18,7 @@ Nano, Uno, DOIT ESP32 DevKit V1, Starcore, classic mPython V2.x, and mPython 3.0
 
 Current source uses WorkBuddy server `1.17.0` with 36 tools. The new `board_identify` tool performs safe reads first, may use a backed-up and restored temporary probe, and falls back to markings or front/back photos. The rc5 section below remains an accurate historical description of the rc5 artifact's `1.7.0` / 23 tools.
 
-Starcore v4.2.2 Knowledge 1.4.0 now reflects a full board-level audit of the owned development sources. It records 42 GPIO, alias, power, and CAN signals; onboard A/B buttons, passive buzzer, QMI8658, CH9102F, SIT3051TK, four power-input paths, and both 3.3 V and level-shifted 5 V I2C banks. It also states that the mPython-compatible `display/rgb/light/sound` objects do not prove onboard Starcore hardware, and that the reviewed QMI8658 public object exposes acceleration and gestures rather than gyroscope readings. Representative onboard-button/buzzer and CAN-listen sketches compile with Mind+ 1.8; upload, bus traffic, and physical effects remain unverified. ChatMaker reports an incomplete WorkBuddy installation when internal Skills or `knowledge_get` are unavailable instead of claiming that an unperformed Knowledge search succeeded. The installer recognizes both current WorkBuddy `.mcp.json` and legacy `mcp.json` configurations.
+Starcore v4.2.2 Knowledge 1.5.0 adds physical-board evidence to the 1.4.0 board audit. One user-confirmed v4.2.2 completed Mind+ 1.8 compilation, upload, 115200 serial output, static QMI8658 readings, a full 16 MiB backup, and byte-verified restoration; an `onboard-self-test` example is included. Full-backup reads now use a hardware-verified 460800 baud, reducing the full identification transaction from about 28 to about 11 minutes while restore remains at 115200. ESP32, CH9102F, or QMI8658 still cannot electronically distinguish Starcore from classic mPython on their own, so an exact firmware marker, markings, or photos remain required. Pressed-button behavior, audible buzzer output, CAN, power-cycle recovery, and the seven external modules remain unverified.
 
 ## 中文
 

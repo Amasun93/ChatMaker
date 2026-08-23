@@ -13,11 +13,46 @@ BOARD_ID = "idmc-0001-starcore-v4-2-2"
 
 
 class StarcoreOnboardAccelerometerTests(unittest.TestCase):
+    def test_onboard_self_test_example_covers_safe_mainboard_only_features(self):
+        sketch = (
+            ROOT
+            / "examples"
+            / "chatduino"
+            / "starcore"
+            / "onboard-self-test"
+            / "onboard-self-test.ino"
+        )
+
+        self.assertTrue(sketch.is_file())
+        source = sketch.read_text(encoding="utf-8")
+        for token in (
+            "mPython.begin()",
+            "buzz.freq(880)",
+            "buzz.off()",
+            "buttonA.isPressed()",
+            "buttonB.isPressed()",
+            "accelerometer.getStrength()",
+            "STARCORE_SELF_TEST_READY",
+        ):
+            self.assertIn(token, source)
+
     def test_catalog_exposes_source_backed_qmi8658_and_mpython_route(self):
         result = execute_request({"action": "get", "id": BOARD_ID}, project_root=ROOT)
 
         self.assertTrue(result["success"], result)
         self.assertEqual(result["record"]["verification"]["code_compiled"]["status"], "verified")
+        self.assertEqual(
+            result["record"]["verification"]["firmware_uploaded"]["status"],
+            "verified",
+        )
+        self.assertEqual(
+            result["record"]["verification"]["physical_effect_verified"]["status"],
+            "verified",
+        )
+        self.assertIn(
+            "QMI8658",
+            result["record"]["verification"]["physical_effect_verified"]["evidence"],
+        )
         devices = {item["id"]: item for item in result["record"]["onboard_hardware"]}
         sensor = devices["qmi8658"]
         self.assertEqual(
@@ -72,6 +107,8 @@ class StarcoreOnboardAccelerometerTests(unittest.TestCase):
             "getZ()",
             "getStrength()",
             "MSA300::TiltLeft",
+            "onboard-self-test",
+            "1041",
         ):
             self.assertIn(token, libraries)
         self.assertIn("0x6B", pins)

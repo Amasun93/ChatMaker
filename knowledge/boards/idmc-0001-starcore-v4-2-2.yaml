@@ -23,7 +23,7 @@ sections:
     pack_id: chatmaker-board-idmc-0001-starcore-v4-2-2-knowledge
   - section_id: toolchains-and-upload
     title: Mind+、编译与上传
-    summary: 使用 Mind+ 1.8 当前目标；板载输入输出、CAN 接口和七个模块示例可编译，上传和实物效果待验证。
+    summary: 使用 Mind+ 1.8 当前目标；实板上传、完整恢复和板载 QMI8658 串口数据已验证，按键按下、可听蜂鸣、CAN 和外接模块仍待验证。
     consumers: [chatmaker, chatduino]
     topics: [mindplus, compile, upload]
     pack_id: chatmaker-board-idmc-0001-starcore-v4-2-2-knowledge
