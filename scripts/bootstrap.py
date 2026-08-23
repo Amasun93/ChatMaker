@@ -159,6 +159,27 @@ def _validate_management_aliases(path: Path) -> None:
                 raise BootstrapError("management_path_unsafe")
 
 
+def _windows_long_path(path: Path) -> Path:
+    """Expand an existing Windows 8.3 ancestor without resolving reparse points."""
+    if os.name != "nt":
+        return path
+    import ctypes  # noqa: PLC0415
+
+    existing = path
+    suffix: list[str] = []
+    while not os.path.lexists(existing) and existing.parent != existing:
+        suffix.append(existing.name)
+        existing = existing.parent
+    if not os.path.lexists(existing):
+        return path
+    buffer = ctypes.create_unicode_buffer(32768)
+    written = ctypes.windll.kernel32.GetLongPathNameW(str(existing), buffer, len(buffer))
+    expanded = Path(buffer.value) if written and written < len(buffer) else existing
+    for part in reversed(suffix):
+        expanded /= part
+    return expanded
+
+
 def _require_safe_parent_chain(path: Path) -> None:
     """Reject a caller-supplied path that crosses a link or reparse point."""
     absolute = Path(os.path.abspath(path))
@@ -949,7 +970,7 @@ def run(
     release_signature = Path(os.path.abspath(Path(release_signature).expanduser()))
     home_candidate = Path.home() if home is None else Path(home).expanduser()
     _validate_management_aliases(home_candidate)
-    selected_home = Path(os.path.abspath(home_candidate))
+    selected_home = _windows_long_path(Path(os.path.abspath(home_candidate)))
     platform_tag = _platform_tag()
     signed, signed_bytes, verified_signature = _read_release_evidence(
         release_manifest,

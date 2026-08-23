@@ -280,6 +280,35 @@ class BootstrapTests(unittest.TestCase):
             self.assertEqual((home / "env.log").read_text(encoding="utf-8"), "|||")
             self.assertFalse(any((base / name).exists() for name in ("wrong-codex", "wrong-workbuddy", "wrong-skills")))
 
+    @unittest.skipUnless(os.name == "nt", "Windows DOS alias only")
+    def test_windows_launcher_accepts_the_same_home_through_a_dos_alias(self):
+        import ctypes  # noqa: PLC0415
+
+        with tempfile.TemporaryDirectory(prefix="chatmaker bootstrap alias ") as temporary:
+            base = Path(temporary)
+            buffer = ctypes.create_unicode_buffer(32768)
+            written = ctypes.windll.kernel32.GetShortPathNameW(str(base), buffer, len(buffer))
+            if not written or written >= len(buffer) or buffer.value == str(base):
+                self.skipTest("DOS 8.3 alias is unavailable on this volume")
+
+            archive, checksum, manifest, signature = self._make_core(base)
+            home = Path(buffer.value) / "老师 的 ChatMaker 家目录"
+            environment = os.environ.copy()
+            environment["PYTHONIOENCODING"] = "cp1252"
+            installed = self._run(archive, checksum, manifest, signature, home, env=environment)
+            self.assertEqual(installed.returncode, 0, installed.stderr)
+            launcher = Path(json.loads(installed.stdout)["launcher"])
+
+            launched = subprocess.run(
+                ["cmd", "/d", "/c", str(launcher), "doctor"],
+                env=environment,
+                text=True,
+                capture_output=True,
+                check=False,
+            )
+
+            self.assertEqual(launched.returncode, 0, launched.stderr)
+
     def test_bootstrap_rejects_a_bad_checksum_before_creating_its_install_root(self):
         """Catches unpacking or creating a version directory before archive identity is proven."""
         with tempfile.TemporaryDirectory() as temporary:
