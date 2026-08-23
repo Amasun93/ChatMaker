@@ -237,7 +237,7 @@ class BootstrapTests(unittest.TestCase):
             self.assertTrue(installed["success"])
             self.assertEqual(installed["status"], "installed")
             venv = home / ".chatmaker" / "versions" / "9.8.7" / "venv"
-            self.assertEqual(Path(installed["venv"]), venv)
+            self.assertTrue(os.path.samefile(Path(installed["venv"]), venv))
             self.assertTrue(venv.is_dir())
             self.assertFalse((home / ".chatmaker" / "versions" / "9.8.7" / ".venv-files.json").exists())
             launcher = Path(installed["launcher"])
@@ -628,10 +628,16 @@ class BootstrapTests(unittest.TestCase):
             module.write_text("# previous installed version\n", encoding="utf-8")
             bootstrap = runpy.run_path(str(self.trusted_bootstrap))
             real_replace = os.replace
+            canonical_version_root = bootstrap["_windows_long_path"](
+                Path(os.path.abspath(version_root))
+            )
 
             def fail_staging_activation(source, destination):
                 source_path = Path(source)
-                if source_path.name.startswith(".9.8.7.staging-") and Path(destination) == version_root:
+                if (
+                    source_path.name.startswith(".9.8.7.staging-")
+                    and Path(destination) == canonical_version_root
+                ):
                     raise OSError("simulated activation failure")
                 return real_replace(source, destination)
 
