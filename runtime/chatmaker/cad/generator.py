@@ -193,9 +193,6 @@ document.querySelectorAll("button[data-kind]").forEach(button=>button.addEventLi
 
 def generate_project(request: dict[str, Any]) -> dict[str, Any]:
     board_id = str(request.get("board_id", ""))
-    loaded = get_profile(board_id)
-    if not loaded.get("success"):
-        return loaded
     mode = str(request.get("mode", "mounting-plate"))
     if mode not in {"mounting-plate", "chat2d", "chat3d"}:
         return {"success": False, "error": "unsupported_cad_mode", "mode": mode}
@@ -204,6 +201,24 @@ def generate_project(request: dict[str, Any]) -> dict[str, Any]:
     parameters = request.get("parameters", {})
     if not isinstance(parameters, dict):
         return {"success": False, "error": "parameters_must_be_object"}
+    design_kind = str(parameters.get("design_kind", "enclosure")).strip() or "enclosure"
+    if mode == "chat3d" and design_kind in {"gear_pair", "rack_and_pinion"}:
+        from . import mechanics
+
+        if board_id:
+            loaded = get_profile(board_id)
+            if not loaded.get("success"):
+                return loaded
+            profile = loaded["profile"]
+        else:
+            profile = {"board_id": None}
+        try:
+            return mechanics.generate(request, profile, output_dir, project_name)
+        except (OSError, ValueError) as exc:
+            return {"success": False, "error": "cad_generation_failed", "detail": str(exc)}
+    loaded = get_profile(board_id)
+    if not loaded.get("success"):
+        return loaded
     if mode == "chat3d":
         from . import chat3d
         try:
