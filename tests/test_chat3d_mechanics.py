@@ -10,6 +10,30 @@ from chatmaker.cad import generator
 
 
 class Chat3DMechanicalBasicsTests(unittest.TestCase):
+    def test_makerlab_delivery_returns_assembly_scad_without_writing_files(self):
+        with tempfile.TemporaryDirectory() as folder:
+            output = Path(folder) / "must-not-exist"
+            result = generator.generate_project(
+                {
+                    "mode": "chat3d",
+                    "delivery_mode": "makerlab-code",
+                    "project_name": "classroom-gears",
+                    "output_dir": str(output),
+                    "parameters": {
+                        "design_kind": "gear_pair",
+                        "driver_teeth": 12,
+                        "driven_teeth": 24,
+                    },
+                }
+            )
+
+            self.assertTrue(result["success"], result)
+            self.assertEqual(result["delivery_mode"], "makerlab-code")
+            self.assertIn("module driver_gear", result["scad_code"])
+            self.assertEqual(result["files"], {})
+            self.assertEqual(result["model_generated"], "unverified")
+            self.assertFalse(output.exists())
+
     def test_standalone_mechanism_does_not_require_an_unrelated_board(self):
         with tempfile.TemporaryDirectory() as folder:
             result = generator.generate_project(

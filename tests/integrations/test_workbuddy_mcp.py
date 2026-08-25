@@ -156,6 +156,69 @@ class WorkBuddyBridgeTests(unittest.TestCase):
         self.assertIn("board_identify", instructions)
         self.assertIn("照片", instructions)
 
+    def test_initialize_keeps_chat3d_in_planning_until_delivery_route_is_confirmed(self):
+        response = self.server.handle(
+            {
+                "jsonrpc": "2.0",
+                "id": 1,
+                "method": "initialize",
+                "params": {"protocolVersion": "2024-11-05"},
+            }
+        )
+
+        instructions = response["result"]["instructions"]
+        self.assertIn("任务卡", instructions)
+        self.assertIn("开始生成", instructions)
+        self.assertIn("不得调用 cad_generate", instructions)
+        self.assertIn("MakerLab", instructions)
+        self.assertIn("OpenSCAD 代码", instructions)
+        self.assertIn("不默认交付 STL、右侧预览或截图", instructions)
+        self.assertIn("只有用户不使用 MakerLab", instructions)
+
+    def test_chat3d_tool_pauses_before_explicit_generation_confirmation(self):
+        with tempfile.TemporaryDirectory() as folder:
+            output = Path(folder) / "must-not-exist"
+            response = self.server._tool_result(
+                "cad_generate",
+                {
+                    "mode": "chat3d",
+                    "board_id": "arduino-uno-r3",
+                    "project_name": "classroom-nameplate",
+                    "output_dir": str(output),
+                },
+            )
+            payload = json.loads(response["content"][0]["text"])
+
+            self.assertFalse(response["isError"])
+            self.assertFalse(payload["success"])
+            self.assertEqual(payload["error"], "chat3d_generation_confirmation_required")
+            self.assertEqual(payload["stage"], "planning")
+            self.assertFalse(output.exists())
+
+    def test_confirmed_chat3d_tool_defaults_to_makerlab_code_without_files(self):
+        with tempfile.TemporaryDirectory() as folder:
+            output = Path(folder) / "must-not-exist"
+            response = self.server._tool_result(
+                "cad_generate",
+                {
+                    "mode": "chat3d",
+                    "board_id": "arduino-uno-r3",
+                    "project_name": "classroom-nameplate",
+                    "output_dir": str(output),
+                    "generation_confirmed": True,
+                    "parameters": {"engrave_text": "博荟"},
+                },
+            )
+            payload = json.loads(response["content"][0]["text"])
+
+            self.assertFalse(response["isError"])
+            self.assertTrue(payload["success"], payload)
+            self.assertEqual(payload["delivery_mode"], "makerlab-code")
+            self.assertIn("linear_extrude", payload["scad_code"])
+            self.assertEqual(payload["files"], {})
+            self.assertEqual(payload["model_generated"], "unverified")
+            self.assertFalse(output.exists())
+
     def test_board_identify_routes_permission_and_preserves_beginner_guidance(self):
         captured = None
         original = self.server.board_identification.execute_request

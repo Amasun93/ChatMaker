@@ -543,10 +543,10 @@ TOOLS = [
     },
     {
         "name": "cad_generate",
-        "description": "按制作方式生成 Chat2D 激光切割盒子、Chat3D 打印外壳或基础齿轮机构；输出参数文件、对应图纸/模型和白底预览实验室。",
+        "description": "按制作方式生成 Chat2D 图纸或已确认的 Chat3D 结果。Chat3D 必须先确认任务卡和开始生成；默认只返回 MakerLab 可用的 OpenSCAD 代码，明确选择 ChatMaker 时才写出模型和预览文件。",
         "inputSchema": {
             "type": "object",
-            "required": ["project_name", "output_dir"],
+            "required": ["project_name"],
             "properties": {
                 "board_id": {
                     "type": "string",
@@ -560,6 +560,12 @@ TOOLS = [
                 },
                 "project_name": {"type": "string", "minLength": 1},
                 "output_dir": {"type": "string", "minLength": 1},
+                "generation_confirmed": {"type": "boolean", "default": False},
+                "delivery_mode": {
+                    "type": "string",
+                    "enum": ["makerlab-code", "chatmaker-preview"],
+                    "default": "makerlab-code",
+                },
                 "mode": {
                     "type": "string",
                     "enum": ["chat2d", "chat3d", "mounting-plate"],
@@ -684,7 +690,30 @@ def _tool_result(name: str, arguments: dict[str, Any]) -> dict[str, Any]:
             }
         )
     elif name == "cad_generate":
-        result = cad_generator.execute_request({"action": "generate", **arguments})
+        cad_request = {"action": "generate", **arguments}
+        if str(arguments.get("mode", "mounting-plate")) == "chat3d":
+            if arguments.get("generation_confirmed") is not True:
+                result = {
+                    "success": False,
+                    "error": "chat3d_generation_confirmation_required",
+                    "state": "awaiting-generation-confirmation",
+                    "stage": "planning",
+                    "required": [
+                        "confirmed_task_card",
+                        "explicit_start_generation",
+                        "delivery_mode",
+                    ],
+                    "delivery_modes": ["makerlab-code", "chatmaker-preview"],
+                    "beginner_message": (
+                        "请先确认任务卡。准备开始后，请明确说“开始生成”，"
+                        "并选择 MakerLab（推荐，直接给 OpenSCAD 代码）或 ChatMaker 右侧预览。"
+                    ),
+                }
+            else:
+                cad_request.setdefault("delivery_mode", "makerlab-code")
+                result = cad_generator.execute_request(cad_request)
+        else:
+            result = cad_generator.execute_request(cad_request)
     elif name == "serial_list":
         result = serial_monitor.SERIAL_MANAGER.list()
     elif name == "serial_open":
@@ -736,6 +765,7 @@ def _tool_result(name: str, arguments: dict[str, Any]) -> dict[str, Any]:
             "compiled-awaiting-hardware",
             "uploaded-awaiting-observation",
             "physical-confirmation-needed",
+            "awaiting-generation-confirmation",
         }
         expected_identification_pause = result.get("identification", {}).get("status") in {
             "probable",
@@ -837,8 +867,11 @@ def handle(request: dict[str, Any]) -> dict[str, Any] | None:
                 "需要运行日志时使用 serial_open/read/expect/write/close；空输出不算实物证据。"
                 "需要制作安装底板、激光切割图或三维模型时，先用 cad_profile_get 核对板卡机械资料；"
                 "涉及星核板自研模块时再用 cad_component_profile_get 按精确 ID 读取组件机械资料，缺失尺寸不得猜测。"
-                "再用 cad_fabrication_get 读取设备、材料、颜色图层和校准边界，最后用 cad_generate "
-                "生成可调参数的 OpenSCAD、DXF、SVG、STL 和右侧预览实验室。"
+                "激光切割任务再用 cad_fabrication_get 读取设备、材料、颜色图层和校准边界，确认后用 cad_generate 生成图纸和预览。"
+                "任何三维任务都先讨论并整理任务卡；在用户确认任务卡且明确说“开始生成”前，不得调用 cad_generate。"
+                "开始生成前先问用户选择 MakerLab 还是 ChatMaker 预览，默认推荐 MakerLab。"
+                "MakerLab 路线直接给完整 OpenSCAD 代码和官方入口 https://makerworld.com.cn/zh/makerlab，"
+                "不默认交付 STL、右侧预览或截图。只有用户不使用 MakerLab，才生成并交付 ChatMaker 右侧预览实验室。"
             ),
         }
     elif method == "tools/list":

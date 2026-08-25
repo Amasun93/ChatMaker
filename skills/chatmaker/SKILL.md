@@ -31,7 +31,8 @@ Treat the installed bundle as incomplete if any internal specialist is missing, 
 5. Route Arduino, Nano, ESP32, wiring, upload, and serial work to `$chatduino`.
 6. Route classroom tools, browser mini games, native HTML, CSS, JavaScript, device interfaces, local preview, and browser interaction work to `$chatweb`.
 7. Route mounting plates, enclosures, basic spur gears or racks, shafts, bushings, simple brackets, DXF, SVG, OpenSCAD, STL, and parameter previews to `$chatcad`.
-8. For combined projects, define the shared board identity and interface requirements first, then invoke the relevant specialists.
+8. Routing a 3D request to `$chatcad` does not authorize generation. Let `$chatcad` finish its task-card confirmation and MakerLab-versus-ChatMaker delivery choice before any `cad_generate` call.
+9. For combined projects, define the shared board identity and interface requirements first, then invoke the relevant specialists.
 
 Use the phrase "exact board identity" literally: do not read optional ChatMaker Knowledge guidance until the board ID is confirmed. Once confirmed, start with the `start-here` section and then continue with canonical board, component, and recipe facts.
 

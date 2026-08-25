@@ -480,11 +480,29 @@ def _public_component(part: dict[str, Any], files: dict[str, Path]) -> dict[str,
 
 def generate(request: dict[str, Any], profile: dict[str, Any], output: Path, name: str) -> dict[str, Any]:
     values = request.get("parameters", {})
+    delivery_mode = str(request.get("delivery_mode", "chatmaker-preview")).strip()
+    if delivery_mode not in {"makerlab-code", "chatmaker-preview"}:
+        raise ValueError("unsupported_chat3d_delivery_mode")
     g = derive(values)
     if g["design_kind"] == "gear_pair":
         parts, placements, layout = _gear_pair_parts(g)
     else:
         parts, placements, layout = _rack_parts(g)
+
+    if delivery_mode == "makerlab-code":
+        return {
+            "success": True,
+            "action": "generate",
+            "mode": "chat3d",
+            "design_kind": g["design_kind"],
+            "delivery_mode": delivery_mode,
+            "scad_code": _assembly_scad(name, parts, placements),
+            "files": {},
+            "scad_generated": "verified",
+            "model_generated": "unverified",
+            "file_opened": "unverified",
+            "physical_fit": "unverified",
+        }
 
     output.mkdir(parents=True, exist_ok=True)
     files: dict[str, Path] = {
@@ -570,6 +588,7 @@ def generate(request: dict[str, Any], profile: dict[str, Any], output: Path, nam
         "action": "generate",
         "mode": "chat3d",
         "design_kind": g["design_kind"],
+        "delivery_mode": delivery_mode,
         "files": {key: str(path) for key, path in files.items()},
         "checks": project["checks"],
         "model_generated": "verified",

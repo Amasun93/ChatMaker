@@ -115,7 +115,19 @@ class ChatCadAlphaTests(unittest.TestCase):
         parameters = tool["inputSchema"]["properties"]["parameters"]
         properties = parameters["properties"]
 
-        self.assertEqual(tool["inputSchema"]["required"], ["project_name", "output_dir"])
+        self.assertEqual(tool["inputSchema"]["required"], ["project_name"])
+        self.assertEqual(
+            tool["inputSchema"]["properties"]["delivery_mode"]["enum"],
+            ["makerlab-code", "chatmaker-preview"],
+        )
+        self.assertEqual(
+            tool["inputSchema"]["properties"]["delivery_mode"]["default"],
+            "makerlab-code",
+        )
+        self.assertEqual(
+            tool["inputSchema"]["properties"]["generation_confirmed"],
+            {"type": "boolean", "default": False},
+        )
         self.assertFalse(parameters["additionalProperties"])
         self.assertEqual(
             properties["design_kind"]["enum"],

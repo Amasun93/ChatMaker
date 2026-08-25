@@ -84,6 +84,7 @@ def _scad(name: str, g: dict[str, Any], engrave: dict[str, Any] | None = None) -
     label_params = ""
     label_module = ""
     label_calls = ""
+    label_lid_call = ""
     if engrave:
         polygon_lines = "\n".join(f"  {statement}" for statement in engrave["polygons"])
         label_params = f'''
@@ -109,6 +110,7 @@ module label_on(cover_y){{
 }}
 '''
         label_calls = "  label_on(inner_depth+2*wall+8) label_glyphs();\n"
+        label_lid_call = "  label_on(0) label_glyphs();\n"
     return f'''// ChatMaker Chat3D V1 - {name}
 // 盒体中心为 XY 原点、Z 向上，单位 mm。
 /* [输出] */
@@ -148,8 +150,7 @@ module cover_part(){{cube([inner_width+2*wall, inner_depth+2*wall, lid]);}}
 if (part == "base") base_part();
 if (part == "lid") {{
   cover_part();
-  label_on(0) label_glyphs();
-}}
+{label_lid_call}}}
 if (part == "assembled") {{
   base_part();
   translate([0, inner_depth+2*wall+8, 0]) cover_part();
@@ -219,6 +220,9 @@ function scad(){const L=label,ow=s.inner_width+2*s.wall,od=s.inner_depth+2*s.wal
 
 def generate(request: dict[str, Any], profile: dict[str, Any], output: Path, name: str) -> dict[str, Any]:
     values=request.get("parameters",{})
+    delivery_mode = str(request.get("delivery_mode", "chatmaker-preview")).strip()
+    if delivery_mode not in {"makerlab-code", "chatmaker-preview"}:
+        raise ValueError("unsupported_chat3d_delivery_mode")
     design_kind = str(values.get("design_kind", "enclosure")).strip() or "enclosure"
     if design_kind != "enclosure":
         from . import mechanics
@@ -226,9 +230,22 @@ def generate(request: dict[str, Any], profile: dict[str, Any], output: Path, nam
         return mechanics.generate(request, profile, output, name)
     g=geometry(profile,values)
     engrave=_engrave_plan(values,g)
+    if delivery_mode == "makerlab-code":
+        return {
+            "success": True,
+            "action": "generate",
+            "mode": "chat3d",
+            "delivery_mode": delivery_mode,
+            "scad_code": _scad(name, g, engrave),
+            "files": {},
+            "scad_generated": "verified",
+            "model_generated": "unverified",
+            "file_opened": "unverified",
+            "physical_fit": "unverified",
+        }
     output.mkdir(parents=True,exist_ok=True)
     files={"project":output/"project.json","scad":output/f"{name}.scad","stl":output/f"{name}.stl","preview_lab":output/"preview-lab.html"}
     files["scad"].write_text(_scad(name,g,engrave),encoding="utf-8");files["stl"].write_text(_stl(name,g,engrave),encoding="ascii");files["preview_lab"].write_text(_lab(name,g,engrave),encoding="utf-8")
     project={"schema_version":"1.0","mode":"chat3d","project_name":name,"board_id":profile["board_id"],"parameters":g,"engrave_text":engrave["text"] if engrave else "","model_generated":"verified","file_opened":"unverified","physical_fit":"unverified"}
     files["project"].write_text(json.dumps(project,ensure_ascii=False,indent=2)+"\n",encoding="utf-8")
-    return {"success":True,"action":"generate","mode":"chat3d","files":{k:str(v) for k,v in files.items()},"model_generated":"verified","file_opened":"unverified","physical_fit":"unverified"}
+    return {"success":True,"action":"generate","mode":"chat3d","delivery_mode":delivery_mode,"files":{k:str(v) for k,v in files.items()},"model_generated":"verified","file_opened":"unverified","physical_fit":"unverified"}
