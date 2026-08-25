@@ -251,6 +251,7 @@ def probe_environment(
     *,
     home: Path | None = None,
     environ: Mapping[str, str] | None = None,
+    include_hosts: bool = True,
 ) -> CapabilityReport:
     """Inspect a bounded set of host prerequisites without changing local state."""
     environment = dict(os_environ() if environ is None else environ)
@@ -291,8 +292,12 @@ def probe_environment(
         ports = _macos_serial_ports() if family == "macos" else nano_mindplus.scan_ports()
     except OSError:
         ports = []
-    skill_roots = _candidate_skill_roots(selected_home, environment, family)
-    mcp_configs = _mcp_configs(selected_home, environment)
+    skill_roots = (
+        _candidate_skill_roots(selected_home, environment, family)
+        if include_hosts
+        else []
+    )
+    mcp_configs = _mcp_configs(selected_home, environment) if include_hosts else []
     value = {
         "success": True,
         "home": str(selected_home),

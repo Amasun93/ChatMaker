@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
-"""Mind+ 1.8 bridge for IDMC-0001 Starcore v4.2.2."""
+"""Mind+ bridge for IDMC-0001 Starcore v4.2.2.
+
+Mind+ 2.x is the preferred backend. Mind+ 1.x remains a compatibility
+fallback for classrooms that do not have a usable 2.x installation.
+"""
 
 from __future__ import annotations
 
@@ -18,19 +22,35 @@ from . import nano_mindplus as shared
 BRIDGE_NAME = "starcore-mindplus"
 SCHEMA_VERSION = 1
 BOARD_ID = "idmc-0001-starcore-v4-2-2"
-CURRENT_FQBN = "dfrobot:mpython:mpython:FlashMode=dio,FlashFreq=80,UploadSpeed=1500000,DebugLevel=none"
-HISTORICAL_FQBN = "mindplus:esp32:mpython:FlashMode=dio,FlashFreq=80,UploadSpeed=1500000,DebugLevel=none"
+V2_FQBN = "mindplus:esp32:mpython:FlashMode=dio,FlashFreq=80,UploadSpeed=1500000,DebugLevel=none"
+V1_FQBN = "dfrobot:mpython:mpython:FlashMode=dio,FlashFreq=80,UploadSpeed=1500000,DebugLevel=none"
+CURRENT_FQBN = V2_FQBN
+FALLBACK_FQBN = V1_FQBN
 
 
 def _current_context() -> dict[str, Any] | None:
-    for installation in shared.discover_installations():
-        if installation.get("backend") != "mindplus-1-builder":
-            continue
-        root = Path(str(installation["root"]))
-        arduino = root / "Arduino"
-        board_file = arduino / "hardware" / "dfrobot" / "mpython" / "boards.txt"
-        if Path(str(installation["builder"])).is_file() and board_file.is_file():
-            return {**installation, "arduino": str(arduino), "boards": str(board_file)}
+    installations = shared.discover_installations()
+    for installation in sorted(
+        installations,
+        key=lambda item: 0 if item.get("backend") == "mindplus-2-cli" else 1,
+    ):
+        backend = installation.get("backend")
+        if backend == "mindplus-2-cli":
+            cli = Path(str(installation.get("cli", "")))
+            config = Path(str(installation.get("config", "")))
+            if cli.is_file() and config.is_file():
+                return {**installation, "fqbn": V2_FQBN}
+        elif backend == "mindplus-1-builder":
+            root = Path(str(installation["root"]))
+            arduino = root / "Arduino"
+            board_file = arduino / "hardware" / "dfrobot" / "mpython" / "boards.txt"
+            if Path(str(installation["builder"])).is_file() and board_file.is_file():
+                return {
+                    **installation,
+                    "arduino": str(arduino),
+                    "boards": str(board_file),
+                    "fqbn": V1_FQBN,
+                }
     return None
 
 
@@ -49,6 +69,16 @@ def _prepare_code(code: str, name: str) -> Path:
 
 
 def build_compile_command(context: dict[str, Any], sketch: Path, build: Path) -> list[str]:
+    if context.get("backend") == "mindplus-2-cli":
+        return [
+            str(context["cli"]),
+            "compile",
+            "--config-file", str(context["config"]),
+            "--no-color",
+            "--fqbn", V2_FQBN,
+            "--build-path", str(build),
+            str(sketch.parent),
+        ]
     arduino = Path(str(context["arduino"]))
     return [
         str(context["builder"]),
@@ -60,7 +90,7 @@ def build_compile_command(context: dict[str, Any], sketch: Path, build: Path) ->
         "-tools", str(arduino / "hardware" / "tools" / "mpython"),
         "-built-in-libraries", str(arduino / "libraries"),
         "-libraries", str(arduino / "libraries"),
-        f"-fqbn={CURRENT_FQBN}",
+        f"-fqbn={V1_FQBN}",
         "-ide-version=10819",
         "-build-path", str(build),
         str(sketch),
@@ -92,7 +122,8 @@ def compile_result(context: dict[str, Any], request: dict[str, Any]) -> dict[str
     success = execution.get("returncode") == 0 and bool(application) and bool(partitions)
     result = {
         "action": "compile", "success": success, "board": BOARD_ID,
-        "fqbn": CURRENT_FQBN, "historical_fqbn": HISTORICAL_FQBN,
+        "backend": context["backend"], "fqbn": str(context["fqbn"]),
+        "preferred_fqbn": V2_FQBN, "fallback_fqbn": V1_FQBN,
         "sketch": str(folder), "build_dir": str(build),
         "application_bin": str(application[0]) if application else None,
         "partitions_bin": str(partitions[0]) if partitions else None,
@@ -128,25 +159,39 @@ def upload_result(context: dict[str, Any], request: dict[str, Any], compiled: di
     port, error, ports = _select_port(request)
     if error or not port:
         return {"action": "upload", "success": False, "error": error, "upload_executed": False, "ports": ports}
-    arduino = Path(str(context["arduino"]))
-    tool = arduino / "hardware" / "tools" / "mpython" / "esptool.exe"
-    platform = arduino / "hardware" / "dfrobot" / "mpython"
-    application = Path(str(compiled["application_bin"]))
-    partitions = Path(str(compiled["partitions_bin"]))
-    command = [
-        str(tool), "--chip", "esp32", "--port", port, "--baud", "1500000",
-        "--before", "default_reset", "--after", "hard_reset", "write_flash", "-z",
-        "--flash_mode", "dio", "--flash_freq", "80m", "--flash_size", "detect",
-        "0xe000", str(platform / "tools" / "partitions" / "boot_app0.bin"),
-        "0x1000", str(platform / "tools" / "sdk" / "bin" / "bootloader_dio_80m.bin"),
-        "0x10000", str(application), "0x8000", str(partitions),
-    ]
+    if context.get("backend") == "mindplus-2-cli":
+        command = [
+            str(context["cli"]),
+            "compile",
+            "--upload",
+            "--port", port,
+            "--config-file", str(context["config"]),
+            "--no-color",
+            "--fqbn", V2_FQBN,
+            "--build-path", str(compiled["build_dir"]),
+            str(compiled["sketch"]),
+        ]
+    else:
+        arduino = Path(str(context["arduino"]))
+        tool = arduino / "hardware" / "tools" / "mpython" / "esptool.exe"
+        platform = arduino / "hardware" / "dfrobot" / "mpython"
+        application = Path(str(compiled["application_bin"]))
+        partitions = Path(str(compiled["partitions_bin"]))
+        command = [
+            str(tool), "--chip", "esp32", "--port", port, "--baud", "1500000",
+            "--before", "default_reset", "--after", "hard_reset", "write_flash", "-z",
+            "--flash_mode", "dio", "--flash_freq", "80m", "--flash_size", "detect",
+            "0xe000", str(platform / "tools" / "partitions" / "boot_app0.bin"),
+            "0x1000", str(platform / "tools" / "sdk" / "bin" / "bootloader_dio_80m.bin"),
+            "0x10000", str(application), "0x8000", str(partitions),
+        ]
     execution = shared._run(command, timeout=int(request.get("upload_timeout", 300)))
     success = execution.get("returncode") == 0
     return {
         "action": "upload", "success": success, "upload_executed": True,
         "firmware_written": success, "hardware_runtime_verified": False,
-        "board": BOARD_ID, "port": port, "execution": execution,
+        "board": BOARD_ID, "backend": context["backend"],
+        "fqbn": str(context["fqbn"]), "port": port, "execution": execution,
         **({} if success else {"error": "upload_failed"}),
     }
 
@@ -175,7 +220,9 @@ def doctor_result() -> dict[str, Any]:
     return {
         "action": "doctor", "success": context is not None, "ready_for_compile": context is not None,
         "ready_for_upload": context is not None and bool([p for p in ports if p.get("eligible_for_upload")]),
-        "board": BOARD_ID, "current_fqbn": CURRENT_FQBN, "historical_fqbn": HISTORICAL_FQBN,
+        "board": BOARD_ID, "preferred_fqbn": V2_FQBN, "fallback_fqbn": V1_FQBN,
+        "selected_backend": context.get("backend") if context else None,
+        "selected_fqbn": context.get("fqbn") if context else None,
         "environment": context, "ports": ports,
     }
 
@@ -189,7 +236,7 @@ def execute_request(request: dict[str, Any]) -> dict[str, Any]:
     elif action in {"compile", "compile-upload"}:
         context = _current_context()
         if not context:
-            result = {"action": action, "success": False, "error": "mindplus_1_starcore_toolchain_missing"}
+            result = {"action": action, "success": False, "error": "starcore_mindplus_toolchain_missing"}
         elif action == "compile":
             result = compile_result(context, request)
         else:

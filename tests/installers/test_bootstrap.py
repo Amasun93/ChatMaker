@@ -83,6 +83,47 @@ class BootstrapTests(unittest.TestCase):
     def _canonical_json(value: object) -> bytes:
         return (json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=True) + "\n").encode("ascii")
 
+    def test_runtime_root_defaults_to_hidden_project_directory_and_can_be_selected(self):
+        bootstrap = runpy.run_path(str(BOOTSTRAP))
+        with tempfile.TemporaryDirectory() as temporary:
+            base = Path(temporary)
+            profile = base / "profile"
+            project = base / "student project"
+            selected = base / "large drive" / "chatmaker"
+
+            default_root = bootstrap["_runtime_root"](
+                profile_home=profile,
+                project_root=project,
+                install_root=None,
+                legacy_home_override=False,
+            )
+            explicit_root = bootstrap["_runtime_root"](
+                profile_home=profile,
+                project_root=project,
+                install_root=selected,
+                legacy_home_override=False,
+            )
+
+        self.assertEqual(default_root, project / ".chatmaker-runtime")
+        self.assertEqual(explicit_root, selected)
+
+    def test_runtime_location_record_explains_recovery(self):
+        bootstrap = runpy.run_path(str(BOOTSTRAP))
+        with tempfile.TemporaryDirectory() as temporary:
+            base = Path(temporary)
+            profile = base / "profile"
+            project = base / "student project"
+            runtime = project / ".chatmaker-runtime"
+            record = bootstrap["_persist_runtime_location"](
+                profile_home=profile,
+                project_root=project,
+                runtime_root=runtime,
+            )
+            value = json.loads(record.read_text(encoding="ascii"))
+
+        self.assertEqual(value["runtime_root"], str(runtime))
+        self.assertIn("rerun_bootstrap", value["recovery"])
+
     def _release_evidence(
         self,
         archive: Path,
@@ -209,7 +250,7 @@ class BootstrapTests(unittest.TestCase):
         self.assertEqual(report["status"], "failed")
 
     def test_bootstrap_installs_a_checked_local_core_in_a_unicode_home_and_reuses_it(self):
-        """Catches bootstrap rebuilding an existing verified venv or skipping auto convergence."""
+        """Catches bootstrap rebuilding a verified venv or skipping local convergence."""
         with tempfile.TemporaryDirectory(prefix="chatmaker bootstrap ") as temporary:
             base = Path(temporary)
             archive, checksum, manifest, signature = self._make_core(base)

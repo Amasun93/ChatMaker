@@ -2,18 +2,18 @@
 
 ## 当前 Alpha 推荐安装方式
 
-目前优先体验 GitHub `main`，让 AI 在终端执行下面四步即可：
+普通用户直接通过 WorkBuddy、Codex、SkillHub 或 GitHub 的原生 Skill 安装入口安装 ChatMaker。基础 Skill 包含 ChatMaker 与三个内部模块；纯生成能力不要求 MCP、Python、Mind+、OpenSCAD 或宿主扫描。
+
+需要本地 CLI 的源码开发者才运行：
 
 ```powershell
 git clone https://github.com/Amasun93/ChatMaker.git
 Set-Location ChatMaker
 python -m pip install -e .
-chatmaker-install auto
-chatmaker-install doctor
+chatmaker-install local
 ```
 
-`auto` 会根据电脑上实际存在的 AI 工作目录完成接入：宿主顶层只安装 ChatMaker，ChatDuino、ChatWeb、ChatCAD 作为它的内部 Skill，并登记通用 MCP。当前是快速迭代版；如需卸载或恢复，可运行 `chatmaker-install uninstall` 或 `chatmaker-install restore <transaction_id>`。下方签名 Core 章节是正式发布流程参考，普通 Alpha 体验不需要先构建发布包。
-Alpha 使用可编辑源码安装，请保留克隆目录；更新时运行 `git pull`，再运行一次 `chatmaker-install auto`。
+`local` 只检查本地能力，不扫描 Codex/WorkBuddy，也不读取或写入 MCP 配置。原 `chatmaker-install auto` 保留为开发者维护多个宿主时的高级工具，不是普通 Skill 安装前置。Alpha 使用可编辑源码安装时请保留克隆目录；更新时运行 `git pull`，再运行一次 `chatmaker-install local`。
 
 > rc5 已作为 [GitHub 公开预发布版](https://github.com/Amasun93/ChatMaker/releases/tag/v0.1.0-rc5) 发布。rc1–rc4 仍是独立历史发布；不要把 rc5 的验证结果倒写到旧版本记录中。
 >
@@ -35,20 +35,21 @@ Get-FileHash .\dist\ChatMaker-Core-0.1.0-rc5-windows-amd64.zip -Algorithm SHA256
 Get-Content .\dist\ChatMaker-Core-0.1.0-rc5-windows-amd64.zip.sha256
 ```
 
-发布者会同时交付 canonical `.manifest.json` 与 detached `.manifest.json.sig.json`。用户应从可信官方渠道取得 `bootstrap.py` 和同目录的 `core_release_signature.py`；不要把尚未验签 ZIP 内的脚本当作信任起点。trusted bootstrap 先用内嵌官方 Ed25519 公钥验证 detached manifest，再只从同一只读文件描述符快照校验、解包 ZIP，并把版本化运行环境安装到 `~/.chatmaker/versions/`：
+发布者会同时交付 canonical `.manifest.json` 与 detached `.manifest.json.sig.json`。用户应从可信官方渠道取得 `bootstrap.py` 和同目录的 `core_release_signature.py`；不要把尚未验签 ZIP 内的脚本当作信任起点。trusted bootstrap 先验证签名与快照，再默认把版本化运行环境放到当前项目的 `.chatmaker-runtime/`。也可用 `--install-root` 选择空间充足的目录：
 
-The publisher also ships a canonical `.manifest.json` and detached `.manifest.json.sig.json`. Obtain `bootstrap.py` and its sibling `core_release_signature.py` from the trusted official channel; do not treat a script extracted from the not-yet-authenticated ZIP as a trust anchor. The trusted bootstrap verifies the detached manifest with its embedded official Ed25519 key, validates and extracts one descriptor-backed ZIP snapshot, and installs under `~/.chatmaker/versions/`:
+The publisher also ships a canonical `.manifest.json` and detached `.manifest.json.sig.json`. The trusted bootstrap verifies the detached manifest and snapshot, then installs under `.chatmaker-runtime/` in the current project by default. Use `--install-root` to choose another drive or folder:
 
 ```powershell
 python .\trusted-bootstrap\bootstrap.py `
   --archive .\dist\ChatMaker-Core-0.1.0-rc5-windows-amd64.zip `
   --checksum .\dist\ChatMaker-Core-0.1.0-rc5-windows-amd64.zip.sha256 `
   --release-manifest .\dist\ChatMaker-Core-0.1.0-rc5-windows-amd64.zip.manifest.json `
-  --release-signature .\dist\ChatMaker-Core-0.1.0-rc5-windows-amd64.zip.manifest.json.sig.json
-~\.chatmaker\bin\chatmaker-install.cmd doctor
+  --release-signature .\dist\ChatMaker-Core-0.1.0-rc5-windows-amd64.zip.manifest.json.sig.json `
+  --project-root .
+.\.chatmaker-runtime\bin\chatmaker-install.cmd local
 ```
 
-macOS uses the same four evidence arguments with the matching `macos-x86_64` or `macos-arm64` archive; the resulting launcher is `~/.chatmaker/bin/chatmaker-install`. Linux is not part of this bootstrap release. Bootstrap and its Ed25519 verifier use only Python 3.11 standard-library code before Core is installed. Runtime installation is strictly local: pip receives `--isolated --no-index --find-links --require-hashes --no-deps`, and the venv does not inherit system site packages. A second trusted-bootstrap run derives the closed-world allowlist again from signed wheel `RECORD` files before running `auto --home`.
+macOS 使用相同参数。bootstrap 会把轻量位置记录写到用户目录的 `.chatmaker-location.json`，其中不含运行环境或密钥。项目连同隐藏目录一起移动时，launcher 使用相对自身的新位置；隐藏目录被删除或只移动了项目内容时，从当前项目重新运行 bootstrap 即可重建并刷新记录。Linux 尚不在本发布范围。bootstrap 安装后只运行 `local` 能力检查，不执行宿主扫描。
 
 官方签名证明 release 来源；trusted bootstrap 的重跑只提供“当下这一刻”的漂移检查、隔离与修复。它不是 OS secure boot，也不承诺抵抗已经获得同用户任意写权限、能修改 verifier/launcher 或能在验证后继续竞态写入的攻击者。stable launcher 会 fail closed，并在 trusted bootstrap 重跑时修复，但 launcher 不会证明自身可信。
 
@@ -75,9 +76,9 @@ Only allowlisted, read-only `knowledge` packs may install automatically. ChatMak
 
 ### 自动动作不会做什么 / What automatic installation never does
 
-它不会安装或修改驱动、Mind+、Arduino Core、Node、Chromium、系统 PATH、安装钩子或管理员软件。需要这些外部环境时，ChatMaker 会停下来说明；用户仍需显式安装或批准。通用安装器处理四个 Skill 和可用宿主的 MCP 接入，不会顺便安装驱动或硬件工具链。
+它不会安装或修改驱动、Mind+、Arduino Core、Node、Chromium、系统 PATH、安装钩子或管理员软件。需要这些外部环境时，ChatMaker 会停下来说明；用户仍需显式安装或批准。普通 bootstrap 不扫描宿主、不注册 MCP。
 
-It never installs or changes drivers, Mind+, Arduino cores, Node, Chromium, PATH, hooks, or administrator-level software. External prerequisites remain explicit. The generic installer manages four Skills and available host MCP integration, not hardware toolchains.
+It never installs or changes drivers, Mind+, Arduino cores, Node, Chromium, PATH, hooks, or administrator-level software. The ordinary bootstrap does not scan hosts or register MCP.
 
 ### 离线、本地覆盖、更新与回滚 / Offline, overrides, update, and rollback
 
@@ -101,6 +102,12 @@ chatmaker-pack rollback chatmaker-board-arduino-nano-classic-knowledge --version
 - Put experiments under `~/.chatmaker/overrides/`, or point `CHATMAKER_PACKS_PATH` at a separate directory. Results remain labelled `provenance=local_override`.
 - Content commands never write Codex or WorkBuddy configuration. Only `chatmaker-install auto` changes detected host configuration by installing top-level ChatMaker, its three internal Skills, and the MCP entry, with the existing transactional backup and restore behavior.
 
+### 版本检查接口边界 / Update-check boundary
+
+版本检查只允许返回 `current_version`、`latest_version`、`update_available`、来源和变更摘要。`update_available=true` 时，宿主必须先询问用户“发现新版本，是否更新？”，只有用户明确确认后，更新动作才可以下载或覆盖文件。检查本身不得静默更新、不得改写 Skill，也不得把启动 ChatMaker 视为更新授权。GitHub Actions 到 SkillHub 的自动发布不属于本轮 P0；发布状态与学生端安装状态继续分开记录。
+
+An update check is read-only. It may report the current/latest versions and a changelog, but applying an update requires an explicit user confirmation after the prompt “A new version is available. Update now?”. Starting ChatMaker is not update consent. GitHub-to-SkillHub publishing remains a separate P1 deployment task.
+
 ## 1. 共同前置条件 / Common prerequisites
 
 1. Windows x64、macOS Intel 或 Apple Silicon；安装对应平台的 Python 3.11。
@@ -116,8 +123,9 @@ python .\trusted-bootstrap\bootstrap.py `
   --archive .\ChatMaker-Core-0.1.0-rc5-windows-amd64.zip `
   --checksum .\ChatMaker-Core-0.1.0-rc5-windows-amd64.zip.sha256 `
   --release-manifest .\ChatMaker-Core-0.1.0-rc5-windows-amd64.zip.manifest.json `
-  --release-signature .\ChatMaker-Core-0.1.0-rc5-windows-amd64.zip.manifest.json.sig.json
-~\.chatmaker\bin\chatmaker-install.cmd doctor
+  --release-signature .\ChatMaker-Core-0.1.0-rc5-windows-amd64.zip.manifest.json.sig.json `
+  --project-root .
+.\.chatmaker-runtime\bin\chatmaker-install.cmd local
 ```
 
 两处 SHA-256 必须完全一致。`chatmaker-doctor` 校验资料包和四套 Skill，但不探测或证明真实硬件。
@@ -147,11 +155,12 @@ These examples compile only. Upload is a separate gate and is considered only fo
 
 ### 星核板 v4.2.2 / Starcore v4.2.2
 
-星核板使用已经安装的 Mind+ 1.8 当前目标。Mind+ 2.0 目标只作为历史资料保留：
+星核板优先复用已安装的 Mind+ 2.x 与 `mindplus:esp32:mpython:FlashMode=dio,FlashFreq=80,UploadSpeed=1500000,DebugLevel=none`。只有找不到可用 2.x 时，才回退 Mind+ 1.x 的 `dfrobot:mpython:mpython:...`；已经有 2.x 的学生不应再下载 1.8：
 
 ```powershell
 chatmaker-starcore --request-json '{"action":"doctor"}'
 chatmaker-starcore --request-json '{"action":"compile","sketch":"examples/chatduino/starcore/blink"}'
+python scripts/verify_no_mcp_starcore.py
 ```
 
 烧录前必须确认实体板为星核板 v4.2.2，并且只剩一个合格的非蓝牙有线串口。没有实体板时上传、重启、串口和实物效果保持 `unverified`。
@@ -203,23 +212,20 @@ chatmaker-cad --request-json '{"action":"generate","mode":"chat3d","board_id":"i
 
 `chatmaker-web-preview` binds to `127.0.0.1` by default; stop it with Ctrl+C. Advanced directions require explicit `--advanced`. Edit the HTML source, not the generated header.
 
-## 5. 一条安装命令与能力结果 / One installer command and capability results
+## 5. 本地能力与开发者宿主工具 / Local capabilities and developer host tooling
+
+```powershell
+chatmaker-install local
+```
+
+`local` 只读探测操作系统、Python、终端、浏览器、串口和 Mind+，明确返回 `host_scan_performed=false` 与 `mcp_registration_performed=false`。没有板卡或 Mind+ 是受限能力状态，不影响纯生成。
+
+WorkBuddy 若有本地命令执行能力，可直接调用同一 `chatmaker-*` CLI；已有 MCP 适配器只是另一种结构化触发方式，不是脚本能力的来源。
+
+需要维护多个宿主的开发者，才使用下面的旧通用入口。它可能扫描宿主并写 MCP，因此必须先 dry-run：
 
 ```powershell
 chatmaker-install auto --dry-run
-chatmaker-install auto
-chatmaker-install doctor
-```
-
-安装器先只读探测操作系统、Python、终端、浏览器、串口、Mind+、已存在的 AI 工作目录线索，以及高级入口提供的显式路径。它不会要求你选择宿主；发现的宿主会一起安装四个 Skill，可用宿主还会登记共享 MCP：`python -m chatmaker.integrations.mcp`。无关 MCP 条目会保留。
-
-每个命令输出一份 JSON，至少包含 `success`、`status`、`environment`、`hosts`、`changes`、`unchanged`、`next_actions` 与 `transaction_id`。先运行 `auto --dry-run` 查看计划；`auto` 执行可逆的用户目录改动；随后重启检测到的宿主应用。
-
-没有板卡、合格有线串口或 Mind+ 是受限能力状态，不是安装失败。此时仍可使用 Core、Skill 和可用的宿主集成；只有需要 Nano / Uno 编译或上传时，按 JSON 的 `next_actions` 安装并启动 Mind+。本阶段不会安装驱动、Mind+、Arduino Core、浏览器，也不会预装所有板卡知识包。
-
-对其他宿主，才使用绝对路径的高级入口，例如：
-
-```powershell
 chatmaker-install auto --skill-root D:\OtherHost\skills
 chatmaker-install auto --skill-root D:\OtherHost\skills --mcp-config D:\OtherHost\mcp.json
 ```

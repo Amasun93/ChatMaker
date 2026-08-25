@@ -303,7 +303,7 @@ TOOLS = [
     },
     {
         "name": "starcore_doctor",
-        "description": "检查星核板 v4.2.2 的 Mind+ 1.8 mPython 兼容编译环境和有线串口；Mind+ 2.0 目标只作为历史记录。",
+        "description": "检查星核板 v4.2.2 的 Mind+ 环境和有线串口；优先复用 2.x，只有缺少可用 2.x 时才回退 1.x。",
         "inputSchema": {"type": "object", "properties": {}, "additionalProperties": False},
     },
     {
@@ -313,7 +313,7 @@ TOOLS = [
     },
     {
         "name": "starcore_compile",
-        "description": "使用已安装的 Mind+ 1.8 和当前 dfrobot:mpython 目标真实编译星核板程序。",
+        "description": "使用已安装的 Mind+ 2.x 优先后端真实编译星核板程序；1.x 仅作为兼容回退。",
         "inputSchema": {
             "type": "object", "required": ["code"],
             "properties": {
@@ -890,7 +890,7 @@ def handle(request: dict[str, Any]) -> dict[str, Any] | None:
                 "再按板型调用对应 doctor。ESP32 只接受官方 3.3.11 core "
                 "和精确 DOIT FQBN；先调用 esp32_prepare_environment 自动检查，并且只安装 ChatMaker 验证的锁定版本。"
                 "ESP-WROOM-32 模块丝印本身不算载板确认，也不会替换成 FireBeetle。"
-                "星核板使用 Mind+ 1.8 的 dfrobot:mpython 当前目标；Mind+ 2.0 目标只保留为历史资料。"
+                "星核板优先使用 Mind+ 2.x 的 mindplus:esp32:mpython 目标；只有没有可用 2.x 时才回退 1.x。"
                 "M10 与 K10 必须分开；M10 先用 catalog_get 读取板卡记录，再调用 unihiker_project_check，源码通过不代表已同步、运行或产生实体效果。"
                 "使用云端模型或语音服务时调用 unihiker_credential_help，明确告诉用户替换字段和官方获取入口；不得复用内部 Key。"
                 "编程前核对板卡、模块型号/丝印和引脚；Nano/Uno 默认调用 avr_project_run 连续完成"

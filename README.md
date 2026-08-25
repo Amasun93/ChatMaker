@@ -14,34 +14,34 @@ ChatMaker 是唯一入口；ChatDuino、ChatWeb 和 ChatCAD 是由它在内部�
 
 对话窗口就是创作环境。Mind+、编译器、串口和浏览器在后台完成专业工作，用户不需要先学习一套 IDE。
 
-> 当前处于 Alpha 快速迭代阶段。[`v0.1.0-rc5`](https://github.com/Amasun93/ChatMaker/releases/tag/v0.1.0-rc5) 是最近一个打包的预发布版；`main` 分支包含更新的 ChatMaker Knowledge 和通用安装器。没有匹配实板证据，因此仍不能声称完成烧录或实物闭环。
+> 当前处于 Alpha 快速迭代阶段。[`v0.1.0-rc5`](https://github.com/Amasun93/ChatMaker/releases/tag/v0.1.0-rc5) 是最近一个打包的预发布版；`main` 分支包含更新的 ChatMaker Knowledge 和 P0 轻量安装边界。各板卡的真实证据按下方状态表分别报告。
 
 ## 从 GitHub 安装当前 Alpha
 
 把下面这段话和仓库链接交给你正在使用的 AI 即可：
 
 ```text
-请安装 ChatMaker 当前 Alpha 源码版：
+请从这个 GitHub 仓库安装 ChatMaker Skill：
 https://github.com/Amasun93/ChatMaker
 
-请先阅读仓库 README 和 docs/installation.md，检查本机环境，安装项目，
-然后运行 chatmaker-install auto 和 chatmaker-install doctor。
-完成后使用 $chatmaker 作为唯一入口，并告诉我已经安装的内部 Skill、MCP 工具，
-以及仍需我处理的项目。
+普通安装只安装 ChatMaker 及其三个内部模块，不运行 chatmaker-install auto，
+不扫描 Codex/WorkBuddy，也不注册 MCP。完成后使用 $chatmaker 作为唯一入口。
+先让我直接使用纯生成能力；只有我要求编译、烧录、串口或真实渲染时，
+再说明需要启用的本地能力。
 ```
 
-也可以在终端直接执行：
+SkillHub、WorkBuddy、Codex 或其他支持 GitHub Skill 的宿主，均使用宿主自己的 Skill 安装入口。纯生成能力只读取 Skill 文件，不要求 Python、Mind+、OpenSCAD 或 MCP。
+
+下面的源码安装只供开发者或需要本地 CLI 的高级用户使用：
 
 ```powershell
 git clone https://github.com/Amasun93/ChatMaker.git
 Set-Location ChatMaker
 python -m pip install -e .
-chatmaker-install auto
-chatmaker-install doctor
+chatmaker-install local
 ```
 
-安装器会根据本机实际环境选择可用的 Skill 目录和 MCP 配置。当前源码版用于体验和反馈；正式发布包、完整 macOS 验证与硬件实测会在后续阶段补齐。
-Alpha 使用可编辑源码安装，因此体验期间请保留克隆下来的 `ChatMaker` 文件夹；后续更新只需在该目录执行 `git pull`，再运行 `chatmaker-install auto`。
+`local` 只检查本地生成/硬件能力，不扫描 AI 宿主、不写 MCP 配置。`chatmaker-install auto` 仅保留为维护多宿主环境的开发者工具。可编辑源码安装期间请保留克隆目录；更新源码后再次运行 `chatmaker-install local` 即可。
 
 ## 它补上的能力
 
@@ -165,7 +165,7 @@ chatmaker-pack rollback chatmaker-board-arduino-nano-classic-knowledge --version
 | 主控板自动识别 | 软件流程已实现，待实板 | WorkBuddy/Codex 可读取芯片和固件标记；允许时先完整备份，再刷入临时探针并恢复。仍不确定时引导查看丝印或拍正反面照片；三种实体板尚待验收 |
 | Nano Mind+ 编译和烧录迁移 | 部分验证 | 原 33 项行为测试已迁移；当前共有 12 个示例从 ChatMaker 路径真实编译；烧录等待有线 Nano |
 | Nano/Uno Mind+ 项目流程 | 部分验证 | 独立板型规则、Blink 和 OLED 仪表盘已真实编译；新增连续入口自动检查环境、编译并在有唯一有线端口时烧录，实体板效果等待用户测试 |
-| 星核板 Mind+ 适配器 | 主板实测 | 使用 Mind+ 1.8 当前 mPython 兼容目标完成实板上传、串口、QMI8658 静止数据、完整 Flash 备份和恢复；按键按下、可听蜂鸣、CAN、断电重启和七个外接模块仍待实测 |
+| 星核板 Mind+ 适配器 | 主板实测 | Mind+ 2.0 为优先后端，Mind+ 1.8 仅回退；Mind+ 2 已完成两个示例编译、COM4 上传、16 MB Flash 四段 Hash 校验、硬复位、115200 串口自检与传感数据，用户确认蜂鸣器真实发声；CAN、断电重启和七个外接模块仍待实测 |
 | DOIT ESP32 DevKit V1 | 部分验证 | 官方 `esp32:esp32@3.3.11` 已安装；`prepare-environment` 真实 no-op 成功；`esp32:esp32:esp32doit-devkit-v1` 已通过 Blink 和 AP 案例真实编译；烧录、启动、串口、SoftAP、HTTP 和实体效果仍待实板 |
 | UNIHIKER M10 | Alpha 源码检查可用 | 官方页面已核对 M10 为 Debian/Python 路线、K10 为独立 MCU 路线；板卡记录、完整项目示例、Codex CLI 与 WorkBuddy 项目检查入口已接入，尚未同步到实板或验证屏幕/外设效果 |
 | 常用模块、库和示例 | 继续扩充 | 21 种元器件、25 个配方已接入；新增星核板 WS2812 与 SG90 课堂示例并真实编译，IDMM-0007 只读诊断、I²C 排错和 OLED 中文分板卡引导已加入 |
@@ -175,7 +175,7 @@ chatmaker-pack rollback chatmaker-board-arduino-nano-classic-knowledge --version
 | 可执行路由与创意规划 | 已验证 | `chatmaker-route` 返回硬件、网页、组合或澄清路线；`chatmaker-web-plan` 在信息不足时只提问，在信息充分时给出 2–3 条精选方向 |
 | 高级方向游乐场 | 显式启用 | 额外方向和 `chatmaker-web-playground` 仅在布尔 `advanced=true` / CLI `--advanced` 时开放 |
 | 浏览器自动化 | 已验证 | Chromium 覆盖课堂页、模拟硬件页、ESP32 AP 模拟页和高级游乐场；检查主要交互、390 px 手机布局、至少 44 px 触控目标和零控制台错误 |
-| 通用 AI 环境安装 | Alpha 可用 | `chatmaker-install auto` 在宿主顶层只安装 ChatMaker，将 ChatDuino、ChatWeb、ChatCAD 放入内部目录，并接入通用 MCP；本阶段由用户在真实 WorkBuddy 中体验反馈 |
+| 轻量 Skill 安装 | P0 已接入 | 基础 Skill 的纯生成不依赖 MCP 或双宿主扫描；`chatmaker-install local` 不读写宿主配置，`auto` 与 MCP 接入仅保留为开发者可选工具 |
 | 串口运行诊断 | 已实现待硬件 | WorkBuddy 6 个串口工具与 Codex JSONL 会话通过自动测试；当前无有线 Nano/Uno，真实日志待现场读取 |
 | v0.1.0-rc1 发布候选 | 历史发布 | [GitHub 预发布](https://github.com/Amasun93/ChatMaker/releases/tag/v0.1.0-rc1)；保留其原始产物与当时验证记录 |
 | v0.1.0-rc2 发布候选 | 已发布 | [GitHub 预发布](https://github.com/Amasun93/ChatMaker/releases/tag/v0.1.0-rc2)；rc1 继续保留，rc2 新增串口运行层 |

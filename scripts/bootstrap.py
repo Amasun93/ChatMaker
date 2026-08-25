@@ -918,7 +918,7 @@ try:
 except Exception: raise SystemExit('installed runtime integrity check failed')
 python=venv/('Scripts/python.exe' if os.name=='nt' else 'bin/python')
 code="import os,runpy,sys; from pathlib import Path; root=Path(sys.executable).parent.parent; pure=root / ('Lib/site-packages' if os.name == 'nt' else f'lib/python{sys.version_info.major}.{sys.version_info.minor}/site-packages'); sys.path.insert(0,str(pure)); runpy.run_module('chatmaker.installers.auto',run_name='__main__')"
-env={'HOME':str(root.parent),'USERPROFILE':str(root.parent),'PATH':os.environ.get('PATH',''),'PYTHONNOUSERSITE':'1','PYTHONDONTWRITEBYTECODE':'1','CHATMAKER_PROJECT_ROOT':str(core)}
+env={'HOME':str(root.parent),'USERPROFILE':str(root.parent),'PATH':os.environ.get('PATH',''),'LOCALAPPDATA':os.environ.get('LOCALAPPDATA',''),'APPDATA':os.environ.get('APPDATA',''),'PYTHONNOUSERSITE':'1','PYTHONDONTWRITEBYTECODE':'1','CHATMAKER_PROJECT_ROOT':str(core)}
 raise SystemExit(subprocess.call([str(python),'-I','-S','-B','-c',code,*args,'--home',str(root.parent)],env=env))
 '''
 
@@ -938,12 +938,12 @@ def _stable_launcher(home_root: Path) -> None:
         _write_if_different(launcher, f'#!/bin/sh\nexec "{trusted_python}" -I -S -B "$(dirname "$0")/chatmaker-launch.py" "$@"\n'.encode("utf-8"), executable=True)
 
 
-def _auto(venv_path: Path, home: Path, core_root: Path) -> dict[str, Any]:
-    temp = home / ".chatmaker" / "tmp"
+def _auto(venv_path: Path, home: Path, runtime_root: Path, core_root: Path) -> dict[str, Any]:
+    temp = runtime_root / "tmp"
     _safe_directory(temp)
     env = {"HOME": str(home), "USERPROFILE": str(home), "PATH": os.environ.get("PATH", ""), "TMP": str(temp), "TEMP": str(temp), "PYTHONNOUSERSITE": "1", "PYTHONDONTWRITEBYTECODE": "1", "PIP_NO_INDEX": "1", "CHATMAKER_PROJECT_ROOT": str(core_root)}
     code = "import os,runpy,sys; from pathlib import Path; root=Path(sys.executable).parent.parent; pure=root / ('Lib/site-packages' if os.name == 'nt' else f'lib/python{sys.version_info.major}.{sys.version_info.minor}/site-packages'); sys.path.insert(0,str(pure)); runpy.run_module('chatmaker.installers.auto',run_name='__main__')"
-    completed = subprocess.run([str(_python(venv_path)), "-I", "-S", "-B", "-c", code, "auto", "--home", str(home)], text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env, check=False)
+    completed = subprocess.run([str(_python(venv_path)), "-I", "-S", "-B", "-c", code, "local", "--home", str(home)], text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env, check=False)
     try:
         value = json.loads(completed.stdout)
     except json.JSONDecodeError as exc:
@@ -953,6 +953,44 @@ def _auto(venv_path: Path, home: Path, core_root: Path) -> dict[str, Any]:
     return value
 
 
+def _runtime_root(
+    *,
+    profile_home: Path,
+    project_root: Path,
+    install_root: Path | None,
+    legacy_home_override: bool,
+) -> Path:
+    """Choose the runtime location without assuming a system-drive path.
+
+    ``--home`` keeps its historical test/developer meaning. Ordinary bootstrap
+    runs use a hidden folder in the selected/current project, while
+    ``--install-root`` selects an exact alternative location.
+    """
+    if install_root is not None:
+        candidate = Path(install_root).expanduser()
+    elif legacy_home_override:
+        candidate = Path(profile_home) / ".chatmaker"
+    else:
+        candidate = Path(project_root).expanduser() / ".chatmaker-runtime"
+    _validate_management_aliases(candidate)
+    return _windows_long_path(Path(os.path.abspath(candidate)))
+
+
+def _persist_runtime_location(
+    *, profile_home: Path, project_root: Path, runtime_root: Path
+) -> Path:
+    """Persist a tiny recovery pointer outside the relocatable runtime tree."""
+    location = Path(profile_home) / ".chatmaker-location.json"
+    payload = {
+        "schema_version": 1,
+        "project_root": str(project_root),
+        "runtime_root": str(runtime_root),
+        "recovery": "rerun_bootstrap_from_current_project_if_runtime_is_moved_or_deleted",
+    }
+    _atomic_write(location, _canonical_json(payload))
+    return location
+
+
 def run(
     *,
     archive: Path,
@@ -960,6 +998,8 @@ def run(
     release_manifest: Path,
     release_signature: Path,
     home: Path | None = None,
+    project_root: Path | None = None,
+    install_root: Path | None = None,
     _fault_inject: Any | None = None,
 ) -> dict[str, Any]:
     if sys.version_info[:2] != (3, 11):
@@ -971,6 +1011,15 @@ def run(
     home_candidate = Path.home() if home is None else Path(home).expanduser()
     _validate_management_aliases(home_candidate)
     selected_home = _windows_long_path(Path(os.path.abspath(home_candidate)))
+    selected_project = _windows_long_path(
+        Path(os.path.abspath(Path.cwd() if project_root is None else Path(project_root).expanduser()))
+    )
+    home_root = _runtime_root(
+        profile_home=selected_home,
+        project_root=selected_project,
+        install_root=install_root,
+        legacy_home_override=home is not None and install_root is None,
+    )
     platform_tag = _platform_tag()
     signed, signed_bytes, verified_signature = _read_release_evidence(
         release_manifest,
@@ -989,7 +1038,6 @@ def run(
         if (version != signed["core_version"]
                 or signed["release_metadata"]["member_count"] != len(infos)):
             raise BootstrapError("release_manifest_archive_mismatch")
-        home_root = selected_home / ".chatmaker"
         _safe_directory(home_root / "versions")
         with _lock(home_root / "locks" / "bootstrap.lock"):
             active_path = home_root / "active.json"
@@ -1064,15 +1112,25 @@ def run(
                 shutil.rmtree(staging, ignore_errors=True)
                 quarantined = None
             try:
-                auto = _auto(version_root / "venv", selected_home, version_root / f"ChatMaker-Core-{version}-{platform_tag}")
+                auto = _auto(
+                    version_root / "venv",
+                    selected_home,
+                    home_root,
+                    version_root / f"ChatMaker-Core-{version}-{platform_tag}",
+                )
             except Exception:
                 if repaired:
                     _restore_quarantined(home_root, version, version_root, quarantined)
                 raise
             _stable_launcher(home_root)
             _persist_active(active_path, _canonical_json({"schema_version": SCHEMA_VERSION, "version": version, "archive_sha256": digest, "platform_tag": platform_tag, "release_sequence": signed["release_sequence"], "release_manifest_sha256": signed_manifest_sha256}), _fault_inject)
+            location_record = _persist_runtime_location(
+                profile_home=selected_home,
+                project_root=selected_project,
+                runtime_root=home_root,
+            )
             status = "repaired" if repaired else "already_current" if existing else "installed"
-            return {"success": True, "status": status, "version": version, "platform_tag": platform_tag, "release_sequence": signed["release_sequence"], "sha256": digest, "venv": str(version_root / "venv"), "launcher": str(home_root / "bin" / ("chatmaker-install.cmd" if os.name == "nt" else "chatmaker-install")), "auto": auto}
+            return {"success": True, "status": status, "version": version, "platform_tag": platform_tag, "release_sequence": signed["release_sequence"], "sha256": digest, "runtime_root": str(home_root), "location_record": str(location_record), "venv": str(version_root / "venv"), "launcher": str(home_root / "bin" / ("chatmaker-install.cmd" if os.name == "nt" else "chatmaker-install")), "auto": auto}
     finally:
         os.close(snapshot)
         snapshot_path.unlink(missing_ok=True)
@@ -1085,6 +1143,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--release-manifest", type=Path, required=True)
     parser.add_argument("--release-signature", type=Path, required=True)
     parser.add_argument("--home", type=Path)
+    parser.add_argument("--project-root", type=Path)
+    parser.add_argument("--install-root", type=Path)
     try:
         args = parser.parse_args(argv)
         result = run(
@@ -1093,6 +1153,8 @@ def main(argv: list[str] | None = None) -> int:
             release_manifest=args.release_manifest,
             release_signature=args.release_signature,
             home=args.home,
+            project_root=args.project_root,
+            install_root=args.install_root,
         )
     except Exception as exc:
         result = {"success": False, "status": "failed", "error": type(exc).__name__, "detail": str(exc)}

@@ -264,7 +264,34 @@ def run(
         environment_values["CHATMAKER_MCP_CONFIG"] = str(args.mcp_config)
     selected_home = Path(args.home).expanduser() if args.home else home
     selected_root = Path(args.state_root).expanduser() if args.state_root else transaction_root
-    environment = probe_environment(home=selected_home, environ=environment_values).to_dict()
+    environment = probe_environment(
+        home=selected_home,
+        environ=environment_values,
+        include_hosts=args.action != "local",
+    ).to_dict()
+    if args.action == "local":
+        next_actions: list[str] = []
+        if not bool(environment.get("mindplus", {}).get("available")):
+            next_actions.append(
+                "Install Mind+ only when a hardware project needs compile or upload."
+            )
+        if not any(
+            isinstance(port, Mapping) and port.get("eligible_for_upload")
+            for port in environment.get("serial", {}).get("ports", [])
+        ):
+            next_actions.append(
+                "Connect a supported wired board only when upload or serial evidence is needed."
+            )
+        return _result(
+            success=True,
+            status="local_ready" if not next_actions else "local_ready_with_limits",
+            environment=environment,
+            hosts=[],
+            next_actions=next_actions,
+            mode="local",
+            host_scan_performed=False,
+            mcp_registration_performed=False,
+        )
     python_executable = environment["python"]["executable"]
     context = {"report": environment, "python_executable": python_executable}
     detected = plan_installation(_detected_context(environment, python_executable))
@@ -336,9 +363,9 @@ def run(
 
 def _parser() -> argparse.ArgumentParser:
     parser = _JsonArgumentParser(
-        description="Install, inspect, restore, or remove ChatMaker for detected hosts."
+        description="Prepare local ChatMaker capabilities or manage developer host integrations."
     )
-    parser.add_argument("action", choices=("auto", "doctor", "restore", "uninstall"))
+    parser.add_argument("action", choices=("local", "auto", "doctor", "restore", "uninstall"))
     parser.add_argument("transaction_id", nargs="?", help="transaction ID required by restore")
     parser.add_argument("--dry-run", action="store_true", help="show auto changes without writing files")
     parser.add_argument("--home", type=Path, help="advanced: home directory to inspect")

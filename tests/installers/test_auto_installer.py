@@ -63,6 +63,29 @@ class UniversalInstallerTests(unittest.TestCase):
                 transaction_root=self.state_root,
             )
 
+    def test_local_mode_skips_host_scan_and_mcp_registration(self):
+        environment = self._environment(codex=True, workbuddy=True)
+        with (
+            mock.patch.object(
+                self.capabilities,
+                "_candidate_skill_roots",
+                side_effect=AssertionError("host scan must not run"),
+            ),
+            mock.patch.object(
+                self.capabilities,
+                "_mcp_configs",
+                side_effect=AssertionError("MCP scan must not run"),
+            ),
+        ):
+            result = self._run("local", environment=environment)
+
+        self.assertTrue(result["success"])
+        self.assertEqual(result["mode"], "local")
+        self.assertEqual(result["hosts"], [])
+        self.assertFalse(result["host_scan_performed"])
+        self.assertFalse(result["mcp_registration_performed"])
+        self.assertFalse(self.state_root.exists())
+
     def test_dry_run_reports_writes_without_creating_user_files(self):
         """Catches a dry run that writes transaction state or host content."""
         environment = self._environment(codex=True)
