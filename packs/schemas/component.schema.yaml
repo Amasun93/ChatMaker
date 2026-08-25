@@ -60,6 +60,10 @@ $defs:
       status: {enum: [unverified, verified, failed, not_applicable]}
       checked_at: {type: [string, "null"], format: date}
       evidence: {type: [string, "null"]}
+      evidence_id: {type: string, pattern: "^[a-z0-9][a-z0-9-]+$"}
+      evidence_ref: {type: string, pattern: "^docs/verification/[A-Za-z0-9._/-]+\\.md$"}
+      method: {enum: [source-review, command-result, serial-observation, serial-proxy, user-confirmation, sensor-observation, not-applicable]}
+    additionalProperties: false
   verification:
     type: object
     required: [source_reviewed, code_compiled, firmware_uploaded, physical_effect_verified]

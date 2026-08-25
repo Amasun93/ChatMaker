@@ -26,20 +26,102 @@ sources:
 verification:
   source_reviewed:
     status: verified
-    checked_at: "2026-08-23"
-    evidence: v4.2.2 schematic, board description, IO Mapping workbook, QMI8658 datasheet, Mind+ MPython API and implementation, pin variant, project corpus, and sanitized mechanical evidence were reviewed together.
+    checked_at: "2026-08-25"
+    evidence: v4.2.2 hardware sources and both Mind+ targets were reviewed; board identity and feature evidence remain separately scoped below.
+    evidence_id: starcore-board-source-review-2026-08-25
+    evidence_ref: docs/verification/2026-08-26-starcore-evidence-normalization.md
+    method: source-review
   code_compiled:
     status: verified
-    checked_at: "2026-08-23"
-    evidence: Mind+ 1.8 compiled representative programs for the onboard QMI8658, A/B buttons, passive buzzer, and the current ESP32 CAN driver interface; see docs/verification/2026-08-23-starcore-complete-board-knowledge.md. No firmware was uploaded.
+    checked_at: "2026-08-25"
+    evidence: The representative onboard self-test compiled with the Mind+ 2 target used in the latest run; earlier Mind+ 1.8 feature and module compilations remain valid historical evidence.
+    evidence_id: starcore-self-test-mindplus2-2026-08-25
+    evidence_ref: docs/verification/2026-08-25-p0-no-mcp-starcore.md
+    method: command-result
   firmware_uploaded:
     status: verified
-    checked_at: "2026-08-24"
-    evidence: The temporary identification probe and onboard self-test were compiled and uploaded to one user-confirmed Starcore v4.2.2 on the only eligible wired port; the original 16 MiB Flash was restored and verified after each test. See docs/verification/2026-08-24-starcore-physical-board.md.
-  physical_effect_verified:
+    checked_at: "2026-08-25"
+    evidence: The representative onboard self-test was uploaded through COM4, the only eligible wired port, with four 16 MiB Flash segment hashes verified and a hard reset through RTS.
+    evidence_id: starcore-self-test-upload-2026-08-25
+    evidence_ref: docs/verification/2026-08-25-p0-no-mcp-starcore.md
+    method: command-result
+  serial_evidence:
     status: verified
-    checked_at: "2026-08-24"
-    evidence: The onboard QMI8658 returned eight static samples with 1047-1050 mg total acceleration, and A/B idle states were read over serial. Audible buzzer output, pressed-button events, CAN, external modules, and power-cycle recovery remain unverified. See docs/verification/2026-08-24-starcore-physical-board.md.
+    checked_at: "2026-08-25"
+    evidence: At 115200 baud the self-test emitted STARCORE_SELF_TEST_READY, BUZZER_COMMAND_COMPLETE, button idle states, and continuing QMI8658 data.
+    evidence_id: starcore-self-test-serial-2026-08-25
+    evidence_ref: docs/verification/2026-08-25-p0-no-mcp-starcore.md
+    method: serial-observation
+  physical_effect_verified:
+    status: not_applicable
+    checked_at: "2026-08-25"
+    evidence: A multi-function board has no honest all-board physical-effect aggregate; use feature_verification and the exact recipe or component record instead.
+    evidence_id: starcore-board-aggregate-boundary-2026-08-25
+    evidence_ref: docs/verification/2026-08-26-starcore-evidence-normalization.md
+    method: not-applicable
+feature_verification:
+  - feature_id: qmi8658
+    name: 板载 QMI8658 加速度传感器
+    verification:
+      serial_evidence:
+        status: verified
+        checked_at: "2026-08-25"
+        evidence: The latest self-test run emitted continuing three-axis and total-acceleration data at 115200 baud.
+        evidence_id: starcore-qmi8658-serial-2026-08-25
+        evidence_ref: docs/verification/2026-08-25-p0-no-mcp-starcore.md
+        method: sensor-observation
+      physical_effect_verified:
+        status: verified
+        checked_at: "2026-08-24"
+        evidence: Eight static QMI8658 samples from the identified board measured approximately 1 g total acceleration; this does not validate orientation or gesture thresholds.
+        evidence_id: starcore-qmi8658-static-samples-2026-08-24
+        evidence_ref: docs/verification/2026-08-24-starcore-physical-board.md
+        method: sensor-observation
+  - feature_id: passive-buzzer
+    name: 板载无源蜂鸣器
+    verification:
+      serial_proxy_evidence:
+        status: verified
+        checked_at: "2026-08-25"
+        evidence: The known self-test emitted BUZZER_COMMAND_COMPLETE on the identified healthy board; this proxy is limited to that board and program.
+        evidence_id: starcore-buzzer-command-proxy-2026-08-25
+        evidence_ref: docs/verification/2026-08-25-p0-no-mcp-starcore.md
+        method: serial-proxy
+      physical_effect_verified:
+        status: verified
+        checked_at: "2026-08-25"
+        evidence: The user previously confirmed that the known self-test produced audible buzzer output; the latest WorkBuddy run did not repeat this listening check.
+        evidence_id: starcore-buzzer-user-confirmation-2026-08-25
+        evidence_ref: docs/verification/2026-08-25-p0-no-mcp-starcore.md
+        method: user-confirmation
+  - feature_id: button-a
+    name: 板载 A 键
+    verification:
+      serial_evidence:
+        status: verified
+        checked_at: "2026-08-25"
+        evidence: The self-test reported the idle state only; no press transition was observed.
+        evidence_id: starcore-button-idle-serial-2026-08-25
+        evidence_ref: docs/verification/2026-08-25-p0-no-mcp-starcore.md
+        method: serial-observation
+      physical_effect_verified:
+        status: unverified
+        checked_at: null
+        evidence: null
+  - feature_id: button-b
+    name: 板载 B 键
+    verification:
+      serial_evidence:
+        status: verified
+        checked_at: "2026-08-25"
+        evidence: The self-test reported the idle state only; no press transition was observed.
+        evidence_id: starcore-button-idle-serial-2026-08-25
+        evidence_ref: docs/verification/2026-08-25-p0-no-mcp-starcore.md
+        method: serial-observation
+      physical_effect_verified:
+        status: unverified
+        checked_at: null
+        evidence: null
 gpio_map:
   R: 3
   T: 1
@@ -363,6 +445,10 @@ constraints:
 constraint_pin_refs: [IO37, IO38, P2, P3, P4, P5, P10, P11, P13, P14, P16, P19, P20, P25, P27, P28]
 toolchains:
   - id: mindplus-1.8-mpython
-    status: source_reviewed_current
+    status: verified_supported
   - id: mindplus-2.0-mpython
-    status: historical_only
+    status: verified_supported
+toolchain_selection:
+  policy: reuse-any-usable-installation
+  when_both_available: mindplus-2.0-mpython
+  when_none_available: recommend-verified-mindplus-1.8-download

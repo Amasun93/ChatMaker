@@ -42,7 +42,7 @@ Compilation, firmware upload, browser interaction, serial evidence, and physical
 
 ## Progressive board knowledge
 
-The current source Core contains the Python runtime, four Skill directories, 5 boards, 20 components, 23 recipes, four compact Knowledge indexes, schemas, and current runnable examples. UNIHIKER M10 is an alpha source-level route with a canonical board record, Skill guidance, project checker, and example; it does not yet have a signed Knowledge pack or physical-board evidence. The Core deliberately excludes detailed Knowledge bodies, the knowledge workspace, tests, optional `.cmpack` artifacts, and development caches.
+The current source Core contains the Python runtime, four Skill directories, 7 boards, 21 components, 26 recipes, six compact Knowledge indexes, schemas, and current runnable examples. UNIHIKER M10 is an alpha source-level route with a canonical board record, Skill guidance, project checker, and example; it does not yet have a signed Knowledge pack or physical-board evidence. The Core deliberately excludes detailed Knowledge bodies, the knowledge workspace, tests, optional `.cmpack` artifacts, and development caches.
 
 When an AI first requests a detailed board section, `chatmaker-knowledge` defaults to automatic installation. It accepts a pack only after checking the official registry signature, immutable URL, length, SHA-256, manifest, and every payload file. Later reads reuse the verified installation. An installed version remains readable after offline revalidation; an exact cache can authorize a new offline install only while its signed receipt is unexpired.
 

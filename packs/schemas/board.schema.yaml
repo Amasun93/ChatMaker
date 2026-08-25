@@ -11,6 +11,10 @@ properties:
   logic_voltage: {type: number, exclusiveMinimum: 0}
   sources: {$ref: "#/$defs/sources"}
   verification: {$ref: "#/$defs/verification"}
+  feature_verification:
+    type: array
+    minItems: 1
+    items: {$ref: "#/$defs/scoped_verification"}
   pins:
     type: array
     minItems: 1
@@ -87,6 +91,14 @@ properties:
     uniqueItems: true
     items: {type: string, minLength: 1}
   toolchains: {type: array, items: {type: object, required: [id, status]}}
+  toolchain_selection:
+    type: object
+    additionalProperties: false
+    required: [policy, when_both_available, when_none_available]
+    properties:
+      policy: {const: reuse-any-usable-installation}
+      when_both_available: {type: string, minLength: 1}
+      when_none_available: {type: string, minLength: 1}
 $defs:
   sources:
     type: array
@@ -99,6 +111,21 @@ $defs:
       status: {enum: [unverified, verified, failed, not_applicable]}
       checked_at: {type: [string, "null"], format: date}
       evidence: {type: [string, "null"]}
+      evidence_id: {type: string, pattern: "^[a-z0-9][a-z0-9-]+$"}
+      evidence_ref: {type: string, pattern: "^docs/verification/[A-Za-z0-9._/-]+\\.md$"}
+      method: {enum: [source-review, command-result, serial-observation, serial-proxy, user-confirmation, sensor-observation, not-applicable]}
+    additionalProperties: false
+  scoped_verification:
+    type: object
+    required: [feature_id, name, verification]
+    additionalProperties: false
+    properties:
+      feature_id: {type: string, pattern: "^[a-z0-9][a-z0-9-]+$"}
+      name: {type: string, minLength: 1}
+      verification:
+        type: object
+        minProperties: 1
+        additionalProperties: {$ref: "#/$defs/gate"}
   verification:
     type: object
     required: [source_reviewed, code_compiled, firmware_uploaded, physical_effect_verified]

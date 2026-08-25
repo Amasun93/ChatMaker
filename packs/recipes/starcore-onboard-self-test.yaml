@@ -1,0 +1,88 @@
+schema_version: "1.0"
+kind: recipe
+id: starcore-onboard-self-test
+name: 星核板板载功能自检
+summary: 在已确认的星核板 v4.2.2 上分别检查蜂鸣器命令、按键空闲状态和 QMI8658 串口数据，不把其中一个结果推广到整块板。
+sources:
+  - title: ChatMaker P0 no-MCP Starcore verification
+    url: https://github.com/Amasun93/ChatMaker/blob/main/docs/verification/2026-08-25-p0-no-mcp-starcore.md
+verification:
+  source_reviewed:
+    status: verified
+    checked_at: "2026-08-25"
+    evidence: The exact checked-in self-test source and its board-only feature scope were reviewed.
+    evidence_id: starcore-self-test-source-review-2026-08-25
+    evidence_ref: docs/verification/2026-08-25-p0-no-mcp-starcore.md
+    method: source-review
+  code_compiled:
+    status: verified
+    checked_at: "2026-08-25"
+    evidence: Mind+ 2 CLI compiled the exact onboard-self-test source for mindplus:esp32:mpython with exit code 0.
+    evidence_id: starcore-self-test-mindplus2-2026-08-25
+    evidence_ref: docs/verification/2026-08-25-p0-no-mcp-starcore.md
+    method: command-result
+  firmware_uploaded:
+    status: verified
+    checked_at: "2026-08-25"
+    evidence: The compiled firmware was written to the identified board on COM4; all four Flash segment hashes passed and RTS hard reset completed.
+    evidence_id: starcore-self-test-upload-2026-08-25
+    evidence_ref: docs/verification/2026-08-25-p0-no-mcp-starcore.md
+    method: command-result
+  serial_evidence:
+    status: verified
+    checked_at: "2026-08-25"
+    evidence: 115200 serial matched STARCORE_SELF_TEST_READY and included BUZZER_COMMAND_COMPLETE, button idle states, and continuing QMI8658 data.
+    evidence_id: starcore-self-test-serial-2026-08-25
+    evidence_ref: docs/verification/2026-08-25-p0-no-mcp-starcore.md
+    method: serial-observation
+  physical_effect_verified:
+    status: not_applicable
+    checked_at: "2026-08-25"
+    evidence: The recipe has several independent effects; use effect_verification instead of one aggregate physical result.
+    evidence_id: starcore-self-test-effect-boundary-2026-08-25
+    evidence_ref: docs/verification/2026-08-26-starcore-evidence-normalization.md
+    method: not-applicable
+effect_verification:
+  - effect_id: qmi8658-static-data
+    name: QMI8658 静止数据
+    verification:
+      serial_evidence:
+        status: verified
+        checked_at: "2026-08-25"
+        evidence: The latest run emitted continuing three-axis and total-acceleration data; the prior physical-board run measured approximately 1 g at rest.
+        evidence_id: starcore-qmi8658-serial-2026-08-25
+        evidence_ref: docs/verification/2026-08-25-p0-no-mcp-starcore.md
+        method: sensor-observation
+  - effect_id: buzzer-audible
+    name: 蜂鸣器真实发声
+    verification:
+      serial_proxy_evidence:
+        status: verified
+        checked_at: "2026-08-25"
+        evidence: BUZZER_COMMAND_COMPLETE is an accepted proxy only for this known program on this identified healthy board.
+        evidence_id: starcore-buzzer-command-proxy-2026-08-25
+        evidence_ref: docs/verification/2026-08-25-p0-no-mcp-starcore.md
+        method: serial-proxy
+      physical_effect_verified:
+        status: verified
+        checked_at: "2026-08-25"
+        evidence: The user previously confirmed audible output; the latest WorkBuddy run did not repeat the listening observation.
+        evidence_id: starcore-buzzer-user-confirmation-2026-08-25
+        evidence_ref: docs/verification/2026-08-25-p0-no-mcp-starcore.md
+        method: user-confirmation
+  - effect_id: button-press-transitions
+    name: A/B 按键按下与松开
+    verification:
+      serial_evidence:
+        status: unverified
+        checked_at: null
+        evidence: null
+      physical_effect_verified:
+        status: unverified
+        checked_at: null
+        evidence: null
+boards: [idmc-0001-starcore-v4-2-2]
+components: []
+wiring: []
+source_file: examples/chatduino/starcore/onboard-self-test/onboard-self-test.ino
+expected_effect: 115200 串口先显示 STARCORE_SELF_TEST_READY，再报告蜂鸣器命令、A/B 空闲状态和连续 QMI8658 数据；按键按下/松开仍需单独操作观察。

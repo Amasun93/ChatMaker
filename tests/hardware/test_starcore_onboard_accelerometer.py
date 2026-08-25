@@ -47,11 +47,23 @@ class StarcoreOnboardAccelerometerTests(unittest.TestCase):
         )
         self.assertEqual(
             result["record"]["verification"]["physical_effect_verified"]["status"],
-            "verified",
+            "not_applicable",
         )
+        features = {
+            item["feature_id"]: item
+            for item in result["record"]["feature_verification"]
+        }
         self.assertIn(
             "QMI8658",
-            result["record"]["verification"]["physical_effect_verified"]["evidence"],
+            features["qmi8658"]["verification"]["physical_effect_verified"]["evidence"],
+        )
+        self.assertEqual(
+            features["passive-buzzer"]["verification"]["physical_effect_verified"]["status"],
+            "verified",
+        )
+        self.assertEqual(
+            features["button-a"]["verification"]["physical_effect_verified"]["status"],
+            "unverified",
         )
         devices = {item["id"]: item for item in result["record"]["onboard_hardware"]}
         sensor = devices["qmi8658"]

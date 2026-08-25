@@ -49,6 +49,30 @@ def _format_path(parts: Any) -> str:
     return ".".join(str(part) for part in parts) or "record"
 
 
+def _validate_gate_map(
+    gates: Any,
+    *,
+    label: str,
+    project_root: Path,
+) -> list[str]:
+    errors: list[str] = []
+    if not isinstance(gates, dict):
+        return [f"{label}: verification gates must be an object"]
+    for gate_name, gate in gates.items():
+        gate_label = f"{label}.{gate_name}"
+        if not isinstance(gate, dict):
+            errors.append(f"{gate_label}: gate must be an object")
+            continue
+        if gate.get("status") == "verified" and (
+            not gate.get("checked_at") or not gate.get("evidence")
+        ):
+            errors.append(f"{gate_label}.evidence: verified status requires checked_at and evidence")
+        evidence_ref = gate.get("evidence_ref")
+        if isinstance(evidence_ref, str) and not (project_root / evidence_ref).is_file():
+            errors.append(f"{gate_label}.evidence_ref: '{evidence_ref}' does not exist")
+    return errors
+
+
 def validate_record(record: dict[str, Any], schema_dir: Path) -> list[str]:
     kind = record.get("kind")
     if kind not in KINDS:
@@ -65,16 +89,43 @@ def validate_record(record: dict[str, Any], schema_dir: Path) -> list[str]:
         for error in sorted(Draft202012Validator(schema).iter_errors(record), key=lambda item: list(item.path))
     ]
 
-    verification = record.get("verification")
-    if isinstance(verification, dict):
-        for gate_name, gate in verification.items():
-            if not isinstance(gate, dict):
-                errors.append(f"verification.{gate_name}: gate must be an object")
+    project_root = schema_dir.parent.parent
+    errors.extend(
+        _validate_gate_map(
+            record.get("verification"),
+            label="verification",
+            project_root=project_root,
+        )
+    )
+    scoped_field = "feature_verification" if kind == "board" else "effect_verification"
+    scoped_id = "feature_id" if kind == "board" else "effect_id"
+    scoped_items = record.get(scoped_field, [])
+    if isinstance(scoped_items, list):
+        seen_scopes: set[str] = set()
+        onboard_ids = {
+            item.get("id")
+            for item in record.get("onboard_hardware", [])
+            if isinstance(item, dict)
+        }
+        for index, item in enumerate(scoped_items):
+            if not isinstance(item, dict):
                 continue
-            if gate.get("status") == "verified" and (not gate.get("checked_at") or not gate.get("evidence")):
-                errors.append(
-                    f"verification.{gate_name}.evidence: verified status requires checked_at and evidence"
+            item_id = item.get(scoped_id)
+            if isinstance(item_id, str):
+                if item_id in seen_scopes:
+                    errors.append(f"{scoped_field}: duplicate {scoped_id} '{item_id}'")
+                seen_scopes.add(item_id)
+                if kind == "board" and item_id not in onboard_ids:
+                    errors.append(
+                        f"{scoped_field}.{item_id}: feature is not declared in onboard_hardware"
+                    )
+            errors.extend(
+                _validate_gate_map(
+                    item.get("verification"),
+                    label=f"{scoped_field}.{item_id or index}.verification",
+                    project_root=project_root,
                 )
+            )
     if kind == "board":
         pin_ids = {pin.get("id") for pin in record.get("pins", []) if isinstance(pin, dict)}
         for pin_id in record.get("constraint_pin_refs", []):
@@ -121,13 +172,15 @@ def canonical_verification_snapshot(pack_root: Path) -> tuple[list[dict[str, Any
     snapshot: list[dict[str, Any]] = []
     for path in _record_paths(pack_root):
         record = load_record(path)
-        snapshot.append(
-            {
-                "kind": record.get("kind"),
-                "id": record.get("id"),
-                "verification": deepcopy(record.get("verification", {})),
-            }
-        )
+        item = {
+            "kind": record.get("kind"),
+            "id": record.get("id"),
+            "verification": deepcopy(record.get("verification", {})),
+        }
+        for scoped_field in ("feature_verification", "effect_verification"):
+            if scoped_field in record:
+                item[scoped_field] = deepcopy(record[scoped_field])
+        snapshot.append(item)
     digest = hashlib.sha256(
         json.dumps(
             snapshot,

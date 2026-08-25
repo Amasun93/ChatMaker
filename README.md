@@ -140,7 +140,7 @@ V1.0 采用渐进创作流程：先帮助用户跑通最小硬件作品，再按
 
 ## 板卡知识怎样按需出现
 
-当前源码构建的 Core 只带运行层、ChatMaker / ChatDuino / ChatWeb / ChatCAD 四个 Skill、7 块板卡、21 种元器件、25 个配方、六个紧凑索引、首批机械资料、schema 与当前案例，不带体积较大的扩展正文。M10 目前只有规范板卡记录、Skill 参考、项目检查器和示例；其签名 Knowledge 知识包尚未发布。这样基础安装更小，也不会把测试或构建缓存交给普通用户。
+当前源码构建的 Core 只带运行层、ChatMaker / ChatDuino / ChatWeb / ChatCAD 四个 Skill、7 块板卡、21 种元器件、26 个配方、六个紧凑索引、首批机械资料、schema 与当前案例，不带体积较大的扩展正文。M10 目前只有规范板卡记录、Skill 参考、项目检查器和示例；其签名 Knowledge 知识包尚未发布。这样基础安装更小，也不会把测试或构建缓存交给普通用户。
 
 当 AI 第一次读取某块板卡的详细章节时，`chatmaker-knowledge` 可以按需取得对应知识包并在之后复用。这个动作只安装知识资料，不会安装驱动、Mind+、Arduino Core、Node 或 Chromium。
 
@@ -165,10 +165,12 @@ chatmaker-pack rollback chatmaker-board-arduino-nano-classic-knowledge --version
 | 主控板自动识别 | 软件流程已实现，待实板 | 本地 CLI 可读取芯片和固件标记；允许时先完整备份，再刷入临时探针并恢复。仍不确定时引导查看丝印或拍正反面照片；三种实体板尚待验收 |
 | Nano Mind+ 编译和烧录迁移 | 部分验证 | 原 33 项行为测试已迁移；当前共有 12 个示例从 ChatMaker 路径真实编译；烧录等待有线 Nano |
 | Nano/Uno Mind+ 项目流程 | 部分验证 | 独立板型规则、Blink 和 OLED 仪表盘已真实编译；新增连续入口自动检查环境、编译并在有唯一有线端口时烧录，实体板效果等待用户测试 |
-| 星核板 Mind+ 适配器 | 主板实测 | Mind+ 2.0 为优先后端，Mind+ 1.8 仅回退；Mind+ 2 已完成两个示例编译、COM4 上传、16 MB Flash 四段 Hash 校验、硬复位、115200 串口自检与传感数据，用户确认蜂鸣器真实发声；CAN、断电重启和七个外接模块仍待实测 |
+<!-- starcore-evidence-summary:start -->
+| 星核板 Mind+ 适配器 | 分项实测 | Mind+ 1.8 和 2 都支持，优先复用电脑里已有的可用版本；两者都有时当前适配器默认选 2。自检与 OLED 案例均已完成编译、上传和串口验证，用户确认蜂鸣器发声和 OLED 实际显示；按键动作、CAN、断电重启和其余模块仍需分别验证。 |
+<!-- starcore-evidence-summary:end -->
 | DOIT ESP32 DevKit V1 | 部分验证 | 官方 `esp32:esp32@3.3.11` 已安装；`prepare-environment` 真实 no-op 成功；`esp32:esp32:esp32doit-devkit-v1` 已通过 Blink 和 AP 案例真实编译；烧录、启动、串口、SoftAP、HTTP 和实体效果仍待实板 |
 | UNIHIKER M10 | Alpha 源码检查可用 | 官方页面已核对 M10 为 Debian/Python 路线、K10 为独立 MCU 路线；板卡记录、完整项目示例和本地项目检查 CLI 已接入，尚未同步到实板或验证屏幕/外设效果 |
-| 常用模块、库和示例 | 继续扩充 | 21 种元器件、25 个配方已接入；新增星核板 WS2812 与 SG90 课堂示例并真实编译，IDMM-0007 只读诊断、I²C 排错和 OLED 中文分板卡引导已加入 |
+| 常用模块、库和示例 | 继续扩充 | 21 种元器件、26 个配方已接入；星核板板载自检现有独立 Recipe，WS2812 与 SG90 课堂示例已真实编译，IDMM-0007 只读诊断、I²C 排错和 OLED 中文分板卡引导已加入 |
 | ESP32 AP 手机控制案例 | 部分验证 | `examples/chatweb/esp32-ap-control.html` 是唯一页面源，`chatmaker-web-embed` 生成 `examples/chatduino/esp32/ap-led-sensor/page_html.h`，固件用 `send_P` 和显式长度嵌入页面；浏览器模拟和固件真实编译已通过，硬件仍未验证 |
 | ChatWeb 生成和本地预览 | 部分验证 | 一句话可自动获得空间玻璃课堂页、科幻模拟设备台或舞台闪光挑战；仍支持小游戏、ESP32 HTTP 页面和 Nano/Uno Web Serial 控制台，模拟预览不代表硬件已连接 |
 | ChatWeb 小游戏 | Alpha 可试玩 | 新增 `mini-game` 路由和反应挑战、躲避收集、拖拽解谜三种单文件模板；默认离线、支持触控，复杂平台与节奏玩法保留为进阶方向 |

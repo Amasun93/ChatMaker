@@ -319,11 +319,26 @@ class CatalogTests(unittest.TestCase):
                 self.assertEqual(record["verification"]["source_reviewed"]["status"], "verified")
                 compiled = record["verification"]["code_compiled"]
                 self.assertEqual(compiled["status"], "verified")
-                self.assertEqual(compiled["checked_at"], "2026-08-18")
-                self.assertTrue(compiled["evidence"].startswith("starcore-"))
-                self.assertTrue(compiled["evidence"].endswith("-compile-2026-08-18"))
+                if component_id == "idmd-0021-starcore-oled-1-3":
+                    self.assertEqual(compiled["checked_at"], "2026-08-25")
+                    self.assertEqual(
+                        compiled["evidence_id"],
+                        "starcore-oled-mindplus2-compile-2026-08-25",
+                    )
+                else:
+                    self.assertEqual(compiled["checked_at"], "2026-08-18")
+                    self.assertTrue(compiled["evidence"].startswith("starcore-"))
+                    self.assertTrue(compiled["evidence"].endswith("-compile-2026-08-18"))
                 self.assertEqual(record["verification"]["firmware_uploaded"]["status"], "unverified")
-                self.assertEqual(record["verification"]["physical_effect_verified"]["status"], "unverified")
+                expected_physical = (
+                    "verified"
+                    if component_id == "idmd-0021-starcore-oled-1-3"
+                    else "unverified"
+                )
+                self.assertEqual(
+                    record["verification"]["physical_effect_verified"]["status"],
+                    expected_physical,
+                )
                 self.assertEqual(record["historical_lead"]["status"], "legacy_reported")
                 self.assertTrue(record["source_ids"])
                 self.assertTrue(record["logic_boundary"])

@@ -17,17 +17,29 @@ sources:
 verification:
   source_reviewed:
     status: verified
-    checked_at: "2026-08-17"
+    checked_at: "2026-08-25"
     evidence: Governed owned sources identify IDMD-0021 as an SSD1306 128x64 I2C module using address 0x3C or 0x3D.
+    evidence_id: starcore-oled-source-review-2026-08-25
+    evidence_ref: docs/verification/2026-08-26-starcore-evidence-normalization.md
+    method: source-review
   code_compiled:
     status: verified
-    checked_at: "2026-08-18"
-    evidence: starcore-idmd-0021-oled-message-compile-2026-08-18
+    checked_at: "2026-08-25"
+    evidence: The owned OLED message recipe compiled with the Mind+ 2 target used in the latest run; Mind+ 1.8 remains supported and the upload/proxy/visual gates stay separately scoped.
+    evidence_id: starcore-oled-mindplus2-compile-2026-08-25
+    evidence_ref: docs/verification/2026-08-26-starcore-evidence-normalization.md
+    method: command-result
   firmware_uploaded: &unverified
     status: unverified
     checked_at: null
     evidence: null
-  physical_effect_verified: *unverified
+  physical_effect_verified:
+    status: verified
+    checked_at: "2026-08-26"
+    evidence: The user confirmed visible output from the exact IDMD-0021 welcome recipe; Chinese font availability and later dynamic-screen flicker remain separate project checks.
+    evidence_id: starcore-oled-user-confirmation-2026-08-26
+    evidence_ref: docs/verification/2026-08-26-starcore-evidence-normalization.md
+    method: user-confirmation
 historical_lead:
   status: legacy_reported
   evidence: Legacy material reports OLED use; current compilation is tracked separately, while display output on hardware remains unchecked.
@@ -46,13 +58,15 @@ constraints:
   - Chinese text uses Noto_Sans_CJK_SC_Light16.xbf at Flash address 0x400000; an application-only upload does not prove that the font asset is present.
   - Scan or confirm 0x3C versus 0x3D rather than guessing when the screen stays blank.
   - The source-reviewed card does not authorize drawPixel, clear, or clearDisplay APIs.
+  - Prefer concise Chinese after the Mind+ Chinese font asset is verified; otherwise use a clearly documented ASCII fallback rather than claiming Chinese support.
+  - Draw static screens once. For dynamic values, update only changed content or use a controlled refresh interval; do not clear and redraw the full screen in every loop.
 identification:
   - Confirm IDMD-0021, 1.3-inch 128x64 OLED, SSD1306, and I2C pins before using this owned card.
 libraries:
   - name: Mind+ MPython display API
     headers: [MPython.h]
     status: compile_verified
-    notes: MPython.h supplied the global display object during the current Mind+ 1.8 compilation; display output remains unverified.
+    notes: MPython.h supplied the global display object in both the Mind+ 1.8 and latest Mind+ 2 compilations; the user confirmed visible output for the exact welcome recipe on 2026-08-26.
 mindplus:
   extension: esp32
   headers: [MPython.h]

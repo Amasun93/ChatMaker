@@ -45,9 +45,16 @@ class StarcoreOwnedExampleTests(unittest.TestCase):
                 )
                 compiled = recipe["verification"]["code_compiled"]
                 self.assertEqual(compiled["status"], "verified")
-                self.assertEqual(compiled["checked_at"], "2026-08-18")
                 evidence = recipe["compile_evidence"]
-                self.assertEqual(compiled["evidence"], evidence["id"])
+                if recipe_id == "starcore-idmd-0021-oled-message":
+                    self.assertEqual(compiled["checked_at"], "2026-08-25")
+                    self.assertEqual(
+                        compiled["evidence_id"],
+                        "starcore-oled-mindplus2-compile-2026-08-25",
+                    )
+                else:
+                    self.assertEqual(compiled["checked_at"], "2026-08-18")
+                    self.assertEqual(compiled["evidence"], evidence["id"])
                 self.assertRegex(
                     evidence["completed_at"],
                     r"^2026-08-18T\d{2}:\d{2}:\d{2}\+08:00$",
@@ -68,19 +75,48 @@ class StarcoreOwnedExampleTests(unittest.TestCase):
                     (ROOT / expected_source).read_bytes()
                 ).hexdigest()
                 self.assertEqual(evidence["source_sha256"], source_digest)
-                for gate in ("firmware_uploaded", "physical_effect_verified"):
-                    self.assertEqual(recipe["verification"][gate]["status"], "unverified")
+                expected_upload = (
+                    "verified"
+                    if recipe_id == "starcore-idmd-0021-oled-message"
+                    else "unverified"
+                )
+                self.assertEqual(
+                    recipe["verification"]["firmware_uploaded"]["status"],
+                    expected_upload,
+                )
+                expected_physical = (
+                    "verified"
+                    if recipe_id == "starcore-idmd-0021-oled-message"
+                    else "unverified"
+                )
+                self.assertEqual(
+                    recipe["verification"]["physical_effect_verified"]["status"],
+                    expected_physical,
+                )
                 component = load_yaml(
                     ROOT / "packs" / "components" / f"{component_id}.yaml"
                 )
                 self.assertIn(expected_source, component["example_files"])
                 component_compiled = component["verification"]["code_compiled"]
                 self.assertEqual(component_compiled["status"], "verified")
-                self.assertEqual(component_compiled["checked_at"], "2026-08-18")
-                self.assertEqual(component_compiled["evidence"], evidence["id"])
+                if recipe_id == "starcore-idmd-0021-oled-message":
+                    self.assertEqual(component_compiled["checked_at"], "2026-08-25")
+                    self.assertEqual(
+                        component_compiled["evidence_id"],
+                        "starcore-oled-mindplus2-compile-2026-08-25",
+                    )
+                else:
+                    self.assertEqual(component_compiled["checked_at"], "2026-08-18")
+                    self.assertEqual(component_compiled["evidence"], evidence["id"])
                 self.assertNotIn("compile_evidence", component)
-                for gate in ("firmware_uploaded", "physical_effect_verified"):
-                    self.assertEqual(component["verification"][gate]["status"], "unverified")
+                self.assertEqual(
+                    component["verification"]["firmware_uploaded"]["status"],
+                    "unverified",
+                )
+                self.assertEqual(
+                    component["verification"]["physical_effect_verified"]["status"],
+                    expected_physical,
+                )
 
         report = ROOT / COMPILE_REPORT
         self.assertTrue(report.is_file())
