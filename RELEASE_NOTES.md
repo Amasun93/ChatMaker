@@ -8,7 +8,7 @@
 
 Nano、Uno、DOIT ESP32 DevKit V1、星核板、经典掌控板 V2.x 和掌控板 3.0 各有一个只读 ChatMaker Knowledge 知识包。两代掌控板按芯片、屏幕、引脚、传感器和 API 分开维护。首次读取缺少的详细章节时，reader 默认从签名注册表自动验证、下载并激活；第二次复用。
 
-WorkBuddy 当前源码服务版本为 `1.17.0`，共有 36 个工具。新增 `board_identify`：先做无损读取；允许时在完整备份后刷入临时识别程序并恢复；仍不确定时引导用户查看型号或拍正反面照片。这条说明不改变下面 rc5 发布物当时的 `1.7.0` / 23 工具事实。
+WorkBuddy 当前源码服务版本为 `1.18.0`，共有 38 个工具。新增 `cad_openscad_status` 与 `cad_openscad_prepare`：本地参数化建模先只读检查 OpenSCAD，缺失时必须获得明确安装同意，并且 Windows 只调用官网列出的 `OpenSCAD.OpenSCAD` WinGet 包；ChatMaker 名牌仿真页可按当前参数导出 STL。已有的 `board_identify` 仍先做无损读取，必要时备份、临时探测并恢复。这条说明不改变下面 rc5 发布物当时的 `1.7.0` / 23 工具事实。
 
 星核板 v4.2.2 Knowledge 1.5.0 在 1.4.0 完整板级审计上补入实板证据：一块用户确认的 v4.2.2 已完成 Mind+ 1.8 编译、上传、115200 串口、QMI8658 静止数据、16 MiB 全量备份和逐字节恢复验证；新增 `onboard-self-test` 示例。完整备份读取从 115200 提升到经实板验证的 460800，完整识别事务从约 28 分钟降至约 11 分钟，恢复仍保持 115200。电子探针仍不能只凭 ESP32、CH9102F 或 QMI8658 区分星核板与经典掌控板，因此继续要求固件精确标记、丝印或照片。按键按下、实际可听蜂鸣、CAN、断电重启和七个外接模块仍未验证。
 
@@ -16,7 +16,7 @@ This source update creates no new GitHub Release and does not rewrite rc1–rc5 
 
 Nano, Uno, DOIT ESP32 DevKit V1, Starcore, classic mPython V2.x, and mPython 3.0 each have one read-only ChatMaker Knowledge pack. The two mPython generations keep separate chip, display, pin, sensor, and API facts.
 
-Current source uses WorkBuddy server `1.17.0` with 36 tools. The new `board_identify` tool performs safe reads first, may use a backed-up and restored temporary probe, and falls back to markings or front/back photos. The rc5 section below remains an accurate historical description of the rc5 artifact's `1.7.0` / 23 tools.
+Current source uses WorkBuddy server `1.18.0` with 38 tools. `cad_openscad_status` probes the local OpenSCAD dependency without mutation; `cad_openscad_prepare` requires explicit install consent and uses only the official Windows WinGet package documented by OpenSCAD. The ChatMaker nameplate laboratory exports an STL from the current parameters. The existing `board_identify` tool still performs safe reads first and may use a backed-up and restored temporary probe. The rc5 section below remains an accurate historical description of the rc5 artifact's `1.7.0` / 23 tools.
 
 Starcore v4.2.2 Knowledge 1.5.0 adds physical-board evidence to the 1.4.0 board audit. One user-confirmed v4.2.2 completed Mind+ 1.8 compilation, upload, 115200 serial output, static QMI8658 readings, a full 16 MiB backup, and byte-verified restoration; an `onboard-self-test` example is included. Full-backup reads now use a hardware-verified 460800 baud, reducing the full identification transaction from about 28 to about 11 minutes while restore remains at 115200. ESP32, CH9102F, or QMI8658 still cannot electronically distinguish Starcore from classic mPython on their own, so an exact firmware marker, markings, or photos remain required. Pressed-button behavior, audible buzzer output, CAN, power-cycle recovery, and the seven external modules remain unverified.
 

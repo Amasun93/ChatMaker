@@ -92,7 +92,7 @@ npm run test:browser
 
 Read the [creative partner design](https://github.com/Amasun93/ChatMaker/blob/main/docs/plans/2026-08-14-chatmaker-creative-partner-design.md) and [implementation plan](https://github.com/Amasun93/ChatMaker/blob/main/docs/plans/2026-08-14-chatmaker-v0.1-implementation.md) for current scope and evidence.
 
-Current source uses WorkBuddy stdio server `1.14.0` with 33 tools, including `knowledge_get`, `cad_component_profile_get`, and the other three ChatCAD tools. The public rc5 paragraph above remains historical and still describes the rc5 artifact accurately.
+Current source uses WorkBuddy stdio server `1.18.0` with 38 tools, including local OpenSCAD status/preparation and ChatCAD generation. The public rc5 paragraph above remains historical and still describes the rc5 artifact accurately.
 
 ## License
 

@@ -1,6 +1,6 @@
 """Host-neutral ChatMaker stdio MCP entry point.
 
-The wire protocol and all 33 tools remain in the established server while host
+The wire protocol and current tool set remain in the established server while host
 installers refer to this stable, generic module name.
 """
 

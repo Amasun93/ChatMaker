@@ -73,11 +73,13 @@ class WorkBuddyBridgeTests(unittest.TestCase):
                 "cad_profile_get",
                 "cad_component_profile_get",
                 "cad_fabrication_get",
+                "cad_openscad_status",
+                "cad_openscad_prepare",
                 "cad_generate",
             },
         )
-        self.assertEqual(self.server.SERVER_VERSION, "1.17.0")
-        self.assertEqual(len(names), 36)
+        self.assertEqual(self.server.SERVER_VERSION, "1.18.0")
+        self.assertEqual(len(names), 38)
         upload_tool = next(
             tool for tool in self.server.TOOLS
             if tool["name"] == "nano_compile_upload"
@@ -300,6 +302,29 @@ class WorkBuddyBridgeTests(unittest.TestCase):
             self.assertIn("function scad()", preview)
             self.assertIn("孙大卫", preview)
             self.assertIn("text_scale", preview)
+            self.assertIn("导出 STL", preview)
+            self.assertIn("function plateMesh()", preview)
+            self.assertIn("function stl()", preview)
+            self.assertIn("text_triangles", preview)
+            self.assertEqual(payload["simulation_exports"], ["scad", "stl"])
+
+    def test_openscad_prepare_routes_explicit_install_permission(self):
+        captured = []
+        original = self.server.openscad_runtime.prepare
+        self.server.openscad_runtime.prepare = lambda **values: captured.append(values) or {
+            "success": False,
+            "state": "awaiting-install-confirmation",
+            "installed": False,
+        }
+        try:
+            response = self.server._tool_result("cad_openscad_prepare", {})
+        finally:
+            self.server.openscad_runtime.prepare = original
+
+        payload = json.loads(response["content"][0]["text"])
+        self.assertFalse(response["isError"])
+        self.assertEqual(payload["state"], "awaiting-install-confirmation")
+        self.assertEqual(captured, [{"allow_install": False}])
 
     def test_board_identify_routes_permission_and_preserves_beginner_guidance(self):
         captured = None
@@ -543,7 +568,7 @@ class WorkBuddyBridgeTests(unittest.TestCase):
         self.assertEqual(completed.returncode, 0, completed.stderr)
         response = json.loads(completed.stdout)
         self.assertEqual(response["id"], 1)
-        self.assertEqual(len(response["result"]["tools"]), 36)
+        self.assertEqual(len(response["result"]["tools"]), 38)
 
     def test_installer_preserves_existing_servers(self):
         with tempfile.TemporaryDirectory() as temporary:

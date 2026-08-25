@@ -118,7 +118,13 @@ union() {{
     }
 
 
-def _polygon_text(values: dict[str, Any], parameters: dict[str, Any]) -> tuple[list[str], list[list[list[list[float]]]]]:
+def _polygon_text(
+    values: dict[str, Any], parameters: dict[str, Any]
+) -> tuple[
+    list[str],
+    list[list[list[list[float]]]],
+    list[tuple[tuple[float, float, float], tuple[float, float, float], tuple[float, float, float]]],
+]:
     raw_font = values.get("engrave_font")
     font = (str(raw_font).strip() or None) if raw_font else None
     size = float(parameters["text_size"])
@@ -132,7 +138,8 @@ def _polygon_text(values: dict[str, Any], parameters: dict[str, Any]) -> tuple[l
         ]
         for glyph in layout["glyphs"]
     ]
-    return statements, glyphs
+    triangles = text_engine.triangles_from_layout(layout, height=1.0, offset=offset)
+    return statements, glyphs, triangles
 
 
 def _polygon_scad(name: str, parameters: dict[str, Any], statements: list[str]) -> str:
@@ -186,20 +193,34 @@ union() {{
 '''
 
 
-def _preview_lab(name: str, parameters: dict[str, Any], glyphs: list[list[list[list[float]]]], statements: list[str]) -> str:
+def _preview_lab(
+    name: str,
+    parameters: dict[str, Any],
+    glyphs: list[list[list[list[float]]]],
+    text_triangles: list[tuple[tuple[float, float, float], tuple[float, float, float], tuple[float, float, float]]],
+    statements: list[str],
+) -> str:
     payload = dict(parameters)
     payload["text_scale"] = 1.0
     payload["glyphs"] = glyphs
+    payload["text_triangles"] = text_triangles
     data = json.dumps(payload, ensure_ascii=False, separators=(",", ":")).replace("</", "<\\/")
     polygon_lines = "\n".join(f"  {statement}" for statement in statements)
     return r'''<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ChatCAD 名牌仿真实验室</title><style>
-*{box-sizing:border-box}body{margin:0;background:#eef2f5;color:#15202b;font-family:Inter,"Microsoft YaHei",sans-serif}.app{display:grid;grid-template-columns:330px 1fr;min-height:100vh}.side{background:#fff;border-right:1px solid #d9e1e7;padding:22px;overflow:auto;max-height:100vh}.eyebrow{font-size:12px;color:#16765d}.fixed{padding:10px 12px;background:#eef8f4;border-radius:10px;font-size:13px}.field{margin:12px 0}.field label{display:flex;justify-content:space-between;font-size:13px}.field input{width:100%;margin-top:6px}.actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:18px}button{min-height:43px;border:1px solid #cbd5dd;border-radius:10px;background:#fff;cursor:pointer}.stage-wrap{padding:20px}.stage{height:calc(100vh - 40px);min-height:520px;border:1px solid #d9e1e7;border-radius:18px;background:#fff;position:relative;overflow:hidden}.stage canvas{width:100%;height:100%}.hint{position:absolute;left:18px;bottom:16px;color:#667784;font-size:12px}.status{font-size:12px;color:#16765d;min-height:18px;margin-top:8px}@media(max-width:780px){.app{grid-template-columns:1fr}.side{max-height:none}.stage{height:520px}}</style></head><body><main class="app"><aside class="side"><div class="eyebrow">CHATCAD · 无需 MakerWorld 登录</div><h1>__NAME__</h1><p class="fixed">文字：<strong>__LABEL__</strong><br>当前页面可调整尺寸、孔位和文字几何；要改文字内容，请回到 ChatCAD 重新生成。</p><div id="fields"></div><div class="actions"><button id="copy">复制 OpenSCAD</button><button id="download">下载 .scad</button></div><div class="status" id="status"></div></aside><section class="stage-wrap"><div class="stage"><canvas id="view"></canvas><span class="hint">这是参数仿真预览；导出后仍需切片和实物试打。</span></div></section></main><script>
+*{box-sizing:border-box}body{margin:0;background:#eef2f5;color:#15202b;font-family:Inter,"Microsoft YaHei",sans-serif}.app{display:grid;grid-template-columns:330px 1fr;min-height:100vh}.side{background:#fff;border-right:1px solid #d9e1e7;padding:22px;overflow:auto;max-height:100vh}.eyebrow{font-size:12px;color:#16765d}.fixed{padding:10px 12px;background:#eef8f4;border-radius:10px;font-size:13px}.field{margin:12px 0}.field label{display:flex;justify-content:space-between;font-size:13px}.field input{width:100%;margin-top:6px}.actions{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:18px}button{min-height:43px;border:1px solid #cbd5dd;border-radius:10px;background:#fff;cursor:pointer;font-size:12px}.stage-wrap{padding:20px}.stage{height:calc(100vh - 40px);min-height:520px;border:1px solid #d9e1e7;border-radius:18px;background:#fff;position:relative;overflow:hidden}.stage canvas{width:100%;height:100%}.hint{position:absolute;left:18px;bottom:16px;color:#667784;font-size:12px}.status{font-size:12px;color:#16765d;min-height:18px;margin-top:8px}@media(max-width:780px){.app{grid-template-columns:1fr}.side{max-height:none}.stage{height:520px}}</style></head><body><main class="app"><aside class="side"><div class="eyebrow">CHATCAD · 无需 MakerWorld 登录</div><h1>__NAME__</h1><p class="fixed">文字：<strong>__LABEL__</strong><br>当前页面可调整尺寸、孔位和文字几何；要改文字内容，请回到 ChatCAD 重新生成。</p><div id="fields"></div><div class="actions"><button id="copy">复制 OpenSCAD</button><button id="download">导出 SCAD</button><button id="stl">导出 STL</button></div><div class="status" id="status"></div></aside><section class="stage-wrap"><div class="stage"><canvas id="view"></canvas><span class="hint">这是参数仿真预览；导出后仍需切片和实物试打。</span></div></section></main><script>
 const s=__DATA__,$=id=>document.getElementById(id),defs=[['tag_length','长度',30,200,1],['tag_width','宽度',12,80,1],['plate_thickness','底板厚度',1,10,.1],['corner_radius','圆角',0,20,.5],['hole_diameter','孔径',.8,10,.1],['hole_margin_x','孔距左边',0,50,.5],['hole_margin_y','孔距上边',0,50,.5],['text_depth','文字凸起',.4,5,.1],['text_scale','文字缩放',.4,2,.05],['text_x','文字左右',-100,100,.5],['text_y','文字上下',-100,100,.5]];
 $('fields').innerHTML=defs.map(([k,n,min,max,step])=>`<div class="field"><label>${n}<output id="${k}v"></output></label><input id="${k}" type="range" min="${min}" max="${max}" step="${step}" value="${s[k]}"></div>`).join('');for(const[k]of defs)$(k).oninput=()=>{s[k]=Number($(k).value);draw()};
 const c=$('view'),ctx=c.getContext('2d');function rr(x,y,w,h,r){r=Math.max(0,Math.min(r,w/2,h/2));ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath()}
 function draw(){const b=c.getBoundingClientRect(),d=devicePixelRatio||1;c.width=b.width*d;c.height=b.height*d;const pad=70*d,scale=Math.min((c.width-2*pad)/s.tag_length,(c.height-2*pad)/s.tag_width),w=s.tag_length*scale,h=s.tag_width*scale,x=(c.width-w)/2,y=(c.height-h)/2,rad=s.corner_radius*scale,shadow=Math.max(3,s.plate_thickness*scale*.22);ctx.clearRect(0,0,c.width,c.height);ctx.fillStyle='#9aaab4';rr(x+shadow,y+shadow,w,h,rad);ctx.fill();ctx.fillStyle='#dce7ec';ctx.strokeStyle='#334956';ctx.lineWidth=2*d;rr(x,y,w,h,rad);ctx.fill();ctx.stroke();const hx=x+s.hole_margin_x*scale,hy=y+s.hole_margin_y*scale;ctx.beginPath();ctx.arc(hx,hy,s.hole_diameter*scale/2,0,Math.PI*2);ctx.fillStyle='#fff';ctx.fill();ctx.stroke();ctx.save();ctx.translate(c.width/2+s.text_x*scale,c.height/2-s.text_y*scale);ctx.scale(scale*s.text_scale,-scale*s.text_scale);ctx.fillStyle='#2e5969';for(const glyph of s.glyphs){ctx.beginPath();for(const contour of glyph){if(!contour.length)continue;ctx.moveTo(contour[0][0],contour[0][1]);for(let i=1;i<contour.length;i++)ctx.lineTo(contour[i][0],contour[i][1]);ctx.closePath()}ctx.fill('evenodd')}ctx.restore();for(const[k]of defs)$(k+'v').value=Number(s[k]).toFixed(k==='text_scale'?2:1)}window.onresize=draw;
 function scad(){return`// ChatMaker Chat3D offline nameplate\n// 固化文字：${s.engrave_text}。改字请回 ChatCAD 重新生成。\n/* [尺寸] */\ntag_length = ${s.tag_length};\ntag_width = ${s.tag_width};\nplate_thickness = ${s.plate_thickness};\ncorner_radius = ${s.corner_radius};\n/* [文字几何] */\ntext_raise = ${s.text_depth};\ntext_scale = ${s.text_scale};\ntext_x = ${s.text_x};\ntext_y = ${s.text_y};\n/* [钥匙孔] */\nhole_diameter = ${s.hole_diameter};\nhole_margin_x = ${s.hole_margin_x};\nhole_margin_y = ${s.hole_margin_y};\n$fn=96;\neffective_corner_radius=max(0,min(corner_radius,tag_width/2-0.5,tag_length/2-0.5));\nhole_x=-(tag_length/2-hole_margin_x);hole_y=tag_width/2-hole_margin_y;\nmodule rounded_plate_2d(){offset(r=effective_corner_radius)square([max(.1,tag_length-2*effective_corner_radius),max(.1,tag_width-2*effective_corner_radius)],center=true);}\nmodule plate(){difference(){linear_extrude(height=plate_thickness)rounded_plate_2d();translate([hole_x,hole_y,-.1])cylinder(h=plate_thickness+.2,d=hole_diameter);}}\nmodule label_glyphs(){\n__POLYGONS__\n}\nunion(){plate();translate([text_x,text_y,plate_thickness-.2])linear_extrude(height=text_raise+.2)scale(text_scale)label_glyphs();}\n`}
-async function copyScad(){const value=scad();try{await navigator.clipboard.writeText(value)}catch(e){const t=document.createElement('textarea');t.value=value;document.body.appendChild(t);t.select();document.execCommand('copy');t.remove()}$('status').textContent='OpenSCAD 代码已复制'}function dl(){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([scad()],{type:'text/plain'}));a.download='__FILE__.scad';a.click();$('status').textContent='OpenSCAD 文件已下载'}$('copy').onclick=copyScad;$('download').onclick=dl;draw();
+async function copyScad(){const value=scad();try{await navigator.clipboard.writeText(value)}catch(e){const t=document.createElement('textarea');t.value=value;document.body.appendChild(t);t.select();document.execCommand('copy');t.remove()}$('status').textContent='OpenSCAD 代码已复制'}
+function downloadFile(filename,body,type='text/plain'){const a=document.createElement('a'),url=URL.createObjectURL(new Blob([body],{type}));a.href=url;a.download=filename;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}
+function insideRounded(x,y,L,W,r){const ax=Math.abs(x),ay=Math.abs(y),hx=L/2,hy=W/2;if(ax>hx||ay>hy)return false;r=Math.max(0,Math.min(r,hx-.5,hy-.5));if(!r||ax<=hx-r||ay<=hy-r)return true;const dx=ax-(hx-r),dy=ay-(hy-r);return dx*dx+dy*dy<=r*r+1e-8}
+function plateMesh(){const L=s.tag_length,W=s.tag_width,z=s.plate_thickness,r=Math.max(0,Math.min(s.corner_radius,W/2-.5,L/2-.5)),hx=-(L/2-s.hole_margin_x),hy=W/2-s.hole_margin_y,hr=s.hole_diameter/2,N=96;if(!insideRounded(hx,hy,L,W,r))throw new Error('钥匙孔中心已超出底板');const outer=[],inner=[];for(let i=0;i<N;i++){const a=2*Math.PI*i/N,dx=Math.cos(a),dy=Math.sin(a);let lo=0,hi=Math.hypot(L,W)*2;for(let k=0;k<42;k++){const mid=(lo+hi)/2;if(insideRounded(hx+dx*mid,hy+dy*mid,L,W,r))lo=mid;else hi=mid}if(lo<=hr+.05)throw new Error('钥匙孔离边缘太近，请增大孔边距或减小孔径');outer.push([hx+dx*lo,hy+dy*lo]);inner.push([hx+dx*hr,hy+dy*hr])}const tris=[];for(let i=0;i<N;i++){const j=(i+1)%N,ob=[...outer[i],0],ojb=[...outer[j],0],ot=[...outer[i],z],ojt=[...outer[j],z],ib=[...inner[i],0],ijb=[...inner[j],0],it=[...inner[i],z],ijt=[...inner[j],z];tris.push([ot,ojt,ijt],[ot,ijt,it],[ob,ijb,ojb],[ob,ib,ijb],[ob,ojb,ojt],[ob,ojt,ot],[ib,it,ijt],[ib,ijt,ijb])}return tris}
+function modelTriangles(){const tris=plateMesh(),base=s.plate_thickness-.2,height=s.text_depth+.2;for(const tri of s.text_triangles)tris.push(tri.map(p=>[p[0]*s.text_scale+s.text_x,p[1]*s.text_scale+s.text_y,base+p[2]*height]));return tris}
+function normal(a,b,c){const ux=b[0]-a[0],uy=b[1]-a[1],uz=b[2]-a[2],vx=c[0]-a[0],vy=c[1]-a[1],vz=c[2]-a[2],nx=uy*vz-uz*vy,ny=uz*vx-ux*vz,nz=ux*vy-uy*vx,n=Math.hypot(nx,ny,nz);return n>1e-9?[nx/n,ny/n,nz/n]:null}
+function stl(){let out='solid chatcad_nameplate\n';for(const tri of modelTriangles()){const n=normal(...tri);if(!n)continue;out+=`facet normal ${n.join(' ')}\n outer loop\n${tri.map(p=>`  vertex ${p.join(' ')}`).join('\n')}\n endloop\nendfacet\n`}return out+'endsolid chatcad_nameplate\n'}
+$('copy').onclick=copyScad;$('download').onclick=()=>{downloadFile('__FILE__.scad',scad());$('status').textContent='OpenSCAD 文件已下载'};$('stl').onclick=()=>{try{downloadFile('__FILE__.stl',stl(),'model/stl');$('status').textContent='当前参数的 STL 已导出'}catch(e){$('status').textContent=e.message}};draw();
 </script></body></html>'''.replace("__NAME__", html.escape(name)).replace("__LABEL__", html.escape(str(parameters["engrave_text"]))).replace("__FILE__", name).replace("__DATA__", data).replace("__POLYGONS__", polygon_lines)
 
 
@@ -209,7 +230,7 @@ def generate(request: dict[str, Any], name: str, output: Path) -> dict[str, Any]
         raise ValueError("unsupported_chat3d_delivery_mode")
     code, parameters = _scad(name, request.get("parameters", {}))
     if delivery_mode == "chatmaker-preview":
-        statements, glyphs = _polygon_text(request.get("parameters", {}), parameters)
+        statements, glyphs, text_triangles = _polygon_text(request.get("parameters", {}), parameters)
         code = _polygon_scad(name, parameters, statements)
         output.mkdir(parents=True, exist_ok=True)
         files = {
@@ -218,7 +239,11 @@ def generate(request: dict[str, Any], name: str, output: Path) -> dict[str, Any]
             "preview_lab": output / "preview-lab.html",
         }
         files["scad"].write_text(code, encoding="utf-8", newline="\n")
-        files["preview_lab"].write_text(_preview_lab(name, parameters, glyphs, statements), encoding="utf-8", newline="\n")
+        files["preview_lab"].write_text(
+            _preview_lab(name, parameters, glyphs, text_triangles, statements),
+            encoding="utf-8",
+            newline="\n",
+        )
         project = {
             "schema_version": "1.0",
             "mode": "chat3d",
@@ -248,6 +273,7 @@ def generate(request: dict[str, Any], name: str, output: Path) -> dict[str, Any]
             },
             "scad_generated": "verified",
             "simulation_interface": "verified",
+            "simulation_exports": ["scad", "stl"],
             "model_generated": "unverified",
             "file_opened": "unverified",
             "physical_fit": "unverified",

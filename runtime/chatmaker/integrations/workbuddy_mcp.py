@@ -10,6 +10,7 @@ from typing import Any
 from chatmaker import catalog
 from chatmaker import knowledge
 from chatmaker.cad import generator as cad_generator
+from chatmaker.cad import openscad_runtime
 from chatmaker.hardware import esp32_devkit_v1 as esp32_bridge
 from chatmaker.hardware import board_identification
 from chatmaker.hardware import nano_mindplus as bridge
@@ -21,7 +22,7 @@ from chatmaker.hardware import unihiker_m10
 
 
 SERVER_NAME = "chatmaker-hardware"
-SERVER_VERSION = "1.17.0"
+SERVER_VERSION = "1.18.0"
 PROTOCOL_VERSION = "2024-11-05"
 
 TOOLS = [
@@ -542,6 +543,23 @@ TOOLS = [
         },
     },
     {
+        "name": "cad_openscad_status",
+        "description": "只读检查本机是否已有 OpenSCAD，并返回可执行文件路径和版本；不会安装或启动任何程序。",
+        "inputSchema": {"type": "object", "properties": {}, "additionalProperties": False},
+    },
+    {
+        "name": "cad_openscad_prepare",
+        "description": (
+            "准备 ChatCAD 本地参数化建模依赖。未安装时必须先取得用户明确同意，"
+            "再传 allow_install=true；Windows 只调用 OpenSCAD 官网明确列出的 WinGet 官方包。"
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {"allow_install": {"type": "boolean", "default": False}},
+            "additionalProperties": False,
+        },
+    },
+    {
         "name": "cad_generate",
         "description": "按制作方式生成 Chat2D 图纸或已确认的 Chat3D 结果。Chat3D 必须先确认任务卡和开始生成；默认只返回 MakerLab 可用的 OpenSCAD 代码，明确选择 ChatMaker 时才写出模型和预览文件。",
         "inputSchema": {
@@ -697,6 +715,10 @@ def _tool_result(name: str, arguments: dict[str, Any]) -> dict[str, Any]:
                 "material_id": arguments.get("material_id", "wood-sheet-3mm"),
             }
         )
+    elif name == "cad_openscad_status":
+        result = openscad_runtime.status()
+    elif name == "cad_openscad_prepare":
+        result = openscad_runtime.prepare(allow_install=arguments.get("allow_install") is True)
     elif name == "cad_generate":
         cad_request = {"action": "generate", **arguments}
         if str(arguments.get("mode", "mounting-plate")) == "chat3d":
@@ -775,6 +797,8 @@ def _tool_result(name: str, arguments: dict[str, Any]) -> dict[str, Any]:
             "uploaded-awaiting-observation",
             "physical-confirmation-needed",
             "awaiting-generation-confirmation",
+            "awaiting-install-confirmation",
+            "manual-install-required",
         }
         expected_identification_pause = result.get("identification", {}).get("status") in {
             "probable",
@@ -881,7 +905,9 @@ def handle(request: dict[str, Any]) -> dict[str, Any] | None:
                 "开始生成前只问一个小白能回答的问题：是否方便登录 MakerLab。"
                 "MakerLab 路线直接给完整 OpenSCAD 代码和官方入口 https://makerworld.com.cn/zh/makerlab，"
                 "不默认交付 STL、右侧预览或截图。用户没有 MakerWorld 账号或不方便登录时，"
-                "使用 chatmaker-preview，同时交付完整 OpenSCAD 代码和 ChatMaker 仿真界面，让用户在界面中调整参数；仍不默认截图。"
+                "先调用 cad_openscad_status 检查本地依赖。缺失时先征得明确安装同意，只有得到同意后才调用"
+                "cad_openscad_prepare 且传 allow_install=true；不得把开始建模视为安装授权。随后使用 chatmaker-preview，"
+                "同时交付完整 OpenSCAD 代码和 ChatMaker 仿真界面，让用户在界面中调整参数并导出 SCAD 或 STL；仍不默认截图。"
                 "MakerLab 中文不得使用 Microsoft YaHei、SimHei 或 SimSun 等电脑本机字体。"
                 "名牌默认使用已在 MakerLab 实测通过的 Noto Sans SC:style=Regular；给代码时必须同时提醒用户："
                 "点击代码区底部带 T 的放大镜图标（字体），搜索并勾选这个精确名称，确认后再生成。字体清单会更新，其他字体只以编辑器当前面板为准。"
