@@ -34,6 +34,8 @@ class Chat3DTests(unittest.TestCase):
             preview=Path(result["files"]["preview_lab"]).read_text(encoding="utf-8")
         self.assertEqual(project["parameters"]["wall"],2.8)
         self.assertIn("difference()",scad)
+        self.assertEqual(result["scad_code"],scad)
+        self.assertEqual(result["preview_lab"],result["files"]["preview_lab"])
         self.assertTrue(stl.startswith("solid"))
         self.assertIn("拖拽旋转",preview)
         self.assertIn("onwheel",preview)

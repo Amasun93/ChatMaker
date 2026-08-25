@@ -173,9 +173,11 @@ class WorkBuddyBridgeTests(unittest.TestCase):
         self.assertIn("MakerLab", instructions)
         self.assertIn("OpenSCAD 代码", instructions)
         self.assertIn("不默认交付 STL、右侧预览或截图", instructions)
-        self.assertIn("只有用户不使用 MakerLab", instructions)
+        self.assertIn("使用 chatmaker-preview", instructions)
         self.assertIn("Noto Sans SC:style=Regular", instructions)
         self.assertIn("带 T 的放大镜图标（字体）", instructions)
+        self.assertIn("没有 MakerWorld 账号或不方便登录", instructions)
+        self.assertIn("OpenSCAD 代码和 ChatMaker 仿真界面", instructions)
 
     def test_chat3d_tool_pauses_before_explicit_generation_confirmation(self):
         with tempfile.TemporaryDirectory() as folder:
@@ -265,6 +267,39 @@ class WorkBuddyBridgeTests(unittest.TestCase):
             self.assertNotIn("SimSun", code)
             self.assertTrue(payload["text_rendering"]["text_content_editable_in_makerlab"])
             self.assertTrue(payload["text_rendering"]["makerlab_font_selection_required"])
+
+    def test_nameplate_without_makerworld_account_returns_code_and_preview(self):
+        with tempfile.TemporaryDirectory() as folder:
+            output = Path(folder) / "nameplate-preview"
+            response = self.server._tool_result(
+                "cad_generate",
+                {
+                    "mode": "chat3d",
+                    "delivery_mode": "chatmaker-preview",
+                    "project_name": "offline-nameplate",
+                    "output_dir": str(output),
+                    "generation_confirmed": True,
+                    "parameters": {
+                        "design_kind": "nameplate",
+                        "engrave_text": "孙大卫",
+                    },
+                },
+            )
+            payload = json.loads(response["content"][0]["text"])
+
+            self.assertFalse(response["isError"])
+            self.assertTrue(payload["success"], payload)
+            self.assertEqual(payload["delivery_mode"], "chatmaker-preview")
+            self.assertEqual(set(payload["files"]), {"project", "scad", "preview_lab"})
+            self.assertEqual(payload["preview_lab"], payload["files"]["preview_lab"])
+            self.assertIn("polygon(points=", payload["scad_code"])
+            self.assertNotIn("text(", payload["scad_code"])
+            preview = Path(payload["preview_lab"]).read_text(encoding="utf-8")
+            self.assertIn("['tag_length','长度'", preview)
+            self.assertIn("复制 OpenSCAD", preview)
+            self.assertIn("function scad()", preview)
+            self.assertIn("孙大卫", preview)
+            self.assertIn("text_scale", preview)
 
     def test_board_identify_routes_permission_and_preserves_beginner_guidance(self):
         captured = None

@@ -110,6 +110,8 @@ class Chat3DMechanicalBasicsTests(unittest.TestCase):
                 100,
             )
             lab = Path(result["files"]["preview_lab"]).read_text(encoding="utf-8")
+            self.assertEqual(result["scad_code"], Path(result["files"]["scad"]).read_text(encoding="utf-8"))
+            self.assertEqual(result["preview_lab"], result["files"]["preview_lab"])
             for marker in (
                 'id="driver_teeth"',
                 'id="driven_teeth"',

@@ -565,6 +565,7 @@ TOOLS = [
                     "type": "string",
                     "enum": ["makerlab-code", "chatmaker-preview"],
                     "default": "makerlab-code",
+                    "description": "Use makerlab-code when MakerLab login is convenient; use chatmaker-preview when the user has no MakerWorld account or login is inconvenient, returning both OpenSCAD code and a parameter simulation page.",
                 },
                 "mode": {
                     "type": "string",
@@ -713,7 +714,8 @@ def _tool_result(name: str, arguments: dict[str, Any]) -> dict[str, Any]:
                     "delivery_modes": ["makerlab-code", "chatmaker-preview"],
                     "beginner_message": (
                         "请先确认任务卡。准备开始后，请明确说“开始生成”，"
-                        "并选择 MakerLab（推荐，直接给 OpenSCAD 代码）或 ChatMaker 右侧预览。"
+                        "然后告诉我你是否方便登录 MakerLab：方便就直接给 OpenSCAD 代码；"
+                        "没有 MakerWorld 账号或不方便登录，就同时给 OpenSCAD 代码和 ChatMaker 仿真界面。"
                     ),
                 }
             else:
@@ -876,9 +878,10 @@ def handle(request: dict[str, Any]) -> dict[str, Any] | None:
                 "涉及星核板自研模块时再用 cad_component_profile_get 按精确 ID 读取组件机械资料，缺失尺寸不得猜测。"
                 "激光切割任务再用 cad_fabrication_get 读取设备、材料、颜色图层和校准边界，确认后用 cad_generate 生成图纸和预览。"
                 "任何三维任务都先讨论并整理任务卡；在用户确认任务卡且明确说“开始生成”前，不得调用 cad_generate。"
-                "开始生成前先问用户选择 MakerLab 还是 ChatMaker 预览，默认推荐 MakerLab。"
+                "开始生成前只问一个小白能回答的问题：是否方便登录 MakerLab。"
                 "MakerLab 路线直接给完整 OpenSCAD 代码和官方入口 https://makerworld.com.cn/zh/makerlab，"
-                "不默认交付 STL、右侧预览或截图。只有用户不使用 MakerLab，才生成并交付 ChatMaker 右侧预览实验室。"
+                "不默认交付 STL、右侧预览或截图。用户没有 MakerWorld 账号或不方便登录时，"
+                "使用 chatmaker-preview，同时交付完整 OpenSCAD 代码和 ChatMaker 仿真界面，让用户在界面中调整参数；仍不默认截图。"
                 "MakerLab 中文不得使用 Microsoft YaHei、SimHei 或 SimSun 等电脑本机字体。"
                 "名牌默认使用已在 MakerLab 实测通过的 Noto Sans SC:style=Regular；给代码时必须同时提醒用户："
                 "点击代码区底部带 T 的放大镜图标（字体），搜索并勾选这个精确名称，确认后再生成。字体清单会更新，其他字体只以编辑器当前面板为准。"

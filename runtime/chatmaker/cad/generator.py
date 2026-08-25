@@ -206,7 +206,7 @@ def generate_project(request: dict[str, Any]) -> dict[str, Any]:
         from . import nameplate
 
         try:
-            return nameplate.generate(request, project_name)
+            return nameplate.generate(request, project_name, output_dir)
         except (OSError, ValueError) as exc:
             return {"success": False, "error": "cad_generation_failed", "detail": str(exc)}
     if mode == "chat3d" and design_kind in {"gear_pair", "rack_and_pinion"}:

@@ -529,7 +529,8 @@ def generate(request: dict[str, Any], profile: dict[str, Any], output: Path, nam
     assembly_triangles: list[Triangle] = []
     for part_id, x, y, z in placements:
         assembly_triangles.extend(_translate(by_id[part_id]["triangles"], x, y, z))
-    files["scad"].write_text(_assembly_scad(name, parts, placements), encoding="utf-8", newline="\n")
+    scad_code = _assembly_scad(name, parts, placements)
+    files["scad"].write_text(scad_code, encoding="utf-8", newline="\n")
     files["stl"].write_text(_stl(name, assembly_triangles), encoding="ascii", newline="\n")
     files["preview_lab"].write_text(_lab(name, g), encoding="utf-8", newline="\n")
 
@@ -589,6 +590,8 @@ def generate(request: dict[str, Any], profile: dict[str, Any], output: Path, nam
         "mode": "chat3d",
         "design_kind": g["design_kind"],
         "delivery_mode": delivery_mode,
+        "scad_code": scad_code,
+        "preview_lab": str(files["preview_lab"]),
         "files": {key: str(path) for key, path in files.items()},
         "checks": project["checks"],
         "model_generated": "verified",

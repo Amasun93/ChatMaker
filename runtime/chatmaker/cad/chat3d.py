@@ -245,7 +245,8 @@ def generate(request: dict[str, Any], profile: dict[str, Any], output: Path, nam
         }
     output.mkdir(parents=True,exist_ok=True)
     files={"project":output/"project.json","scad":output/f"{name}.scad","stl":output/f"{name}.stl","preview_lab":output/"preview-lab.html"}
-    files["scad"].write_text(_scad(name,g,engrave),encoding="utf-8");files["stl"].write_text(_stl(name,g,engrave),encoding="ascii");files["preview_lab"].write_text(_lab(name,g,engrave),encoding="utf-8")
+    scad_code=_scad(name,g,engrave)
+    files["scad"].write_text(scad_code,encoding="utf-8");files["stl"].write_text(_stl(name,g,engrave),encoding="ascii");files["preview_lab"].write_text(_lab(name,g,engrave),encoding="utf-8")
     project={"schema_version":"1.0","mode":"chat3d","project_name":name,"board_id":profile["board_id"],"parameters":g,"engrave_text":engrave["text"] if engrave else "","model_generated":"verified","file_opened":"unverified","physical_fit":"unverified"}
     files["project"].write_text(json.dumps(project,ensure_ascii=False,indent=2)+"\n",encoding="utf-8")
-    return {"success":True,"action":"generate","mode":"chat3d","delivery_mode":delivery_mode,"files":{k:str(v) for k,v in files.items()},"model_generated":"verified","file_opened":"unverified","physical_fit":"unverified"}
+    return {"success":True,"action":"generate","mode":"chat3d","delivery_mode":delivery_mode,"scad_code":scad_code,"preview_lab":str(files["preview_lab"]),"files":{k:str(v) for k,v in files.items()},"model_generated":"verified","file_opened":"unverified","physical_fit":"unverified"}
