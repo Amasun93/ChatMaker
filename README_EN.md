@@ -10,11 +10,11 @@ ChatMaker helps teachers, students, and hackathon participants move from a clear
 
 ChatMaker is the only user entry. ChatDuino, ChatWeb, and ChatCAD remain separately maintained internal specialists invoked by ChatMaker.
 
-Install the current Alpha through the host's native SkillHub or GitHub Skill flow, then: "Use $chatmaker as the only user entry." Ordinary installation does not scan Codex/WorkBuddy or install a separate tool service. Source developers who need local CLIs may run `python -m pip install -e .` followed by `chatmaker-install local`.
+Install the current Beta from GitHub `main` through the host's native GitHub Skill flow, then: "Use $chatmaker as the only user entry." Ordinary installation does not scan Codex/WorkBuddy or install a separate tool service. Source developers who need local CLIs may run `python -m pip install -e .` followed by `chatmaker-install local`.
 
-> Early development status: [`v0.1.0-rc5`](https://github.com/Amasun93/ChatMaker/releases/tag/v0.1.0-rc5) is the latest packaged prerelease. Current source uses one Skill plus local CLIs and reuses Mind+ 1.8.x or 2.x, preferring 2.x when both are usable. Physical evidence remains board-specific rather than inferred from software checks.
+> Beta status: the maintainer reports more than 20 invited testers. GitHub `main` is the recommended source. [`v0.1.0-rc5`](https://github.com/Amasun93/ChatMaker/releases/tag/v0.1.0-rc5) remains available only as an older historical snapshot. Physical evidence remains board-specific rather than inferred from software checks.
 
-Current post-rc5 source is preparing a minimal `ChatMaker-Core-<version>.zip` plus four board-specific ChatMaker Knowledge packs. This work does not create a new GitHub Release; rc5 remains the current public prerelease.
+Current source includes a Windows x64 ChatMaker-managed Starcore CLI path. It prepares a locked Arduino CLI, Mind+ public ESP32 core, and exact mPython/OLED/font libraries without requiring the Mind+ desktop application. Existing Mind+ 1.8.x and 2.x installations remain compatible fallbacks.
 
 ## Architecture
 
@@ -57,9 +57,9 @@ chatmaker-pack rollback chatmaker-board-arduino-nano-classic-knowledge --version
 
 Experiments belong in a separate local override directory and stay labelled `provenance=local_override`; they cannot impersonate official content. See the [installation guide](docs/installation.md) for cache, offline, update, and rollback instructions.
 
-## rc5 public prerelease
+## rc5 historical snapshot
 
-The current public prerelease is [`v0.1.0-rc5`](https://github.com/Amasun93/ChatMaker/releases/tag/v0.1.0-rc5). rc1, rc2, rc3, and rc4 remain historical releases with their original artifacts and verification records.
+[`v0.1.0-rc5`](https://github.com/Amasun93/ChatMaker/releases/tag/v0.1.0-rc5) remains available with its original artifacts and verification records, but it is no longer the recommended installation entry. Beta testers should install from GitHub `main`; SkillHub automation is planned for P2.
 
 Users can download the rc5 ZIP and matching `.sha256` from GitHub Releases, verify the archive, and then install it. Public `main` contains the current source. Neither route turns software tests or compilation into evidence of real upload, serial, network, or physical behavior.
 
@@ -79,6 +79,7 @@ chatmaker-catalog --request-json '{"action":"search","query":"relay","kind":"com
 chatmaker-route --request-json '{"hardware":{"board":"arduino-nano-classic"}}'
 chatmaker-nano --request-json '{"action":"doctor"}'
 chatmaker-uno --request-json '{"action":"doctor"}'
+chatmaker-starcore --request-json '{"action":"prepare-environment"}'
 chatmaker-esp32 --request-json '{"action":"prepare-environment"}'
 chatmaker-nano-examples --root examples/chatduino/nano
 chatmaker-web-plan --brief-json '{"kind":"classroom-tool","idea":"collect class feedback","audience_scene":"students before class ends","desired_feeling":"clear and calm","primary_action":"choose the step to explain again"}'
@@ -90,7 +91,7 @@ npx playwright install chromium
 npm run test:browser
 ```
 
-Read the [creative partner design](https://github.com/Amasun93/ChatMaker/blob/main/docs/plans/2026-08-14-chatmaker-creative-partner-design.md) and [implementation plan](https://github.com/Amasun93/ChatMaker/blob/main/docs/plans/2026-08-14-chatmaker-v0.1-implementation.md) for current scope and evidence.
+See the [Beta roadmap](docs/roadmap.md), [creative partner design](https://github.com/Amasun93/ChatMaker/blob/main/docs/plans/2026-08-14-chatmaker-creative-partner-design.md), and [implementation plan](https://github.com/Amasun93/ChatMaker/blob/main/docs/plans/2026-08-14-chatmaker-v0.1-implementation.md) for current scope and evidence.
 
 Current source removes the historical 38-tool stdio adapter and multi-host scanner. The same local capabilities are exposed through the smaller `chatmaker-*` CLI set. The public rc5 paragraph above remains historical and still describes that artifact accurately.
 

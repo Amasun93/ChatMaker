@@ -65,12 +65,18 @@ def _canonical_errors(board: dict[str, Any], self_test: dict[str, Any], oled: di
         for item in board.get("toolchains", [])
         if isinstance(item, dict)
     }
-    for toolchain_id in ("mindplus-1.8-mpython", "mindplus-2.0-mpython"):
+    for toolchain_id in (
+        "chatmaker-managed-starcore",
+        "mindplus-1.8-mpython",
+        "mindplus-2.0-mpython",
+    ):
         if toolchains.get(toolchain_id) != "verified_supported":
             errors.append(f"board.toolchains: {toolchain_id} must be verified_supported")
     selection = board.get("toolchain_selection", {})
     if selection.get("policy") != "reuse-any-usable-installation":
         errors.append("board.toolchain_selection: must reuse any usable Mind+ installation")
+    if selection.get("when_none_available") != "prepare-chatmaker-managed-starcore":
+        errors.append("board.toolchain_selection: missing managed Starcore preparation route")
 
     _expect_status(
         errors,
@@ -125,14 +131,13 @@ def _canonical_errors(board: dict[str, Any], self_test: dict[str, Any], oled: di
 
 def _readme_summary() -> str:
     return (
-        "| 星核板 Mind+ 适配器 | 分项实测 | Mind+ 1.8 和 2 都支持，优先复用电脑里已有的可用版本；两者都有时当前适配器默认选 2。"
-        "自检与 OLED 案例均已完成编译、上传和串口验证，用户确认蜂鸣器发声和 OLED 实际显示；按键动作、CAN、断电重启和其余模块仍需分别验证。 |"
+        "| 星核板独立 CLI | Beta P1 实测 | ChatMaker 管理的隔离工具链已完成准备、地震预警站编译、COM4 上传、硬复位和 115200 串口验证，不要求安装 Mind+ 应用。已有 Mind+ 1.8 或 2 仍可作为兼容后端。此前用户确认中文 OLED、防闪、蜂鸣器与 A/B 键均正常；本轮只重新验证了编译、上传和串口数据。 |"
     )
 
 
 def _knowledge_index_summary() -> str:
     return (
-        "Mind+ 1.8 和 2 均支持，复用任一已有可用版本；两者都有时当前适配器默认选 2。自检与 OLED 案例已完成编译、上传和串口验证，蜂鸣器发声与 OLED 实显有用户确认；按键动作仍未验证。"
+        "优先使用 ChatMaker 管理的独立 CLI；无需安装 Mind+ 应用。Mind+ 1.8 和 2 仍可作为兼容后端。独立链路已完成地震预警站编译、COM4 上传、硬复位和 115200 串口验证。"
     )
 
 
@@ -141,9 +146,9 @@ def _knowledge_block() -> str:
         (
             "## 当前结构化证据摘要",
             "",
-            "Mind+ 1.8 和 2 都是已验证支持的后端，优先复用电脑里已有的可用版本；两者都有时当前适配器默认选择 2，这不表示 1.8 不够用。板载自检与 IDMD-0021 OLED 案例都已在 COM4 完成编译、上传、RTS 硬复位和 115200 串口验证。",
+            "ChatMaker 管理的独立 CLI 是星核板首选后端；它在隔离目录中使用固定 Arduino CLI、`mindplus:esp32@0.0.1` 核心和六个校验过的 mPython/OLED/中文字库，不要求安装 Mind+ 应用。Mind+ 1.8 和 2 仍是可用的兼容后端，两者都有时兼容路线默认选择 2。",
             "",
-            "证据按对象继续分开：QMI8658 有传感数据；蜂鸣器真实发声沿用用户此前确认；A/B 键只读到空闲状态，没有按下/松开观察；OLED 先取得 `STARCORE_OLED_READY` 代理标记，随后用户又确认屏幕实际成功显示。后续画面优先使用简洁中文，并避免在循环中反复清空整屏造成闪烁。",
+            "2026-08-26，独立链路用桌面地震预警站完成真实编译、COM4 上传、RTS 硬复位和 115200 串口回读，看到 `STARCORE_QUAKE_STATION_UI_V2_READY` 与连续 `QUAKE_DATA`。此前用户已确认中文 OLED、防闪、蜂鸣器、A/B 键和预警效果均正常；本轮没有重新肉眼或听觉确认这些实体效果。",
             "",
             "权威状态读取 `packs/boards/idmc-0001-starcore-v4-2-2.yaml`、`packs/recipes/starcore-onboard-self-test.yaml` 和 `packs/recipes/starcore-idmd-0021-oled-message.yaml`；本段由 `scripts/sync_starcore_evidence.py` 生成。",
         )
@@ -153,9 +158,9 @@ def _knowledge_block() -> str:
 def _installation_block() -> str:
     return "\n".join(
         (
-            "Mind+ 1.8 和 2 均可作为星核板后端，优先复用电脑里已有的可用版本；两者都有时当前适配器默认选 2。本次 Mind+ 2 已用于自检和 OLED 案例的编译、COM4 上传、硬复位与 115200 串口验证。用户此前确认自检蜂鸣器真实发声；最新运行没有重新听音。",
+            "星核板首选 ChatMaker 管理的独立 CLI，不要求安装 Mind+ 应用。首次执行 `chatmaker-starcore --request-json '{\"action\":\"prepare-environment\"}'` 会在 ChatMaker 自己的目录中下载并校验固定 Arduino CLI、`mindplus:esp32@0.0.1` 核心和六个 mPython/OLED/中文字库。已有 Mind+ 1.8 或 2 仍可作为兼容后端。",
             "",
-            "`BUZZER_COMMAND_COMPLETE` 只对这块已确认健康的板和这个已知自检程序构成约定的课堂代理证据。OLED 已由用户确认实际显示成功；后续中文内容仍要确认字库，动态页面应减少整屏清空和无意义刷新。按键动作、CAN、断电重启和其他模块继续分别验收。",
+            "独立链路已用桌面地震预警站完成编译、COM4 上传、硬复位和 115200 串口验证。此前用户确认中文 OLED、防闪、蜂鸣器、A/B 键和预警效果正常；本轮没有重新做肉眼或听觉验收。CAN、断电重启和其他模块继续分别验收。",
         )
     )
 

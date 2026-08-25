@@ -33,24 +33,24 @@ verification:
     method: source-review
   code_compiled:
     status: verified
-    checked_at: "2026-08-25"
-    evidence: The representative onboard self-test compiled with the Mind+ 2 target used in the latest run; earlier Mind+ 1.8 feature and module compilations remain valid historical evidence.
-    evidence_id: starcore-self-test-mindplus2-2026-08-25
-    evidence_ref: docs/verification/2026-08-25-p0-no-mcp-starcore.md
+    checked_at: "2026-08-26"
+    evidence: The desktop earthquake warning station compiled with the isolated ChatMaker-managed Arduino CLI, mindplus:esp32@0.0.1 core, and six hash-locked mPython libraries; earlier Mind+ 1.8 and 2 evidence remains valid.
+    evidence_id: starcore-quake-chatmaker-managed-compile-2026-08-26
+    evidence_ref: docs/verification/2026-08-26-starcore-independent-cli.md
     method: command-result
   firmware_uploaded:
     status: verified
-    checked_at: "2026-08-25"
-    evidence: The representative onboard self-test was uploaded through COM4, the only eligible wired port, with four 16 MiB Flash segment hashes verified and a hard reset through RTS.
-    evidence_id: starcore-self-test-upload-2026-08-25
-    evidence_ref: docs/verification/2026-08-25-p0-no-mcp-starcore.md
+    checked_at: "2026-08-26"
+    evidence: The same earthquake warning station was uploaded from the ChatMaker-managed environment through COM4, the only eligible wired port; all four Flash segments passed hash verification and RTS hard reset completed.
+    evidence_id: starcore-quake-chatmaker-managed-upload-2026-08-26
+    evidence_ref: docs/verification/2026-08-26-starcore-independent-cli.md
     method: command-result
   serial_evidence:
     status: verified
-    checked_at: "2026-08-25"
-    evidence: At 115200 baud the self-test emitted STARCORE_SELF_TEST_READY, BUZZER_COMMAND_COMPLETE, button idle states, and continuing QMI8658 data.
-    evidence_id: starcore-self-test-serial-2026-08-25
-    evidence_ref: docs/verification/2026-08-25-p0-no-mcp-starcore.md
+    checked_at: "2026-08-26"
+    evidence: At 115200 baud the managed-toolchain build emitted STARCORE_QUAKE_STATION_UI_V2_READY, calibration completion, and continuing QUAKE_DATA acceleration values.
+    evidence_id: starcore-quake-chatmaker-managed-serial-2026-08-26
+    evidence_ref: docs/verification/2026-08-26-starcore-independent-cli.md
     method: serial-observation
   physical_effect_verified:
     status: not_applicable
@@ -444,11 +444,16 @@ constraints:
   - Use the exact v4.2.2 mechanical profile for CAD work; physical fit, supplied screws and connector clearance remain unverified.
 constraint_pin_refs: [IO37, IO38, P2, P3, P4, P5, P10, P11, P13, P14, P16, P19, P20, P25, P27, P28]
 toolchains:
+  - id: chatmaker-managed-starcore
+    status: verified_supported
+    role: preferred
   - id: mindplus-1.8-mpython
     status: verified_supported
+    role: compatibility-fallback
   - id: mindplus-2.0-mpython
     status: verified_supported
+    role: compatibility-fallback
 toolchain_selection:
   policy: reuse-any-usable-installation
   when_both_available: mindplus-2.0-mpython
-  when_none_available: recommend-verified-mindplus-1.8-download
+  when_none_available: prepare-chatmaker-managed-starcore

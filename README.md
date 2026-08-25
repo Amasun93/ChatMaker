@@ -12,11 +12,11 @@ ChatMaker 是面向老师、学生和黑客松参与者的 AI 创作伙伴。用
 
 ChatMaker 是唯一入口；ChatDuino、ChatWeb 和 ChatCAD 是由它在内部调用、分别维护的专业模块。
 
-对话窗口就是创作环境。Mind+、编译器、串口和浏览器在后台完成专业工作，用户不需要先学习一套 IDE。
+对话窗口就是创作环境。编译器、串口和浏览器在后台完成专业工作；部分旧板卡仍可复用 Mind+，用户不需要先学习一套 IDE。
 
-> 当前处于 Alpha 快速迭代阶段。[`v0.1.0-rc5`](https://github.com/Amasun93/ChatMaker/releases/tag/v0.1.0-rc5) 是最近一个打包的预发布版；`main` 分支包含更新的 ChatMaker Knowledge 和 P0 轻量安装边界。各板卡的真实证据按下方状态表分别报告。
+> 当前处于 Beta 体验阶段，维护者已邀请 20 多位体验者参与测试。GitHub `main` 是当前推荐安装来源；[`v0.1.0-rc5`](https://github.com/Amasun93/ChatMaker/releases/tag/v0.1.0-rc5) 只保留为较早的历史快照。各板卡的真实证据按下方状态表分别报告。
 
-## 从 GitHub 安装当前 Alpha
+## 从 GitHub 安装当前 Beta
 
 把下面这段话和仓库链接交给你正在使用的 AI 即可：
 
@@ -71,7 +71,7 @@ ChatMaker
 
 ### ChatDuino
 
-帮助用户识别板卡和模块，给出简单直白的文字接线、完整程序和真实编译结果。第一阶段复用 Mind+ 工具链，下一阶段再开发不依赖 Mind+ 的托管环境。
+帮助用户识别板卡和模块，给出简单直白的文字接线、完整程序和真实编译结果。星核板在 Windows x64 上已可由 ChatMaker 自己准备独立 CLI；Nano、Uno 和经典掌控板暂时仍可复用已有 Mind+。
 
 默认接线长这样。
 
@@ -166,7 +166,7 @@ chatmaker-pack rollback chatmaker-board-arduino-nano-classic-knowledge --version
 | Nano Mind+ 编译和烧录迁移 | 部分验证 | 原 33 项行为测试已迁移；当前共有 12 个示例从 ChatMaker 路径真实编译；烧录等待有线 Nano |
 | Nano/Uno Mind+ 项目流程 | 部分验证 | 独立板型规则、Blink 和 OLED 仪表盘已真实编译；新增连续入口自动检查环境、编译并在有唯一有线端口时烧录，实体板效果等待用户测试 |
 <!-- starcore-evidence-summary:start -->
-| 星核板 Mind+ 适配器 | 分项实测 | Mind+ 1.8 和 2 都支持，优先复用电脑里已有的可用版本；两者都有时当前适配器默认选 2。自检与 OLED 案例均已完成编译、上传和串口验证，用户确认蜂鸣器发声和 OLED 实际显示；按键动作、CAN、断电重启和其余模块仍需分别验证。 |
+| 星核板独立 CLI | Beta P1 实测 | ChatMaker 管理的隔离工具链已完成准备、地震预警站编译、COM4 上传、硬复位和 115200 串口验证，不要求安装 Mind+ 应用。已有 Mind+ 1.8 或 2 仍可作为兼容后端。此前用户确认中文 OLED、防闪、蜂鸣器与 A/B 键均正常；本轮只重新验证了编译、上传和串口数据。 |
 <!-- starcore-evidence-summary:end -->
 | DOIT ESP32 DevKit V1 | 部分验证 | 官方 `esp32:esp32@3.3.11` 已安装；`prepare-environment` 真实 no-op 成功；`esp32:esp32:esp32doit-devkit-v1` 已通过 Blink 和 AP 案例真实编译；烧录、启动、串口、SoftAP、HTTP 和实体效果仍待实板 |
 | UNIHIKER M10 | Alpha 源码检查可用 | 官方页面已核对 M10 为 Debian/Python 路线、K10 为独立 MCU 路线；板卡记录、完整项目示例和本地项目检查 CLI 已接入，尚未同步到实板或验证屏幕/外设效果 |
@@ -184,11 +184,11 @@ chatmaker-pack rollback chatmaker-board-arduino-nano-classic-knowledge --version
 | v0.1.0-rc3 发布候选 | 已发布 | [GitHub 预发布](https://github.com/Amasun93/ChatMaker/releases/tag/v0.1.0-rc3)；包含 12 种模块、11 个配方、10 个编译示例和中文资料目录入口 |
 | v0.1.0-rc4 发布候选 | 已发布 | [GitHub 预发布](https://github.com/Amasun93/ChatMaker/releases/tag/v0.1.0-rc4)；新增独立 Uno 适配器、12 个配方、11 个 AVR 编译示例和 18 个 WorkBuddy 工具 |
 | v0.1.0-rc5 发布候选 | 已发布 | [GitHub 预发布](https://github.com/Amasun93/ChatMaker/releases/tag/v0.1.0-rc5)；193 项 Python 测试、4 项 Chromium 自动化、双 ZIP 确定性构建和下载哈希已验证，实物硬件门仍保持未验证 |
-| 不依赖 Mind+ 的环境 | 下一阶段 | 尚未实现 |
+| 不依赖 Mind+ 应用的星核板环境 | Beta P1 已验证 | ChatMaker 隔离工具链已完成固定下载校验、地震预警站编译、COM4 上传、硬复位与 115200 串口回读；当前自动准备限 Windows x64 |
 
-## rc5 公开预发布版
+## rc5 历史快照
 
-当前公开预发布版是 [`v0.1.0-rc5`](https://github.com/Amasun93/ChatMaker/releases/tag/v0.1.0-rc5)。rc1、rc2、rc3 和 rc4 继续保留各自的历史产物与当时验证记录。
+[`v0.1.0-rc5`](https://github.com/Amasun93/ChatMaker/releases/tag/v0.1.0-rc5) 继续保留，方便回看当时的代码、产物与验证记录，但不再是推荐安装入口。当前体验者应从 GitHub `main` 安装；后续 SkillHub 自动部署属于 Beta P2。
 
 用户可以从 GitHub Release 下载 rc5 ZIP 与同名 `.sha256`，先校验哈希再安装；也可以从公开 `main` 获取当前源码。两种方式都不能把软件测试或编译结果写成真实烧录、串口、网络或物理效果成功。
 
@@ -207,6 +207,7 @@ chatmaker-route --request-json '{"hardware":{"board":"arduino-nano-classic"}}'
 chatmaker-nano --request-json '{"action":"doctor"}'
 chatmaker-uno --request-json '{"action":"doctor"}'
 chatmaker-avr-project --request-json '{"board_id":"arduino-uno-r3","code":"void setup(){} void loop(){}"}'
+chatmaker-starcore --request-json '{"action":"prepare-environment"}'
 chatmaker-starcore --request-json '{"action":"doctor"}'
 chatmaker-esp32 --request-json '{"action":"prepare-environment"}'
 chatmaker-cad --request-json '{"action":"generate","board_id":"arduino-uno-r3","project_name":"uno-base","output_dir":"uno-base"}'
@@ -237,14 +238,9 @@ docs/         设计、路线和贡献说明
 
 ## 路线
 
-1. 继续扩充常用模块、可靠程序库和真实编译示例。
-2. 建立 ChatWeb 单文件生成、方案推荐和本地预览。
-3. 使用有线 Nano 补做烧录、串口、断电重启和实物效果验收。
-4. 增加 Uno、ESP32、串口和软硬件旗舰案例。
-5. 开发不依赖 Mind+ 的独立工具链和驱动诊断。
-6. 完成宿主无关的公开发布包和学生端安装说明。
+当前按 P0 到 P4 管理：P0 精简与证据归一化已完成；P1 星核板独立 CLI 已完成 Windows x64 最小闭环；P2 将打通 SkillHub 自动部署和 Beta 反馈闭环；P3 再根据真实需求扩展 Nano、Uno、经典掌控板与课堂案例；P4 收口稳定版。
 
-详细路线见 [中文说明版](https://github.com/Amasun93/ChatMaker/blob/main/docs/plans/2026-08-14-chatmaker-v0.1-%E4%B8%AD%E6%96%87%E8%AF%B4%E6%98%8E%E7%89%88.md) 和 [技术实施计划](https://github.com/Amasun93/ChatMaker/blob/main/docs/plans/2026-08-14-chatmaker-v0.1-implementation.md)。
+每完成一个阶段，先根据体验者反馈调整下一阶段范围。详见 [ChatMaker Beta 路线图](docs/roadmap.md)。
 
 ## License
 

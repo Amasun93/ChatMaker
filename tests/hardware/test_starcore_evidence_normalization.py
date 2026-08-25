@@ -39,6 +39,18 @@ class StarcoreEvidenceNormalizationTests(unittest.TestCase):
             "reuse-any-usable-installation",
         )
         self.assertEqual(
+            board["toolchain_selection"]["when_none_available"],
+            "prepare-chatmaker-managed-starcore",
+        )
+        self.assertEqual(
+            {item["id"] for item in board["toolchains"]},
+            {
+                "chatmaker-managed-starcore",
+                "mindplus-1.8-mpython",
+                "mindplus-2.0-mpython",
+            },
+        )
+        self.assertEqual(
             board["verification"]["physical_effect_verified"]["status"],
             "not_applicable",
         )

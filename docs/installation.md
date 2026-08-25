@@ -46,6 +46,7 @@ chatmaker-install local
 常用入口：
 
 ```powershell
+chatmaker-starcore --request-json '{"action":"prepare-environment"}'
 chatmaker-starcore --request-json '{"action":"doctor"}'
 chatmaker-nano --request-json '{"action":"doctor"}'
 chatmaker-uno --request-json '{"action":"doctor"}'
@@ -140,6 +141,14 @@ GitHub Actions 到 SkillHub 的自动发布、国内 CDN 和自动分发不属�
 
 ## 无 MCP 的星核板代表路径
 
+首次使用星核板本地执行时，Windows x64 可以先准备 ChatMaker 自己管理的隔离工具链：
+
+```powershell
+chatmaker-starcore --request-json '{"action":"prepare-environment"}'
+```
+
+该动作会联网下载并校验固定版本，不安装或启动 Mind+ 应用，也不写入 Mind+ 的目录。已有 Mind+ 1.8 或 2 仍可作为兼容后端。
+
 只做环境检查和真实编译：
 
 ```powershell
@@ -162,7 +171,7 @@ python scripts/verify_no_mcp_starcore.py `
 环境发现、源码生成、编译、上传、复位、串口、浏览器交互和实体效果分别记录。命令退出码不能自动升级为实物效果。
 
 <!-- starcore-install-evidence:start -->
-Mind+ 1.8 和 2 均可作为星核板后端，优先复用电脑里已有的可用版本；两者都有时当前适配器默认选 2。本次 Mind+ 2 已用于自检和 OLED 案例的编译、COM4 上传、硬复位与 115200 串口验证。用户此前确认自检蜂鸣器真实发声；最新运行没有重新听音。
+星核板首选 ChatMaker 管理的独立 CLI，不要求安装 Mind+ 应用。首次执行 `chatmaker-starcore --request-json '{"action":"prepare-environment"}'` 会在 ChatMaker 自己的目录中下载并校验固定 Arduino CLI、`mindplus:esp32@0.0.1` 核心和六个 mPython/OLED/中文字库。已有 Mind+ 1.8 或 2 仍可作为兼容后端。
 
-`BUZZER_COMMAND_COMPLETE` 只对这块已确认健康的板和这个已知自检程序构成约定的课堂代理证据。OLED 已由用户确认实际显示成功；后续中文内容仍要确认字库，动态页面应减少整屏清空和无意义刷新。按键动作、CAN、断电重启和其他模块继续分别验收。
+独立链路已用桌面地震预警站完成编译、COM4 上传、硬复位和 115200 串口验证。此前用户确认中文 OLED、防闪、蜂鸣器、A/B 键和预警效果正常；本轮没有重新做肉眼或听觉验收。CAN、断电重启和其他模块继续分别验收。
 <!-- starcore-install-evidence:end -->

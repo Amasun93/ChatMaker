@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Mind+ bridge for IDMC-0001 Starcore v4.2.2.
+"""Compile and upload bridge for IDMC-0001 Starcore v4.2.2.
 
-Mind+ 2.x is the preferred backend. Mind+ 1.x remains a compatibility
-fallback for classrooms that do not have a usable 2.x installation.
+ChatMaker's isolated managed toolchain is preferred. Existing Mind+ 2.x and
+1.x environments remain compatibility fallbacks.
 """
 
 from __future__ import annotations
@@ -17,9 +17,10 @@ import tempfile
 from typing import Any
 
 from . import nano_mindplus as shared
+from . import starcore_toolchain as managed
 
 
-BRIDGE_NAME = "starcore-mindplus"
+BRIDGE_NAME = "chatmaker-starcore"
 SCHEMA_VERSION = 1
 BOARD_ID = "idmc-0001-starcore-v4-2-2"
 V2_FQBN = "mindplus:esp32:mpython:FlashMode=dio,FlashFreq=80,UploadSpeed=1500000,DebugLevel=none"
@@ -29,6 +30,9 @@ FALLBACK_FQBN = V1_FQBN
 
 
 def _current_context() -> dict[str, Any] | None:
+    managed_environment = managed.managed_context()
+    if managed_environment:
+        return {**managed_environment, "fqbn": V2_FQBN}
     installations = shared.discover_installations()
     for installation in sorted(
         installations,
@@ -62,14 +66,14 @@ def _prepare_code(code: str, name: str) -> Path:
     if not isinstance(code, str) or not code.strip():
         raise ValueError("code_required")
     digest = hashlib.sha256(code.encode("utf-8")).hexdigest()[:12]
-    folder = Path(tempfile.gettempdir()) / "starcore-mindplus-sketches" / f"{_safe_name(name)}-{digest}"
+    folder = Path(tempfile.gettempdir()) / "chatmaker-starcore-sketches" / f"{_safe_name(name)}-{digest}"
     folder.mkdir(parents=True, exist_ok=True)
     (folder / f"{folder.name}.ino").write_text(code, encoding="utf-8")
     return folder
 
 
 def build_compile_command(context: dict[str, Any], sketch: Path, build: Path) -> list[str]:
-    if context.get("backend") == "mindplus-2-cli":
+    if context.get("backend") in {managed.BACKEND, "mindplus-2-cli"}:
         return [
             str(context["cli"]),
             "compile",
@@ -111,7 +115,7 @@ def compile_result(context: dict[str, Any], request: dict[str, Any]) -> dict[str
     except (OSError, ValueError) as exc:
         return {"action": "compile", "success": False, "error": str(exc)}
 
-    build = Path(tempfile.gettempdir()) / "starcore-mindplus-builds" / hashlib.sha256(str(folder).encode()).hexdigest()[:12]
+    build = Path(tempfile.gettempdir()) / "chatmaker-starcore-builds" / hashlib.sha256(str(folder).encode()).hexdigest()[:12]
     build.mkdir(parents=True, exist_ok=True)
     execution = shared._run(
         build_compile_command(context, folder / f"{folder.name}.ino", build),
@@ -159,7 +163,7 @@ def upload_result(context: dict[str, Any], request: dict[str, Any], compiled: di
     port, error, ports = _select_port(request)
     if error or not port:
         return {"action": "upload", "success": False, "error": error, "upload_executed": False, "ports": ports}
-    if context.get("backend") == "mindplus-2-cli":
+    if context.get("backend") in {managed.BACKEND, "mindplus-2-cli"}:
         command = [
             str(context["cli"]),
             "compile",
@@ -224,32 +228,41 @@ def doctor_result() -> dict[str, Any]:
         "selected_backend": context.get("backend") if context else None,
         "selected_fqbn": context.get("fqbn") if context else None,
         "environment": context, "ports": ports,
+        "managed_toolchain": managed.managed_context(),
+        "toolchain_lock": managed.toolchain_lock(),
     }
 
 
 def execute_request(request: dict[str, Any]) -> dict[str, Any]:
     action = request.get("action")
-    if action == "doctor":
+    if action == "prepare-environment":
+        result = managed.prepare_environment_result(runner=shared._run)
+    elif action == "doctor":
         result = doctor_result()
     elif action == "ports":
         result = {"action": "ports", "success": True, "board": BOARD_ID, "ports": scan_ports()}
     elif action in {"compile", "compile-upload"}:
         context = _current_context()
         if not context:
-            result = {"action": action, "success": False, "error": "starcore_mindplus_toolchain_missing"}
+            result = {
+                "action": action,
+                "success": False,
+                "error": "starcore_toolchain_missing",
+                "next_action": "prepare-environment",
+            }
         elif action == "compile":
             result = compile_result(context, request)
         else:
             result = compile_upload_result(context, request)
     else:
-        raise ValueError("action_must_be_doctor_ports_compile_or_compile-upload")
+        raise ValueError("action_must_be_prepare-environment_doctor_ports_compile_or_compile-upload")
     result.setdefault("bridge", BRIDGE_NAME)
     result.setdefault("schema_version", SCHEMA_VERSION)
     return result
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Starcore Mind+ bridge")
+    parser = argparse.ArgumentParser(description="ChatMaker Starcore bridge")
     parser.add_argument("--request-json", required=True)
     args = parser.parse_args(argv)
     try:
