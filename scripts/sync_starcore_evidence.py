@@ -101,7 +101,7 @@ def _canonical_errors(board: dict[str, Any], self_test: dict[str, Any], oled: di
                 errors,
                 f"feature.{button_id}.physical_effect_verified",
                 features[button_id]["verification"]["physical_effect_verified"],
-                "unverified",
+                "verified",
             )
 
     for gate_name in ("code_compiled", "firmware_uploaded", "serial_evidence"):

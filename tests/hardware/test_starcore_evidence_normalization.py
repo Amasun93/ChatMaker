@@ -66,7 +66,11 @@ class StarcoreEvidenceNormalizationTests(unittest.TestCase):
         for button_id in ("button-a", "button-b"):
             self.assertEqual(
                 features[button_id]["verification"]["physical_effect_verified"]["status"],
-                "unverified",
+                "verified",
+            )
+            self.assertEqual(
+                features[button_id]["verification"]["physical_effect_verified"]["method"],
+                "user-confirmation",
             )
 
     def test_self_test_and_oled_keep_case_and_effect_gates_separate(self):

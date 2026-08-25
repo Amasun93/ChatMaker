@@ -105,9 +105,12 @@ feature_verification:
         evidence_ref: docs/verification/2026-08-25-p0-no-mcp-starcore.md
         method: serial-observation
       physical_effect_verified:
-        status: unverified
-        checked_at: null
-        evidence: null
+        status: verified
+        checked_at: "2026-08-26"
+        evidence: The user confirmed that button A toggled mute in the desktop earthquake warning station; the independent-CLI run did not repeat the physical press check.
+        evidence_id: starcore-button-a-quake-station-user-confirmation-2026-08-26
+        evidence_ref: docs/verification/2026-08-26-starcore-independent-cli.md
+        method: user-confirmation
   - feature_id: button-b
     name: 板载 B 键
     verification:
@@ -119,9 +122,12 @@ feature_verification:
         evidence_ref: docs/verification/2026-08-25-p0-no-mcp-starcore.md
         method: serial-observation
       physical_effect_verified:
-        status: unverified
-        checked_at: null
-        evidence: null
+        status: verified
+        checked_at: "2026-08-26"
+        evidence: The user confirmed that button B recalibrated the desktop earthquake warning station; the independent-CLI run did not repeat the physical press check.
+        evidence_id: starcore-button-b-quake-station-user-confirmation-2026-08-26
+        evidence_ref: docs/verification/2026-08-26-starcore-independent-cli.md
+        method: user-confirmation
 gpio_map:
   R: 3
   T: 1
