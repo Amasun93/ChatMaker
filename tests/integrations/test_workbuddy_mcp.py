@@ -174,6 +174,8 @@ class WorkBuddyBridgeTests(unittest.TestCase):
         self.assertIn("OpenSCAD 代码", instructions)
         self.assertIn("不默认交付 STL、右侧预览或截图", instructions)
         self.assertIn("只有用户不使用 MakerLab", instructions)
+        self.assertIn("Noto Sans SC:style=Regular", instructions)
+        self.assertIn("带 T 的放大镜图标（字体）", instructions)
 
     def test_chat3d_tool_pauses_before_explicit_generation_confirmation(self):
         with tempfile.TemporaryDirectory() as folder:
@@ -218,6 +220,51 @@ class WorkBuddyBridgeTests(unittest.TestCase):
             self.assertEqual(payload["files"], {})
             self.assertEqual(payload["model_generated"], "unverified")
             self.assertFalse(output.exists())
+
+    def test_chinese_nameplate_uses_verified_editable_makerlab_font(self):
+        with tempfile.TemporaryDirectory() as folder:
+            output = Path(folder) / "must-not-exist"
+            response = self.server._tool_result(
+                "cad_generate",
+                {
+                    "mode": "chat3d",
+                    "project_name": "usb-nameplate",
+                    "output_dir": str(output),
+                    "generation_confirmed": True,
+                    "parameters": {
+                        "design_kind": "nameplate",
+                        "engrave_text": "孙大卫",
+                        "tag_length": 60,
+                        "tag_width": 20,
+                        "plate_thickness": 2,
+                        "corner_radius": 3,
+                        "hole_diameter": 4,
+                        "hole_margin_x": 7,
+                        "hole_margin_y": 7,
+                        "text_size": 8,
+                        "text_depth": 1,
+                    },
+                },
+            )
+            payload = json.loads(response["content"][0]["text"])
+
+            self.assertFalse(response["isError"])
+            self.assertTrue(payload["success"], payload)
+            self.assertEqual(payload["design_kind"], "nameplate")
+            self.assertEqual(payload["delivery_mode"], "makerlab-code")
+            self.assertEqual(payload["files"], {})
+            self.assertFalse(output.exists())
+            code = payload["scad_code"]
+            self.assertIn('cn_text = "孙大卫"', code)
+            self.assertIn('text_font = "Noto Sans SC:style=Regular"', code)
+            self.assertIn("text(cn_text", code)
+            self.assertIn("tag_length = 60", code)
+            self.assertIn("hole_diameter = 4", code)
+            self.assertNotIn("Microsoft YaHei", code)
+            self.assertNotIn("SimHei", code)
+            self.assertNotIn("SimSun", code)
+            self.assertTrue(payload["text_rendering"]["text_content_editable_in_makerlab"])
+            self.assertTrue(payload["text_rendering"]["makerlab_font_selection_required"])
 
     def test_board_identify_routes_permission_and_preserves_beginner_guidance(self):
         captured = None

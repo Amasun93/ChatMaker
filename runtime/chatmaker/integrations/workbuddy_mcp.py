@@ -603,12 +603,19 @@ TOOLS = [
                         "engrave_text": {"type": "string", "maxLength": 24},
                         "text_size": {"type": "number", "minimum": 3, "maximum": 60},
                         "text_depth": {"type": "number", "minimum": 0.4, "maximum": 5},
-                        "engrave_font": {"type": "string", "description": "Optional CJK font file path; defaults to the system font"},
+                        "engrave_font": {"type": "string", "description": "Optional local font file override; defaults to ChatMaker's bundled CJK font and is converted to polygons before MakerLab"},
                         "design_kind": {
                             "type": "string",
-                            "enum": ["enclosure", "gear_pair", "rack_and_pinion"],
+                            "enum": ["enclosure", "nameplate", "gear_pair", "rack_and_pinion"],
                             "default": "enclosure",
                         },
+                        "tag_length": {"type": "number", "minimum": 30, "maximum": 200},
+                        "tag_width": {"type": "number", "minimum": 12, "maximum": 80},
+                        "corner_radius": {"type": "number", "minimum": 0, "maximum": 20},
+                        "hole_margin_x": {"type": "number", "minimum": 0, "maximum": 50},
+                        "hole_margin_y": {"type": "number", "minimum": 0, "maximum": 50},
+                        "text_x": {"type": "number", "minimum": -100, "maximum": 100},
+                        "text_y": {"type": "number", "minimum": -100, "maximum": 100},
                         "gear_module": {"type": "number", "minimum": 0.5, "maximum": 5},
                         "driver_teeth": {"type": "integer", "minimum": 8, "maximum": 80},
                         "driven_teeth": {"type": "integer", "minimum": 8, "maximum": 120},
@@ -872,6 +879,9 @@ def handle(request: dict[str, Any]) -> dict[str, Any] | None:
                 "开始生成前先问用户选择 MakerLab 还是 ChatMaker 预览，默认推荐 MakerLab。"
                 "MakerLab 路线直接给完整 OpenSCAD 代码和官方入口 https://makerworld.com.cn/zh/makerlab，"
                 "不默认交付 STL、右侧预览或截图。只有用户不使用 MakerLab，才生成并交付 ChatMaker 右侧预览实验室。"
+                "MakerLab 中文不得使用 Microsoft YaHei、SimHei 或 SimSun 等电脑本机字体。"
+                "名牌默认使用已在 MakerLab 实测通过的 Noto Sans SC:style=Regular；给代码时必须同时提醒用户："
+                "点击代码区底部带 T 的放大镜图标（字体），搜索并勾选这个精确名称，确认后再生成。字体清单会更新，其他字体只以编辑器当前面板为准。"
             ),
         }
     elif method == "tools/list":

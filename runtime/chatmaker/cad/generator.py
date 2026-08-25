@@ -202,6 +202,13 @@ def generate_project(request: dict[str, Any]) -> dict[str, Any]:
     if not isinstance(parameters, dict):
         return {"success": False, "error": "parameters_must_be_object"}
     design_kind = str(parameters.get("design_kind", "enclosure")).strip() or "enclosure"
+    if mode == "chat3d" and design_kind == "nameplate":
+        from . import nameplate
+
+        try:
+            return nameplate.generate(request, project_name)
+        except (OSError, ValueError) as exc:
+            return {"success": False, "error": "cad_generation_failed", "detail": str(exc)}
     if mode == "chat3d" and design_kind in {"gear_pair", "rack_and_pinion"}:
         from . import mechanics
 

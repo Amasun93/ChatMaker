@@ -131,8 +131,15 @@ class ChatCadAlphaTests(unittest.TestCase):
         self.assertFalse(parameters["additionalProperties"])
         self.assertEqual(
             properties["design_kind"]["enum"],
-            ["enclosure", "gear_pair", "rack_and_pinion"],
+            ["enclosure", "nameplate", "gear_pair", "rack_and_pinion"],
         )
+        self.assertEqual(properties["tag_length"], {"type": "number", "minimum": 30, "maximum": 200})
+        self.assertEqual(properties["tag_width"], {"type": "number", "minimum": 12, "maximum": 80})
+        self.assertEqual(properties["corner_radius"], {"type": "number", "minimum": 0, "maximum": 20})
+        self.assertEqual(properties["hole_margin_x"], {"type": "number", "minimum": 0, "maximum": 50})
+        self.assertEqual(properties["hole_margin_y"], {"type": "number", "minimum": 0, "maximum": 50})
+        self.assertEqual(properties["text_x"], {"type": "number", "minimum": -100, "maximum": 100})
+        self.assertEqual(properties["text_y"], {"type": "number", "minimum": -100, "maximum": 100})
         self.assertEqual(properties["gear_module"], {"type": "number", "minimum": 0.5, "maximum": 5})
         self.assertEqual(properties["driver_teeth"], {"type": "integer", "minimum": 8, "maximum": 80})
         self.assertEqual(properties["driven_teeth"], {"type": "integer", "minimum": 8, "maximum": 120})
