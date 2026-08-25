@@ -46,7 +46,6 @@ EXPECTED_COMMANDS = {
     "chatmaker-avr-project",
     "chatmaker-starcore",
     "chatmaker-unihiker",
-    "chatmaker-workbuddy-mcp",
     "chatmaker-install",
     "chatmaker-web",
     "chatmaker-web-plan",
@@ -68,7 +67,7 @@ def prepared_runtime(root: Path) -> Path:
     payloads = {
         "chatmaker/__init__.py": b"",
         "chatmaker/installers/__init__.py": b"",
-        "chatmaker/installers/auto.py": b"import json\ndef main(argv=None): print(json.dumps({'success':True,'status':'ready_with_limits'})); return 0\nif __name__ == '__main__': raise SystemExit(main())\n",
+        "chatmaker/installers/local.py": b"import json\ndef main(argv=None): print(json.dumps({'success':True,'status':'local_ready_with_limits','host_scan_performed':False})); return 0\nif __name__ == '__main__': raise SystemExit(main())\n",
         "chatmaker-0.1.0rc5.dist-info/METADATA": b"Metadata-Version: 2.1\nName: chatmaker\nVersion: 0.1.0rc5\n",
         "chatmaker-0.1.0rc5.dist-info/WHEEL": b"Wheel-Version: 1.0\nRoot-Is-Purelib: true\nTag: py3-none-any\n",
     }
@@ -152,7 +151,7 @@ class CleanCoreIntegrationTests(unittest.TestCase):
         suffix = ".exe" if os.name == "nt" else ""
         return scripts / f"{name}{suffix}"
 
-    def test_extracted_core_bootstrap_installs_the_versioned_runtime_and_runs_auto(self):
+    def test_extracted_core_bootstrap_installs_the_versioned_runtime_and_runs_local_check(self):
         """Catches a release whose bundled bootstrap cannot start from a fresh user HOME."""
         with tempfile.TemporaryDirectory(prefix="chatmaker-bootstrap-clean-") as directory:
             base = Path(directory)
@@ -225,7 +224,7 @@ class CleanCoreIntegrationTests(unittest.TestCase):
 
             self.assertTrue(result["success"])
             self.assertEqual(result["status"], "installed")
-            self.assertEqual(result["auto"]["status"], "ready_with_limits")
+            self.assertIn(result["local_check"]["status"], {"local_ready", "local_ready_with_limits"})
             self.assertTrue(Path(result["venv"]).is_dir())
             self.assertTrue(Path(result["launcher"]).is_file())
 
@@ -334,23 +333,12 @@ class CleanCoreIntegrationTests(unittest.TestCase):
             self.assertEqual(set(metadata["project"]["scripts"]), EXPECTED_COMMANDS)
             for name in sorted(EXPECTED_COMMANDS):
                 self.assertTrue(self._command(venv, name).is_file(), name)
-            for name in sorted(EXPECTED_COMMANDS - {"chatmaker-workbuddy-mcp"}):
+            for name in sorted(EXPECTED_COMMANDS):
                 self._run(
                     [str(self._command(venv, name)), "--help"],
                     cwd=core,
                     env=env,
                 )
-
-            mcp = json.loads(
-                self._run(
-                    [str(self._command(venv, "chatmaker-workbuddy-mcp"))],
-                    cwd=core,
-                    env=env,
-                    input_text='{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}\n',
-                ).stdout
-            )
-            self.assertEqual(mcp["id"], 1)
-            self.assertEqual(len(mcp["result"]["tools"]), 36)
 
             doctor = json.loads(
                 self._run(
@@ -431,44 +419,22 @@ class CleanCoreIntegrationTests(unittest.TestCase):
                 }
             )
             installer = self._command(venv, "chatmaker-install")
-            installed = json.loads(
+            local_check = json.loads(
                 self._run(
-                    [str(installer), "auto"],
+                    [str(installer), "local"],
                     cwd=core,
                     env=env,
                 ).stdout
             )
-            self.assertTrue(installed["success"])
-            self.assertEqual([host["host"] for host in installed["hosts"]], ["codex", "workbuddy"])
-            for host_root in (codex_home, workbuddy_config.parent):
-                visible = {
-                    path.name
-                    for path in (host_root / "skills").iterdir()
-                    if path.is_dir()
-                }
-                self.assertEqual(visible, {"chatmaker"})
-                for specialist in ("chatduino", "chatweb", "chatcad"):
-                    self.assertTrue(
-                        (
-                            host_root
-                            / "skills"
-                            / "chatmaker"
-                            / "internal_skills"
-                            / specialist
-                            / "SKILL.md"
-                        ).is_file()
-                    )
+            self.assertTrue(local_check["success"])
+            self.assertFalse(local_check["host_scan_performed"])
+            self.assertNotIn("hosts", local_check)
+            self.assertFalse(any((codex_home / "skills").glob("*")))
             self.assertTrue(json.loads(self._run(
                 [str(installer), "doctor"],
                 cwd=core,
                 env=env,
             ).stdout)["success"])
-            self.assertTrue(json.loads(self._run(
-                [str(installer), "uninstall"],
-                cwd=core,
-                env=env,
-            ).stdout)["success"])
-            self.assertFalse(any((codex_home / "skills").glob("*")))
             self.assertEqual(
                 json.loads(workbuddy_config.read_text(encoding="utf-8")),
                 original_config,

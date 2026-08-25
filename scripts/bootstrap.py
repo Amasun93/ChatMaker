@@ -917,7 +917,7 @@ try:
  if not bootstrap['_verify_venv'](venv,manifest,wheelhouse): raise ValueError
 except Exception: raise SystemExit('installed runtime integrity check failed')
 python=venv/('Scripts/python.exe' if os.name=='nt' else 'bin/python')
-code="import os,runpy,sys; from pathlib import Path; root=Path(sys.executable).parent.parent; pure=root / ('Lib/site-packages' if os.name == 'nt' else f'lib/python{sys.version_info.major}.{sys.version_info.minor}/site-packages'); sys.path.insert(0,str(pure)); runpy.run_module('chatmaker.installers.auto',run_name='__main__')"
+code="import os,runpy,sys; from pathlib import Path; root=Path(sys.executable).parent.parent; pure=root / ('Lib/site-packages' if os.name == 'nt' else f'lib/python{sys.version_info.major}.{sys.version_info.minor}/site-packages'); sys.path.insert(0,str(pure)); runpy.run_module('chatmaker.installers.local',run_name='__main__')"
 env={'HOME':str(root.parent),'USERPROFILE':str(root.parent),'PATH':os.environ.get('PATH',''),'LOCALAPPDATA':os.environ.get('LOCALAPPDATA',''),'APPDATA':os.environ.get('APPDATA',''),'PYTHONNOUSERSITE':'1','PYTHONDONTWRITEBYTECODE':'1','CHATMAKER_PROJECT_ROOT':str(core)}
 raise SystemExit(subprocess.call([str(python),'-I','-S','-B','-c',code,*args,'--home',str(root.parent)],env=env))
 '''
@@ -938,18 +938,18 @@ def _stable_launcher(home_root: Path) -> None:
         _write_if_different(launcher, f'#!/bin/sh\nexec "{trusted_python}" -I -S -B "$(dirname "$0")/chatmaker-launch.py" "$@"\n'.encode("utf-8"), executable=True)
 
 
-def _auto(venv_path: Path, home: Path, runtime_root: Path, core_root: Path) -> dict[str, Any]:
+def _local_check(venv_path: Path, home: Path, runtime_root: Path, core_root: Path) -> dict[str, Any]:
     temp = runtime_root / "tmp"
     _safe_directory(temp)
     env = {"HOME": str(home), "USERPROFILE": str(home), "PATH": os.environ.get("PATH", ""), "TMP": str(temp), "TEMP": str(temp), "PYTHONNOUSERSITE": "1", "PYTHONDONTWRITEBYTECODE": "1", "PIP_NO_INDEX": "1", "CHATMAKER_PROJECT_ROOT": str(core_root)}
-    code = "import os,runpy,sys; from pathlib import Path; root=Path(sys.executable).parent.parent; pure=root / ('Lib/site-packages' if os.name == 'nt' else f'lib/python{sys.version_info.major}.{sys.version_info.minor}/site-packages'); sys.path.insert(0,str(pure)); runpy.run_module('chatmaker.installers.auto',run_name='__main__')"
+    code = "import os,runpy,sys; from pathlib import Path; root=Path(sys.executable).parent.parent; pure=root / ('Lib/site-packages' if os.name == 'nt' else f'lib/python{sys.version_info.major}.{sys.version_info.minor}/site-packages'); sys.path.insert(0,str(pure)); runpy.run_module('chatmaker.installers.local',run_name='__main__')"
     completed = subprocess.run([str(_python(venv_path)), "-I", "-S", "-B", "-c", code, "local", "--home", str(home)], text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env, check=False)
     try:
         value = json.loads(completed.stdout)
     except json.JSONDecodeError as exc:
-        raise BootstrapError("auto_installer_report_invalid") from exc
+        raise BootstrapError("local_capability_report_invalid") from exc
     if completed.returncode or not isinstance(value, dict) or not value.get("success"):
-        raise BootstrapError("auto_installer_failed")
+        raise BootstrapError("local_capability_check_failed")
     return value
 
 
@@ -1112,7 +1112,7 @@ def run(
                 shutil.rmtree(staging, ignore_errors=True)
                 quarantined = None
             try:
-                auto = _auto(
+                local_check = _local_check(
                     version_root / "venv",
                     selected_home,
                     home_root,
@@ -1130,7 +1130,7 @@ def run(
                 runtime_root=home_root,
             )
             status = "repaired" if repaired else "already_current" if existing else "installed"
-            return {"success": True, "status": status, "version": version, "platform_tag": platform_tag, "release_sequence": signed["release_sequence"], "sha256": digest, "runtime_root": str(home_root), "location_record": str(location_record), "venv": str(version_root / "venv"), "launcher": str(home_root / "bin" / ("chatmaker-install.cmd" if os.name == "nt" else "chatmaker-install")), "auto": auto}
+            return {"success": True, "status": status, "version": version, "platform_tag": platform_tag, "release_sequence": signed["release_sequence"], "sha256": digest, "runtime_root": str(home_root), "location_record": str(location_record), "venv": str(version_root / "venv"), "launcher": str(home_root / "bin" / ("chatmaker-install.cmd" if os.name == "nt" else "chatmaker-install")), "local_check": local_check}
     finally:
         os.close(snapshot)
         snapshot_path.unlink(missing_ok=True)

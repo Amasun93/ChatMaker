@@ -190,7 +190,7 @@ class BootstrapTests(unittest.TestCase):
             + (" print(json.dumps({'success':False,'status':'failed'})); return 2\n" if fail_auto else " print(json.dumps({'success':True,'status':'ready_with_limits'})); return 0\n")
             + "\nif __name__ == '__main__': raise SystemExit(main())\n"
         )
-        _wheel(wheelhouse / wheel_name, project="chatmaker", version=version, files={"chatmaker/__init__.py": "", "chatmaker/installers/__init__.py": "", "chatmaker/installers/auto.py": auto})
+        _wheel(wheelhouse / wheel_name, project="chatmaker", version=version, files={"chatmaker/__init__.py": "", "chatmaker/installers/__init__.py": "", "chatmaker/installers/local.py": auto})
         digest = hashlib.sha256((wheelhouse / wheel_name).read_bytes()).hexdigest()
         manifest = {"schema_version": 2, "platform_tag": tag, "python_requires": "==3.11.*", "core_wheel": wheel_name, "wheels": [{"filename": wheel_name, "project": "chatmaker", "version": version, "size": (wheelhouse / wheel_name).stat().st_size, "sha256": digest, "tags": ["py3-none-any"], "requires": []}]}
         (runtime / "manifest.json").write_bytes((json.dumps(manifest, sort_keys=True, separators=(",", ":")) + "\n").encode("ascii"))
@@ -644,7 +644,7 @@ class BootstrapTests(unittest.TestCase):
             first = self._run(archive, checksum, manifest, signature, home, env=environment)
             self.assertEqual(first.returncode, 0, first.stdout)
             venv = home / ".chatmaker" / "versions" / "9.8.7" / "venv"
-            module = venv / ("Lib/site-packages" if os.name == "nt" else "lib/python3.11/site-packages") / "chatmaker" / "installers" / "auto.py"
+            module = venv / ("Lib/site-packages" if os.name == "nt" else "lib/python3.11/site-packages") / "chatmaker" / "installers" / "local.py"
             module.write_text("raise SystemExit('tampered code executed')\n", encoding="utf-8")
 
             repeated = self._run(archive, checksum, manifest, signature, home, env=environment)
@@ -667,7 +667,7 @@ class BootstrapTests(unittest.TestCase):
             version_root = home / ".chatmaker" / "versions" / "9.8.7"
             module = version_root / "venv" / (
                 "Lib/site-packages" if os.name == "nt" else "lib/python3.11/site-packages"
-            ) / "chatmaker" / "installers" / "auto.py"
+            ) / "chatmaker" / "installers" / "local.py"
             module.write_text("# previous installed version\n", encoding="utf-8")
             bootstrap = runpy.run_path(str(self.trusted_bootstrap))
             real_replace = os.replace

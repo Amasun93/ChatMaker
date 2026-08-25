@@ -1,7 +1,7 @@
 # ChatMaker Knowledge JSON API v1
 
-The CLI and MCP tool use the same object requests and responses. Unknown IDs
-fail without fuzzy matching. `index` never reads an optional section body.
+The CLI uses stable object requests and responses. Unknown IDs fail without
+fuzzy matching. `index` never reads an optional section body.
 `section` defaults `auto_install` to `true` when omitted and returns one full
 UTF-8 body of at most 65,536 bytes. Version 1 has no pagination and the key
 `cursor` is invalid at every level.
@@ -14,7 +14,6 @@ These Version 1 names are the stable entrypoints for ChatMaker Knowledge.
 ```json
 {
   "cli": "chatmaker-knowledge",
-  "mcp_tool": "knowledge_get",
   "python": "chatmaker.knowledge",
   "payload_path": "knowledge/boards",
   "schema_identifier": "knowledge_index_schema"

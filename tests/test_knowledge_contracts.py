@@ -49,7 +49,6 @@ class KnowledgeApiContractTests(unittest.TestCase):
             contract_example("stable.entrypoints"),
             {
                 "cli": "chatmaker-knowledge",
-                "mcp_tool": "knowledge_get",
                 "python": "chatmaker.knowledge",
                 "payload_path": "knowledge/boards",
                 "schema_identifier": "knowledge_index_schema",

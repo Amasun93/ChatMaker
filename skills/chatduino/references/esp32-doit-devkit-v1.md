@@ -16,7 +16,7 @@ FQBN: esp32:esp32:esp32doit-devkit-v1
 
 The installed Mind+ `mindplus:esp32 0.0.1` package exposes only board-specific DFRobot and teaching variants. It is not a compatible fallback.
 
-`esp32_prepare_environment` may install only the ChatMaker-verified official `esp32:esp32@3.3.11`. It must not chase latest releases, silently downgrade a newer official core, or treat Mind+, FireBeetle, DevKitC, mPython, S2, S3, or C3 as substitutes.
+The `prepare-environment` action of `chatmaker-esp32` may install only the ChatMaker-verified official `esp32:esp32@3.3.11`. It must not chase latest releases, silently downgrade a newer official core, or treat Mind+, FireBeetle, DevKitC, mPython, S2, S3, or C3 as substitutes.
 
 ## Pin and voltage boundaries
 

@@ -1,4 +1,4 @@
-"""Bounded, read-only host capability detection for the universal installer."""
+"""Bounded, read-only detection of optional local ChatMaker capabilities."""
 
 from __future__ import annotations
 
@@ -186,48 +186,6 @@ def _macos_serial_ports() -> list[dict[str, Any]]:
     return sorted(ports, key=lambda item: item["address"])
 
 
-def _candidate_skill_roots(home: Path, environ: Mapping[str, str], family: str) -> list[dict[str, Any]]:
-    codex_home = _path_from_environ(environ, "CODEX_HOME") or home / ".codex"
-    workbuddy_home = _path_from_environ(environ, "WORKBUDDY_HOME")
-    workbuddy_config = _path_from_environ(environ, "WORKBUDDY_CONFIG")
-    if workbuddy_home is None:
-        workbuddy_home = workbuddy_config.parent if workbuddy_config else home / ".workbuddy"
-    roots: list[tuple[str, Path, bool]] = [("codex", codex_home / "skills", "CODEX_HOME" in environ)]
-    explicit_root = _path_from_environ(environ, "CHATMAKER_SKILL_ROOT")
-    if explicit_root:
-        roots.insert(0, ("explicit", explicit_root, True))
-    roots.append(("workbuddy", workbuddy_home / "skills", bool(workbuddy_config or "WORKBUDDY_HOME" in environ)))
-    return [
-        {"host": host, "path": str(path), "available": _safe_is_dir(path), "explicit": explicit}
-        for host, path, explicit in roots
-    ]
-
-
-def _mcp_configs(home: Path, environ: Mapping[str, str]) -> list[dict[str, Any]]:
-    workbuddy_home = _path_from_environ(environ, "WORKBUDDY_HOME") or home / ".workbuddy"
-    current_workbuddy = workbuddy_home / ".mcp.json"
-    legacy_workbuddy = workbuddy_home / "mcp.json"
-    workbuddy = _path_from_environ(environ, "WORKBUDDY_CONFIG")
-    if workbuddy is None:
-        workbuddy = (
-            current_workbuddy
-            if _safe_is_file(current_workbuddy) or not _safe_is_file(legacy_workbuddy)
-            else legacy_workbuddy
-        )
-    codex_home = _path_from_environ(environ, "CODEX_HOME") or home / ".codex"
-    configs: list[tuple[str, Path, bool]] = [
-        ("workbuddy", workbuddy, "WORKBUDDY_CONFIG" in environ),
-        ("codex", codex_home / "config.toml", "CODEX_HOME" in environ),
-    ]
-    explicit = _path_from_environ(environ, "CHATMAKER_MCP_CONFIG")
-    if explicit:
-        configs.insert(0, ("explicit", explicit, True))
-    return [
-        {"host": host, "path": str(path), "available": _safe_is_file(path), "explicit": is_explicit}
-        for host, path, is_explicit in configs
-    ]
-
-
 @dataclass(frozen=True)
 class CapabilityReport:
     """Serializable snapshot of optional local capabilities.
@@ -239,21 +197,15 @@ class CapabilityReport:
     value: dict[str, Any]
 
     def to_dict(self) -> dict[str, Any]:
-        return {
-            **self.value,
-            "skill_roots": [dict(item) for item in self.value["skill_roots"]],
-            "candidate_skill_roots": [dict(item) for item in self.value["skill_roots"]],
-            "mcp_configs": [dict(item) for item in self.value["mcp_configs"]],
-        }
+        return dict(self.value)
 
 
 def probe_environment(
     *,
     home: Path | None = None,
     environ: Mapping[str, str] | None = None,
-    include_hosts: bool = True,
 ) -> CapabilityReport:
-    """Inspect a bounded set of host prerequisites without changing local state."""
+    """Inspect local prerequisites without reading AI-host configuration."""
     environment = dict(os_environ() if environ is None else environ)
     selected_home = Path(home).expanduser() if home is not None else Path.home()
     system_name = platform.system()
@@ -292,12 +244,6 @@ def probe_environment(
         ports = _macos_serial_ports() if family == "macos" else nano_mindplus.scan_ports()
     except OSError:
         ports = []
-    skill_roots = (
-        _candidate_skill_roots(selected_home, environment, family)
-        if include_hosts
-        else []
-    )
-    mcp_configs = _mcp_configs(selected_home, environment) if include_hosts else []
     value = {
         "success": True,
         "home": str(selected_home),
@@ -313,8 +259,6 @@ def probe_environment(
         "serial": {"available": bool(ports), "ports": ports},
         "mindplus": {"available": bool(installations), "installations": installations},
         "arduino_cli": {"available": bool(cli_path), "path": cli_path},
-        "skill_roots": skill_roots,
-        "mcp_configs": mcp_configs,
     }
     return CapabilityReport(value)
 

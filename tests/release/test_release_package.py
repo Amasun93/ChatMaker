@@ -261,16 +261,15 @@ class ReleasePackageTests(unittest.TestCase):
         self.assertGreaterEqual(signature_position, 0)
         self.assertLess(checksum_position, bootstrap_position)
         self.assertNotIn("Expand-Archive .\\ChatMaker-Core-0.1.0-rc5-windows-amd64.zip", installation)
-        self.assertIn("point-in-time drift detection", installation)
-        self.assertIn("not OS secure boot", installation)
+        self.assertIn("--install-root", installation)
+        self.assertIn(".chatmaker-location.json", installation)
 
-    def test_workbuddy_stdio_is_excluded_from_help_claim(self):
+    def test_removed_stdio_service_is_absent_from_current_installation(self):
         installation = (ROOT / "docs" / "installation.md").read_text(encoding="utf-8")
+        metadata = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
 
-        self.assertNotIn("所有已安装命令均支持 `--help`", installation)
-        self.assertNotIn("All installed commands support `--help`", installation)
-        self.assertNotRegex(installation, r"chatmaker-workbuddy-mcp\s+--help")
-        self.assertIn('"method":"tools/list"', installation)
+        self.assertNotIn('"method":"tools/list"', installation)
+        self.assertNotIn("chatmaker-workbuddy-mcp", metadata["project"]["scripts"])
 
     def test_core_cli_defaults_to_rc5_and_reports_archive_size(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -372,9 +371,10 @@ class ReleasePackageTests(unittest.TestCase):
         self.assertIn(prefix + "skills/chatmaker/agents/openai.yaml", names)
         for specialist in ("chatduino", "chatweb", "chatcad"):
             self.assertNotIn(prefix + f"skills/{specialist}/agents/openai.yaml", names)
-        self.assertIn(prefix + "runtime/chatmaker/installers/codex.py", names)
-        self.assertIn(prefix + "runtime/chatmaker/installers/workbuddy.py", names)
-        self.assertIn(prefix + "runtime/chatmaker/installers/skill_bundle.py", names)
+        self.assertIn(prefix + "runtime/chatmaker/installers/local.py", names)
+        self.assertNotIn(prefix + "runtime/chatmaker/installers/codex.py", names)
+        self.assertNotIn(prefix + "runtime/chatmaker/installers/workbuddy.py", names)
+        self.assertNotIn(prefix + "runtime/chatmaker/integrations/workbuddy_mcp.py", names)
         self.assertIn(prefix + "runtime/chatmaker/hardware/esp32_devkit_v1.py", names)
         self.assertIn(prefix + "runtime/chatmaker/hardware/board_identification.py", names)
         self.assertIn(prefix + "runtime/chatmaker/hardware/unihiker_m10.py", names)

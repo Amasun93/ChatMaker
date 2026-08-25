@@ -23,13 +23,13 @@ If a cloud service is used, never copy a course, company, teacher, or internal-p
 3. The official console where that credential is created or viewed.
 4. That `config.example.yaml` stays empty, while the real value belongs in an untracked `config.yaml` or environment variable.
 
-In Codex, retrieve the current built-in reminder with:
+Retrieve the current built-in reminder with:
 
 ```powershell
 chatmaker-unihiker --request-json '{"action":"credential_help","provider":"aliyun-dashscope"}'
 ```
 
-Supported provider IDs are `aliyun-dashscope`, `aliyun-qwen-omni`, `volcengine-ark`, `volcengine-openspeech`, and `baidu-tts`. In WorkBuddy, call `unihiker_credential_help` with the same provider ID. Use only the provider actually selected for the project.
+Supported provider IDs are `aliyun-dashscope`, `aliyun-qwen-omni`, `volcengine-ark`, `volcengine-openspeech`, and `baidu-tts`. Use only the provider actually selected for the project.
 
 For example, a Qwen project should say: “把私有 `config.yaml` 中的 `aliyun.dashscope.api_key` 换成你自己的阿里云百炼 API Key；在 https://bailian.console.aliyun.com/cn-beijing#/api-key 获取。公开的 `config.example.yaml` 保持空字符串。” Do not ask the user to paste the secret into chat, screenshots, an Issue, or a public repository.
 
@@ -64,7 +64,7 @@ The Debian 10 system interpreter is Python 3.7 by default. Avoid `match/case`, `
 
 ## Source check
 
-In Codex, run:
+Run:
 
 ```powershell
 chatmaker-unihiker --request-json '{"action":"check_project","project":"<project-folder>"}'

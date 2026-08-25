@@ -133,7 +133,7 @@ class StarcoreOnboardAccelerometerTests(unittest.TestCase):
         ):
             self.assertRegex(evidence[source_id]["sha256"], r"^[0-9a-f]{64}$")
 
-    def test_router_reports_an_incomplete_workbuddy_bundle_instead_of_fake_search(self):
+    def test_router_uses_local_knowledge_and_keeps_starcore_guidance(self):
         router = (ROOT / "skills" / "chatmaker" / "SKILL.md").read_text(
             encoding="utf-8"
         )
@@ -141,9 +141,9 @@ class StarcoreOnboardAccelerometerTests(unittest.TestCase):
             encoding="utf-8"
         )
 
-        self.assertIn("chatmaker-install doctor", router)
-        self.assertIn("chatmaker-install auto", router)
-        self.assertIn("never claim that ChatMaker Knowledge was searched", router)
+        self.assertIn("chatmaker-knowledge", router)
+        self.assertNotIn("MCP", router)
+        self.assertNotIn("WorkBuddy", specialist)
         self.assertIn("read Starcore `start-here` and `libraries-and-examples`", specialist)
         self.assertIn("onboard QMI8658", specialist)
 

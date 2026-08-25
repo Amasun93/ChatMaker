@@ -13,7 +13,6 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "runtime"))
 
 from chatmaker.cad import generator  # noqa: E402
-from chatmaker.integrations import workbuddy_mcp  # noqa: E402
 
 
 COMPONENT_IDS = {
@@ -112,7 +111,7 @@ class StarcoreComponentMechanicalTests(unittest.TestCase):
         for forbidden in (".step", ".dxf", ".gerber", "c:\\", "d:\\", "file://"):
             self.assertNotIn(forbidden, serialized)
 
-    def test_runtime_and_mcp_read_a_component_profile_by_exact_id(self):
+    def test_runtime_reads_a_component_profile_by_exact_id(self):
         result = generator.execute_request(
             {
                 "action": "component-profile",
@@ -121,19 +120,6 @@ class StarcoreComponentMechanicalTests(unittest.TestCase):
         )
         self.assertTrue(result["success"], result)
         self.assertEqual(result["profile"]["hardware_id"], "IDMS-0008")
-
-        tool = next(
-            item for item in workbuddy_mcp.TOOLS
-            if item["name"] == "cad_component_profile_get"
-        )
-        self.assertEqual(set(tool["inputSchema"]["required"]), {"component_id"})
-        response = workbuddy_mcp._tool_result(
-            "cad_component_profile_get",
-            {"component_id": "idms-0008-starcore-dht11"},
-        )
-        self.assertFalse(response["isError"])
-        payload = json.loads(response["content"][0]["text"])
-        self.assertEqual(payload["profile"]["component_id"], "idms-0008-starcore-dht11")
 
         rejected = generator.execute_request(
             {"action": "component-profile", "component_id": "../private-source"}

@@ -11,7 +11,6 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "runtime"))
 
 from chatmaker.cad import generator  # noqa: E402
-from chatmaker.integrations import workbuddy_mcp  # noqa: E402
 
 
 class ChatCadAlphaTests(unittest.TestCase):
@@ -91,62 +90,6 @@ class ChatCadAlphaTests(unittest.TestCase):
             self.assertIn("右侧预览实验室", preview)
             for marker in ("clearance", "plateThickness", 'data-kind="dxf"', 'data-kind="svg"', 'data-kind="scad"', 'data-kind="stl"'):
                 self.assertIn(marker, preview)
-
-    def test_mcp_exposes_and_routes_cad_tools(self):
-        names = {tool["name"] for tool in workbuddy_mcp.TOOLS}
-        self.assertIn("cad_profile_get", names)
-        self.assertIn("cad_fabrication_get", names)
-        self.assertIn("cad_generate", names)
-
-        response = workbuddy_mcp._tool_result(
-            "cad_profile_get", {"board_id": "idmc-0001-starcore-v4-2-2"}
-        )
-        payload = json.loads(response["content"][0]["text"])
-        self.assertFalse(response["isError"])
-        self.assertEqual(payload["profile"]["revision"], "v4.2.2")
-
-        fabrication_response = workbuddy_mcp._tool_result("cad_fabrication_get", {})
-        fabrication_payload = json.loads(fabrication_response["content"][0]["text"])
-        self.assertFalse(fabrication_response["isError"])
-        self.assertEqual(fabrication_payload["material"]["default_thickness_mm"], 3.0)
-
-    def test_mcp_exposes_bounded_basic_mechanical_parameters(self):
-        tool = next(item for item in workbuddy_mcp.TOOLS if item["name"] == "cad_generate")
-        parameters = tool["inputSchema"]["properties"]["parameters"]
-        properties = parameters["properties"]
-
-        self.assertEqual(tool["inputSchema"]["required"], ["project_name"])
-        self.assertEqual(
-            tool["inputSchema"]["properties"]["delivery_mode"]["enum"],
-            ["makerlab-code", "chatmaker-preview"],
-        )
-        self.assertEqual(
-            tool["inputSchema"]["properties"]["delivery_mode"]["default"],
-            "makerlab-code",
-        )
-        self.assertEqual(
-            tool["inputSchema"]["properties"]["generation_confirmed"],
-            {"type": "boolean", "default": False},
-        )
-        self.assertFalse(parameters["additionalProperties"])
-        self.assertEqual(
-            properties["design_kind"]["enum"],
-            ["enclosure", "nameplate", "gear_pair", "rack_and_pinion"],
-        )
-        self.assertEqual(properties["tag_length"], {"type": "number", "minimum": 30, "maximum": 200})
-        self.assertEqual(properties["tag_width"], {"type": "number", "minimum": 12, "maximum": 80})
-        self.assertEqual(properties["corner_radius"], {"type": "number", "minimum": 0, "maximum": 20})
-        self.assertEqual(properties["hole_margin_x"], {"type": "number", "minimum": 0, "maximum": 50})
-        self.assertEqual(properties["hole_margin_y"], {"type": "number", "minimum": 0, "maximum": 50})
-        self.assertEqual(properties["text_x"], {"type": "number", "minimum": -100, "maximum": 100})
-        self.assertEqual(properties["text_y"], {"type": "number", "minimum": -100, "maximum": 100})
-        self.assertEqual(properties["gear_module"], {"type": "number", "minimum": 0.5, "maximum": 5})
-        self.assertEqual(properties["driver_teeth"], {"type": "integer", "minimum": 8, "maximum": 80})
-        self.assertEqual(properties["driven_teeth"], {"type": "integer", "minimum": 8, "maximum": 120})
-        self.assertEqual(properties["pinion_teeth"], {"type": "integer", "minimum": 8, "maximum": 80})
-        self.assertEqual(properties["rack_teeth"], {"type": "integer", "minimum": 4, "maximum": 80})
-        self.assertEqual(properties["pressure_angle"], {"type": "number", "minimum": 14.5, "maximum": 30})
-
 
 if __name__ == "__main__":
     unittest.main()

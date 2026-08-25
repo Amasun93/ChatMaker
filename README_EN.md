@@ -10,9 +10,9 @@ ChatMaker helps teachers, students, and hackathon participants move from a clear
 
 ChatMaker is the only user entry. ChatDuino, ChatWeb, and ChatCAD remain separately maintained internal specialists invoked by ChatMaker.
 
-Install the current Alpha through the host's native SkillHub or GitHub Skill flow, then: "Use $chatmaker as the only user entry." Ordinary installation does not run `chatmaker-install auto`, scan Codex/WorkBuddy, or register MCP. Source developers who need local CLIs may run `python -m pip install -e .` followed by `chatmaker-install local`.
+Install the current Alpha through the host's native SkillHub or GitHub Skill flow, then: "Use $chatmaker as the only user entry." Ordinary installation does not scan Codex/WorkBuddy or install a separate tool service. Source developers who need local CLIs may run `python -m pip install -e .` followed by `chatmaker-install local`.
 
-> Early development status: [`v0.1.0-rc5`](https://github.com/Amasun93/ChatMaker/releases/tag/v0.1.0-rc5) is the latest packaged prerelease. Current source restores Mind+ 2.x as the preferred Starcore backend and keeps local CLI execution independent from optional WorkBuddy MCP registration. Physical evidence remains board-specific rather than inferred from software checks.
+> Early development status: [`v0.1.0-rc5`](https://github.com/Amasun93/ChatMaker/releases/tag/v0.1.0-rc5) is the latest packaged prerelease. Current source uses one Skill plus local CLIs and reuses Mind+ 1.8.x or 2.x, preferring 2.x when both are usable. Physical evidence remains board-specific rather than inferred from software checks.
 
 Current post-rc5 source is preparing a minimal `ChatMaker-Core-<version>.zip` plus four board-specific ChatMaker Knowledge packs. This work does not create a new GitHub Release; rc5 remains the current public prerelease.
 
@@ -46,7 +46,7 @@ The current source Core contains the Python runtime, four Skill directories, 5 b
 
 When an AI first requests a detailed board section, `chatmaker-knowledge` defaults to automatic installation. It accepts a pack only after checking the official registry signature, immutable URL, length, SHA-256, manifest, and every payload file. Later reads reuse the verified installation. An installed version remains readable after offline revalidation; an exact cache can authorize a new offline install only while its signed receipt is unexpired.
 
-Automatic installation is limited to passive knowledge pages. It never installs drivers, Mind+, Arduino cores, Node, Chromium, PATH changes, hooks, or administrator-level software. The base Skill works without MCP. `chatmaker-install local` checks local capabilities without host scanning; the old multi-host `auto` path is retained only as an optional developer tool.
+Automatic installation is limited to passive knowledge pages. It never installs drivers, Mind+, Arduino cores, Node, Chromium, PATH changes, hooks, or administrator-level software. `chatmaker-install local` checks local capabilities without discovering or modifying an AI host.
 
 ```powershell
 chatmaker-knowledge --request-json '{"action":"section","board_id":"arduino-nano-classic","consumer":"chatduino","section_id":"identify-and-safety"}'
@@ -92,7 +92,7 @@ npm run test:browser
 
 Read the [creative partner design](https://github.com/Amasun93/ChatMaker/blob/main/docs/plans/2026-08-14-chatmaker-creative-partner-design.md) and [implementation plan](https://github.com/Amasun93/ChatMaker/blob/main/docs/plans/2026-08-14-chatmaker-v0.1-implementation.md) for current scope and evidence.
 
-Current source uses WorkBuddy stdio server `1.18.0` with 38 tools, including local OpenSCAD status/preparation and ChatCAD generation. The public rc5 paragraph above remains historical and still describes the rc5 artifact accurately.
+Current source removes the historical 38-tool stdio adapter and multi-host scanner. The same local capabilities are exposed through the smaller `chatmaker-*` CLI set. The public rc5 paragraph above remains historical and still describes that artifact accurately.
 
 ## License
 

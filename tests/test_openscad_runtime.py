@@ -4,11 +4,27 @@ import subprocess
 import tempfile
 from pathlib import Path
 import unittest
+from unittest import mock
 
-from chatmaker.cad import openscad_runtime
+from chatmaker.cad import generator, openscad_runtime
 
 
 class OpenScadRuntimeTests(unittest.TestCase):
+    def test_chatmaker_cad_cli_routes_status_and_guarded_prepare(self):
+        with (
+            mock.patch.object(openscad_runtime, "status", return_value={"success": True, "installed": False}) as status,
+            mock.patch.object(openscad_runtime, "prepare", return_value={"success": True, "installed": True}) as prepare,
+        ):
+            self.assertTrue(generator.execute_request({"action": "openscad-status"})["success"])
+            self.assertTrue(
+                generator.execute_request(
+                    {"action": "openscad-prepare", "allow_install": True}
+                )["success"]
+            )
+
+        status.assert_called_once_with()
+        prepare.assert_called_once_with(allow_install=True)
+
     def test_status_reports_real_executable_and_version(self):
         with tempfile.TemporaryDirectory() as directory:
             executable = Path(directory) / "openscad.com"

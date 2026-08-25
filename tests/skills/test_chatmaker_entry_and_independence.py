@@ -32,12 +32,16 @@ class ChatMakerEntryAndIndependenceTests(unittest.TestCase):
             self.assertIn("internal specialist", specialist)
             self.assertIn("ChatMaker", specialist)
 
-    def test_base_skill_does_not_require_workbuddy_mcp_or_host_scan(self):
+    def test_base_skill_uses_only_local_cli_execution_and_no_host_adapter(self):
         router = (ROOT / "skills" / "chatmaker" / "SKILL.md").read_text(encoding="utf-8")
-        self.assertIn("does not require WorkBuddy MCP registration", router)
-        self.assertIn("never triggers `chatmaker-install auto`", router)
         self.assertIn("`chatmaker-*` CLIs", router)
-        self.assertNotIn("Treat the installed bundle as incomplete if any internal specialist is missing, or if WorkBuddy", router)
+        self.assertIn("single execution route", router)
+        self.assertNotIn("MCP", router)
+        self.assertNotIn("chatmaker-install auto", router)
+        for specialist in ("chatduino", "chatweb", "chatcad"):
+            text = (ROOT / "skills" / specialist / "SKILL.md").read_text(encoding="utf-8")
+            self.assertNotIn("MCP", text)
+            self.assertNotIn("WorkBuddy", text)
 
     def test_runtime_and_skills_do_not_reference_external_legacy_skill_roots(self):
         forbidden = (

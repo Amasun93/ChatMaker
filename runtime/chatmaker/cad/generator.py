@@ -8,6 +8,7 @@ from pathlib import Path
 import re
 from typing import Any, Iterable
 
+from . import openscad_runtime
 from .fabrication import get_fabrication_profile, list_fabrication_profiles
 from .profiles import get_component_profile, get_profile, list_profiles
 
@@ -298,6 +299,10 @@ def generate_project(request: dict[str, Any]) -> dict[str, Any]:
 
 def execute_request(request: dict[str, Any]) -> dict[str, Any]:
     action = request.get("action")
+    if action == "openscad-status":
+        return openscad_runtime.status()
+    if action == "openscad-prepare":
+        return openscad_runtime.prepare(allow_install=bool(request.get("allow_install", False)))
     if action == "list-profiles":
         return list_profiles()
     if action == "profile":

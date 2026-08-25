@@ -36,11 +36,11 @@ python scripts/verify_no_mcp_starcore.py `
 - 端口：COM4 是唯一合格的非蓝牙有线端口。
 - 上传：成功；ESP32D0WDQ6 revision 3，16 MB Flash，四段写入均 `Hash of data verified`，随后 `Hard resetting via RTS pin`。
 - 串口：115200 成功打开，匹配 `STARCORE_SELF_TEST_READY`，并收到 `BUZZER_COMMAND_COMPLETE`、按钮状态和持续三轴加速度数据。
-- 聚焦自动测试：15 项通过，覆盖 Mind+ 2 优先/1.x 回退、无宿主扫描的 `local` 模式、基础 Skill 不强依赖 MCP、项目目录运行根与位置记录。
+- 聚焦自动测试：40 项通过，覆盖 Mind+ 2 优先/1.x 回退、无宿主扫描的 `local` 模式、基础 Skill 只使用 CLI、旧注册定向清理、OpenSCAD CLI 路由和知识接口；另有发布/Bootstrap 与两条干净 Core 集成路径通过。
 
 ## 证据边界
 
 1. 上述命令证明脚本本身可完成环境检查、编译、上传和串口，不证明任意 WorkBuddy 安装都自动拥有本地命令执行权限。
-2. WorkBuddy 有本地命令执行能力时，可以直接触发同一 `chatmaker-*` CLI；已经注册的 MCP 只是可选结构化适配层，不是脚本能力来源。
-3. 本轮串口证明程序启动并输出自检数据。`BUZZER_COMMAND_COMPLETE` 只证明程序执行了蜂鸣命令；蜂鸣器真实发声沿用用户在同一硬件复验中给出的独立确认，不能由串口推断。
+2. WorkBuddy、Codex 或其他 AI 工作区只有在具备本地命令执行能力时，才能触发同一 `chatmaker-*` CLI；ChatMaker 不再发布第二套 MCP 入口。
+3. 本轮串口证明程序启动并输出自检数据，用户也在同一硬件复验中确认蜂鸣器真实发声。用户随后明确同意：对这块已确认健康的板和这个已知自检程序，今后可把 `BUZZER_COMMAND_COMPLETE` 作为课堂代理证据。这个约定不能推广到其他板卡、程序或物理效果。
 4. 当前板上运行的是 `onboard-self-test`。命令成功不自动证明其他外接模块、CAN、断电重启或后续作品的实体效果。

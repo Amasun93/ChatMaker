@@ -24,13 +24,13 @@ ChatMaker 是唯一入口；ChatDuino、ChatWeb 和 ChatCAD 是由它在内部�
 请从这个 GitHub 仓库安装 ChatMaker Skill：
 https://github.com/Amasun93/ChatMaker
 
-普通安装只安装 ChatMaker 及其三个内部模块，不运行 chatmaker-install auto，
-不扫描 Codex/WorkBuddy，也不注册 MCP。完成后使用 $chatmaker 作为唯一入口。
+普通安装只安装 ChatMaker 及其三个内部模块，不扫描 Codex/WorkBuddy，
+也不安装额外工具服务。完成后使用 $chatmaker 作为唯一入口。
 先让我直接使用纯生成能力；只有我要求编译、烧录、串口或真实渲染时，
 再说明需要启用的本地能力。
 ```
 
-SkillHub、WorkBuddy、Codex 或其他支持 GitHub Skill 的宿主，均使用宿主自己的 Skill 安装入口。纯生成能力只读取 Skill 文件，不要求 Python、Mind+、OpenSCAD 或 MCP。
+SkillHub、WorkBuddy、Codex 或其他支持 GitHub Skill 的宿主，均使用宿主自己的 Skill 安装入口。纯生成能力只读取 Skill 文件，不要求 Python、Mind+ 或 OpenSCAD。
 
 下面的源码安装只供开发者或需要本地 CLI 的高级用户使用：
 
@@ -41,7 +41,7 @@ python -m pip install -e .
 chatmaker-install local
 ```
 
-`local` 只检查本地生成/硬件能力，不扫描 AI 宿主、不写 MCP 配置。`chatmaker-install auto` 仅保留为维护多宿主环境的开发者工具。可编辑源码安装期间请保留克隆目录；更新源码后再次运行 `chatmaker-install local` 即可。
+`local` 只检查本地生成、硬件和渲染能力，不扫描或修改任何 AI 宿主。可编辑源码安装期间请保留克隆目录；更新源码后再次运行 `chatmaker-install local` 即可。
 
 ## 它补上的能力
 
@@ -162,12 +162,12 @@ chatmaker-pack rollback chatmaker-board-arduino-nano-classic-knowledge --version
 | 创作伙伴对话规则 | 已写入 | 尚需独立前向测试 |
 | 数据包和证据状态 | 已验证 | 自动测试与项目 doctor 通过 |
 | ChatMaker Knowledge 渐进知识包 | 六板卡已接入 | Nano、Uno、ESP32、星核板、经典掌控板 V2.x、掌控板 3.0 均有独立板卡索引和详细知识包；机械资料仍只对已有机械档案的板卡开放 |
-| 主控板自动识别 | 软件流程已实现，待实板 | WorkBuddy/Codex 可读取芯片和固件标记；允许时先完整备份，再刷入临时探针并恢复。仍不确定时引导查看丝印或拍正反面照片；三种实体板尚待验收 |
+| 主控板自动识别 | 软件流程已实现，待实板 | 本地 CLI 可读取芯片和固件标记；允许时先完整备份，再刷入临时探针并恢复。仍不确定时引导查看丝印或拍正反面照片；三种实体板尚待验收 |
 | Nano Mind+ 编译和烧录迁移 | 部分验证 | 原 33 项行为测试已迁移；当前共有 12 个示例从 ChatMaker 路径真实编译；烧录等待有线 Nano |
 | Nano/Uno Mind+ 项目流程 | 部分验证 | 独立板型规则、Blink 和 OLED 仪表盘已真实编译；新增连续入口自动检查环境、编译并在有唯一有线端口时烧录，实体板效果等待用户测试 |
 | 星核板 Mind+ 适配器 | 主板实测 | Mind+ 2.0 为优先后端，Mind+ 1.8 仅回退；Mind+ 2 已完成两个示例编译、COM4 上传、16 MB Flash 四段 Hash 校验、硬复位、115200 串口自检与传感数据，用户确认蜂鸣器真实发声；CAN、断电重启和七个外接模块仍待实测 |
 | DOIT ESP32 DevKit V1 | 部分验证 | 官方 `esp32:esp32@3.3.11` 已安装；`prepare-environment` 真实 no-op 成功；`esp32:esp32:esp32doit-devkit-v1` 已通过 Blink 和 AP 案例真实编译；烧录、启动、串口、SoftAP、HTTP 和实体效果仍待实板 |
-| UNIHIKER M10 | Alpha 源码检查可用 | 官方页面已核对 M10 为 Debian/Python 路线、K10 为独立 MCU 路线；板卡记录、完整项目示例、Codex CLI 与 WorkBuddy 项目检查入口已接入，尚未同步到实板或验证屏幕/外设效果 |
+| UNIHIKER M10 | Alpha 源码检查可用 | 官方页面已核对 M10 为 Debian/Python 路线、K10 为独立 MCU 路线；板卡记录、完整项目示例和本地项目检查 CLI 已接入，尚未同步到实板或验证屏幕/外设效果 |
 | 常用模块、库和示例 | 继续扩充 | 21 种元器件、25 个配方已接入；新增星核板 WS2812 与 SG90 课堂示例并真实编译，IDMM-0007 只读诊断、I²C 排错和 OLED 中文分板卡引导已加入 |
 | ESP32 AP 手机控制案例 | 部分验证 | `examples/chatweb/esp32-ap-control.html` 是唯一页面源，`chatmaker-web-embed` 生成 `examples/chatduino/esp32/ap-led-sensor/page_html.h`，固件用 `send_P` 和显式长度嵌入页面；浏览器模拟和固件真实编译已通过，硬件仍未验证 |
 | ChatWeb 生成和本地预览 | 部分验证 | 一句话可自动获得空间玻璃课堂页、科幻模拟设备台或舞台闪光挑战；仍支持小游戏、ESP32 HTTP 页面和 Nano/Uno Web Serial 控制台，模拟预览不代表硬件已连接 |
@@ -175,8 +175,8 @@ chatmaker-pack rollback chatmaker-board-arduino-nano-classic-knowledge --version
 | 可执行路由与创意规划 | 已验证 | `chatmaker-route` 返回硬件、网页、组合或澄清路线；`chatmaker-web-plan` 在信息不足时只提问，在信息充分时给出 2–3 条精选方向 |
 | 高级方向游乐场 | 显式启用 | 额外方向和 `chatmaker-web-playground` 仅在布尔 `advanced=true` / CLI `--advanced` 时开放 |
 | 浏览器自动化 | 已验证 | Chromium 覆盖课堂页、模拟硬件页、ESP32 AP 模拟页和高级游乐场；检查主要交互、390 px 手机布局、至少 44 px 触控目标和零控制台错误 |
-| 轻量 Skill 安装 | P0 已接入 | 基础 Skill 的纯生成不依赖 MCP 或双宿主扫描；`chatmaker-install local` 不读写宿主配置，`auto` 与 MCP 接入仅保留为开发者可选工具 |
-| 串口运行诊断 | 已实现待硬件 | WorkBuddy 6 个串口工具与 Codex JSONL 会话通过自动测试；当前无有线 Nano/Uno，真实日志待现场读取 |
+| 轻量 Skill 安装 | P0 干净断代 | 基础 Skill 不含 MCP 服务或双宿主扫描；普通安装只安装一个 ChatMaker 入口，执行层统一使用 `chatmaker-*` CLI |
+| 串口运行诊断 | 已实现待更多硬件 | `chatmaker-serial` JSONL 会话通过自动测试；星核板实板串口已验证，Nano/Uno 真实日志仍待现场读取 |
 | v0.1.0-rc1 发布候选 | 历史发布 | [GitHub 预发布](https://github.com/Amasun93/ChatMaker/releases/tag/v0.1.0-rc1)；保留其原始产物与当时验证记录 |
 | v0.1.0-rc2 发布候选 | 已发布 | [GitHub 预发布](https://github.com/Amasun93/ChatMaker/releases/tag/v0.1.0-rc2)；rc1 继续保留，rc2 新增串口运行层 |
 | v0.1.0-rc3 发布候选 | 已发布 | [GitHub 预发布](https://github.com/Amasun93/ChatMaker/releases/tag/v0.1.0-rc3)；包含 12 种模块、11 个配方、10 个编译示例和中文资料目录入口 |
@@ -240,7 +240,7 @@ docs/         设计、路线和贡献说明
 3. 使用有线 Nano 补做烧录、串口、断电重启和实物效果验收。
 4. 增加 Uno、ESP32、串口和软硬件旗舰案例。
 5. 开发不依赖 Mind+ 的独立工具链和驱动诊断。
-6. 完成 Codex、WorkBuddy 安装器和公开发布包。
+6. 完成宿主无关的公开发布包和学生端安装说明。
 
 详细路线见 [中文说明版](https://github.com/Amasun93/ChatMaker/blob/main/docs/plans/2026-08-14-chatmaker-v0.1-%E4%B8%AD%E6%96%87%E8%AF%B4%E6%98%8E%E7%89%88.md) 和 [技术实施计划](https://github.com/Amasun93/ChatMaker/blob/main/docs/plans/2026-08-14-chatmaker-v0.1-implementation.md)。
 
