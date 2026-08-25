@@ -1,8 +1,8 @@
 {
   "schema_version": "1.0",
-  "sequence": 9,
-  "generated_at": "2026-08-25T17:46:46Z",
-  "expires_at": "2026-09-24T17:46:46Z",
+  "sequence": 10,
+  "generated_at": "2026-08-25T17:50:10Z",
+  "expires_at": "2026-09-24T17:50:10Z",
   "packs": [
     {
       "pack_id": "chatmaker-board-arduino-nano-classic-knowledge",
@@ -49,11 +49,11 @@
     {
       "pack_id": "chatmaker-board-idmc-0001-starcore-v4-2-2-knowledge",
       "pack_type": "knowledge",
-      "version": "1.6.0",
+      "version": "1.7.0",
       "board_id": "idmc-0001-starcore-v4-2-2",
-      "url": "https://raw.githubusercontent.com/Amasun93/ChatMaker/9cc8cb4317510f9a3d0bd464fb4103073c108fb5/distribution/packs/chatmaker-board-idmc-0001-starcore-v4-2-2-knowledge-1.6.0.cmpack",
-      "length": 40169,
-      "sha256": "93add5cb661f01a6b2e546e3ac32678c7c550fd26df2bce15517c9ded9355a85",
+      "url": "https://raw.githubusercontent.com/Amasun93/ChatMaker/04cba60593252f7070dc0bac91eea44ffdec61f1/distribution/packs/chatmaker-board-idmc-0001-starcore-v4-2-2-knowledge-1.7.0.cmpack",
+      "length": 40294,
+      "sha256": "73f1b4cfb3cc54e1f8fb22bacf111e5dff4022a173bba78fb10cac3a036a2bf6",
       "compatibility": {
         "core": {"minimum": "0.1.0", "maximum_exclusive": "0.2.0"},
         "pack_manifest_schema": ["1.0"],
