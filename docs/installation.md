@@ -51,6 +51,7 @@ chatmaker-starcore --request-json '{"action":"doctor"}'
 chatmaker-nano --request-json '{"action":"doctor"}'
 chatmaker-uno --request-json '{"action":"doctor"}'
 chatmaker-esp32 --request-json '{"action":"doctor"}'
+chatmaker-mpython --request-json '{"action":"doctor"}'
 chatmaker-unihiker --request-json '{"action":"check_project","project":"<project-folder>"}'
 chatmaker-serial
 chatmaker-cad --request-json '{"action":"openscad-status"}'
@@ -61,7 +62,8 @@ AI 工作区如果具备本地命令执行能力，就直接调用这些 CLI；�
 ## Mind+ 版本策略
 
 - 星核板：Windows x64 已可由 ChatMaker 自己准备独立环境，不需要安装 Mind+ 桌面应用。
-- Nano、Uno 和经典掌控板：目前仍复用电脑里已有的 Mind+ 1.8.x 或 2.x。
+- 经典掌控板 V2.x：Windows x64 首选 `chatmaker-mpython` 独立链；已有 Mind+ 1.8.x 或 2.x 仍可作为兼容后端。
+- Nano、Uno：目前仍复用电脑里已有的 Mind+ 1.8.x 或 2.x。
 - 两个 Mind+ 版本都可用时优先 2.x；已有一个可用版本时，不要求学生再下载另一个。
 - 掌控板 3.0 和其他未完成独立工具链验证的板卡，不能套用星核板结论。
 
@@ -168,6 +170,16 @@ python scripts/verify_no_mcp_starcore.py `
 ## 证据边界
 
 环境发现、源码生成、编译、上传、复位、串口、浏览器交互和实体效果分别记录。命令退出码不能自动升级为实物效果。
+
+## 经典掌控板 V2.x 独立链（Windows x64）
+
+```powershell
+chatmaker-mpython --request-json '{"action":"prepare-environment"}'
+chatmaker-mpython --request-json '{"action":"doctor"}'
+chatmaker-mpython --request-json '{"action":"compile","sketch":"examples/chatduino/mpython-classic-v2x/chinese-status"}'
+```
+
+上传或复位前必须确认实物确实是经典掌控板 V2.x，并明确设置 `board_confirmed=true`。串口可通过 `serial-read` 做一次读取，也可使用 `chatmaker-serial` 的持久 JSONL 会话。当前中文状态页已完成独立链编译；由于没有已确认的经典掌控板实物，上传、复位后启动、串口、断电重启和 OLED 肉眼效果仍未验证。
 
 <!-- starcore-install-evidence:start -->
 星核板首选 ChatMaker 管理的独立 CLI，不要求安装 Mind+ 应用。首次执行 `chatmaker-starcore --request-json '{"action":"prepare-environment"}'` 会在 ChatMaker 自己的目录中下载并校验固定 Arduino CLI、`mindplus:esp32@0.0.1` 核心和六个 mPython/OLED/中文字库。已有 Mind+ 1.8 或 2 仍可作为兼容后端。

@@ -21,7 +21,7 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 
 ROOT = Path(__file__).resolve().parents[2]
 PROJECT_VERSION = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))["project"]["version"]
-RELEASE_VERSION = "0.2.0-beta.1"
+RELEASE_VERSION = "0.2.0-beta.2"
 TEST_PLATFORM = "windows-amd64"
 
 
@@ -412,7 +412,7 @@ class ReleasePackageTests(unittest.TestCase):
         )
         self.assertEqual(
             len([name for name in names if name.startswith(prefix + "packs/recipes/")]),
-            26,
+            27,
         )
         self.assertEqual(
             len([name for name in names if name.startswith(prefix + "knowledge/boards/")]),

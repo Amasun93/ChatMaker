@@ -24,7 +24,7 @@ ChatDuino is an internal specialist under the ChatMaker parent entry. Keep this 
 3. After the exact board identity is confirmed, read `identify-and-safety`, `pins-and-electrical`, and `toolchains-and-upload` for a board with a ChatMaker Knowledge index. Run `chatmaker-knowledge --request-json '{"action":"section","board_id":"<exact-board-id>","consumer":"chatduino","section_id":"identify-and-safety"}'` and substitute the requested section. Keep those pages paired with canonical facts rather than replacing them. The current M10 alpha instead uses [unihiker-m10.md](references/unihiker-m10.md) plus canonical board `unihiker-m10`; do not invent an unavailable Knowledge pack.
 4. Resolve pin, voltage, current, boot, serial, and shared-ground constraints before writing code.
 5. Present one visible disconnected-power `text` wiring block, then a complete `cpp` block. Do not generate SVG or another wiring graphic unless the user explicitly asks for an image.
-6. In the first release, discover and reuse an existing Mind+ 1.x or 2.x toolchain. Do not install or switch toolchains silently. Treat a managed standalone toolchain as a later development phase.
+6. Prefer a board's documented ChatMaker-managed toolchain when it exists. On Windows x64 this currently covers Starcore v4.2.2 and classic mPython V2.x; existing Mind+ 1.x/2.x installations remain compatibility fallbacks. Never substitute one physical board identity merely because the compiler target overlaps.
 7. For MCU boards, compile with the selected board identity and record the command, exit code, and artifact path. For M10, run the Python 3.7 source preflight, then synchronize the complete project and observe a board-side run as separate gates.
 8. Upload MCU firmware only when one high-confidence wired port remains. Close serial handles before upload. Do not describe M10 file synchronization as firmware upload.
 9. Reopen serial after an MCU board returns, or read the M10 process log after launch. Use the `read` or `expect` action in a `chatmaker-serial` JSONL session only for a defined serial workflow; use `write` only when the project defines an input command. Ask for physical confirmation separately.
@@ -112,6 +112,8 @@ Read [oled-i2c-troubleshooting.md](references/oled-i2c-troubleshooting.md) when 
 
 - Use canonical board `mpython-classic-v2x` and read its `start-here`, `identify-and-safety`, and `toolchains-and-upload` pages.
 - V2.0, V2.1, V2.2 and V2.3 do not have one universal sensor combination. Use verified probe identities or printed revision markings; never turn an address clue into a chip model.
+- On Windows x64 use `chatmaker-mpython --request-json '<request>'` with `prepare-environment`, `doctor`, `ports`, `compile`, `compile-upload`, `reset`, or `serial-read`. The managed path does not require the Mind+ desktop application.
+- Upload and reset require an explicit classic mPython V2.x identity confirmation. A unique non-Bluetooth COM port is not identity evidence. `reset` proves only that the control-line sequence ran; `serial-read` proves only the returned bytes.
 - Mind+ 1.8 uses `dfrobot:mpython:mpython:...`; Mind+ 2.0 uses `mindplus:esp32:mpython:...`. Keep their paths and reset settings separate.
 - Arduino `MPython.h` and MicroPython `from mpython import *` expose different APIs. The classic MicroPython display object is `oled`; do not copy the 3.0 `display`/RGB565 examples.
 

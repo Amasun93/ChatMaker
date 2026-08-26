@@ -12,7 +12,7 @@ ChatMaker is the only user entry. ChatDuino, ChatWeb, and ChatCAD remain separat
 
 Install the current Beta from GitHub `main` through the host's native GitHub Skill flow, then: "Use $chatmaker as the only user entry." Ordinary installation does not scan Codex/WorkBuddy or install a separate tool service. Source developers who need local CLIs may run `python -m pip install -e .` followed by `chatmaker-install local`.
 
-> Current version: **0.2.0-beta.1**. The maintainer reports more than 20 invited testers, and GitHub `main` is the recommended source. Physical evidence remains board-specific rather than inferred from software checks.
+> Current version: **0.2.0-beta.2**. The maintainer reports more than 20 invited testers, and GitHub `main` is the recommended source. Physical evidence remains board-specific rather than inferred from software checks.
 
 See the beginner-facing [WHAT'S NEW](WHATS_NEW.md) for a short summary of this update.
 

@@ -76,7 +76,13 @@ verification:
     status: verified
     checked_at: "2026-08-23"
     evidence: Official hardware, version, API, OSHWA and local Mind+ 1.8/2.0 package facts were reviewed; revision contradictions remain explicit.
-  code_compiled: {status: unverified, checked_at: null, evidence: null}
+  code_compiled:
+    status: verified
+    checked_at: "2026-08-26"
+    evidence: The exact Chinese status example compiled with exit code 0 using the isolated Windows x64 toolchain; upload and physical-board gates remain unverified.
+    evidence_id: mpython-classic-chinese-status-compile-2026-08-26
+    evidence_ref: docs/verification/2026-08-26-mpython-classic-independent-cli.md
+    method: command-result
   firmware_uploaded: {status: unverified, checked_at: null, evidence: null}
   physical_effect_verified: {status: unverified, checked_at: null, evidence: null}
 pins:
@@ -117,10 +123,14 @@ constraints:
   - A mPython-compatible compile target does not prove the physical board is a classic mPython board or Starcore.
 constraint_pin_refs: [P2, P3, P4, P5, P10, P11, P19, P20, P25, P27, P28]
 toolchains:
+  - id: chatmaker-managed-mpython-classic
+    status: windows_x64_compile_verified
+    fqbn: mindplus:esp32:mpython:FlashMode=dio,FlashFreq=80,UploadSpeed=1500000,DebugLevel=none
+    version_lock: arduino-cli-0.33.1-mindplus-esp32-0.0.1-libraries-1.0.0
+    desktop_application_required: false
   - id: mindplus-1.8-mpython
     status: locally_discovered
     fqbn: dfrobot:mpython:mpython:FlashMode=dio,FlashFreq=80,UploadSpeed=1500000,DebugLevel=none
   - id: mindplus-2.0-mpython
     status: locally_discovered
     fqbn: mindplus:esp32:mpython:FlashMode=dio,FlashFreq=80,UploadSpeed=1500000,DebugLevel=none
-

@@ -1,0 +1,77 @@
+schema_version: "1.0"
+kind: recipe
+id: mpython-classic-chinese-status
+name: 经典掌控板中文状态页
+summary: 在经典掌控板 V2.x 的板载 OLED 上静态绘制中文状态页，并用 115200 串口输出启动与心跳标记。
+sources:
+  - title: mPython 掌控板官方文档
+    url: https://mpython.readthedocs.io/zh-cn/master/
+  - title: Mind+ official package index
+    url: https://resource.mindplus.top/mindplus/package/package_mindplus_index.json
+verification:
+  source_reviewed:
+    status: verified
+    checked_at: "2026-08-26"
+    evidence: Official classic-board documentation, the Mind+ package index, core archive license and checked library headers were reviewed.
+    evidence_id: mpython-classic-source-review-2026-08-26
+    evidence_ref: docs/verification/2026-08-26-mpython-classic-independent-cli.md
+    method: source-review
+  code_compiled:
+    status: verified
+    checked_at: "2026-08-26"
+    evidence: The exact checked-in source compiled with exit code 0 for mindplus:esp32:mpython using only the isolated ChatMaker toolchain.
+    evidence_id: mpython-classic-chinese-status-compile-2026-08-26
+    evidence_ref: docs/verification/2026-08-26-mpython-classic-independent-cli.md
+    method: command-result
+  firmware_uploaded:
+    status: unverified
+    checked_at: null
+    evidence: null
+  serial_evidence:
+    status: unverified
+    checked_at: null
+    evidence: null
+  power_cycle_verified:
+    status: unverified
+    checked_at: null
+    evidence: null
+  physical_effect_verified:
+    status: unverified
+    checked_at: null
+    evidence: null
+effect_verification:
+  - effect_id: onboard-oled-visible-chinese
+    name: 板载 OLED 肉眼显示中文
+    verification:
+      physical_effect_verified:
+        status: unverified
+        checked_at: null
+        evidence: null
+  - effect_id: serial-ready-and-heartbeat
+    name: 启动标记与连续串口心跳
+    verification:
+      serial_evidence:
+        status: unverified
+        checked_at: null
+        evidence: null
+boards: [mpython-classic-v2x]
+components: []
+wiring: []
+source_file: examples/chatduino/mpython-classic-v2x/chinese-status/chinese-status.ino
+expected_effect: OLED 静态显示“掌控板就绪 / ChatMaker”，串口输出 READY 与每秒心跳；编译、上传、串口、断电重启和肉眼显示必须分别验收。
+compile_evidence:
+  id: mpython-classic-chinese-status-compile-2026-08-26
+  completed_at: "2026-08-26"
+  report: docs/verification/2026-08-26-mpython-classic-independent-cli.md
+  toolchain: ChatMaker managed Arduino CLI 0.33.1
+  fqbn: mindplus:esp32:mpython:FlashMode=dio,FlashFreq=80,UploadSpeed=1500000,DebugLevel=none
+  exit_code: 0
+  source_sha256: 65ab0cc4c926d0d6b9ad76143e352bf4eb0b9f59756a3e1ba4bfe9174b2988d1
+  flash_bytes: 272100
+  flash_percent: 20
+  ram_bytes: 17812
+  ram_percent: 6
+  application_artifact: $TEMP/chatmaker-mpython-builds/3ab1c0ed5ba1/chinese-status.ino.bin
+  application_sha256: 2ea78431816caad1a327eb6c2a86df33f5477de8d44842924e9ec6d9e69978f8
+  partitions_artifact: $TEMP/chatmaker-mpython-builds/3ab1c0ed5ba1/chinese-status.ino.partitions.bin
+  partitions_sha256: efba4421982bd177695a2e2091828fe3b6aa42076be3844a84f0fb08085cead4

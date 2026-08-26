@@ -45,6 +45,7 @@ EXPECTED_COMMANDS = {
     "chatmaker-serial",
     "chatmaker-avr-project",
     "chatmaker-starcore",
+    "chatmaker-mpython",
     "chatmaker-unihiker",
     "chatmaker-install",
     "chatmaker-web",
@@ -349,7 +350,7 @@ class CleanCoreIntegrationTests(unittest.TestCase):
             )
             self.assertEqual(
                 doctor["packs"]["counts"],
-                {"board": 7, "component": 21, "recipe": 25},
+                {"board": 7, "component": 21, "recipe": 27},
             )
             self.assertEqual(doctor["packs"]["knowledge_indexes"], 6)
             self.assertEqual(

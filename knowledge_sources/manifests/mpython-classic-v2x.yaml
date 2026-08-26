@@ -6,18 +6,19 @@ source_type: canonical-board-documentation
 canonical_url: https://mpython.readthedocs.io/zh-cn/master/
 license_use_boundary: >-
   Official documentation declares CC0 and may be summarized with attribution.
-  Hardware and software sources keep their CERN/GPL or file-level licenses;
-  do not copy local Mind+ packages whose aggregate license is unclear.
+  Arduino CLI is GPL-3.0 and the reviewed Mind+ core archive carries LGPL-2.1.
+  The six official library archives do not declare one aggregate redistribution
+  license, so fetch them from the official origin at runtime and do not repackage them.
 cleaning_version: chatmaker-mpython-classic-v1
-review_date: "2026-08-23"
+review_date: "2026-08-26"
 cleaning_verified:
   status: verified
   date: "2026-08-23"
-  evidence: Official hardware, version, API, license and OSHWA pages were compared with locally installed Mind+ metadata.
+  evidence: Official hardware, version, API and OSHWA pages were compared with the public package index, release archives and their license files.
 source_reviewed:
   status: verified
   date: "2026-08-23"
-  evidence: Version-specific sensors, pin mapping, board functions and Arduino/MicroPython API boundaries were reviewed.
+  evidence: Version-specific sensors, pin mapping, board functions, Arduino/MicroPython API boundaries and the independent CLI artifact lock were reviewed.
 publication_approved:
   status: verified
   date: "2026-08-24"
@@ -31,4 +32,3 @@ page_declarations:
   - {stable_id: mpython-classic-v2x-libraries-and-examples, path: published/boards/mpython-classic-v2x/libraries-and-examples.md}
   - {stable_id: mpython-classic-v2x-web-and-protocol, path: published/boards/mpython-classic-v2x/web-and-protocol.md}
   - {stable_id: mpython-classic-v2x-troubleshooting, path: published/boards/mpython-classic-v2x/troubleshooting.md}
-
