@@ -23,6 +23,12 @@ class VersionConsistencyTests(unittest.TestCase):
         self.assertEqual(checker.public_version(ROOT), "0.2.0-beta.1")
         self.assertEqual(checker.check(ROOT), [])
 
+    def test_whats_new_is_a_dated_public_history_without_roadmap_copy(self):
+        whats_new = (ROOT / "WHATS_NEW.md").read_text(encoding="utf-8")
+        self.assertIn("## 2026-08-26 · 0.2.0-beta.1", whats_new)
+        self.assertNotIn("## 接下来做什么", whats_new)
+        self.assertNotIn("P3.1", whats_new)
+
 
 if __name__ == "__main__":
     unittest.main()

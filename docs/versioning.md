@@ -19,7 +19,7 @@ ChatMaker 只维护一套当前版本，权威位置是 `pyproject.toml` 的 `pr
 每次阶段更新必须同时完成四件事：
 
 1. 在 `pyproject.toml` 修改版本。
-2. 在 `WHATS_NEW.md` 用大白话写变化。
+2. 在 `WHATS_NEW.md` 最上方新增“日期 + 版本”记录，用大白话写已经发布的变化；保留旧记录，不写后续计划。
 3. 更新 README 与路线图里的当前状态。
 4. 运行 `python scripts/check_version_consistency.py`。
 
