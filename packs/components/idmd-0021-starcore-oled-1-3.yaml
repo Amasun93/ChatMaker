@@ -2,7 +2,7 @@ schema_version: "1.0"
 kind: component
 id: idmd-0021-starcore-oled-1-3
 hardware_id: IDMD-0021
-name: IDMD-0021 星核板 1.3 寸 OLED
+name: IDMD-0021 自研 1.3 寸 OLED
 aliases: [星核1.3寸OLED, 自研OLED显示模块, IDMD-0021显示屏]
 category: display
 interface: i2c-ssd1306-128x64
@@ -10,15 +10,17 @@ supply_voltage:
   minimum: 3.3
   maximum: 5.0
 logic_boundary: Insert the complete module into a matching-voltage I2C bank; P19/P20 are shared, and a 5 V pull-up must not reach the ESP32 bus.
-source_ids: [starcore-module-catalog-snapshot, starcore-classroom-module-cards-snapshot, starcore-code-patterns-snapshot, starcore-board-pin-map-snapshot]
+source_ids: [starcore-module-catalog-snapshot, starcore-classroom-module-cards-snapshot, starcore-code-patterns-snapshot, starcore-board-pin-map-snapshot, stardust-idmd-0021-schematic]
 sources:
   - title: ChatMaker governed Starcore source manifest
     url: https://github.com/Amasun93/ChatMaker/tree/main/knowledge_sources
+  - title: ChatMaker 星尘板与 IDMD-0021 OLED 实板记录
+    url: https://github.com/Amasun93/ChatMaker/blob/main/docs/verification/2026-08-26-stardust-oled-physical-board.md
 verification:
   source_reviewed:
     status: verified
-    checked_at: "2026-08-25"
-    evidence: Governed owned sources identify IDMD-0021 as an SSD1306 128x64 I2C module using address 0x3C or 0x3D.
+    checked_at: "2026-08-26"
+    evidence: Governed sources and the owner schematic identify IDMD-0021 as an SSD1306 128x64 I2C module using 3.3V/5V and address 0x3C or 0x3D; the connected Stardust unit responded at 0x3C.
     evidence_id: starcore-oled-source-review-2026-08-25
     evidence_ref: docs/verification/2026-08-26-starcore-evidence-normalization.md
     method: source-review
@@ -52,9 +54,10 @@ pins:
     role: i2c-clock
   - id: SDA
     role: i2c-data
-supported_boards: [idmc-0001-starcore-v4-2-2]
+supported_boards: [idmc-0001-starcore-v4-2-2, stardust-atmega328p]
 constraints:
-  - Use the MPython.h global display object; do not add U8g2 or a second SSD1306 driver.
+  - On Starcore use the MPython.h global display object; do not add U8g2 or a second SSD1306 driver.
+  - On Stardust use DFRobot_SSD1306_I2C on A4/A5 with the observed 0x3C address; do not copy the Starcore display object API.
   - Chinese text uses Noto_Sans_CJK_SC_Light16.xbf at Flash address 0x400000; an application-only upload does not prove that the font asset is present.
   - Scan or confirm 0x3C versus 0x3D rather than guessing when the screen stays blank.
   - The source-reviewed card does not authorize drawPixel, clear, or clearDisplay APIs.
@@ -67,6 +70,10 @@ libraries:
     headers: [MPython.h]
     status: compile_verified
     notes: MPython.h supplied the global display object in both the Mind+ 1.8 and latest Mind+ 2 compilations; the user confirmed visible output for the exact welcome recipe on 2026-08-26.
+  - name: DFRobot SSD1306 I2C for Stardust
+    headers: [DFRobot_SSD1306_I2C.h]
+    status: compile_verified
+    notes: The exact Stardust status source compiled and uploaded; visible output remains a separate user-confirmation gate.
 mindplus:
   extension: esp32
   headers: [MPython.h]
@@ -79,3 +86,4 @@ common_failures:
   - English working while Chinese is blank or garbled usually points to the separate Mind+ font asset at 0x400000, not to a need for U8g2.
 board_notes:
   idmc-0001-starcore-v4-2-2: Use a matching-voltage I2C connector; P19 is SCL and P20 is SDA on the shared bus.
+  stardust-atmega328p: The connected module responded at address 0x3C on A4(SDA)/A5(SCL); visible output for the Stardust recipe still requires user confirmation.

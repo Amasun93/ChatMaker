@@ -6,9 +6,8 @@ board_id: mpython-v3
 section_id: toolchains-and-upload
 source_refs: [source-mpython-v3-official]
 ---
-# 没装工具链就如实停下
+# 使用掌控板 3.0 独立工具链
 
-官方资料覆盖 mPython IDE、MicroPython、PlatformIO 和 Arduino IDE。本机 Mind+ 2.0 索引记录 `mpython:esp32@3.0.0` 及 ESP32-S3 工具依赖，但实际包、板卡定义和专用库尚未安装。因此现在只能报告“官方资料可用、工具包待准备”，不能冒充已编译或上传。
+Windows x64 可使用 `chatmaker-mpython-v3` 的 `prepare-environment`、`doctor`、`ports`、`compile` 和 `compile-upload` 动作。ChatMaker 从 Labplus 官方索引安装固定的 `mpython:esp32@3.0.0`、ESP32-S3 编译器和烧录工具，不要求预先安装 Mind+ 桌面应用。电脑里已有 Mind+ 仍可保留，但不是独立链的前置条件。
 
-自动识别可先读取 ESP32-S3 芯片和丝印。需要临时探针但缺少受支持的 3.0 工具链时，应转为照片识别，不允许回退到经典掌控板目标。
-
+编译目标只能是 `mpython:esp32:labplus_mpython_v3`。上传前必须确认实板确实是掌控板 3.0，并且只剩一个合格有线端口；不能回退到经典掌控板或星核板目标。编译、上传、串口、断电重启和彩屏显示分别报告。

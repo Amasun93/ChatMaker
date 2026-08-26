@@ -8,8 +8,8 @@ family: mpython-v3
 mcu: ESP32-S3
 logic_voltage: 3.3
 chatmaker:
-  runtime_cli: null
-  runtime_module: null
+  runtime_cli: chatmaker-mpython-v3
+  runtime_module: chatmaker.hardware.mpython_v3
   identification: automatic
 mechanics:
   status: profile-available
@@ -72,9 +72,17 @@ verification:
   source_reviewed:
     status: verified
     checked_at: "2026-08-26"
-    evidence: Official hardware, IO, structural dimensions, API, source, license and local Mind+ package-index facts were reviewed; the local 3.0 toolchain is not installed and physical fit is unverified.
-  code_compiled: {status: unverified, checked_at: null, evidence: null}
+    evidence: Official hardware, IO, structural dimensions, API, source, license and Labplus package-index facts were reviewed; the isolated Windows toolchain and representative compile are verified while physical fit remains unverified.
+  code_compiled:
+    status: verified
+    checked_at: "2026-08-26"
+    evidence: The checked-in static Chinese status page compiled with the isolated mpython:esp32@3.0.0 target and produced a 1,064,480-byte application BIN.
+    evidence_id: mpython-v3-independent-compile-2026-08-26
+    evidence_ref: docs/verification/2026-08-26-mpython-v3-independent-cli.md
+    method: command-result
   firmware_uploaded: {status: unverified, checked_at: null, evidence: null}
+  serial_evidence: {status: unverified, checked_at: null, evidence: null}
+  power_cycle_verified: {status: unverified, checked_at: null, evidence: null}
   physical_effect_verified: {status: unverified, checked_at: null, evidence: null}
 pins:
   - {id: P0, kind: gpio, capabilities: [gpio-1, analog-input, digital-input, digital-output, pwm], source_ids: [mpython-v3-official-io]}
@@ -115,7 +123,9 @@ constraints:
 constraint_pin_refs: [P5, P7, P10, P11, P12, P19, P20]
 toolchains:
   - id: mindplus-mpython-v3-3.0.0
-    status: source_indexed_toolchain_not_installed
+    status: independent_windows_compile_verified
     package: mpython:esp32@3.0.0
+    fqbn: mpython:esp32:labplus_mpython_v3
+    package_index: https://labplus-cn.github.io/arduino-esp32/package_esp32_mpython_index_cn.json
   - id: micropython-mpython-v3
     status: official_source_available_hardware_unverified

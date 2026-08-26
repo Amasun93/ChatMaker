@@ -1,0 +1,38 @@
+schema_version: "1.0"
+kind: recipe
+id: mpython-v3-chinese-status
+name: 掌控板 3.0 中文状态页
+summary: 使用掌控板 3.0 官方 Arduino 库在彩屏上静态显示三行中文，避免循环清屏闪烁。
+sources:
+  - title: Labplus official Arduino core and mPython V3 library
+    url: https://github.com/labplus-cn/arduino_esp32_v3_0_0
+verification:
+  source_reviewed:
+    status: verified
+    checked_at: "2026-08-26"
+    evidence: The official MPython.h DisplayFB example confirms mPython.begin, drawTextCN, fillScreen and show for the mPython V3 target.
+    method: source-review
+  code_compiled:
+    status: verified
+    checked_at: "2026-08-26"
+    evidence: The exact checked-in source compiled with the ChatMaker-managed mpython:esp32@3.0.0 environment and the labplus_mpython_v3 target.
+    evidence_id: mpython-v3-chinese-status-compile-2026-08-26
+    evidence_ref: docs/verification/2026-08-26-mpython-v3-independent-cli.md
+    method: command-result
+  firmware_uploaded: {status: unverified, checked_at: null, evidence: null}
+  serial_evidence: {status: unverified, checked_at: null, evidence: null}
+  power_cycle_verified: {status: unverified, checked_at: null, evidence: null}
+  physical_effect_verified: {status: unverified, checked_at: null, evidence: null}
+effect_verification:
+  - effect_id: color-lcd-chinese-status
+    name: 彩屏显示中文状态页
+    verification:
+      physical_effect_verified:
+        status: unverified
+        checked_at: null
+        evidence: No mPython V3 board is currently available for visual confirmation.
+boards: [mpython-v3]
+components: []
+wiring: []
+source_file: examples/chatduino/mpython-v3/chinese-status/chinese-status.ino
+expected_effect: 彩屏静态显示“掌控板3.0 / ChatMaker就绪 / 等待创意项目”，串口输出 MPYTHON_V3_CHINESE_STATUS_READY；实板效果待验证。

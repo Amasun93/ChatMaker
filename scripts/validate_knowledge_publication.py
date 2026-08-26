@@ -210,6 +210,8 @@ def validate_knowledge_publication(root: Path) -> dict[str, Any]:
             board_id = manifest.get("board_id")
             if not isinstance(board_id, str) or path.name != f"{board_id}.yaml":
                 errors.append(f"{path}: board_id {board_id!r} does not match filename")
+            if isinstance(board_id, str) and board_id not in BOARD_IDS:
+                errors.append(f"{path}: board_id {board_id!r} is not registered")
             if manifest.get("schema_version") != "1.0":
                 errors.append(f"{path}: unsupported schema_version {manifest.get('schema_version')!r}")
             for error in sorted(validator.iter_errors(manifest), key=lambda item: list(item.path)):

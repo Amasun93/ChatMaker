@@ -8,20 +8,20 @@ license_use_boundary: >-
   Official documentation declares CC0. Hardware follows CERN-OHL-S-2.0 and
   project software follows GPL-3.0-or-later unless a source file states another
   license. Product-page text and third-party datasheets are linked, not copied.
-cleaning_version: chatmaker-mpython-v3-v1
-review_date: "2026-08-23"
+cleaning_version: chatmaker-mpython-v3-v2
+review_date: "2026-08-26"
 cleaning_verified:
   status: verified
-  date: "2026-08-23"
-  evidence: Official hardware, IO, examples, license, OSHWA and source pages were reviewed with the local Mind+ package index.
+  date: "2026-08-26"
+  evidence: Official hardware, IO, examples, license, source and Labplus package-index facts were reviewed together with the independent Windows compile result.
 source_reviewed:
   status: verified
-  date: "2026-08-23"
-  evidence: ESP32-S3 identity, display, sensors, audio, pin mapping and API differences were reviewed; evolving-document defects remain noted.
+  date: "2026-08-26"
+  evidence: ESP32-S3 identity, display, sensors, audio, pin mapping, API differences and the mpython:esp32@3.0.0 target were reviewed; evolving-document defects remain noted.
 publication_approved:
   status: verified
-  date: "2026-08-24"
-  evidence: Approved normalized facts and original beginner guidance while keeping compile, upload and hardware evidence unverified.
+  date: "2026-08-26"
+  evidence: Approved the independent environment and compile guidance while keeping upload, serial, power-cycle and physical-effect evidence unverified without a board.
 page_declarations:
   - {stable_id: mpython-v3-start-here, path: published/boards/mpython-v3/start-here.md}
   - {stable_id: mpython-v3-identify-and-safety, path: published/boards/mpython-v3/identify-and-safety.md}

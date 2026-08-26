@@ -25,7 +25,8 @@ properties:
     type: string
     minLength: 1
   board_id:
-    enum: [arduino-nano-classic, arduino-uno-r3, esp32-devkit-v1, idmc-0001-starcore-v4-2-2, mpython-classic-v2x, mpython-v3]
+    type: string
+    pattern: "^[a-z0-9][a-z0-9-]+$"
   source_type:
     enum: [canonical-board-documentation, checked-in-project-documentation, owned-local-source]
   canonical_url:

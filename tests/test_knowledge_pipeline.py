@@ -139,15 +139,18 @@ class KnowledgePublicationPipelineTests(unittest.TestCase):
         result = self.validate(ROOT)
 
         self.assertTrue(result["success"], result["errors"])
-        self.assertEqual(result["counts"], {"manifests": 6, "pages": 48})
+        registry = json.loads(
+            (ROOT / "runtime/chatmaker/catalog_registry.json").read_text(encoding="utf-8")
+        )
         expected_boards = {
-            "arduino-nano-classic",
-            "arduino-uno-r3",
-            "esp32-devkit-v1",
-            "idmc-0001-starcore-v4-2-2",
-            "mpython-classic-v2x",
-            "mpython-v3",
+            board_id
+            for board_id, registration in registry["boards"].items()
+            if registration["knowledge"] is not None
         }
+        self.assertEqual(
+            result["counts"],
+            {"manifests": len(expected_boards), "pages": len(expected_boards) * 8},
+        )
         actual_boards = set()
         for path in (ROOT / "knowledge_sources" / "manifests").glob("*.yaml"):
             manifest = yaml.safe_load(path.read_text(encoding="utf-8"))
@@ -158,6 +161,7 @@ class KnowledgePublicationPipelineTests(unittest.TestCase):
                     "idmc-0001-starcore-v4-2-2",
                     "mpython-classic-v2x",
                     "mpython-v3",
+                    "stardust-atmega328p",
                 }
                 else "unverified"
             )
@@ -167,6 +171,20 @@ class KnowledgePublicationPipelineTests(unittest.TestCase):
             if manifest["board_id"] in {"arduino-nano-classic", "arduino-uno-r3"}:
                 self.assertEqual(manifest["source_reviewed"]["status"], "unverified")
         self.assertEqual(actual_boards, expected_boards)
+
+    def test_publication_validator_rejects_manifest_for_unregistered_board(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            workspace = self.make_workspace(root)
+            _, manifest = self.manifest(workspace)
+            manifest["board_id"] = "unregistered-board"
+            manifest["id"] = "source-unregistered-board"
+            write_yaml(workspace / "manifests/unregistered-board.yaml", manifest)
+
+            result = self.validate(root)
+
+        self.assertFalse(result["success"])
+        self.assertTrue(any("not registered" in error for error in result["errors"]), result)
 
     def test_starcore_manifest_governs_exact_approved_module_rewrites(self):
         manifest = yaml.safe_load(
@@ -260,7 +278,14 @@ class KnowledgePublicationPipelineTests(unittest.TestCase):
             result = self.validate(Path(directory))
 
         self.assertTrue(result["success"], result["errors"])
-        self.assertEqual(result["counts"], {"manifests": 6, "pages": 1})
+        registry = json.loads(
+            (ROOT / "runtime/chatmaker/catalog_registry.json").read_text(encoding="utf-8")
+        )
+        expected_manifests = sum(
+            registration["knowledge"] is not None
+            for registration in registry["boards"].values()
+        )
+        self.assertEqual(result["counts"], {"manifests": expected_manifests, "pages": 1})
 
     def test_page_uses_exact_six_fields_and_a_nonempty_body(self):
         for body, extra_frontmatter in (

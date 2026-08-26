@@ -1,0 +1,82 @@
+schema_version: "1.0"
+kind: board
+id: stardust-atmega328p
+name: 星尘板（ATmega328P）
+family: stardust-avr
+mcu: ATmega328P
+logic_voltage: 5.0
+chatmaker:
+  runtime_cli: chatmaker-stardust
+  runtime_module: chatmaker.hardware.stardust
+  identification: assisted
+mechanics:
+  status: research-required
+  profile_path: null
+  fit_verified: false
+  notes: The supplied self-developed hardware archive does not contain a Stardust board drawing; dimensions and mounting holes require the exact board source or physical measurement.
+identity:
+  product_line: 星尘板
+  exact_revision: unconfirmed
+  user_confirmed_name: true
+  observed_mcu_signature: 0x1E950F
+  observed_usb_uart: CH340
+  observed_bootloader_baud: 115200
+  compatible_target: mindplus:avr:nano:cpu=atmega328
+  physical_board_is_not: IDMC-0001 星核板、掌控板 3.0 或通用 Arduino Nano 商品板
+sources:
+  - title: ChatMaker 星尘板与自研 OLED 实板记录
+    url: https://github.com/Amasun93/ChatMaker/blob/main/docs/verification/2026-08-26-stardust-oled-physical-board.md
+  - title: Arduino Nano official ATmega328P compatibility reference
+    url: https://docs.arduino.cc/hardware/nano/
+verification:
+  source_reviewed:
+    status: verified
+    checked_at: "2026-08-26"
+    evidence: The user confirmed the Stardust product identity; read-only device evidence confirmed CH340, ATmega328P signature 0x1E950F and a 115200 bootloader. The supplied archive contains no Stardust mechanical or pin-map source.
+    evidence_id: stardust-identity-review-2026-08-26
+    evidence_ref: docs/verification/2026-08-26-stardust-oled-physical-board.md
+    method: source-review
+  code_compiled:
+    status: verified
+    checked_at: "2026-08-26"
+    evidence: The exact static OLED status source compiled for mindplus:avr:nano:cpu=atmega328 with the observed compatible profile.
+    evidence_id: stardust-oled-compile-2026-08-26
+    evidence_ref: docs/verification/2026-08-26-stardust-oled-physical-board.md
+    method: command-result
+  firmware_uploaded:
+    status: verified
+    checked_at: "2026-08-26"
+    evidence: COM8 was the only wired port; 7814 bytes were written at 115200 baud and avrdude verified the flash contents.
+    evidence_id: stardust-oled-upload-2026-08-26
+    evidence_ref: docs/verification/2026-08-26-stardust-oled-physical-board.md
+    method: command-result
+  serial_evidence:
+    status: verified
+    checked_at: "2026-08-26"
+    evidence: COM8 at 115200 emitted STARDUST_OLED_READY followed by repeating STARDUST_ALIVE after reset.
+    evidence_id: stardust-oled-serial-2026-08-26
+    evidence_ref: docs/verification/2026-08-26-stardust-oled-physical-board.md
+    method: serial-observation
+  physical_effect_verified:
+    status: unverified
+    checked_at: null
+    evidence: The display write path and serial marker ran, but visible pixels and text still require the user's observation.
+pins:
+  - {id: USB, kind: connector-signal, capabilities: [usb-data, serial-upload], source_ids: [stardust-observed-com8]}
+  - {id: 5V, kind: power-rail, capabilities: [five-volt-power], source_ids: [stardust-nano-compatible-profile]}
+  - {id: GND, kind: ground, capabilities: [ground, shared], source_ids: [stardust-nano-compatible-profile]}
+  - {id: A4, kind: gpio, capabilities: [analog-input, digital-input, digital-output, i2c-sda], source_ids: [stardust-observed-i2c-scan]}
+  - {id: A5, kind: gpio, capabilities: [analog-input, digital-input, digital-output, i2c-scl], source_ids: [stardust-observed-i2c-scan]}
+constraints:
+  - Only ATmega328P, CH340, the 115200 bootloader and the A4/A5 I2C route are physically verified; do not invent the remaining board labels or onboard features.
+  - Keep D0/D1 free during upload even when the exact external header names are not yet documented.
+  - The connected IDMD-0021 OLED was discovered at 0x3C; an address response does not prove visible output.
+  - The current representative target is Nano-compatible for compilation and upload, but the product remains a distinct self-developed board record.
+constraint_pin_refs: [USB, 5V, GND, A4, A5]
+toolchains:
+  - id: mindplus-2-avr-nano-compatible
+    status: compile_upload_serial_verified
+    fqbn: mindplus:avr:nano:cpu=atmega328
+  - id: mindplus-1-avr-nano-compatible
+    status: compatibility_backend_available
+    fqbn: arduino:avr:nano:cpu=atmega328

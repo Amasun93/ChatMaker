@@ -1,0 +1,13 @@
+schema_version: "1.0"
+kind: knowledge-index
+board_id: stardust-atmega328p
+max_section_bytes: 65536
+sections:
+  - {section_id: start-here, title: 星尘板从这里开始, summary: 先确认自研产品身份，再使用已验证的 ATmega328P 兼容链。, consumers: [chatmaker, chatduino, chatweb, chatcad], topics: [stardust, identity, workflow], pack_id: chatmaker-board-stardust-atmega328p-knowledge}
+  - {section_id: identify-and-safety, title: 识别与安全, summary: 产品名由用户确认；电子线索只证明当前兼容范围。, consumers: [chatmaker, chatduino, chatweb, chatcad], topics: [stardust, identity, safety], pack_id: chatmaker-board-stardust-atmega328p-knowledge}
+  - {section_id: pins-and-electrical, title: 引脚与电气规则, summary: 当前只使用已验证的 5V、GND、A4 和 A5；其余针脚待资料。, consumers: [chatmaker, chatduino, chatweb], topics: [stardust, pins, electrical, i2c], pack_id: chatmaker-board-stardust-atmega328p-knowledge}
+  - {section_id: toolchains-and-upload, title: 编译、上传与串口, summary: 使用 115200 引导程序兼容链，并将各证据门分开。, consumers: [chatmaker, chatduino], topics: [stardust, toolchain, compile, upload, serial], pack_id: chatmaker-board-stardust-atmega328p-knowledge}
+  - {section_id: components-and-wiring, title: 模块与接线, summary: 当前代表组合为 IDMD-0021 OLED 的 A4/A5 I²C 接线。, consumers: [chatmaker, chatduino, chatweb, chatcad], topics: [stardust, components, wiring, oled], pack_id: chatmaker-board-stardust-atmega328p-knowledge}
+  - {section_id: libraries-and-examples, title: 库与案例, summary: 从登记的代表案例开始，不把兼容目标当成产品身份。, consumers: [chatmaker, chatduino], topics: [stardust, libraries, examples], pack_id: chatmaker-board-stardust-atmega328p-knowledge}
+  - {section_id: web-and-protocol, title: 网页与通信, summary: 只有项目需要时才定义串口或网页协议。, consumers: [chatmaker, chatduino, chatweb], topics: [stardust, web, protocol, serial], pack_id: chatmaker-board-stardust-atmega328p-knowledge}
+  - {section_id: troubleshooting, title: 排错与证据状态, summary: 区分地址应答、上传、串口、断电重启和肉眼显示。, consumers: [chatmaker, chatduino, chatweb, chatcad], topics: [stardust, diagnosis, evidence], pack_id: chatmaker-board-stardust-atmega328p-knowledge}

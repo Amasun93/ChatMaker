@@ -1,0 +1,35 @@
+schema_version: "1.0"
+id: source-stardust-atmega328p-observed
+title: 星尘板与 IDMD-0021 OLED 实板记录
+board_id: stardust-atmega328p
+source_type: owned-local-source
+owned_local_source:
+  description: Owner-provided self-developed hardware archive reviewed together with the connected Stardust board and IDMD-0021 OLED.
+  sha256: 1fc82300d133d8be38f9956f6d63f19d2cdf074c8d7f55265b77b81b37383c02
+license_use_boundary: >-
+  Only normalized facts from the owner-supplied archive and observed hardware
+  are published here. The source archive, schematic body and firmware backups
+  are not redistributed by this Knowledge pack.
+cleaning_version: chatmaker-stardust-v1
+review_date: "2026-08-26"
+cleaning_verified:
+  status: verified
+  date: "2026-08-26"
+  evidence: Product identity, archive coverage, observed chip, bootloader, I2C and evidence boundaries were normalized without guessing missing board facts.
+source_reviewed:
+  status: verified
+  date: "2026-08-26"
+  evidence: The owner archive and connected hardware were reviewed; board dimensions, revision and full pin map remain explicitly unknown.
+publication_approved:
+  status: verified
+  date: "2026-08-26"
+  evidence: Approved the normalized beginner guidance and evidence references only; raw owner files and backups remain local.
+page_declarations:
+  - {stable_id: stardust-atmega328p-start-here, path: published/boards/stardust-atmega328p/start-here.md}
+  - {stable_id: stardust-atmega328p-identify-and-safety, path: published/boards/stardust-atmega328p/identify-and-safety.md}
+  - {stable_id: stardust-atmega328p-pins-and-electrical, path: published/boards/stardust-atmega328p/pins-and-electrical.md}
+  - {stable_id: stardust-atmega328p-toolchains-and-upload, path: published/boards/stardust-atmega328p/toolchains-and-upload.md}
+  - {stable_id: stardust-atmega328p-components-and-wiring, path: published/boards/stardust-atmega328p/components-and-wiring.md}
+  - {stable_id: stardust-atmega328p-libraries-and-examples, path: published/boards/stardust-atmega328p/libraries-and-examples.md}
+  - {stable_id: stardust-atmega328p-web-and-protocol, path: published/boards/stardust-atmega328p/web-and-protocol.md}
+  - {stable_id: stardust-atmega328p-troubleshooting, path: published/boards/stardust-atmega328p/troubleshooting.md}

@@ -70,7 +70,9 @@ def test_v3_record_keeps_new_pin_and_light_semantics_separate():
     assert board["sensor_semantics"]["light_read_unit"] == "lux"
     onboard = {item["id"] for item in board["onboard_hardware"]}
     assert {"qmi8658c", "mmc5603nj", "ltr-308als-01", "speaker"}.issubset(onboard)
-    assert board["toolchains"][0]["status"] == "source_indexed_toolchain_not_installed"
+    assert board["toolchains"][0]["status"] == "independent_windows_compile_verified"
+    assert board["verification"]["code_compiled"]["status"] == "verified"
+    assert board["verification"]["firmware_uploaded"]["status"] == "unverified"
 
 
 def test_both_boards_publish_the_standard_knowledge_sections():

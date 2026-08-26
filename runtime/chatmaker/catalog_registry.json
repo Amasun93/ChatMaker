@@ -112,8 +112,25 @@
         "status": "profile-available"
       },
       "record_path": "packs/boards/mpython-v3.yaml",
-      "runtime_cli": null,
-      "runtime_module": null
+      "runtime_cli": "chatmaker-mpython-v3",
+      "runtime_module": "chatmaker.hardware.mpython_v3"
+    },
+    "stardust-atmega328p": {
+      "identification": "assisted",
+      "knowledge": {
+        "index_path": "knowledge/boards/stardust-atmega328p.yaml",
+        "pack_id": "chatmaker-board-stardust-atmega328p-knowledge",
+        "source_ref": "source-stardust-atmega328p-observed"
+      },
+      "mechanics": {
+        "fit_verified": false,
+        "notes": "The supplied self-developed hardware archive does not contain a Stardust board drawing; dimensions and mounting holes require the exact board source or physical measurement.",
+        "profile_path": null,
+        "status": "research-required"
+      },
+      "record_path": "packs/boards/stardust-atmega328p.yaml",
+      "runtime_cli": "chatmaker-stardust",
+      "runtime_module": "chatmaker.hardware.stardust"
     },
     "unihiker-m10": {
       "identification": "manual",
