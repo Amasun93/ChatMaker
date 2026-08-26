@@ -60,11 +60,10 @@ AI 工作区如果具备本地命令执行能力，就直接调用这些 CLI；�
 
 ## Mind+ 版本策略
 
-- 电脑已经有可用的 Mind+ 1.8.x：直接复用。
-- 电脑已经有可用的 Mind+ 2.x：直接复用。
-- 两个版本都可用：优先使用 Mind+ 2.x。
-- 两个版本都没有：在星核板独立工具链完成前，推荐安装已经验证的 Mind+ 1.8.x。
-- 不会让已经有可用 Mind+ 的学生再下载另一套版本。
+- 星核板：Windows x64 已可由 ChatMaker 自己准备独立环境，不需要安装 Mind+ 桌面应用。
+- Nano、Uno 和经典掌控板：目前仍复用电脑里已有的 Mind+ 1.8.x 或 2.x。
+- 两个 Mind+ 版本都可用时优先 2.x；已有一个可用版本时，不要求学生再下载另一个。
+- 掌控板 3.0 和其他未完成独立工具链验证的板卡，不能套用星核板结论。
 
 星核板 Mind+ 2.x 的已验证配置为：
 
@@ -88,16 +87,16 @@ dfrobot:mpython:mpython:FlashMode=dio,FlashFreq=80,UploadSpeed=1500000,DebugLeve
 <项目目录>\.chatmaker-runtime\
 ```
 
-也可以显式选择其他磁盘或目录：
+未来重新发布签名离线 Core 后，也可以显式选择其他磁盘或目录。下面的 `<version>` 应替换为该 Release 页面显示的真实版本；当前 Beta 用户请直接从 GitHub `main` 安装：
 
 ```powershell
-Get-FileHash .\ChatMaker-Core-0.1.0-rc5-windows-amd64.zip -Algorithm SHA256
-Get-Content .\ChatMaker-Core-0.1.0-rc5-windows-amd64.zip.sha256
+Get-FileHash .\ChatMaker-Core-<version>-windows-amd64.zip -Algorithm SHA256
+Get-Content .\ChatMaker-Core-<version>-windows-amd64.zip.sha256
 python .\trusted-bootstrap\bootstrap.py `
-  --archive .\ChatMaker-Core-0.1.0-rc5-windows-amd64.zip `
-  --checksum .\ChatMaker-Core-0.1.0-rc5-windows-amd64.zip.sha256 `
-  --release-manifest .\ChatMaker-Core-0.1.0-rc5-windows-amd64.zip.manifest.json `
-  --release-signature .\ChatMaker-Core-0.1.0-rc5-windows-amd64.zip.manifest.json.sig.json `
+  --archive .\ChatMaker-Core-<version>-windows-amd64.zip `
+  --checksum .\ChatMaker-Core-<version>-windows-amd64.zip.sha256 `
+  --release-manifest .\ChatMaker-Core-<version>-windows-amd64.zip.manifest.json `
+  --release-signature .\ChatMaker-Core-<version>-windows-amd64.zip.manifest.json.sig.json `
   --project-root . `
   --install-root E:\ChatMakerRuntime
 ```
@@ -137,7 +136,7 @@ chatmaker-cad --request-json '{"action":"openscad-prepare","allow_install":true}
 
 当 `update_available=true` 时，必须先询问用户：“发现新版本，是否更新？”只有用户明确回答同意，更新动作才可以下载或覆盖文件。启动 ChatMaker 不等于授权更新；不得静默强制覆盖。
 
-GitHub Actions 到 SkillHub 的自动发布、国内 CDN 和自动分发不属于本轮 P0。
+GitHub Actions 到 SkillHub 的自动发布属于 P2 后续任务；国内 CDN 和自动分发仍不在本轮范围。
 
 ## 无 MCP 的星核板代表路径
 

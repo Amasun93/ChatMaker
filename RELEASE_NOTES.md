@@ -1,6 +1,6 @@
-# ChatMaker v0.1.0-rc5
+# ChatMaker v0.1.0-rc5 历史发布记录
 
-> 状态 / Status: [GitHub 公开预发布版](https://github.com/Amasun93/ChatMaker/releases/tag/v0.1.0-rc5)。Public GitHub prerelease.
+> 2026-08-26 已撤下对应 GitHub Release 和标签。本文件只保留当时的构建与验证历史；当前小白更新说明请看 [WHAT'S NEW](WHATS_NEW.md)。
 
 ## rc5 之后的当前源码 / Current source after rc5
 

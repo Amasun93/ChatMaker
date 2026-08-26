@@ -14,7 +14,9 @@ ChatMaker 是唯一入口；ChatDuino、ChatWeb 和 ChatCAD 是由它在内部�
 
 对话窗口就是创作环境。编译器、串口和浏览器在后台完成专业工作；部分旧板卡仍可复用 Mind+，用户不需要先学习一套 IDE。
 
-> 当前处于 Beta 体验阶段，维护者已邀请 20 多位体验者参与测试。GitHub `main` 是当前推荐安装来源；[`v0.1.0-rc5`](https://github.com/Amasun93/ChatMaker/releases/tag/v0.1.0-rc5) 只保留为较早的历史快照。各板卡的真实证据按下方状态表分别报告。
+> 当前版本：**0.2.0-beta.1**。维护者已邀请 20 多位体验者参与测试，GitHub `main` 是当前推荐安装来源。各板卡的真实证据按下方状态表分别报告。
+
+想快速了解这次变化，请看面向普通用户的 [WHAT'S NEW](WHATS_NEW.md)。
 
 ## 从 GitHub 安装当前 Beta
 
@@ -183,45 +185,7 @@ chatmaker-pack rollback chatmaker-board-arduino-nano-classic-knowledge --version
 | v0.1.0-rc2 发布候选 | 已发布 | [GitHub 预发布](https://github.com/Amasun93/ChatMaker/releases/tag/v0.1.0-rc2)；rc1 继续保留，rc2 新增串口运行层 |
 | v0.1.0-rc3 发布候选 | 已发布 | [GitHub 预发布](https://github.com/Amasun93/ChatMaker/releases/tag/v0.1.0-rc3)；包含 12 种模块、11 个配方、10 个编译示例和中文资料目录入口 |
 | v0.1.0-rc4 发布候选 | 已发布 | [GitHub 预发布](https://github.com/Amasun93/ChatMaker/releases/tag/v0.1.0-rc4)；新增独立 Uno 适配器、12 个配方、11 个 AVR 编译示例和 18 个 WorkBuddy 工具 |
-| v0.1.0-rc5 发布候选 | 已发布 | [GitHub 预发布](https://github.com/Amasun93/ChatMaker/releases/tag/v0.1.0-rc5)；193 项 Python 测试、4 项 Chromium 自动化、双 ZIP 确定性构建和下载哈希已验证，实物硬件门仍保持未验证 |
 | 不依赖 Mind+ 应用的星核板环境 | Beta P1 已验证 | ChatMaker 隔离工具链已完成固定下载校验、地震预警站编译、COM4 上传、硬复位与 115200 串口回读；当前自动准备限 Windows x64 |
-
-## rc5 历史快照
-
-[`v0.1.0-rc5`](https://github.com/Amasun93/ChatMaker/releases/tag/v0.1.0-rc5) 继续保留，方便回看当时的代码、产物与验证记录，但不再是推荐安装入口。当前体验者应从 GitHub `main` 安装；后续 SkillHub 自动部署属于 Beta P2。
-
-用户可以从 GitHub Release 下载 rc5 ZIP 与同名 `.sha256`，先校验哈希再安装；也可以从公开 `main` 获取当前源码。两种方式都不能把软件测试或编译结果写成真实烧录、串口、网络或物理效果成功。
-
-rc5 新增受控 ESP32 环境准备（只安装官方 `esp32:esp32@3.3.11`）、可执行项目路由、创意简报规划、显式高级游乐场和四页 Chromium 自动化。Nano/Uno 继续使用 Mind+；ESP32 只使用官方 Arduino CLI 和精确 DOIT FQBN。完整安装、命令、前置条件和卸载恢复说明见 [安装说明](docs/installation.md)。
-
-```powershell
-Get-FileHash .\ChatMaker-0.1.0-rc5.zip -Algorithm SHA256
-Get-Content .\ChatMaker-0.1.0-rc5.zip.sha256
-Expand-Archive .\ChatMaker-0.1.0-rc5.zip -DestinationPath .
-Set-Location .\ChatMaker-0.1.0-rc5
-python -m pip install -e .
-python -m unittest discover -s tests -v
-python runtime/doctor.py
-chatmaker-catalog --request-json '{"action":"search","query":"继电器","kind":"component"}'
-chatmaker-route --request-json '{"hardware":{"board":"arduino-nano-classic"}}'
-chatmaker-nano --request-json '{"action":"doctor"}'
-chatmaker-uno --request-json '{"action":"doctor"}'
-chatmaker-avr-project --request-json '{"board_id":"arduino-uno-r3","code":"void setup(){} void loop(){}"}'
-chatmaker-starcore --request-json '{"action":"prepare-environment"}'
-chatmaker-starcore --request-json '{"action":"doctor"}'
-chatmaker-esp32 --request-json '{"action":"prepare-environment"}'
-chatmaker-cad --request-json '{"action":"generate","board_id":"arduino-uno-r3","project_name":"uno-base","output_dir":"uno-base"}'
-chatmaker-nano-examples --root examples/chatduino/nano
-chatmaker-web-plan --brief-json '{"kind":"classroom-tool","idea":"收集课堂反馈","audience_scene":"学生下课前使用","desired_feeling":"清楚而轻松","primary_action":"选择最需要重讲的一步"}'
-chatmaker-web-plan --brief-json '{"kind":"mini-game","idea":"做一个小猫接星星的游戏","audience_scene":"学生用手机玩一分钟","desired_feeling":"轻松、有成就感","primary_action":"左右移动小猫接住星星"}'
-chatmaker-web-embed examples/chatweb/esp32-ap-control.html examples/chatduino/esp32/ap-led-sensor/page_html.h --symbol CHATMAKER_AP_PAGE
-chatmaker-web --request-json '{"kind":"classroom-tool","title":"课堂脉冲","prompt":"今天哪一步最需要再讲一次？","primary_label":"我需要再讲一次","direction_id":"editorial-signal"}' --output examples/chatweb/classroom-pulse.html
-chatmaker-web --request-json '{"kind":"mini-game","title":"星光反应赛","prompt":"二十秒内尽可能多地点亮星星。","primary_label":"开始挑战","direction_id":"reaction-rush"}' --output examples/chatweb/my-game.html
-chatmaker-web-preview examples/chatweb/classroom-pulse.html
-npm ci
-npx playwright install chromium
-npm run test:browser
-```
 
 ## 项目结构
 
@@ -238,7 +202,7 @@ docs/         设计、路线和贡献说明
 
 ## 路线
 
-当前按 P0 到 P4 管理：P0 精简与证据归一化已完成；P1 星核板独立 CLI 已完成 Windows x64 最小闭环；P2 将打通 SkillHub 自动部署和 Beta 反馈闭环；P3 再根据真实需求扩展 Nano、Uno、经典掌控板与课堂案例；P4 收口稳定版。
+当前按 P0 到 P4 管理：P0 精简与证据归一化已完成；P1 星核板独立 CLI 已完成 Windows x64 最小闭环；P2 将打通 SkillHub 自动部署、版本更新和 Beta 反馈闭环；P3.1 补齐经典掌控板，P3.2 调研并接入 micro:bit V2；P4 收口稳定版。
 
 每完成一个阶段，先根据体验者反馈调整下一阶段范围。详见 [ChatMaker Beta 路线图](docs/roadmap.md)。
 

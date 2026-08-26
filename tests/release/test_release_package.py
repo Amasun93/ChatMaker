@@ -20,7 +20,8 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 
 
 ROOT = Path(__file__).resolve().parents[2]
-RELEASE_VERSION = "0.1.0-rc5"
+PROJECT_VERSION = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))["project"]["version"]
+RELEASE_VERSION = "0.2.0-beta.1"
 TEST_PLATFORM = "windows-amd64"
 
 
@@ -37,17 +38,17 @@ def prepared_runtime(directory: Path) -> Path:
     root = directory / "prepared"
     wheelhouse = root / "wheelhouse"
     wheelhouse.mkdir(parents=True, exist_ok=True)
-    wheel = wheelhouse / "chatmaker-0.1.0rc5-py3-none-any.whl"
+    wheel = wheelhouse / f"chatmaker-{PROJECT_VERSION}-py3-none-any.whl"
     payloads = {
         "chatmaker/__init__.py": b"",
-        "chatmaker-0.1.0rc5.dist-info/METADATA": b"Metadata-Version: 2.1\nName: chatmaker\nVersion: 0.1.0rc5\n",
-        "chatmaker-0.1.0rc5.dist-info/WHEEL": b"Wheel-Version: 1.0\nRoot-Is-Purelib: true\nTag: py3-none-any\n",
+        f"chatmaker-{PROJECT_VERSION}.dist-info/METADATA": f"Metadata-Version: 2.1\nName: chatmaker\nVersion: {PROJECT_VERSION}\n".encode("ascii"),
+        f"chatmaker-{PROJECT_VERSION}.dist-info/WHEEL": b"Wheel-Version: 1.0\nRoot-Is-Purelib: true\nTag: py3-none-any\n",
     }
     rows: list[list[str]] = []
     for name, value in sorted(payloads.items()):
         encoded = base64.urlsafe_b64encode(hashlib.sha256(value).digest()).rstrip(b"=").decode("ascii")
         rows.append([name, f"sha256={encoded}", str(len(value))])
-    rows.append(["chatmaker-0.1.0rc5.dist-info/RECORD", "", ""])
+    rows.append([f"chatmaker-{PROJECT_VERSION}.dist-info/RECORD", "", ""])
     record = io.StringIO(newline="")
     csv.writer(record, lineterminator="\n").writerows(rows)
     def frozen_wheel_info(name: str) -> zipfile.ZipInfo:
@@ -61,7 +62,7 @@ def prepared_runtime(directory: Path) -> Path:
         for name, value in payloads.items():
             archive.writestr(frozen_wheel_info(name), value)
         archive.writestr(
-            frozen_wheel_info("chatmaker-0.1.0rc5.dist-info/RECORD"),
+            frozen_wheel_info(f"chatmaker-{PROJECT_VERSION}.dist-info/RECORD"),
             record.getvalue(),
         )
     digest = hashlib.sha256(wheel.read_bytes()).hexdigest()
@@ -70,10 +71,10 @@ def prepared_runtime(directory: Path) -> Path:
         "platform_tag": TEST_PLATFORM,
         "python_requires": "==3.11.*",
         "core_wheel": wheel.name,
-        "wheels": [{"filename": wheel.name, "project": "chatmaker", "version": "0.1.0rc5", "size": wheel.stat().st_size, "sha256": digest, "tags": ["py3-none-any"], "requires": []}],
+        "wheels": [{"filename": wheel.name, "project": "chatmaker", "version": PROJECT_VERSION, "size": wheel.stat().st_size, "sha256": digest, "tags": ["py3-none-any"], "requires": []}],
     }
     (root / "manifest.json").write_bytes((json.dumps(manifest, sort_keys=True, separators=(",", ":")) + "\n").encode("ascii"))
-    (root / "requirements.txt").write_bytes(f"chatmaker==0.1.0rc5 --hash=sha256:{digest}\n".encode("ascii"))
+    (root / "requirements.txt").write_bytes(f"chatmaker=={PROJECT_VERSION} --hash=sha256:{digest}\n".encode("ascii"))
     return root
 
 
@@ -99,9 +100,9 @@ class ReleasePackageTests(unittest.TestCase):
                 "c02249952c827244ce1273f20760a36d266ab17ecc7bd87ef67a8cc4a1fc8a2c",
             ),
             "chatmaker-board-idmc-0001-starcore-v4-2-2-knowledge": (
-                "chatmaker-board-idmc-0001-starcore-v4-2-2-knowledge-1.5.0.cmpack",
-                38142,
-                "b320b21bb36e31cb3ae10ce62f2e3e1ff23a46a369f90bb8be5f18eac9129277",
+                "chatmaker-board-idmc-0001-starcore-v4-2-2-knowledge-1.7.0.cmpack",
+                40294,
+                "73f1b4cfb3cc54e1f8fb22bacf111e5dff4022a173bba78fb10cac3a036a2bf6",
             ),
             "chatmaker-board-mpython-classic-v2x-knowledge": (
                 "chatmaker-board-mpython-classic-v2x-knowledge-1.0.0.cmpack",
@@ -114,7 +115,7 @@ class ReleasePackageTests(unittest.TestCase):
                 "fd8073a0a020482174e6f5484ffbcc3352b241f8b80b2a8f62c5b2d6c22b254b",
             ),
         }
-        self.assertEqual(registry["sequence"], 8)
+        self.assertEqual(registry["sequence"], 10)
         generated_at = datetime.fromisoformat(registry["generated_at"].replace("Z", "+00:00"))
         expires_at = datetime.fromisoformat(registry["expires_at"].replace("Z", "+00:00"))
         self.assertLessEqual((expires_at - generated_at).days, 31)
@@ -125,7 +126,7 @@ class ReleasePackageTests(unittest.TestCase):
             if item["board_id"] in {"mpython-classic-v2x", "mpython-v3"}:
                 pinned_commit = "0579d277abc667b71b060da124647623d54b6901"
             elif item["board_id"] == "idmc-0001-starcore-v4-2-2":
-                pinned_commit = "0031187dcff89ffdcbe50a7825fe88f153c2ad68"
+                pinned_commit = "04cba60593252f7070dc0bac91eea44ffdec61f1"
             else:
                 pinned_commit = "1556a055d9625409e9380f4e6abdf7c0e95778fc"
             self.assertEqual(item["url"], (
@@ -250,7 +251,7 @@ class ReleasePackageTests(unittest.TestCase):
 
     def test_installation_uses_a_trusted_bootstrap_and_all_detached_release_evidence(self):
         installation = (ROOT / "docs" / "installation.md").read_text(encoding="utf-8")
-        checksum_position = installation.find("Get-FileHash .\\ChatMaker-Core-0.1.0-rc5-windows-amd64.zip")
+        checksum_position = installation.find("Get-FileHash .\\ChatMaker-Core-<version>-windows-amd64.zip")
         bootstrap_position = installation.find("python .\\trusted-bootstrap\\bootstrap.py", checksum_position)
         manifest_position = installation.find("--release-manifest", bootstrap_position)
         signature_position = installation.find("--release-signature", manifest_position)
@@ -260,7 +261,7 @@ class ReleasePackageTests(unittest.TestCase):
         self.assertGreaterEqual(manifest_position, 0)
         self.assertGreaterEqual(signature_position, 0)
         self.assertLess(checksum_position, bootstrap_position)
-        self.assertNotIn("Expand-Archive .\\ChatMaker-Core-0.1.0-rc5-windows-amd64.zip", installation)
+        self.assertNotIn("0.1.0-rc5", installation)
         self.assertIn("--install-root", installation)
         self.assertIn(".chatmaker-location.json", installation)
 
@@ -271,7 +272,7 @@ class ReleasePackageTests(unittest.TestCase):
         self.assertNotIn('"method":"tools/list"', installation)
         self.assertNotIn("chatmaker-workbuddy-mcp", metadata["project"]["scripts"])
 
-    def test_core_cli_defaults_to_rc5_and_reports_archive_size(self):
+    def test_core_cli_defaults_to_pyproject_version_and_reports_archive_size(self):
         with tempfile.TemporaryDirectory() as directory:
             prepared = prepared_runtime(Path(directory))
             completed = subprocess.run(
@@ -333,7 +334,7 @@ class ReleasePackageTests(unittest.TestCase):
         prefix = f"ChatMaker-Core-{RELEASE_VERSION}-{TEST_PLATFORM}/"
         metadata = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
 
-        self.assertEqual(metadata["project"]["version"], "0.1.0rc5")
+        self.assertEqual(metadata["project"]["version"], PROJECT_VERSION)
         self.assertEqual(first_hash, second_hash)
         self.assertEqual(first_hash, first["sha256"])
         self.assertEqual([info.filename for info in infos], sorted(info.filename for info in infos))
@@ -356,14 +357,21 @@ class ReleasePackageTests(unittest.TestCase):
         }
         self.assertEqual(
             root_files,
-            {"LICENSE", "README.md", "README_EN.md", "pyproject.toml"},
+            {"LICENSE", "README.md", "README_EN.md", "WHATS_NEW.md", "pyproject.toml"},
         )
         docs_files = {
             name.removeprefix(prefix)
             for name in names
             if name.startswith(prefix + "docs/")
         }
-        self.assertEqual(docs_files, {"docs/installation.md"})
+        self.assertEqual(
+            docs_files,
+            {
+                "docs/installation.md",
+                "docs/roadmap.md",
+                "docs/contributing/board-research-workflow.md",
+            },
+        )
         self.assertIn(prefix + "skills/chatmaker/SKILL.md", names)
         self.assertIn(prefix + "skills/chatduino/SKILL.md", names)
         self.assertIn(prefix + "skills/chatweb/SKILL.md", names)
@@ -404,7 +412,7 @@ class ReleasePackageTests(unittest.TestCase):
         )
         self.assertEqual(
             len([name for name in names if name.startswith(prefix + "packs/recipes/")]),
-            25,
+            26,
         )
         self.assertEqual(
             len([name for name in names if name.startswith(prefix + "knowledge/boards/")]),

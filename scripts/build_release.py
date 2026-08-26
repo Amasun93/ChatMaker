@@ -9,6 +9,7 @@ from pathlib import Path
 import platform
 import re
 import stat
+import tomllib
 from typing import Any
 import unicodedata
 import zipfile
@@ -20,8 +21,8 @@ except ImportError:
 
 
 CORE_PATHS = (
-    "LICENSE", "README.md", "README_EN.md", "pyproject.toml", "scripts/bootstrap.py", "scripts/core_release_signature.py",
-    "docs/installation.md", "examples", "packs/boards", "packs/components", "knowledge/boards", "knowledge/mechanical", "knowledge/fabrication",
+    "LICENSE", "README.md", "README_EN.md", "WHATS_NEW.md", "pyproject.toml", "scripts/bootstrap.py", "scripts/core_release_signature.py",
+    "docs/installation.md", "docs/roadmap.md", "docs/contributing/board-research-workflow.md", "examples", "packs/boards", "packs/components", "knowledge/boards", "knowledge/mechanical", "knowledge/fabrication",
     "packs/recipes", "packs/schemas", "runtime", "skills/chatduino", "skills/chatmaker", "skills/chatweb", "skills/chatcad",
 )
 EXCLUDED_PARTS = {"__pycache__", ".pytest_cache", ".playwright-cli", ".chatmaker-esp32-builds", ".chatmaker-esp32-cache"}
@@ -273,17 +274,29 @@ def build_release(
     return {"success": True, "version": version, "platform_tag": selected, "archive": str(archive), "checksum_file": str(checksum), "release_manifest": str(release_manifest), "sha256": digest, "size_bytes": archive.stat().st_size, "file_count": len(payload), "release_sequence": release_sequence}
 
 
+def default_release_version(root: Path) -> str:
+    """Return the beginner-facing release version from pyproject.toml."""
+    metadata = tomllib.loads((Path(root) / "pyproject.toml").read_text(encoding="utf-8"))
+    version = Version(metadata["project"]["version"])
+    if version.pre is None:
+        return version.public
+    label, number = version.pre
+    readable_label = {"a": "alpha", "b": "beta", "rc": "rc"}[label]
+    return f"{version.base_version}-{readable_label}.{number}"
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Build a deterministic platform-specific offline ChatMaker Core ZIP.")
     parser.add_argument("--root", type=Path, default=Path(__file__).resolve().parents[1])
     parser.add_argument("--output", type=Path, default=Path("dist"))
-    parser.add_argument("--version", default="0.1.0-rc5")
+    parser.add_argument("--version", help="Defaults to the version declared in pyproject.toml.")
     parser.add_argument("--platform-tag", choices=tuple(sorted(PLATFORM_TAGS)))
     parser.add_argument("--prepared-root", type=Path)
     parser.add_argument("--release-sequence", type=int, default=1)
     args = parser.parse_args()
     try:
-        result = build_release(args.root, args.output, args.version, platform_tag=args.platform_tag, prepared_root=args.prepared_root, release_sequence=args.release_sequence)
+        version = args.version or default_release_version(args.root)
+        result = build_release(args.root, args.output, version, platform_tag=args.platform_tag, prepared_root=args.prepared_root, release_sequence=args.release_sequence)
     except Exception as exc:
         result = {"success": False, "error": type(exc).__name__, "detail": str(exc)}
     print(json.dumps(result, ensure_ascii=False, sort_keys=True))
