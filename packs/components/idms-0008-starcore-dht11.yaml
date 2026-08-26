@@ -2,7 +2,7 @@ schema_version: "1.0"
 kind: component
 id: idms-0008-starcore-dht11
 hardware_id: IDMS-0008
-name: IDMS-0008 星核板 DHT11 温湿度模块
+name: 温湿度传感器
 aliases: [星核DHT11, 自研温湿度传感器, IDMS-0008温湿度]
 category: input
 interface: single-wire-digital-dht11

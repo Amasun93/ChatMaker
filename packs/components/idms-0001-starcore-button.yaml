@@ -2,7 +2,7 @@ schema_version: "1.0"
 kind: component
 id: idms-0001-starcore-button
 hardware_id: IDMS-0001
-name: IDMS-0001 星核板三线按钮
+name: 按钮传感器
 aliases: [星核按钮传感器, 自研三线按键, IDMS-0001按钮]
 category: input
 interface: three-wire-digital-output

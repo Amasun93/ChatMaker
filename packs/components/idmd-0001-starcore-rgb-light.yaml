@@ -2,7 +2,7 @@ schema_version: "1.0"
 kind: component
 id: idmd-0001-starcore-rgb-light
 hardware_id: IDMD-0001
-name: IDMD-0001 星核板共阳 RGB 灯
+name: 三色 RGB 灯
 aliases: [星核RGB灯, 三路PWM彩灯, 自研RGB灯模块]
 category: output
 interface: three-channel-pwm-common-anode

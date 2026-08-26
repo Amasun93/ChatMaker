@@ -1,0 +1,57 @@
+schema_version: '1.0'
+kind: component
+id: idmf-0010-starcore-power-splitter
+hardware_id: IDMF-0010
+name: 电源与信号并线器
+aliases:
+- 并线器
+- 电源与信号并线器
+- IDMF-0010
+category: connectivity
+interface: passive-distribution
+supply_voltage:
+  minimum: null
+  maximum: null
+  status: unknown
+logic_boundary: 不得并接不同电压轨
+source_ids:
+- self-developed-hardware-handoff-2026-07-25
+sources:
+- title: ChatMaker self-developed hardware source manifest
+  url: https://github.com/Amasun93/ChatMaker/tree/main/knowledge_sources
+verification:
+  source_reviewed:
+    status: verified
+    checked_at: '2026-08-27'
+    evidence: The 2026-07-25 handoff index and selected raw source files were reviewed; unresolved fields remain explicit.
+  code_compiled:
+    status: not_applicable
+    checked_at: null
+    evidence: null
+  firmware_uploaded:
+    status: not_applicable
+    checked_at: null
+    evidence: null
+  physical_effect_verified:
+    status: unverified
+    checked_at: null
+    evidence: null
+pins:
+- id: CONNECTION
+  role: connector-details-require-source-review
+supported_boards:
+- idmc-0001-starcore-v4-2-2
+constraints:
+- 不得并接不同电压轨
+- 不是普通 GPIO 传感器
+- 资料未形成可直接执行的完整电气或协议结论，必须核对原文和实物版本。
+identification:
+- Confirm the IDMF-0010 marking and the beginner name '电源与信号并线器' before applying this record.
+libraries: []
+example_files:
+- docs/hardware/self-developed-modules.md
+common_failures:
+- Substituting a similarly named generic module can change voltage, pin order, active level, dimensions, or protocol.
+board_notes:
+  idmc-0001-starcore-v4-2-2: Use module_guide or project_task before assigning pins; unknown and conflicting fields are generation
+    blockers.

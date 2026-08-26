@@ -185,7 +185,7 @@ chatmaker-pack rollback chatmaker-board-arduino-nano-classic-knowledge --version
 <!-- starcore-evidence-summary:end -->
 | DOIT ESP32 DevKit V1 | 部分验证 | 官方 `esp32:esp32@3.3.11` 已安装；`prepare-environment` 真实 no-op 成功；`esp32:esp32:esp32doit-devkit-v1` 已通过 Blink 和 AP 案例真实编译；烧录、启动、串口、SoftAP、HTTP 和实体效果仍待实板 |
 | UNIHIKER M10 | Alpha 源码检查可用 | 官方页面已核对 M10 为 Debian/Python 路线、K10 为独立 MCU 路线；板卡记录、完整项目示例和本地项目检查 CLI 已接入，尚未同步到实板或验证屏幕/外设效果 |
-| 常用模块、库和示例 | 继续扩充 | 21 种元器件、28 个配方已接入；新增 micro:bit V2 心形状态案例和经典掌控板中文状态页，星核板板载自检现有独立 Recipe，WS2812 与 SG90 课堂示例已真实编译，IDMM-0007 只读诊断、I²C 排错和 OLED 中文分板卡引导已加入 |
+| 常用模块、库和示例 | 继续扩充 | 35 种元器件、30 个配方已接入；完整自研硬件交接包的 23 项已进入同一目录，可用初学者中文名称检索并按证据状态生成指导或核对任务；已有编译、烧录和实物效果仍分别报告 |
 | ESP32 AP 手机控制案例 | 部分验证 | `examples/chatweb/esp32-ap-control.html` 是唯一页面源，`chatmaker-web-embed` 生成 `examples/chatduino/esp32/ap-led-sensor/page_html.h`，固件用 `send_P` 和显式长度嵌入页面；浏览器模拟和固件真实编译已通过，硬件仍未验证 |
 | ChatWeb 生成和本地预览 | 部分验证 | 一句话可自动获得空间玻璃课堂页、科幻模拟设备台或舞台闪光挑战；仍支持小游戏、ESP32 HTTP 页面和 Nano/Uno Web Serial 控制台，模拟预览不代表硬件已连接 |
 | ChatWeb 小游戏 | Alpha 可试玩 | 新增 `mini-game` 路由和反应挑战、躲避收集、拖拽解谜三种单文件模板；默认离线、支持触控，复杂平台与节奏玩法保留为进阶方向 |

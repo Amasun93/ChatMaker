@@ -2,7 +2,7 @@ schema_version: "1.0"
 kind: component
 id: idmd-0002-starcore-serial-mp3
 hardware_id: IDMD-0002
-name: IDMD-0002 星核板串口 MP3
+name: 串口 MP3 播放模块
 aliases: [星核串口MP3, 自研MP3播放模块, JQ8400-FL播放板]
 category: output
 interface: uart-9600-8n1

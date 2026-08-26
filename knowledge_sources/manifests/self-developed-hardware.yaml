@@ -1,0 +1,1933 @@
+schema_version: '1.0'
+id: self-developed-hardware-handoff-2026-07-25
+source_package:
+  archive_date: '2026-07-25'
+  module_index: 03_归档索引/自研模块索引.json
+  full_file_index: 03_归档索引/全文件清单.csv
+  raw_material_root: 02_自研硬件资料/01自研硬件资料
+  curation_inputs:
+  - path: 04_Skill开发/starcore-project-maker/assets/hardware/module_catalog.json
+    sha256: FFFA9A46D791820C6224CA82507FC7E7E732EDF6E920B115E2394698081402F4
+    role: reviewed extraction seed; raw evidence paths and conflicts remain authoritative
+  - path: 04_Skill开发/starcore-project-maker/assets/hardware/mechanical_profiles.json
+    sha256: 68553EC917D9AEAD498618DB1DA4189A8D697E707630C733437DFADDAC594620
+    role: reviewed mechanical extraction seed; physical fit remains unverified
+  boundary: Runtime keeps only curated facts, evidence paths, and hashes; raw binaries stay in the handoff archive.
+module_count: 23
+modules:
+- hardware_id: IDMC-0001
+  catalog_id: idmc-0001-starcore-v4-2-2
+  display_name: 星核板主控
+  source_name: 星核板
+  purpose: 作为项目主控，读取传感器并控制灯光、声音、显示和执行机构。
+  io_role: controller
+  category: controller
+  aliases:
+  - 星核板
+  - 星核板主控
+  - IDMC-0001
+  interface:
+    type: esp32_controller
+    software_board: 掌控板
+  power:
+    status: unknown
+  confirmed_wiring: []
+  unknowns: []
+  example_capabilities:
+  - 读取板载按键与加速度
+  - 控制板载蜂鸣器
+  - 组合外接自研模块
+  constraints: []
+  mechanical:
+    outline:
+      width_mm: 90.021
+      height_mm: 61.511
+    mounting_status: verified
+    mounting:
+      status: verified
+      count: 4
+      pattern_x: 80
+      pattern_y: 42
+      centers:
+      - - -40.0
+        - -21.0
+      - - 40.0
+        - -21.0
+      - - 40.0
+        - 21.0
+      - - -40.0
+        - 21.0
+      pcb_hole_diameter: 4.25
+      fastener_geometry_status: M3-class geometry suspected; supplied fastener requires physical verification
+    panel_features: []
+    source_files:
+      mechanical-step: 02_自研硬件资料/01自研硬件资料/IDMC-0001 星核板/IDMC-0001 星核板v4.2.2 3D.step
+      mechanical-dxf: 02_自研硬件资料/01自研硬件资料/IDMC-0001 星核板/IDMC-0001 星核板v4.2.2 平面图.dxf
+    physical_fit: unverified
+  evidence_status: verified
+  usability: guidance_ready
+  source_evidence:
+  - path: 02_自研硬件资料/01自研硬件资料/IDMC-0001 星核板/IDMC-0001 星核板v4.2.2 3D.step
+    sha256: 039C6BCD04B35507EF781F6E63F4F44A84A0694DB7C9CB231502DFDF00814325
+    evidence_type: mechanical-step
+  - path: 02_自研硬件资料/01自研硬件资料/IDMC-0001 星核板/IDMC-0001 星核板v4.2.2 平面图.dxf
+    sha256: 7A0EE84FEEA0AAE5EF920C2A3314CA42F9AA4C32F15CA2CCBABB80CC59DAF1A3
+    evidence_type: mechanical-dxf
+  - path: 02_自研硬件资料/01自研硬件资料/IDMC-0001 星核板/星核板IO-Mapping.xlsx
+    sha256: 2A3723C318F3E130DBA9202CB993410C3868A51C58C09A914DEBBAE8D66554B6
+    evidence_type: documentation
+  - path: 02_自研硬件资料/01自研硬件资料/IDMC-0001 星核板/IDMC-0001 星核板v4.2.2 说明文件.doc
+    sha256: 2071034F362CFBA107B16CDAFEC609BF4B210B22EB40661E51604DCD62F83969
+    evidence_type: documentation
+  - path: 02_自研硬件资料/01自研硬件资料/IDMC-0001 星核板/IDMC-0001 星核板v4.2.2 SCH.pdf
+    sha256: 0DD93C5A1AB77E3A7A0D9DD2465E41C9B4D31DC186ED9C3DD68E77FA502E730D
+    evidence_type: schematic
+  - path: 02_自研硬件资料/01自研硬件资料/IDMC-0001 星核板/DS CH9102F.pdf
+    sha256: 3DE3C89C9AA452454B0E5E6E19C05B9AB6C35D89CD61740C484BCC0FD50C497B
+    evidence_type: datasheet
+  - path: 03_归档索引/自研模块索引.json
+    sha256: 815DFEB7DD1EFC5A9818EE31FD7B5D749580FB357A2F8AF2D5786AA08B5EACC1
+    evidence_type: index
+  - path: 03_归档索引/全文件清单.csv
+    sha256: 1FBA59F462CCB4230072644825B7F3B018B2338142ECFA846E05C97FE90B371D
+    evidence_type: index
+- hardware_id: IDMD-0001
+  catalog_id: idmd-0001-starcore-rgb-light
+  display_name: 三色 RGB 灯
+  source_name: RGB灯
+  purpose: 用三个 PWM 通道混合红、绿、蓝三种颜色。
+  io_role: output
+  category: output
+  aliases:
+  - RGB灯
+  - 三色 RGB 灯
+  - IDMD-0001
+  interface:
+    type: three_channel_pwm
+    signals:
+    - RED
+    - GREEN
+    - BLUE
+    common: VCC
+    active_level: LOW
+  power:
+    status: unknown
+  confirmed_wiring:
+  - module_pin: VCC
+    board_pin: 3V3
+    status: confirmed
+  - module_pin: RED/GREEN/BLUE
+    board_pin: three unoccupied PWM pins
+    status: assignment_required
+  unknowns:
+  - 交接资料的结构化提取未确认统一供电范围。
+  example_capabilities:
+  - 呼吸灯
+  - 颜色状态提示
+  constraints:
+  - 共阳 RGB；三个颜色通道分别占用一个可输出 PWM 的引脚
+  mechanical:
+    outline:
+      width_mm: 30.0
+      height_mm: 30.0
+    mounting_status: verified_profile
+    mounting:
+      status: verified_profile
+      count: 4
+      pattern_x: 20
+      pattern_y: 20
+      centers:
+      - - -10.0
+        - -10.0
+      - - 10.0
+        - -10.0
+      - - 10.0
+        - 10.0
+      - - -10.0
+        - 10.0
+      nominal_fastener_class: M3
+      printed_hole_diameter: null
+    panel_features: []
+    source_files:
+      mechanical-step: 02_自研硬件资料/01自研硬件资料/IDMD-0001 RGB灯/IDMD-0001 RGB_LED_LIGHT v1.5 3D.step
+      mechanical-dxf: 02_自研硬件资料/01自研硬件资料/IDMD-0001 RGB灯/IDMD-0001 RGB_LED_LIGHT v1.5 平面.dxf
+    physical_fit: unverified
+  evidence_status: verified
+  usability: guidance_ready
+  source_evidence:
+  - path: 02_自研硬件资料/01自研硬件资料/IDMD-0001 RGB灯/IDMD-0001 RGB_LED_LIGHT v1.5 3D.step
+    sha256: 7062361199394128E044AC3C7D44F5601C264EF29AF63937D895D92C5AC675CE
+    evidence_type: mechanical-step
+  - path: 02_自研硬件资料/01自研硬件资料/IDMD-0001 RGB灯/IDMD-0001 RGB_LED_LIGHT v1.5 平面.dxf
+    sha256: 2A687A5B75DBEDFD9449F21E10006596ABB55D31159F7118AC5530F23631DA94
+    evidence_type: mechanical-dxf
+  - path: 02_自研硬件资料/01自研硬件资料/IDMD-0001 RGB灯/IDMD-0001 RGB_LED_LIGHT v1.5 SCH.pdf
+    sha256: 748E7ACCC6EEC9D9124EBD83C5F733E24E20B86B410410C556FFC66AD4C965C1
+    evidence_type: schematic
+  - path: 03_归档索引/自研模块索引.json
+    sha256: 815DFEB7DD1EFC5A9818EE31FD7B5D749580FB357A2F8AF2D5786AA08B5EACC1
+    evidence_type: index
+  - path: 03_归档索引/全文件清单.csv
+    sha256: 1FBA59F462CCB4230072644825B7F3B018B2338142ECFA846E05C97FE90B371D
+    evidence_type: index
+- hardware_id: IDMD-0002
+  catalog_id: idmd-0002-starcore-serial-mp3
+  display_name: 串口 MP3 播放模块
+  source_name: 串口MP3播放
+  purpose: 通过串口播放存储介质中的提示音或音乐。
+  io_role: output
+  category: output
+  aliases:
+  - 串口MP3播放
+  - 串口 MP3 播放模块
+  - IDMD-0002
+  interface:
+    type: uart
+    signals:
+    - RXD
+    - TXD
+    - VCC
+    - GND
+    baud: 9600
+    data_bits: 8
+    parity: none
+    stop_bits: 1
+    classroom_standard_pins:
+      controller_rx: P15
+      controller_tx: P16
+      module_txd_to: P15
+      module_rxd_to: P16
+    mindplus_library: DFRobot_SerialMp3
+    mindplus_init: serialMp3.begin(&Serial1, P15, P16)
+  power:
+    status: unknown
+  confirmed_wiring:
+  - module_pin: VCC
+    board_pin: 5V connector bank
+    status: confirmed
+  - module_pin: GND
+    board_pin: GND
+    status: confirmed
+  - module_pin: TXD
+    board_pin: P15 (controller RX)
+    status: confirmed
+  - module_pin: RXD
+    board_pin: P16 (controller TX)
+    status: confirmed
+  unknowns:
+  - 交接资料的结构化提取未确认统一供电范围。
+  example_capabilities:
+  - 播放提示音
+  - 按事件切换音轨
+  constraints: []
+  mechanical:
+    outline:
+      width_mm: 55.021
+      height_mm: 30.021
+    mounting_status: verified_profile
+    mounting:
+      status: verified_profile
+      count: 4
+      pattern_x: 45
+      pattern_y: 20
+      centers:
+      - - -22.5
+        - -10.0
+      - - 22.5
+        - -10.0
+      - - 22.5
+        - 10.0
+      - - -22.5
+        - 10.0
+      nominal_fastener_class: M3
+      printed_hole_diameter: null
+    panel_features:
+    - id: speaker_opening
+      shape: round
+      center:
+      - 0
+      - 0
+      diameter: 23
+      nominal_dxf_hole_diameter: 3.0
+      status: verified
+    source_files:
+      mechanical-step: 02_自研硬件资料/01自研硬件资料/IDMD-0002 串口MP3播放/IDMD-0002 串口MP3播放v1.3 3D.step
+      mechanical-dxf: 02_自研硬件资料/01自研硬件资料/IDMD-0002 串口MP3播放/IDMD-0002 串口MP3播放v1.3 2D.dxf
+    physical_fit: unverified
+  evidence_status: verified
+  usability: guidance_ready
+  source_evidence:
+  - path: 02_自研硬件资料/01自研硬件资料/IDMD-0002 串口MP3播放/IDMD-0002 串口MP3播放v1.3 3D.step
+    sha256: F8146FB8118CD9B07C118B1CA647EB82042298439738742FE8FC9003DC0D3CB4
+    evidence_type: mechanical-step
+  - path: 02_自研硬件资料/01自研硬件资料/IDMD-0002 串口MP3播放/IDMD-0002 串口MP3播放v1.3 2D.dxf
+    sha256: BFBE4BFBE4091883BF004469B565F0BF1E28576B9CDD29B32878909ACA35A60F
+    evidence_type: mechanical-dxf
+  - path: 02_自研硬件资料/01自研硬件资料/IDMD-0002 串口MP3播放/IDMD-0002 串口MP3播放v1.3 说明.doc
+    sha256: A7BC58A922BA9AF8617514B80B380DB345258759918868829BC1D094AFEB5BCF
+    evidence_type: documentation
+  - path: 02_自研硬件资料/01自研硬件资料/IDMD-0002 串口MP3播放/IDMD-0002 串口MP3播放v1.3 SCH.pdf
+    sha256: 619A2EAD6E54BFD6715E57001AEF47F896DBEF5382B1F1995C23C03944C5A2E7
+    evidence_type: schematic
+  - path: 02_自研硬件资料/01自研硬件资料/IDMD-0002 串口MP3播放/DS NS8002.pdf
+    sha256: ABDF6C36EBB2278B7BDDB0A040D3FCD7B31C0C4E4C05F21719D5379756C4EA27
+    evidence_type: datasheet
+  - path: 03_归档索引/自研模块索引.json
+    sha256: 815DFEB7DD1EFC5A9818EE31FD7B5D749580FB357A2F8AF2D5786AA08B5EACC1
+    evidence_type: index
+  - path: 03_归档索引/全文件清单.csv
+    sha256: 1FBA59F462CCB4230072644825B7F3B018B2338142ECFA846E05C97FE90B371D
+    evidence_type: index
+- hardware_id: IDMD-0003
+  catalog_id: idmd-0003-starcore-asr
+  display_name: 离线语音识别模块
+  source_name: ASR语音识别
+  purpose: 在本地识别预先配置的语音词条，并用串口交换识别结果。
+  io_role: input_output
+  category: input_output
+  aliases:
+  - ASR语音识别
+  - 离线语音识别模块
+  - IDMD-0003
+  interface:
+    type: uart
+    signals:
+    - RXD
+    - TXD
+    - VCC
+    - GND
+    baud: 9600
+    data_bits: 8
+    parity: none
+    stop_bits: 1
+  power:
+    status: unknown
+  confirmed_wiring: []
+  unknowns:
+  - 交接资料的结构化提取未确认统一供电范围。
+  - 尚无经过当前 ChatMaker 证据链确认的星核板具体引脚分配。
+  example_capabilities:
+  - 语音口令触发
+  - 识别结果串口上报
+  constraints:
+  - 语音词条、回复与消息参数取决于烧录到 SU-03T 的配置固件
+  mechanical:
+    outline:
+      width_mm: 55.021
+      height_mm: 30.021
+    mounting_status: verified_profile
+    mounting:
+      status: verified_profile
+      count: 4
+      pattern_x: 45
+      pattern_y: 20
+      centers:
+      - - -22.5
+        - -10.0
+      - - 22.5
+        - -10.0
+      - - 22.5
+        - 10.0
+      - - -22.5
+        - 10.0
+      nominal_fastener_class: M3
+      printed_hole_diameter: null
+    panel_features: []
+    source_files:
+      mechanical-step: 02_自研硬件资料/01自研硬件资料/IDMD-0003 ASR语音识别/IDMD-0003 ASR语音识别v1.4 3D.step
+      mechanical-dxf: 02_自研硬件资料/01自研硬件资料/IDMD-0003 ASR语音识别/IDMD-0003 ASR语音识别v1.4 2D.dxf
+    physical_fit: unverified
+  evidence_status: verified
+  usability: teacher_validation
+  source_evidence:
+  - path: 02_自研硬件资料/01自研硬件资料/IDMD-0003 ASR语音识别/IDMD-0003 ASR语音识别v1.4 3D.step
+    sha256: 278D043619E252D7FD28B663453CA8E94C8D70C0A27FF194921313782432FB47
+    evidence_type: mechanical-step
+  - path: 02_自研硬件资料/01自研硬件资料/IDMD-0003 ASR语音识别/IDMD-0003 ASR语音识别v1.4 2D.dxf
+    sha256: D30AAB2DE4B51B68BA22023F893F1D4569ADD4B3107CECAEB2674004E5F79876
+    evidence_type: mechanical-dxf
+  - path: 02_自研硬件资料/01自研硬件资料/IDMD-0003 ASR语音识别/SU03T编程说明.docx
+    sha256: FCF83206964BC8976E5B5029BFD57F258BEC94DE68FB0AA4F0379425BC8C3720
+    evidence_type: documentation
+  - path: 02_自研硬件资料/01自研硬件资料/IDMD-0003 ASR语音识别/Mind+SU03T网页配置说明/SU03T设置说明.txt
+    sha256: 408A79AEB80AB68F403888913E0DA8A26440677948DEDAB3E783625247FDBE26
+    evidence_type: documentation
+  - path: 02_自研硬件资料/01自研硬件资料/IDMD-0003 ASR语音识别/SU03T开发工具/开发手册/SU-03T原理图.pdf
+    sha256: 9998C9757449A5EE085654E3C1CCC48E08127B8F03B504064CBC8069F1D4BD5B
+    evidence_type: schematic
+  - path: 02_自研硬件资料/01自研硬件资料/IDMD-0003 ASR语音识别/DS NS8002.pdf
+    sha256: ABDF6C36EBB2278B7BDDB0A040D3FCD7B31C0C4E4C05F21719D5379756C4EA27
+    evidence_type: datasheet
+  - path: 02_自研硬件资料/01自研硬件资料/IDMD-0003 ASR语音识别/Mind+SU03T网页配置说明/demo.png
+    sha256: 014537433B881F97E312CF2CAD93B1C20DB1F17A75D9B8491BD6CCC1D8FC8244
+    evidence_type: extension
+  - path: 02_自研硬件资料/01自研硬件资料/IDMD-0003 ASR语音识别/Mind+SU03T网页配置说明/Ext_SU03T.zip
+    sha256: E91F5591EDFE2137CFA1D8DD91BC3261C17FCC9BE703ECC62EFF167698745CF8
+    evidence_type: extension
+  - path: 03_归档索引/自研模块索引.json
+    sha256: 815DFEB7DD1EFC5A9818EE31FD7B5D749580FB357A2F8AF2D5786AA08B5EACC1
+    evidence_type: index
+  - path: 03_归档索引/全文件清单.csv
+    sha256: 1FBA59F462CCB4230072644825B7F3B018B2338142ECFA846E05C97FE90B371D
+    evidence_type: index
+- hardware_id: IDMD-0021
+  catalog_id: idmd-0021-starcore-oled-1-3
+  display_name: 1.3 寸 OLED 显示屏
+  source_name: OLED1.3寸
+  purpose: 显示文字、状态和传感器读数。
+  io_role: output
+  category: display
+  aliases:
+  - OLED1.3寸
+  - 1.3 寸 OLED 显示屏
+  - IDMD-0021
+  interface:
+    type: i2c
+    signals:
+    - SCL
+    - SDA
+    - VIN
+    - GND
+    addresses:
+    - '0x3C'
+    - '0x3D'
+    resolution:
+    - 128
+    - 64
+  power:
+    tested:
+    - 3.3
+    - 5.0
+    preferred_with_starcore: 3.3
+    status: confirmed
+  confirmed_wiring:
+  - module_pin: VCC/GND/SCL/SDA
+    board_pin: matching-voltage I2C bank on P19/P20
+    status: confirmed
+  unknowns: []
+  example_capabilities:
+  - 欢迎页面
+  - 传感器数据显示
+  constraints: []
+  mechanical:
+    outline:
+      width_mm: 55.283
+      height_mm: 30.255
+    mounting_status: verified_profile
+    mounting:
+      status: verified_profile
+      count: 4
+      pattern_x: 45
+      pattern_y: 20
+      centers:
+      - - -22.5
+        - -10.0
+      - - 22.5
+        - -10.0
+      - - 22.5
+        - 10.0
+      - - -22.5
+        - 10.0
+      nominal_fastener_class: M3
+      printed_hole_diameter: null
+    panel_features:
+    - id: display_window
+      shape: rect
+      center:
+      - 0
+      - 0
+      size:
+      - 37
+      - 25
+      nominal_dxf_hole_diameter: 3.0
+      status: verified
+    source_files:
+      mechanical-step: 02_自研硬件资料/01自研硬件资料/IDMD-0021 OLED1.3寸/IDMD-0021 OLED1.3寸v1.3 3D.step
+      mechanical-dxf: 02_自研硬件资料/01自研硬件资料/IDMD-0021 OLED1.3寸/IDMD-0021 OLED1.3寸v1.3 平面图.dxf
+    physical_fit: unverified
+  evidence_status: verified
+  usability: guidance_ready
+  source_evidence:
+  - path: 02_自研硬件资料/01自研硬件资料/IDMD-0021 OLED1.3寸/IDMD-0021 OLED1.3寸v1.3 3D.step
+    sha256: 1FF4A639146B1809152C66AF73BB2D3EA51AA47025EE727EEB18E3C8798C869A
+    evidence_type: mechanical-step
+  - path: 02_自研硬件资料/01自研硬件资料/IDMD-0021 OLED1.3寸/IDMD-0021 OLED1.3寸v1.3 平面图.dxf
+    sha256: 718FF3116301CBD8F5A4738A995E968C5A6F39E564A5EB997D70E816E403602C
+    evidence_type: mechanical-dxf
+  - path: 02_自研硬件资料/01自研硬件资料/IDMD-0021 OLED1.3寸/IDMD-0021 OLED1.3寸v1.3 SCH.pdf
+    sha256: 9FCC750D18F5725E9510581AB181D879CB7F4C74208D6FAC70E4F04985A10496
+    evidence_type: schematic
+  - path: 02_自研硬件资料/01自研硬件资料/IDMD-0021 OLED1.3寸/DS SC662K-3.3V.pdf
+    sha256: C3B9BDD5FB3C25A3031D8D04ED07ABAD7FA25C8A966CE1F9AE894B2ACBE9461C
+    evidence_type: datasheet
+  - path: 03_归档索引/自研模块索引.json
+    sha256: 815DFEB7DD1EFC5A9818EE31FD7B5D749580FB357A2F8AF2D5786AA08B5EACC1
+    evidence_type: index
+  - path: 03_归档索引/全文件清单.csv
+    sha256: 1FBA59F462CCB4230072644825B7F3B018B2338142ECFA846E05C97FE90B371D
+    evidence_type: index
+- hardware_id: IDMF-0001
+  catalog_id: idmf-0001-starcore-pd-power-adapter
+  display_name: PD 快充电源适配模块
+  source_name: PD快充电源适配
+  purpose: 把 USB-C PD 电源协商后的电能接入项目供电系统。
+  io_role: power
+  category: power
+  aliases:
+  - PD快充电源适配
+  - PD 快充电源适配模块
+  - IDMF-0001
+  interface:
+    type: power_adapter
+  power:
+    status: unknown
+  confirmed_wiring: []
+  unknowns:
+  - 资料未形成可直接执行的完整电气或协议结论，必须核对原文和实物版本。
+  - 交接资料的结构化提取未确认统一供电范围。
+  example_capabilities:
+  - 项目供电方案检索与实测确认
+  constraints:
+  - 连接负载前测量并确认 PD 协商后的实际输出电压
+  - 不是普通 GPIO 模块
+  mechanical:
+    outline:
+      width_mm: 30.0
+      height_mm: 30.0
+    mounting_status: verified_profile
+    mounting:
+      status: verified_profile
+      count: 4
+      pattern_x: 20
+      pattern_y: 20
+      centers:
+      - - -10.0
+        - -10.0
+      - - 10.0
+        - -10.0
+      - - 10.0
+        - 10.0
+      - - -10.0
+        - 10.0
+      nominal_fastener_class: M3
+      printed_hole_diameter: null
+    panel_features: []
+    source_files:
+      mechanical-step: 02_自研硬件资料/01自研硬件资料/IDMF-0001 PD快充电源适配/IDMF-0001 PD快充电源适配v1.3 3D.step
+      mechanical-dxf: 02_自研硬件资料/01自研硬件资料/IDMF-0001 PD快充电源适配/IDMF-0001 PD快充电源适配v1.3 平面图.dxf
+    physical_fit: unverified
+  evidence_status: partial
+  usability: retrieval_only
+  source_evidence:
+  - path: 02_自研硬件资料/01自研硬件资料/IDMF-0001 PD快充电源适配/IDMF-0001 PD快充电源适配v1.3 3D.step
+    sha256: E18A592F7A0C71654E719589FAB094140DC1CEDC89E73B5EB63B831B5266A133
+    evidence_type: mechanical-step
+  - path: 02_自研硬件资料/01自研硬件资料/IDMF-0001 PD快充电源适配/IDMF-0001 PD快充电源适配v1.3 平面图.dxf
+    sha256: 1C4908D92CD6758662EC3E035C1F0E320F9F0463DF5876EDA0D6044B690D078B
+    evidence_type: mechanical-dxf
+  - path: 02_自研硬件资料/01自研硬件资料/IDMF-0001 PD快充电源适配/IDMF-0001 PD快充电源适配v1.3 SCH.pdf
+    sha256: 14F392B37D42C2B0C166BB9EB36A2CCA06581D070724D84366E7201CC59D6A6C
+    evidence_type: schematic
+  - path: 02_自研硬件资料/01自研硬件资料/IDMF-0001 PD快充电源适配/CH224 Datasheet.PDF
+    sha256: E7A8E6BEE7BE33FE6E374A87EF719C05BBE361C97BE2D497111F86210A57922E
+    evidence_type: datasheet
+  - path: 03_归档索引/自研模块索引.json
+    sha256: 815DFEB7DD1EFC5A9818EE31FD7B5D749580FB357A2F8AF2D5786AA08B5EACC1
+    evidence_type: index
+  - path: 03_归档索引/全文件清单.csv
+    sha256: 1FBA59F462CCB4230072644825B7F3B018B2338142ECFA846E05C97FE90B371D
+    evidence_type: index
+- hardware_id: IDMF-0010
+  catalog_id: idmf-0010-starcore-power-splitter
+  display_name: 电源与信号并线器
+  source_name: 并线器
+  purpose: 在确认同一电压轨后分配电源或信号连接。
+  io_role: connectivity
+  category: connectivity
+  aliases:
+  - 并线器
+  - 电源与信号并线器
+  - IDMF-0010
+  interface:
+    type: passive_distribution
+  power:
+    status: unknown
+  confirmed_wiring: []
+  unknowns:
+  - 资料未形成可直接执行的完整电气或协议结论，必须核对原文和实物版本。
+  example_capabilities:
+  - 同电压轨分配方案检索
+  constraints:
+  - 不得并接不同电压轨
+  - 不是普通 GPIO 传感器
+  mechanical:
+    outline:
+      width_mm: 30.0
+      height_mm: 30.0
+    mounting_status: verified_profile
+    mounting:
+      status: verified_profile
+      count: 4
+      pattern_x: 20
+      pattern_y: 20
+      centers:
+      - - -10.0
+        - -10.0
+      - - 10.0
+        - -10.0
+      - - 10.0
+        - 10.0
+      - - -10.0
+        - 10.0
+      nominal_fastener_class: M3
+      printed_hole_diameter: null
+    panel_features: []
+    source_files:
+      mechanical-step: 02_自研硬件资料/01自研硬件资料/IDMF-0010 并线器/IDMF-0010 并线器v1.3 3D.step
+      mechanical-dxf: 02_自研硬件资料/01自研硬件资料/IDMF-0010 并线器/IDMF-0010 并线器v1.3 平面图.dxf
+    physical_fit: unverified
+  evidence_status: partial
+  usability: retrieval_only
+  source_evidence:
+  - path: 02_自研硬件资料/01自研硬件资料/IDMF-0010 并线器/IDMF-0010 并线器v1.3 3D.step
+    sha256: 131417C6EAAC0C0BFAF17C5D70BAD10D3AD898639EE5CF23A1DD11D95BCEEF58
+    evidence_type: mechanical-step
+  - path: 02_自研硬件资料/01自研硬件资料/IDMF-0010 并线器/IDMF-0010 并线器v1.3 平面图.dxf
+    sha256: 37B789887A41C33A4F83D92771322B186C6EE19539613B3E0BCDA79DB7E1ACB7
+    evidence_type: mechanical-dxf
+  - path: 02_自研硬件资料/01自研硬件资料/IDMF-0010 并线器/IDMF-0010 并线器v1.3 SCH.pdf
+    sha256: F6EFDA04ACF1677D9983957F19AE80FD139D3E96F6E9BC8664D4A257A94E9918
+    evidence_type: schematic
+  - path: 03_归档索引/自研模块索引.json
+    sha256: 815DFEB7DD1EFC5A9818EE31FD7B5D749580FB357A2F8AF2D5786AA08B5EACC1
+    evidence_type: index
+  - path: 03_归档索引/全文件清单.csv
+    sha256: 1FBA59F462CCB4230072644825B7F3B018B2338142ECFA846E05C97FE90B371D
+    evidence_type: index
+- hardware_id: IDMF-0011
+  catalog_id: idmf-0011-starcore-usb-hub-1-to-4
+  display_name: 一分四 USB 集线器
+  source_name: USB-HUB1分4
+  purpose: 把一个 USB 上行口扩展为四个 USB 连接口。
+  io_role: connectivity
+  category: connectivity
+  aliases:
+  - USB-HUB1分4
+  - 一分四 USB 集线器
+  - IDMF-0011
+  interface:
+    type: usb_hub
+    ports: 4
+  power:
+    status: unknown
+  confirmed_wiring: []
+  unknowns: []
+  example_capabilities:
+  - USB 外设连接方案检索
+  constraints:
+  - USB 数据与供电连接模块，不是普通 GPIO 模块
+  mechanical:
+    outline:
+      width_mm: 55.0
+      height_mm: 30.005
+    mounting_status: verified_profile
+    mounting:
+      status: verified_profile
+      count: 4
+      pattern_x: 45
+      pattern_y: 20
+      centers:
+      - - -22.5
+        - -10.0
+      - - 22.5
+        - -10.0
+      - - 22.5
+        - 10.0
+      - - -22.5
+        - 10.0
+      nominal_fastener_class: M3
+      printed_hole_diameter: null
+    panel_features: []
+    source_files:
+      mechanical-step: 02_自研硬件资料/01自研硬件资料/IDMF-0011 USB-HUB1分4/IDMF-0011 USB-HUB1分4v1.0 3D.step
+      mechanical-dxf: 02_自研硬件资料/01自研硬件资料/IDMF-0011 USB-HUB1分4/IDMF-0011 USB-HUB1分4v1.0 平面图.dxf
+    physical_fit: unverified
+  evidence_status: verified
+  usability: retrieval_only
+  source_evidence:
+  - path: 02_自研硬件资料/01自研硬件资料/IDMF-0011 USB-HUB1分4/IDMF-0011 USB-HUB1分4v1.0 3D.step
+    sha256: BC5633440C0DEA792A73F2FD7E3BAD72B69497BCA2207F89F120E4EBF55452A3
+    evidence_type: mechanical-step
+  - path: 02_自研硬件资料/01自研硬件资料/IDMF-0011 USB-HUB1分4/IDMF-0011 USB-HUB1分4v1.0 平面图.dxf
+    sha256: 830BA36E706A4203CBE7476F2D43AB86F71819C7DA9B405005515EB6C1C0FCA6
+    evidence_type: mechanical-dxf
+  - path: 02_自研硬件资料/01自研硬件资料/IDMF-0011 USB-HUB1分4/IDMF-0011 USB-HUB1分4v1.0 SCH.pdf
+    sha256: C19F1A82A73810D78999AF59690BFD077B27E1E6FC0B041C0E31A65E6B27F860
+    evidence_type: schematic
+  - path: 02_自研硬件资料/01自研硬件资料/IDMF-0011 USB-HUB1分4/FE8.1 Product Brief .pdf
+    sha256: 04B185CC2167092B50D6426089E156081A5999ED8364D37F308CEDD4AC3B689E
+    evidence_type: datasheet
+  - path: 03_归档索引/自研模块索引.json
+    sha256: 815DFEB7DD1EFC5A9818EE31FD7B5D749580FB357A2F8AF2D5786AA08B5EACC1
+    evidence_type: index
+  - path: 03_归档索引/全文件清单.csv
+    sha256: 1FBA59F462CCB4230072644825B7F3B018B2338142ECFA846E05C97FE90B371D
+    evidence_type: index
+- hardware_id: IDMM-0001
+  catalog_id: idmm-0001-starcore-four-channel-dc-motor-driver
+  display_name: 四路直流电机驱动模块
+  source_name: 四路直流电机驱动
+  purpose: 让主控分别控制四路直流电机的方向和速度。
+  io_role: actuator
+  category: motor_driver
+  aliases:
+  - 四路直流电机驱动
+  - 四路直流电机驱动模块
+  - IDMM-0001
+  interface:
+    type: dual_digital_per_channel
+    channels: 4
+    signals_per_channel:
+    - FI
+    - BI
+  power:
+    min: 3
+    max: 28
+    status: confirmed
+  confirmed_wiring: []
+  unknowns:
+  - 交接资料的结构化提取未确认统一供电范围。
+  - 尚无经过当前 ChatMaker 证据链确认的星核板具体引脚分配。
+  example_capabilities:
+  - 电机方向控制
+  - 四路电机分组控制
+  constraints:
+  - 动力电源反接会损坏模块
+  - 逻辑与动力电源必须共地
+  - 不要从星核板 3.3V 引脚给电机供电
+  mechanical:
+    outline:
+      width_mm: 55.283
+      height_mm: 30.255
+    mounting_status: verified_profile
+    mounting:
+      status: verified_profile
+      count: 4
+      pattern_x: 45
+      pattern_y: 20
+      centers:
+      - - -22.5
+        - -10.0
+      - - 22.5
+        - -10.0
+      - - 22.5
+        - 10.0
+      - - -22.5
+        - 10.0
+      nominal_fastener_class: M3
+      printed_hole_diameter: null
+    panel_features: []
+    source_files:
+      mechanical-step: 02_自研硬件资料/01自研硬件资料/IDMM-0001 四路直流电机驱动/IDMM-0001 四路直流电机驱动v1.3 3D.step
+      mechanical-dxf: 02_自研硬件资料/01自研硬件资料/IDMM-0001 四路直流电机驱动/IDMM-0001 四路直流电机驱动v1.3 平面图.dxf
+    physical_fit: unverified
+  evidence_status: verified
+  usability: teacher_validation
+  source_evidence:
+  - path: 02_自研硬件资料/01自研硬件资料/IDMM-0001 四路直流电机驱动/IDMM-0001 四路直流电机驱动v1.3 3D.step
+    sha256: CE283DB91FF5FB17E05D40C179401FAFCF991EA060F0D5E630558280F6BF6F94
+    evidence_type: mechanical-step
+  - path: 02_自研硬件资料/01自研硬件资料/IDMM-0001 四路直流电机驱动/IDMM-0001 四路直流电机驱动v1.3 平面图.dxf
+    sha256: 0E31760EDC7ABE2C2B8142462E6DCF2DF0E07CC0A268967949EB7F6B5A58E029
+    evidence_type: mechanical-dxf
+  - path: 02_自研硬件资料/01自研硬件资料/IDMM-0001 四路直流电机驱动/IDMM-0001具有DC双向马达的四路直流电机驱动模块WIKI文档20241126 v1.0.docx
+    sha256: CD8E6CD84C4D30CC6FDB64ED2B36231ACC8662222B9F4C9A9400F309B54240C6
+    evidence_type: documentation
+  - path: 02_自研硬件资料/01自研硬件资料/IDMM-0001 四路直流电机驱动/IDMM-0001 四路直流电机驱动v1.3 SCH.pdf
+    sha256: BB3DFCD1098FE32C2E204E45478EC91738ECF7FA1398458858EEC63E29D16196
+    evidence_type: schematic
+  - path: 02_自研硬件资料/01自研硬件资料/IDMM-0001 四路直流电机驱动/DS RZ7899.pdf
+    sha256: 052E20DB089B5C8728A8BFA4FD1A79941C0B595FEF33640F075AF02E7D3F8A5D
+    evidence_type: datasheet
+  - path: 03_归档索引/自研模块索引.json
+    sha256: 815DFEB7DD1EFC5A9818EE31FD7B5D749580FB357A2F8AF2D5786AA08B5EACC1
+    evidence_type: index
+  - path: 03_归档索引/全文件清单.csv
+    sha256: 1FBA59F462CCB4230072644825B7F3B018B2338142ECFA846E05C97FE90B371D
+    evidence_type: index
+- hardware_id: IDMM-0007
+  catalog_id: idmm-0007-starcore-serial-servo-driver
+  display_name: 串口舵机驱动模块
+  source_name: 串口舵机驱动
+  purpose: 通过串口管理配套舵机总线；命令协议取决于模块和舵机版本。
+  io_role: actuator
+  category: servo_driver
+  aliases:
+  - 串口舵机驱动
+  - 串口舵机驱动模块
+  - IDMM-0007
+  interface:
+    type: uart_and_servo_bus
+    signals:
+    - RXD
+    - TXD
+    - VCC
+    - GND
+  power:
+    status: unknown
+  confirmed_wiring: []
+  unknowns:
+  - 资料未形成可直接执行的完整电气或协议结论，必须核对原文和实物版本。
+  - 交接资料的结构化提取未确认统一供电范围。
+  - 尚无经过当前 ChatMaker 证据链确认的星核板具体引脚分配。
+  - 舵机命令协议和配套舵机型号未确认，禁止生成运动命令。
+  example_capabilities:
+  - 舵机总线识别与只读诊断
+  constraints:
+  - 具体命令协议须按所配舵机和模块版本确认
+  - 舵机应独立足量供电并与星核板共地
+  mechanical:
+    outline:
+      width_mm: 55.0
+      height_mm: 30.0
+    mounting_status: verified_profile
+    mounting:
+      status: verified_profile
+      count: 4
+      pattern_x: 45
+      pattern_y: 20
+      centers:
+      - - -22.5
+        - -10.0
+      - - 22.5
+        - -10.0
+      - - 22.5
+        - 10.0
+      - - -22.5
+        - 10.0
+      nominal_fastener_class: M3
+      printed_hole_diameter: null
+    panel_features: []
+    source_files:
+      mechanical-step: 02_自研硬件资料/01自研硬件资料/IDMM-0007 串口舵机驱动/IDMM-0007 串口舵机驱动v1.2 3D.step
+      mechanical-dxf: 02_自研硬件资料/01自研硬件资料/IDMM-0007 串口舵机驱动/IDMM-0007 串口舵机驱动v1.2 平面图.dxf
+    physical_fit: unverified
+  evidence_status: partial
+  usability: retrieval_only
+  source_evidence:
+  - path: 02_自研硬件资料/01自研硬件资料/IDMM-0007 串口舵机驱动/IDMM-0007 串口舵机驱动v1.2 3D.step
+    sha256: B6BF73B050C5C5DFF5E730E26DCC6B4C939ECBBD4A1FF70DC826B42CED40B5E8
+    evidence_type: mechanical-step
+  - path: 02_自研硬件资料/01自研硬件资料/IDMM-0007 串口舵机驱动/IDMM-0007 串口舵机驱动v1.2 平面图.dxf
+    sha256: A5400C4A4BCE9A51C8FA187A9035C64E36A307E458D92B98DE505B4F30A36E9F
+    evidence_type: mechanical-dxf
+  - path: 02_自研硬件资料/01自研硬件资料/IDMM-0007 串口舵机驱动/Serial Servo Interface v2 SCH.pdf
+    sha256: AE323F1FC64AF52DBCFF70664AD1AF124B5AD89E7D3A236F67A89B4967852CE1
+    evidence_type: schematic
+  - path: 03_归档索引/自研模块索引.json
+    sha256: 815DFEB7DD1EFC5A9818EE31FD7B5D749580FB357A2F8AF2D5786AA08B5EACC1
+    evidence_type: index
+  - path: 03_归档索引/全文件清单.csv
+    sha256: 1FBA59F462CCB4230072644825B7F3B018B2338142ECFA846E05C97FE90B371D
+    evidence_type: index
+- hardware_id: IDMS-0001
+  catalog_id: idms-0001-starcore-button
+  display_name: 按钮传感器
+  source_name: 按钮传感器
+  purpose: 检测学生是否按下按钮。
+  io_role: input
+  category: digital_sensor
+  aliases:
+  - 按钮传感器
+  - IDMS-0001
+  interface:
+    type: digital_output
+    signals:
+    - GND
+    - VCC
+    - SIG
+    active_level: HIGH
+  power:
+    min: 2.5
+    max: 3.3
+    preferred_with_starcore: 3.3
+    status: confirmed
+  confirmed_wiring:
+  - module_pin: VCC/GND
+    board_pin: 3V3/GND
+    status: confirmed
+  - module_pin: SIG
+    board_pin: one unoccupied digital input
+    status: assignment_required
+  unknowns: []
+  example_capabilities:
+  - 按钮控制灯光
+  - 按键计数
+  constraints: []
+  mechanical:
+    outline:
+      width_mm: 30.0
+      height_mm: 30.0
+    mounting_status: verified_profile
+    mounting:
+      status: verified_profile
+      count: 4
+      pattern_x: 20
+      pattern_y: 20
+      centers:
+      - - -10.0
+        - -10.0
+      - - 10.0
+        - -10.0
+      - - 10.0
+        - 10.0
+      - - -10.0
+        - 10.0
+      nominal_fastener_class: M3
+      printed_hole_diameter: null
+    panel_features:
+    - id: button
+      shape: round
+      size: null
+      status: requires_measurement
+    source_files:
+      mechanical-step: 02_自研硬件资料/01自研硬件资料/IDMS-0001 按钮传感器/IDMS-0001 按钮v1.3 3D.step
+      mechanical-dxf: 02_自研硬件资料/01自研硬件资料/IDMS-0001 按钮传感器/IDMS-0001 按钮v1.3 平面图.dxf
+    physical_fit: unverified
+  evidence_status: verified
+  usability: guidance_ready
+  source_evidence:
+  - path: 02_自研硬件资料/01自研硬件资料/IDMS-0001 按钮传感器/IDMS-0001 按钮v1.3 3D.step
+    sha256: 588C6FBB400C3E3C2A102B3DC39EFF266FB82FC488AEA67CB96D25776C85A726
+    evidence_type: mechanical-step
+  - path: 02_自研硬件资料/01自研硬件资料/IDMS-0001 按钮传感器/IDMS-0001 按钮v1.3 平面图.dxf
+    sha256: C546D83630F66FD3DDDD6E5D3EA7A7724EDABFBAAB1CC83CDAED49C614657426
+    evidence_type: mechanical-dxf
+  - path: 02_自研硬件资料/01自研硬件资料/IDMS-0001 按钮传感器/IDMS-0001能识别按键动作并输出数字信号的按钮数字模块WIKI文档20241111 v1.0.docx
+    sha256: 0A2520E64241DA497B5A77D4910D2C17DB2B6AD169673995FB2A5C007284B8CA
+    evidence_type: documentation
+  - path: 02_自研硬件资料/01自研硬件资料/IDMS-0001 按钮传感器/IDMS-0001 按钮v1.3 SCH.pdf
+    sha256: B4103B6F4A64559802C7AF171944F6B8ED4086DD9DC7DFEDC853A9AFF37D7D09
+    evidence_type: schematic
+  - path: 03_归档索引/自研模块索引.json
+    sha256: 815DFEB7DD1EFC5A9818EE31FD7B5D749580FB357A2F8AF2D5786AA08B5EACC1
+    evidence_type: index
+  - path: 03_归档索引/全文件清单.csv
+    sha256: 1FBA59F462CCB4230072644825B7F3B018B2338142ECFA846E05C97FE90B371D
+    evidence_type: index
+- hardware_id: IDMS-0002
+  catalog_id: idms-0002-starcore-toggle-switch
+  display_name: 三档钮子开关
+  source_name: 钮子开关
+  purpose: 提供可保持的三档机械开关状态。
+  io_role: input
+  category: passive_switch
+  aliases:
+  - 钮子开关
+  - 三档钮子开关
+  - IDMS-0002
+  interface:
+    type: dpdt_on_off_on
+    signals:
+    - C
+    - M
+    - D
+    positions:
+    - 'ON'
+    - 'OFF'
+    - 'ON'
+  power:
+    status: unknown
+  confirmed_wiring: []
+  unknowns:
+  - 尚无经过当前 ChatMaker 证据链确认的星核板具体引脚分配。
+  example_capabilities:
+  - 三档模式选择
+  constraints:
+  - 作为星核板输入时使用低压无源触点和上拉/下拉
+  - 不得把 AC 125V 线路接入星核板
+  mechanical:
+    outline:
+      width_mm: 30.0
+      height_mm: 30.0
+    mounting_status: verified_profile
+    mounting:
+      status: verified_profile
+      count: 4
+      pattern_x: 20
+      pattern_y: 20
+      centers:
+      - - -10.0
+        - -10.0
+      - - 10.0
+        - -10.0
+      - - 10.0
+        - 10.0
+      - - -10.0
+        - 10.0
+      nominal_fastener_class: M3
+      printed_hole_diameter: null
+    panel_features:
+    - id: toggle
+      shape: slot
+      size: null
+      status: requires_measurement
+    source_files:
+      mechanical-step: 02_自研硬件资料/01自研硬件资料/IDMS-0002 钮子开关/IDMS-0002 钮子开关v1.3 3D.step
+      mechanical-dxf: 02_自研硬件资料/01自研硬件资料/IDMS-0002 钮子开关/IDMS-0002 钮子开关v1.3 平面图.dxf
+    physical_fit: unverified
+  evidence_status: verified
+  usability: teacher_validation
+  source_evidence:
+  - path: 02_自研硬件资料/01自研硬件资料/IDMS-0002 钮子开关/IDMS-0002 钮子开关v1.3 3D.step
+    sha256: E3DB65009429220A5479F742BA5D18CE52B865147C2D3D8A8F26B0916E4918D6
+    evidence_type: mechanical-step
+  - path: 02_自研硬件资料/01自研硬件资料/IDMS-0002 钮子开关/IDMS-0002 钮子开关v1.3 平面图.dxf
+    sha256: E84A45D4D8EF40C4863E37D9ABCA0ABE412C7D4F978652EBED08766CF67A428F
+    evidence_type: mechanical-dxf
+  - path: 02_自研硬件资料/01自研硬件资料/IDMS-0002 钮子开关/IDMS-0002手动控制的双刀三掷的钮子开关模块WIKI文档20241126 v1.0.docx
+    sha256: FD30D5423B0833844A47255C53111C7F4DD03DE174437AD889CBB2C2B52BB255
+    evidence_type: documentation
+  - path: 02_自研硬件资料/01自研硬件资料/IDMS-0002 钮子开关/IDMS-0002 钮子开关v1.3 SCH.pdf
+    sha256: 9070BA7CD36FE76080DEFC5ABE0D13FFF5EE0AAB5EFF2B7DF4688B048AFA946F
+    evidence_type: schematic
+  - path: 03_归档索引/自研模块索引.json
+    sha256: 815DFEB7DD1EFC5A9818EE31FD7B5D749580FB357A2F8AF2D5786AA08B5EACC1
+    evidence_type: index
+  - path: 03_归档索引/全文件清单.csv
+    sha256: 1FBA59F462CCB4230072644825B7F3B018B2338142ECFA846E05C97FE90B371D
+    evidence_type: index
+- hardware_id: IDMS-0003
+  catalog_id: idms-0003-starcore-potentiometer
+  display_name: 电位器旋钮
+  source_name: 电位器旋钮
+  purpose: 把旋钮位置转换为模拟电压。
+  io_role: input
+  category: analog_sensor
+  aliases:
+  - 电位器旋钮
+  - IDMS-0003
+  interface:
+    type: analog_output
+    signals:
+    - GND
+    - VCC
+    - SIG
+  power:
+    preferred_with_starcore: 3.3
+    status: confirmed
+  confirmed_wiring:
+  - module_pin: VCC/GND
+    board_pin: 3V3/GND
+    status: safe_default
+  - module_pin: SIG
+    board_pin: one unoccupied ADC input
+    status: assignment_required
+  unknowns: []
+  example_capabilities:
+  - 旋钮调亮度
+  - 模拟量阈值控制
+  constraints:
+  - 资料允许较宽供电范围，但直接接 ESP32 ADC 时必须用 3.3V 供电或限制 SIG 至 3.3V
+  mechanical:
+    outline:
+      width_mm: 30.0
+      height_mm: 30.0
+    mounting_status: verified_profile
+    mounting:
+      status: verified_profile
+      count: 4
+      pattern_x: 20
+      pattern_y: 20
+      centers:
+      - - -10.0
+        - -10.0
+      - - 10.0
+        - -10.0
+      - - 10.0
+        - 10.0
+      - - -10.0
+        - 10.0
+      nominal_fastener_class: M3
+      printed_hole_diameter: null
+    panel_features:
+    - id: potentiometer_shaft
+      shape: round
+      size: null
+      status: requires_measurement
+    source_files:
+      mechanical-step: 02_自研硬件资料/01自研硬件资料/IDMS-0003 电位器旋钮/IDMS-0003 电位器旋钮v1.3 3D.step
+      mechanical-dxf: 02_自研硬件资料/01自研硬件资料/IDMS-0003 电位器旋钮/IDMS-0003 电位器旋钮v1.3 平面图.dxf
+    physical_fit: unverified
+  evidence_status: verified_with_safe_default
+  usability: guidance_ready
+  source_evidence:
+  - path: 02_自研硬件资料/01自研硬件资料/IDMS-0003 电位器旋钮/IDMS-0003 电位器旋钮v1.3 3D.step
+    sha256: 22270CFACB7EE28148C29A2585440395521A0D21C19D1EBACB29B04A424D21D5
+    evidence_type: mechanical-step
+  - path: 02_自研硬件资料/01自研硬件资料/IDMS-0003 电位器旋钮/IDMS-0003 电位器旋钮v1.3 平面图.dxf
+    sha256: B4F6ABC005CAF3DFAF1C10704E4A1DF6D4FDA313BC8DDC6AB84B5C976A608CB3
+    evidence_type: mechanical-dxf
+  - path: 02_自研硬件资料/01自研硬件资料/IDMS-0003 电位器旋钮/IDMS-0003阻值可变化调节的电位器旋钮模块WIKI文档20241126 v1.0.docx
+    sha256: 8C2539F7D81C6E87864052059D7D65E4A99881BC343822C9FD4BBD8D98318F1B
+    evidence_type: documentation
+  - path: 02_自研硬件资料/01自研硬件资料/IDMS-0003 电位器旋钮/IDMS-0003 电位器旋钮v1.3 SCH.pdf
+    sha256: 94F478F4DEFB4D5ACE67BE62179A0CA58611690FE7DB75E445313CB870F05374
+    evidence_type: schematic
+  - path: 03_归档索引/自研模块索引.json
+    sha256: 815DFEB7DD1EFC5A9818EE31FD7B5D749580FB357A2F8AF2D5786AA08B5EACC1
+    evidence_type: index
+  - path: 03_归档索引/全文件清单.csv
+    sha256: 1FBA59F462CCB4230072644825B7F3B018B2338142ECFA846E05C97FE90B371D
+    evidence_type: index
+- hardware_id: IDMS-0004
+  catalog_id: idms-0004-starcore-rotary-encoder
+  display_name: 编码器旋钮
+  source_name: 编码器旋钮
+  purpose: 检测旋转方向、步数和按压动作。
+  io_role: input
+  category: digital_sensor
+  aliases:
+  - 编码器旋钮
+  - IDMS-0004
+  interface:
+    type: quadrature_encoder_with_button
+    signals:
+    - VCC
+    - GND
+    - CW
+    - CCW
+    - BUTTON
+  power:
+    status: unknown
+  confirmed_wiring: []
+  unknowns:
+  - 资料未形成可直接执行的完整电气或协议结论，必须核对原文和实物版本。
+  - 交接资料的结构化提取未确认统一供电范围。
+  - 尚无经过当前 ChatMaker 证据链确认的星核板具体引脚分配。
+  example_capabilities:
+  - 菜单选择
+  - 旋转计数
+  constraints:
+  - 有效电平和上拉需求应以实物测试确认
+  mechanical:
+    outline:
+      width_mm: 30.0
+      height_mm: 30.0
+    mounting_status: verified_profile
+    mounting:
+      status: verified_profile
+      count: 4
+      pattern_x: 20
+      pattern_y: 20
+      centers:
+      - - -10.0
+        - -10.0
+      - - 10.0
+        - -10.0
+      - - 10.0
+        - 10.0
+      - - -10.0
+        - 10.0
+      nominal_fastener_class: M3
+      printed_hole_diameter: null
+    panel_features:
+    - id: encoder_shaft
+      shape: round
+      size: null
+      status: requires_measurement
+    source_files:
+      mechanical-step: 02_自研硬件资料/01自研硬件资料/IDMS-0004 编码器旋钮/IDMS-0004 编码旋钮v1.3 3D.step
+      mechanical-dxf: 02_自研硬件资料/01自研硬件资料/IDMS-0004 编码器旋钮/IDMS-0004 编码旋钮v1.3 平面图.dxf
+    physical_fit: unverified
+  evidence_status: partial
+  usability: teacher_validation
+  source_evidence:
+  - path: 02_自研硬件资料/01自研硬件资料/IDMS-0004 编码器旋钮/IDMS-0004 编码旋钮v1.3 3D.step
+    sha256: 5C5E1AF404B905D9A5A95CD7B7980502A0CDE3E324E87977F77C3DF7E692CDFB
+    evidence_type: mechanical-step
+  - path: 02_自研硬件资料/01自研硬件资料/IDMS-0004 编码器旋钮/IDMS-0004 编码旋钮v1.3 平面图.dxf
+    sha256: B638E57790909EE038E11062F6ADDAE5FB4D0200249266D3EF8290FDDE7D5A93
+    evidence_type: mechanical-dxf
+  - path: 02_自研硬件资料/01自研硬件资料/IDMS-0004 编码器旋钮/IDMS-0004 编码旋钮v1.3 Gerber/Status Report.Txt
+    sha256: 5F72A439FE892E1AEA30661E0DD04E8A90DE6D4B2CC948386E643B61E4101AC2
+    evidence_type: documentation
+  - path: 02_自研硬件资料/01自研硬件资料/IDMS-0004 编码器旋钮/IDMS-0004 编码旋钮v1.3 SCH.pdf
+    sha256: E3F58C2D36C7CB9342561EC6220AE84C159A4E00A4CB601778FC7ECAFF03D625
+    evidence_type: schematic
+  - path: 03_归档索引/自研模块索引.json
+    sha256: 815DFEB7DD1EFC5A9818EE31FD7B5D749580FB357A2F8AF2D5786AA08B5EACC1
+    evidence_type: index
+  - path: 03_归档索引/全文件清单.csv
+    sha256: 1FBA59F462CCB4230072644825B7F3B018B2338142ECFA846E05C97FE90B371D
+    evidence_type: index
+- hardware_id: IDMS-0005
+  catalog_id: idms-0005-starcore-light-sensor
+  display_name: 光照强度传感器
+  source_name: 光照强度传感器
+  purpose: 把环境光强变化转换为模拟信号。
+  io_role: input
+  category: analog_sensor
+  aliases:
+  - 光照强度传感器
+  - IDMS-0005
+  interface:
+    type: analog_output
+    signals:
+    - GND
+    - VCC
+    - SIG
+  power:
+    min: 3.3
+    max: 5.0
+    preferred_with_starcore: 3.3
+    status: confirmed
+  confirmed_wiring: []
+  unknowns:
+  - 尚无经过当前 ChatMaker 证据链确认的星核板具体引脚分配。
+  example_capabilities:
+  - 自动夜灯
+  - 光照趋势观察
+  constraints: []
+  mechanical:
+    outline:
+      width_mm: 30.0
+      height_mm: 30.0
+    mounting_status: verified_profile
+    mounting:
+      status: verified_profile
+      count: 4
+      pattern_x: 20
+      pattern_y: 20
+      centers:
+      - - -10.0
+        - -10.0
+      - - 10.0
+        - -10.0
+      - - 10.0
+        - 10.0
+      - - -10.0
+        - 10.0
+      nominal_fastener_class: M3
+      printed_hole_diameter: null
+    panel_features: []
+    source_files:
+      mechanical-step: 02_自研硬件资料/01自研硬件资料/IDMS-0005 光照强度传感器/IDMS-0005 光照v1.3 3D.step
+      mechanical-dxf: 02_自研硬件资料/01自研硬件资料/IDMS-0005 光照强度传感器/IDMS-0005 光照v1.3 平面图.dxf
+    physical_fit: unverified
+  evidence_status: verified
+  usability: teacher_validation
+  source_evidence:
+  - path: 02_自研硬件资料/01自研硬件资料/IDMS-0005 光照强度传感器/IDMS-0005 光照v1.3 3D.step
+    sha256: AC541C6BBDAE67767DD1BC5B0FE080B0553D140126B0BC5DB88425FAD07C8983
+    evidence_type: mechanical-step
+  - path: 02_自研硬件资料/01自研硬件资料/IDMS-0005 光照强度传感器/IDMS-0005 光照v1.3 平面图.dxf
+    sha256: B2A24B1073C4B754F2BF5A7966C9D954DF28AC172D1AB97B71CF8D795B5D646D
+    evidence_type: mechanical-dxf
+  - path: 02_自研硬件资料/01自研硬件资料/IDMS-0005 光照强度传感器/IDMS-0005 光照v1.3 Gerber/Status Report.Txt
+    sha256: CAA269C89EA80C4D90835EE1E30D6E090573D9A46DA973B38FEC1319C87C3576
+    evidence_type: documentation
+  - path: 02_自研硬件资料/01自研硬件资料/IDMS-0005 光照强度传感器/IDMS-0005可替代光敏电阻（CdS）的光照强度传感模块WIKI文档20241017 v1.0.docx
+    sha256: FEB5220B3E703AF4162E9ECDCADE951D05DEEF085E4E558DCFD730FF73E53EC3
+    evidence_type: documentation
+  - path: 02_自研硬件资料/01自研硬件资料/IDMS-0005 光照强度传感器/IDMS-0005 光照v1.3 SCH.pdf
+    sha256: 23B0BF4FF3B508D54F93514F14CB3F3B9CABCF4F6371053E42293444609A5DAB
+    evidence_type: schematic
+  - path: 02_自研硬件资料/01自研硬件资料/IDMS-0005 光照强度传感器/DS HL504HP.pdf
+    sha256: 7E34BC560746AFC2FEE0B7C6B20DF2F76A8A77BBC6478AD61A689BDB28DE54F8
+    evidence_type: datasheet
+  - path: 03_归档索引/自研模块索引.json
+    sha256: 815DFEB7DD1EFC5A9818EE31FD7B5D749580FB357A2F8AF2D5786AA08B5EACC1
+    evidence_type: index
+  - path: 03_归档索引/全文件清单.csv
+    sha256: 1FBA59F462CCB4230072644825B7F3B018B2338142ECFA846E05C97FE90B371D
+    evidence_type: index
+- hardware_id: IDMS-0006
+  catalog_id: idms-0006-starcore-microphone-sensor
+  display_name: 麦克风声音传感器
+  source_name: 麦克风声音传感器
+  purpose: 把声音强弱变化转换为带偏置的模拟信号。
+  io_role: input
+  category: analog_sensor
+  aliases:
+  - 麦克风声音传感器
+  - IDMS-0006
+  interface:
+    type: analog_output
+    signals:
+    - GND
+    - VCC
+    - SIG
+    bias: approximately VCC/2
+  power:
+    min: 2.5
+    max: 5.5
+    preferred_with_starcore: 3.3
+    status: confirmed
+  confirmed_wiring: []
+  unknowns:
+  - 尚无经过当前 ChatMaker 证据链确认的星核板具体引脚分配。
+  example_capabilities:
+  - 声音强弱显示
+  - 拍手触发实验
+  constraints: []
+  mechanical:
+    outline:
+      width_mm: 30.0
+      height_mm: 30.0
+    mounting_status: verified_profile
+    mounting:
+      status: verified_profile
+      count: 4
+      pattern_x: 20
+      pattern_y: 20
+      centers:
+      - - -10.0
+        - -10.0
+      - - 10.0
+        - -10.0
+      - - 10.0
+        - 10.0
+      - - -10.0
+        - 10.0
+      nominal_fastener_class: M3
+      printed_hole_diameter: null
+    panel_features: []
+    source_files:
+      mechanical-step: 02_自研硬件资料/01自研硬件资料/IDMS-0006 麦克风声音传感器/IDMS-0006 麦克风v1.3 3D.step
+      mechanical-dxf: 02_自研硬件资料/01自研硬件资料/IDMS-0006 麦克风声音传感器/IDMS-0006 麦克风v1.3 平面图.dxf
+    physical_fit: unverified
+  evidence_status: verified
+  usability: teacher_validation
+  source_evidence:
+  - path: 02_自研硬件资料/01自研硬件资料/IDMS-0006 麦克风声音传感器/IDMS-0006 麦克风v1.3 3D.step
+    sha256: 0CA846F45549436D491155778976FD1489DEC30817C77280792AFB1F326EFF91
+    evidence_type: mechanical-step
+  - path: 02_自研硬件资料/01自研硬件资料/IDMS-0006 麦克风声音传感器/IDMS-0006 麦克风v1.3 平面图.dxf
+    sha256: F0FEEA83570A822E1C73E094AF4BA39D643A26C747F792F6B70F07B4011BEF95
+    evidence_type: mechanical-dxf
+  - path: 02_自研硬件资料/01自研硬件资料/IDMS-0006 麦克风声音传感器/IDMS-0006驻极体电容式高信噪比全指向麦克风－声音模拟传感模块WIKI文档20241111 v1.0.docx
+    sha256: 882A8DAEE11C7CB287783A5F316B34C033FCA315C9470100E2F707A5EE716898
+    evidence_type: documentation
+  - path: 02_自研硬件资料/01自研硬件资料/IDMS-0006 麦克风声音传感器/IDMS-0006 麦克风v1.3 SCH.pdf
+    sha256: 988CB45900C896D2BCCD293389FCE5D20B562DB771A398792B2C48015CE25290
+    evidence_type: schematic
+  - path: 02_自研硬件资料/01自研硬件资料/IDMS-0006 麦克风声音传感器/DS LMV358AIDDFR.pdf
+    sha256: 7EE860DAB827555633A3FFFFB0BE89E77CCB3A99FA1EAC504ABA88F77F38640C
+    evidence_type: datasheet
+  - path: 03_归档索引/自研模块索引.json
+    sha256: 815DFEB7DD1EFC5A9818EE31FD7B5D749580FB357A2F8AF2D5786AA08B5EACC1
+    evidence_type: index
+  - path: 03_归档索引/全文件清单.csv
+    sha256: 1FBA59F462CCB4230072644825B7F3B018B2338142ECFA846E05C97FE90B371D
+    evidence_type: index
+- hardware_id: IDMS-0007
+  catalog_id: idms-0007-starcore-gas-sensor
+  display_name: 烟雾与酒精气体传感器
+  source_name: 可燃烟雾酒精等气体传感器
+  purpose: 观察烟雾、酒精等气体引起的模拟信号变化，仅用于教学实验。
+  io_role: input
+  category: analog_sensor
+  aliases:
+  - 可燃烟雾酒精等气体传感器
+  - 烟雾与酒精气体传感器
+  - IDMS-0007
+  interface:
+    type: analog_output
+    signals:
+    - GND
+    - VCC
+    - SIG
+  power:
+    nominal: 5.0
+    status: confirmed
+  confirmed_wiring: []
+  unknowns:
+  - 尚无经过当前 ChatMaker 证据链确认的星核板具体引脚分配。
+  example_capabilities:
+  - 气体变化趋势观察
+  - 预热与校准实验
+  constraints:
+  - SIG 接 ESP32 前确认或限制至不超过 3.3V
+  - 需预热和实测校准
+  - 教学用途，不作为认证安全报警器
+  mechanical:
+    outline:
+      width_mm: 30.0
+      height_mm: 30.0
+    mounting_status: verified_profile
+    mounting:
+      status: verified_profile
+      count: 4
+      pattern_x: 20
+      pattern_y: 20
+      centers:
+      - - -10.0
+        - -10.0
+      - - 10.0
+        - -10.0
+      - - 10.0
+        - 10.0
+      - - -10.0
+        - 10.0
+      nominal_fastener_class: M3
+      printed_hole_diameter: null
+    panel_features: []
+    source_files:
+      mechanical-step: 02_自研硬件资料/01自研硬件资料/IDMS-0007 可燃烟雾酒精等气体传感器/IDMS-0007 气体v1.3 3D.step
+      mechanical-dxf: 02_自研硬件资料/01自研硬件资料/IDMS-0007 可燃烟雾酒精等气体传感器/IDMS-0007 气体v1.3 平面图.dxf
+    physical_fit: unverified
+  evidence_status: verified
+  usability: teacher_validation
+  source_evidence:
+  - path: 02_自研硬件资料/01自研硬件资料/IDMS-0007 可燃烟雾酒精等气体传感器/IDMS-0007 气体v1.3 3D.step
+    sha256: 2391BA002BB854D182A371A86DEF5DA1C13B72EBB4341B6D259C4EF85562502F
+    evidence_type: mechanical-step
+  - path: 02_自研硬件资料/01自研硬件资料/IDMS-0007 可燃烟雾酒精等气体传感器/IDMS-0007 气体v1.3 平面图.dxf
+    sha256: 25024CD89F81CE0D4662EA0C29E21E41BCD90CDBF426FC7B2172E5B4E8867C08
+    evidence_type: mechanical-dxf
+  - path: 02_自研硬件资料/01自研硬件资料/IDMS-0007 可燃烟雾酒精等气体传感器/IDMS-0007使用二氧化锡作为气敏材料的气体传感模块WIKI文档20241117 v1.0.docx
+    sha256: E3BADC016DF9827E407EF2B86BF8954CCCBD9C779940E5B930B1444B4739B0A2
+    evidence_type: documentation
+  - path: 02_自研硬件资料/01自研硬件资料/IDMS-0007 可燃烟雾酒精等气体传感器/IDMS-0007 气体v1.3 SCH.pdf
+    sha256: 8485A74CF9E75011F5A8D9D874ADD4572D7BE9F4BCFEE46E0E2DF4ADEBE26DC7
+    evidence_type: schematic
+  - path: 02_自研硬件资料/01自研硬件资料/IDMS-0007 可燃烟雾酒精等气体传感器/DS MQ-2B.pdf
+    sha256: 140AD3A22709CFF64856907104636E67ED64BBFEE0193F1866FFBD563794D185
+    evidence_type: datasheet
+  - path: 03_归档索引/自研模块索引.json
+    sha256: 815DFEB7DD1EFC5A9818EE31FD7B5D749580FB357A2F8AF2D5786AA08B5EACC1
+    evidence_type: index
+  - path: 03_归档索引/全文件清单.csv
+    sha256: 1FBA59F462CCB4230072644825B7F3B018B2338142ECFA846E05C97FE90B371D
+    evidence_type: index
+- hardware_id: IDMS-0008
+  catalog_id: idms-0008-starcore-dht11
+  display_name: 温湿度传感器
+  source_name: 温湿度传感器
+  purpose: 读取环境温度和相对湿度。
+  io_role: input
+  category: digital_sensor
+  aliases:
+  - 温湿度传感器
+  - IDMS-0008
+  interface:
+    type: single_wire_digital
+    signals:
+    - GND
+    - VCC
+    - SIG
+    minimum_read_interval_ms: 2000
+    classroom_interval_ms: 2500
+    classroom_recommended_pin: P0
+    diagnostic_alternate_pin: P14
+  power:
+    min: 3.3
+    max: 5.5
+    preferred_with_starcore: 3.3
+    status: confirmed
+  confirmed_wiring:
+  - module_pin: VCC/GND
+    board_pin: 3V3/GND
+    status: confirmed
+  - module_pin: SIG
+    board_pin: P0 classroom route
+    status: confirmed
+  unknowns: []
+  example_capabilities:
+  - 温湿度串口监测
+  - 环境仪表盘
+  constraints: []
+  mechanical:
+    outline:
+      width_mm: 30.0
+      height_mm: 30.0
+    mounting_status: verified_profile
+    mounting:
+      status: verified_profile
+      count: 4
+      pattern_x: 20
+      pattern_y: 20
+      centers:
+      - - -10.0
+        - -10.0
+      - - 10.0
+        - -10.0
+      - - 10.0
+        - 10.0
+      - - -10.0
+        - 10.0
+      nominal_fastener_class: M3
+      printed_hole_diameter: null
+    panel_features:
+    - id: sensor_window
+      shape: rect
+      center:
+      - 0
+      - 0.239
+      size:
+      - 17
+      - 14
+      nominal_dxf_hole_diameter: 3.0
+      status: verified
+    source_files:
+      mechanical-step: 02_自研硬件资料/01自研硬件资料/IDMS-0008 温湿度传感器/IDMS-0008 温湿度v1.3 3D.step
+      mechanical-dxf: 02_自研硬件资料/01自研硬件资料/IDMS-0008 温湿度传感器/IDMS-0008 温湿度v1.3 平面图.dxf
+    physical_fit: unverified
+  evidence_status: verified
+  usability: guidance_ready
+  source_evidence:
+  - path: 02_自研硬件资料/01自研硬件资料/IDMS-0008 温湿度传感器/IDMS-0008 温湿度v1.3 3D.step
+    sha256: ADA0CE321CC62042D4A34D4B0CC5C0E996E65CA9F10200A48E2D1411D91796C9
+    evidence_type: mechanical-step
+  - path: 02_自研硬件资料/01自研硬件资料/IDMS-0008 温湿度传感器/IDMS-0008 温湿度v1.3 平面图.dxf
+    sha256: 1F395BCCB44C39A83A7C970FF909AD50C6FB8F3C85C5C829324381164D8BAD8F
+    evidence_type: mechanical-dxf
+  - path: 02_自研硬件资料/01自研硬件资料/IDMS-0008 温湿度传感器/IDMS-0008 温湿度v1.3 Gerber/Status Report.Txt
+    sha256: 3790A805F8D73C3B314B29763AC7F12E96FABF863EF96C5CDDD0C0379E596662
+    evidence_type: documentation
+  - path: 02_自研硬件资料/01自研硬件资料/IDMS-0008 温湿度传感器/IDMS-0008具有数字模块采集技术和温湿度传感技术的温湿度复合传感模块WIKI文档20241025 v1.0.docx
+    sha256: E2A01EE94540F97D3081B1C10A0DD32951BFF0AA03CAC09C182EF92839E37A6E
+    evidence_type: documentation
+  - path: 02_自研硬件资料/01自研硬件资料/IDMS-0008 温湿度传感器/IDMS-0008 温湿度v1.3 SCH.pdf
+    sha256: B2CDCA49C44F62B61234BAEB971BEFF23DA0C8FCD8CBB566425644D9AA678C79
+    evidence_type: schematic
+  - path: 02_自研硬件资料/01自研硬件资料/IDMS-0008 温湿度传感器/DS DHT11.pdf
+    sha256: DFB225A62503AF3CAFB14D07D4ECF010DB1294B07FA2B44D7E19AA666AB723DD
+    evidence_type: datasheet
+  - path: 03_归档索引/自研模块索引.json
+    sha256: 815DFEB7DD1EFC5A9818EE31FD7B5D749580FB357A2F8AF2D5786AA08B5EACC1
+    evidence_type: index
+  - path: 03_归档索引/全文件清单.csv
+    sha256: 1FBA59F462CCB4230072644825B7F3B018B2338142ECFA846E05C97FE90B371D
+    evidence_type: index
+- hardware_id: IDMS-0009
+  catalog_id: idms-0009-starcore-ultrasonic
+  display_name: 超声波测距传感器
+  source_name: 超声波测距传感器
+  purpose: 测量模块前方目标的大致距离。
+  io_role: input
+  category: distance_sensor
+  aliases:
+  - 超声波测距传感器
+  - IDMS-0009
+  interface:
+    type: gpio_hcsr04_compatible
+    signals:
+    - VCC
+    - GND
+    - TRIG
+    - ECHO
+    other_supported_modes:
+    - UART
+    - I2C
+    - 1-WIRE
+    classroom_standard_pins:
+      trig:
+        silkscreen: H
+        cpp: P_H
+        gpio: 13
+      echo:
+        silkscreen: O
+        cpp: P_O
+        gpio: 15
+    mindplus_driver: DFRobot_URM10
+    mindplus_method: getDistanceCM(P_H, P_O)
+  power:
+    min: 2.8
+    max: 5.0
+    status: confirmed
+  confirmed_wiring:
+  - module_pin: VCC/GND
+    board_pin: 3V3/GND
+    status: confirmed
+  - module_pin: TRIG
+    board_pin: P_H
+    status: confirmed
+  - module_pin: ECHO
+    board_pin: P_O
+    status: confirmed
+  unknowns: []
+  example_capabilities:
+  - 距离显示
+  - 靠近提醒
+  constraints:
+  - 5V 供电时须确认 ECHO 电平不超过 3.3V
+  - H/O 标准接法来自接线PPT和历史工程；图形化同款代码已编译，实物复测仍需记录
+  mechanical:
+    outline:
+      width_mm: 55.021
+      height_mm: 30.021
+    mounting_status: verified_profile
+    mounting:
+      status: verified_profile
+      count: 4
+      pattern_x: 45
+      pattern_y: 20
+      centers:
+      - - -22.5
+        - -10.0
+      - - 22.5
+        - -10.0
+      - - 22.5
+        - 10.0
+      - - -22.5
+        - 10.0
+      nominal_fastener_class: M3
+      printed_hole_diameter: null
+    panel_features:
+    - id: ultrasonic_transducers
+      shape: dual_round
+      center:
+      - 0
+      - 0
+      diameter: 15.8
+      center_spacing: 25.525
+      nominal_dxf_hole_diameter: 3.0
+      status: verified
+    source_files:
+      mechanical-step: 02_自研硬件资料/01自研硬件资料/IDMS-0009 超声波测距传感器/IDMS-0009 超声测距v1.3 3D.step
+      mechanical-dxf: 02_自研硬件资料/01自研硬件资料/IDMS-0009 超声波测距传感器/IDMS-0009 超声测距v1.3 平面图.dxf
+    physical_fit: unverified
+  evidence_status: verified
+  usability: guidance_ready
+  source_evidence:
+  - path: 02_自研硬件资料/01自研硬件资料/IDMS-0009 超声波测距传感器/IDMS-0009 超声测距v1.3 3D.step
+    sha256: C823AF7D169D174700B748CBD4336258B1D4CE84370847C1E483E154E166B418
+    evidence_type: mechanical-step
+  - path: 02_自研硬件资料/01自研硬件资料/IDMS-0009 超声波测距传感器/IDMS-0009 超声测距v1.3 平面图.dxf
+    sha256: C289BB5CD9F92792F528A0EF4C04A0767ED3AC82F27C8E7B9D9356BC032B3586
+    evidence_type: mechanical-dxf
+  - path: 02_自研硬件资料/01自研硬件资料/IDMS-0009 超声波测距传感器/IDMS-0009分体开放式超声波测距模块WIKI文档20241101 v1.0.docx
+    sha256: 44B794EF29438929AB7EB2D838E95851060C8FE35095188AE0613F1CD770C47E
+    evidence_type: documentation
+  - path: 02_自研硬件资料/01自研硬件资料/IDMS-0009 超声波测距传感器/IDMS-0009 超声测距v1.3 SCH.pdf
+    sha256: 710E767C77833555BBEFB0C473758079BFAA9DC39DDC91A3887FBA6230A961FD
+    evidence_type: schematic
+  - path: 02_自研硬件资料/01自研硬件资料/IDMS-0009 超声波测距传感器/DS RCWL9610.pdf
+    sha256: 25B90D3710D16EA11DAF9768EDE53D970493BC0C2B636AD89A0D87D252D0E8D1
+    evidence_type: datasheet
+  - path: 03_归档索引/自研模块索引.json
+    sha256: 815DFEB7DD1EFC5A9818EE31FD7B5D749580FB357A2F8AF2D5786AA08B5EACC1
+    evidence_type: index
+  - path: 03_归档索引/全文件清单.csv
+    sha256: 1FBA59F462CCB4230072644825B7F3B018B2338142ECFA846E05C97FE90B371D
+    evidence_type: index
+- hardware_id: IDMS-0010
+  catalog_id: idms-0010-starcore-laser-receiver
+  display_name: 激光接收传感器
+  source_name: 激光接收传感器
+  purpose: 判断接收端是否检测到配套光源。
+  io_role: input
+  category: digital_sensor
+  aliases:
+  - 激光接收传感器
+  - IDMS-0010
+  interface:
+    type: digital_output
+    signals:
+    - GND
+    - VCC
+    - SIG
+    light_detected_level: LOW
+    no_light_level: HIGH
+  power:
+    safe_default: 5.0
+    requires_version_check: true
+    status: confirmed
+  confirmed_wiring: []
+  unknowns:
+  - 资料未形成可直接执行的完整电气或协议结论，必须核对原文和实物版本。
+  - 尚无经过当前 ChatMaker 证据链确认的星核板具体引脚分配。
+  - 供电范围在说明材料中存在冲突，不能自动选择 3.3V 或 5V。
+  example_capabilities:
+  - 光束中断检测
+  - 对准实验
+  constraints:
+  - 说明文档的技术规格与接口段给出的供电范围不一致
+  - 按实物丝印确认供电，SIG 接入前确认 3.3V 安全
+  mechanical:
+    outline:
+      width_mm: 30.0
+      height_mm: 30.0
+    mounting_status: verified_profile
+    mounting:
+      status: verified_profile
+      count: 4
+      pattern_x: 20
+      pattern_y: 20
+      centers:
+      - - -10.0
+        - -10.0
+      - - 10.0
+        - -10.0
+      - - 10.0
+        - 10.0
+      - - -10.0
+        - 10.0
+      nominal_fastener_class: M3
+      printed_hole_diameter: null
+    panel_features: []
+    source_files:
+      mechanical-step: 02_自研硬件资料/01自研硬件资料/IDMS-0010 激光接收传感器/IDMS-0010 激光接收模组v1.3 3D.step
+      mechanical-dxf: 02_自研硬件资料/01自研硬件资料/IDMS-0010 激光接收传感器/IDMS-0010 激光接收模组v1.3 平面图.dxf
+    physical_fit: unverified
+  evidence_status: documentation_conflict
+  usability: teacher_validation
+  source_evidence:
+  - path: 02_自研硬件资料/01自研硬件资料/IDMS-0010 激光接收传感器/IDMS-0010 激光接收模组v1.3 3D.step
+    sha256: C473B230F62DF2B189D7E7E67606083D4C893FF4835C999FA6D10CBDF1021066
+    evidence_type: mechanical-step
+  - path: 02_自研硬件资料/01自研硬件资料/IDMS-0010 激光接收传感器/IDMS-0010 激光接收模组v1.3 平面图.dxf
+    sha256: 13B3C8E886F197C85F583BABFAD9C6DEEE9CE0503E6ABDBE62C1F9BC10F3E34F
+    evidence_type: mechanical-dxf
+  - path: 02_自研硬件资料/01自研硬件资料/IDMS-0010 激光接收传感器/IDMS-0010具有施密特触发器的红外接收传感模块WIKI文档20241101 v1.0.docx
+    sha256: F217443C0544800DD1E3F5EE6106B968B83470AF19056E9F7C2BCA83270DC560
+    evidence_type: documentation
+  - path: 02_自研硬件资料/01自研硬件资料/IDMS-0010 激光接收传感器/IDMS-0010 激光接收模组v1.3 SCH.pdf
+    sha256: 31D0CB5651AAC2A5EED8B8F666EA1F21D8E26DF145A7814E807379E19350CBCF
+    evidence_type: schematic
+  - path: 02_自研硬件资料/01自研硬件资料/IDMS-0010 激光接收传感器/DS LMV321.pdf
+    sha256: CBD0098636AEC1798D83C9A33226DB8595E33749EF9D95BADCD6FCC9F47FE9D1
+    evidence_type: datasheet
+  - path: 03_归档索引/自研模块索引.json
+    sha256: 815DFEB7DD1EFC5A9818EE31FD7B5D749580FB357A2F8AF2D5786AA08B5EACC1
+    evidence_type: index
+  - path: 03_归档索引/全文件清单.csv
+    sha256: 1FBA59F462CCB4230072644825B7F3B018B2338142ECFA846E05C97FE90B371D
+    evidence_type: index
+- hardware_id: IDMS-0011
+  catalog_id: idms-0011-starcore-slot-counter
+  display_name: U 形槽光电计数器
+  source_name: U形槽光电计数器
+  purpose: 检测物体穿过 U 形槽并用于计数或测速。
+  io_role: input
+  category: digital_sensor
+  aliases:
+  - U形槽光电计数器
+  - U 形槽光电计数器
+  - IDMS-0011
+  interface:
+    type: digital_output
+    signals:
+    - GND
+    - VCC
+    - SIG
+    blocked_level: HIGH
+    clear_level: LOW
+  power:
+    min: 2.7
+    max: 5.5
+    preferred_with_starcore: 3.3
+    status: confirmed
+  confirmed_wiring: []
+  unknowns:
+  - 尚无经过当前 ChatMaker 证据链确认的星核板具体引脚分配。
+  example_capabilities:
+  - 物体计数
+  - 转速脉冲采集
+  constraints: []
+  mechanical:
+    outline:
+      width_mm: 30.0
+      height_mm: 30.0
+    mounting_status: verified_profile
+    mounting:
+      status: verified_profile
+      count: 4
+      pattern_x: 20
+      pattern_y: 20
+      centers:
+      - - -10.0
+        - -10.0
+      - - 10.0
+        - -10.0
+      - - 10.0
+        - 10.0
+      - - -10.0
+        - 10.0
+      nominal_fastener_class: M3
+      printed_hole_diameter: null
+    panel_features: []
+    source_files:
+      mechanical-step: 02_自研硬件资料/01自研硬件资料/IDMS-0011 U形槽光电计数器/IDMS-0011 U槽光电计数器v1.0 3D.step
+      mechanical-dxf: 02_自研硬件资料/01自研硬件资料/IDMS-0011 U形槽光电计数器/IDMS-0011 U槽光电计数器v1.0 平面图.dxf
+    physical_fit: unverified
+  evidence_status: verified
+  usability: teacher_validation
+  source_evidence:
+  - path: 02_自研硬件资料/01自研硬件资料/IDMS-0011 U形槽光电计数器/IDMS-0011 U槽光电计数器v1.0 3D.step
+    sha256: 2619EDFB763B4F9C112E5DA61786F7232459EFC26BF407F325F39690400D8165
+    evidence_type: mechanical-step
+  - path: 02_自研硬件资料/01自研硬件资料/IDMS-0011 U形槽光电计数器/IDMS-0011 U槽光电计数器v1.0 平面图.dxf
+    sha256: 069ED23FEAA6BCC6BF4010D7DFE6543DB1716526EF69774C7A1F0A1944450191
+    evidence_type: mechanical-dxf
+  - path: 02_自研硬件资料/01自研硬件资料/IDMS-0011 U形槽光电计数器/IDMS-0011受可见光干扰小的红外对射光电计数传感器WIKI文档20241117 v1.0.docx
+    sha256: 687F4E375D55637E6D01047B3BD184AC6129DF9640D90883C14840968EBEB03D
+    evidence_type: documentation
+  - path: 02_自研硬件资料/01自研硬件资料/IDMS-0011 U形槽光电计数器/IDMS-0011 U槽光电计数器v1.0 SCH.pdf
+    sha256: 9492F56057C4EB035F49698F931A9FD7B3615FCB1158B48CA54F6A9CDBAB45DB
+    evidence_type: schematic
+  - path: 02_自研硬件资料/01自研硬件资料/IDMS-0011 U形槽光电计数器/DS LMV321.pdf
+    sha256: CBD0098636AEC1798D83C9A33226DB8595E33749EF9D95BADCD6FCC9F47FE9D1
+    evidence_type: datasheet
+  - path: 03_归档索引/自研模块索引.json
+    sha256: 815DFEB7DD1EFC5A9818EE31FD7B5D749580FB357A2F8AF2D5786AA08B5EACC1
+    evidence_type: index
+  - path: 03_归档索引/全文件清单.csv
+    sha256: 1FBA59F462CCB4230072644825B7F3B018B2338142ECFA846E05C97FE90B371D
+    evidence_type: index
+- hardware_id: IDMS-0012
+  catalog_id: idms-0012-starcore-limit-switch
+  display_name: 微动限位开关
+  source_name: 微动限位开关
+  purpose: 检测机构是否到达机械行程边界。
+  io_role: input
+  category: digital_sensor
+  aliases:
+  - 微动限位开关
+  - IDMS-0012
+  interface:
+    type: digital_output
+    signals:
+    - GND
+    - VCC
+    - SIG
+  power:
+    preferred_with_starcore: 3.3
+    requires_version_check: true
+    status: confirmed
+  confirmed_wiring: []
+  unknowns:
+  - 尚无经过当前 ChatMaker 证据链确认的星核板具体引脚分配。
+  example_capabilities:
+  - 行程到位检测
+  - 机构回零实验
+  constraints:
+  - 接星核板时按 3.3V 逻辑使用并核对实物有效电平
+  mechanical:
+    outline:
+      width_mm: 33.5
+      height_mm: 30.0
+    mounting_status: incomplete
+    mounting:
+      status: incomplete
+      count: 4
+      pattern_x: null
+      pattern_y: null
+      centers: null
+      nominal_fastener_class: M3
+      printed_hole_diameter: null
+    panel_features:
+    - id: limit_switch_motion
+      shape: motion_envelope
+      size: null
+      status: requires_physical_measurement
+    source_files:
+      mechanical-step: 02_自研硬件资料/01自研硬件资料/IDMS-0012 微动限位开关/IDMS-0012 限位开关v1.0 3D.step
+      mechanical-dxf: 02_自研硬件资料/01自研硬件资料/IDMS-0012 微动限位开关/IDMS-0012 限位开关v1.0 平面图.dxf
+    physical_fit: unverified
+  evidence_status: verified_with_safe_default
+  usability: teacher_validation
+  source_evidence:
+  - path: 02_自研硬件资料/01自研硬件资料/IDMS-0012 微动限位开关/IDMS-0012 限位开关v1.0 3D.step
+    sha256: 3E9CCFDFF07915D1F655080DECFD8BF703389E9A4ADD6A50187B0D19AF7B172D
+    evidence_type: mechanical-step
+  - path: 02_自研硬件资料/01自研硬件资料/IDMS-0012 微动限位开关/IDMS-0012 限位开关v1.0 平面图.dxf
+    sha256: A506F2C7DF9DDC16F314E64469C8088EA5B8E59B72EA5CC1760EE1966B663049
+    evidence_type: mechanical-dxf
+  - path: 02_自研硬件资料/01自研硬件资料/IDMS-0012 微动限位开关/IDMS-0012高精度双弹簧微动限位开关模块WIKI文档20241126 v1.0.docx
+    sha256: C17690C8DE567036F8BF829DD57F9805E44774007BBAFDB4B38FA916DD1029E0
+    evidence_type: documentation
+  - path: 02_自研硬件资料/01自研硬件资料/IDMS-0012 微动限位开关/IDMS-0012 限位开关v1.0 SCH.pdf
+    sha256: 6855BC524F85438B1079F30FCA2C8391CDEE5B8CC9292A79911422AD50E40934
+    evidence_type: schematic
+  - path: 02_自研硬件资料/01自研硬件资料/IDMS-0012 微动限位开关/DS OMRON D2F.pdf
+    sha256: 1F3DBBC7877A93D6751EED4365D5428DC2F71940EC97E1D2031890BEAEA1F84A
+    evidence_type: datasheet
+  - path: 03_归档索引/自研模块索引.json
+    sha256: 815DFEB7DD1EFC5A9818EE31FD7B5D749580FB357A2F8AF2D5786AA08B5EACC1
+    evidence_type: index
+  - path: 03_归档索引/全文件清单.csv
+    sha256: 1FBA59F462CCB4230072644825B7F3B018B2338142ECFA846E05C97FE90B371D
+    evidence_type: index
+- hardware_id: IDMS-0036
+  catalog_id: idms-0036-starcore-analog-accelerometer
+  display_name: 模拟三轴加速度传感器
+  source_name: 模拟型三轴加速度传感器
+  purpose: 分别输出 X、Y、Z 三个方向的模拟加速度信号。
+  io_role: input
+  category: analog_sensor
+  aliases:
+  - 模拟型三轴加速度传感器
+  - 模拟三轴加速度传感器
+  - IDMS-0036
+  interface:
+    type: three_axis_analog_output
+    signals:
+    - VCC
+    - GND
+    - XOUT
+    - YOUT
+    - ZOUT
+  power:
+    status: unknown
+  confirmed_wiring: []
+  unknowns:
+  - 资料未形成可直接执行的完整电气或协议结论，必须核对原文和实物版本。
+  - 交接资料的结构化提取未确认统一供电范围。
+  - 尚无经过当前 ChatMaker 证据链确认的星核板具体引脚分配。
+  - 归档编号为 IDMS-0036，但随附机械/原理图文件名含 IDMS-0013，需核对实物丝印。
+  example_capabilities:
+  - 倾斜趋势观察
+  - 三轴模拟量采样
+  constraints:
+  - 归档编号为 IDMS-0036，但随附原理图文件名包含 IDMS-0013；生成项目时以实物丝印为准
+  - 供电与输出范围需按实物版本确认，三路输出均不得超过 3.3V
+  mechanical:
+    outline:
+      width_mm: 30.0
+      height_mm: 30.0
+    mounting_status: verified_profile
+    mounting:
+      status: verified_profile
+      count: 4
+      pattern_x: 20
+      pattern_y: 20
+      centers:
+      - - -10.0
+        - -10.0
+      - - 10.0
+        - -10.0
+      - - 10.0
+        - 10.0
+      - - -10.0
+        - 10.0
+      nominal_fastener_class: M3
+      printed_hole_diameter: null
+    panel_features: []
+    source_files:
+      mechanical-step: 02_自研硬件资料/01自研硬件资料/IDMS-0036 模拟型三轴加速度传感器/IDMS-0013 三轴加速度计v1.0 3D.step
+      mechanical-dxf: 02_自研硬件资料/01自研硬件资料/IDMS-0036 模拟型三轴加速度传感器/IDMS-0013 三轴加速度计v1.0 平面图.dxf
+    physical_fit: unverified
+  evidence_status: partial
+  usability: teacher_validation
+  source_evidence:
+  - path: 02_自研硬件资料/01自研硬件资料/IDMS-0036 模拟型三轴加速度传感器/IDMS-0013 三轴加速度计v1.0 3D.step
+    sha256: 684C8DF38740EBD029628B2F52159ECF17F4018FF3A478FEE98D9AFEB74AF1A6
+    evidence_type: mechanical-step
+  - path: 02_自研硬件资料/01自研硬件资料/IDMS-0036 模拟型三轴加速度传感器/IDMS-0013 三轴加速度计v1.0 平面图.dxf
+    sha256: AAF94B1A290EEAB347EE0E8F48FD7F96334ED6E2EC95633C878F19E290A069CA
+    evidence_type: mechanical-dxf
+  - path: 02_自研硬件资料/01自研硬件资料/IDMS-0036 模拟型三轴加速度传感器/IDMS-0013 三轴加速度计v1.0 SCH.pdf
+    sha256: F7B247DD2FECA24B7B403B17EBA890DCFABD35E5A1B4612E8D0EAEFC2D714AFA
+    evidence_type: schematic
+  - path: 02_自研硬件资料/01自研硬件资料/IDMS-0036 模拟型三轴加速度传感器/ADXL335BCPZ-RL7 Datasheet.pdf
+    sha256: 9B3E4DEA71D6BDB21BEA7221C9B7132EEF511C002420160504BFFB8025C53E79
+    evidence_type: datasheet
+  - path: 03_归档索引/自研模块索引.json
+    sha256: 815DFEB7DD1EFC5A9818EE31FD7B5D749580FB357A2F8AF2D5786AA08B5EACC1
+    evidence_type: index
+  - path: 03_归档索引/全文件清单.csv
+    sha256: 1FBA59F462CCB4230072644825B7F3B018B2338142ECFA846E05C97FE90B371D
+    evidence_type: index

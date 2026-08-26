@@ -1,0 +1,55 @@
+schema_version: '1.0'
+kind: component
+id: idmf-0011-starcore-usb-hub-1-to-4
+hardware_id: IDMF-0011
+name: 一分四 USB 集线器
+aliases:
+- USB-HUB1分4
+- 一分四 USB 集线器
+- IDMF-0011
+category: connectivity
+interface: usb-hub
+supply_voltage:
+  minimum: null
+  maximum: null
+  status: unknown
+logic_boundary: USB 数据与供电连接模块，不是普通 GPIO 模块
+source_ids:
+- self-developed-hardware-handoff-2026-07-25
+sources:
+- title: ChatMaker self-developed hardware source manifest
+  url: https://github.com/Amasun93/ChatMaker/tree/main/knowledge_sources
+verification:
+  source_reviewed:
+    status: verified
+    checked_at: '2026-08-27'
+    evidence: The 2026-07-25 handoff index and selected raw source files were reviewed; unresolved fields remain explicit.
+  code_compiled:
+    status: not_applicable
+    checked_at: null
+    evidence: null
+  firmware_uploaded:
+    status: not_applicable
+    checked_at: null
+    evidence: null
+  physical_effect_verified:
+    status: unverified
+    checked_at: null
+    evidence: null
+pins:
+- id: CONNECTION
+  role: connector-details-require-source-review
+supported_boards:
+- idmc-0001-starcore-v4-2-2
+constraints:
+- USB 数据与供电连接模块，不是普通 GPIO 模块
+identification:
+- Confirm the IDMF-0011 marking and the beginner name '一分四 USB 集线器' before applying this record.
+libraries: []
+example_files:
+- docs/hardware/self-developed-modules.md
+common_failures:
+- Substituting a similarly named generic module can change voltage, pin order, active level, dimensions, or protocol.
+board_notes:
+  idmc-0001-starcore-v4-2-2: Use module_guide or project_task before assigning pins; unknown and conflicting fields are generation
+    blockers.

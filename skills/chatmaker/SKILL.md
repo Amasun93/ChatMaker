@@ -49,6 +49,12 @@ Read [project-contract.md](references/project-contract.md) before planning a com
 - Infer nothing from a missing photo. Ask about printed labels, pin count, shape, wire colors, and intended use.
 - Do not require a separate IDE. Treat installed tools as background infrastructure.
 
+## Use the complete self-developed hardware directory
+
+When the user mentions a Starcore self-developed module, do not assume the currently familiar seven examples are the full range. Read the complete 23-module directory with `chatmaker-catalog --request-json '{"action":"list_modules"}'`, then resolve the selected beginner-readable name with `module_guide`. For a project request, use `project_task` before assigning pins or generating code.
+
+Keep `guidance_ready`, `teacher_validation`, and `retrieval_only` distinct. A `teacher_validation` result may generate a verification experiment but must not invent a missing voltage, active level, pin assignment, dimension, or protocol. A `retrieval_only` result may return source paths, risks, and a measurement checklist only. Internal IDs remain in the returned identity data and generation chain; ordinary titles use the Chinese `display_name`.
+
 ## Help beginners report problems and contribute learning
 
 Read [beginner-issue-feedback.md](references/beginner-issue-feedback.md) in either of these situations:

@@ -1,0 +1,61 @@
+schema_version: '1.0'
+kind: component
+id: idms-0002-starcore-toggle-switch
+hardware_id: IDMS-0002
+name: 三档钮子开关
+aliases:
+- 钮子开关
+- 三档钮子开关
+- IDMS-0002
+category: passive_switch
+interface: dpdt-on-off-on
+supply_voltage:
+  minimum: null
+  maximum: null
+  status: unknown
+logic_boundary: 作为星核板输入时使用低压无源触点和上拉/下拉
+source_ids:
+- self-developed-hardware-handoff-2026-07-25
+sources:
+- title: ChatMaker self-developed hardware source manifest
+  url: https://github.com/Amasun93/ChatMaker/tree/main/knowledge_sources
+verification:
+  source_reviewed:
+    status: verified
+    checked_at: '2026-08-27'
+    evidence: The 2026-07-25 handoff index and selected raw source files were reviewed; unresolved fields remain explicit.
+  code_compiled:
+    status: unverified
+    checked_at: null
+    evidence: null
+  firmware_uploaded:
+    status: unverified
+    checked_at: null
+    evidence: null
+  physical_effect_verified:
+    status: unverified
+    checked_at: null
+    evidence: null
+pins:
+- id: C
+  role: source-labelled-signal
+- id: M
+  role: source-labelled-signal
+- id: D
+  role: source-labelled-signal
+supported_boards:
+- idmc-0001-starcore-v4-2-2
+constraints:
+- 作为星核板输入时使用低压无源触点和上拉/下拉
+- 不得把 AC 125V 线路接入星核板
+- 尚无经过当前 ChatMaker 证据链确认的星核板具体引脚分配。
+identification:
+- Confirm the IDMS-0002 marking and the beginner name '三档钮子开关' before applying this record.
+libraries: []
+example_files:
+- docs/hardware/self-developed-modules.md
+common_failures:
+- Substituting a similarly named generic module can change voltage, pin order, active level, dimensions, or protocol.
+board_notes:
+  idmc-0001-starcore-v4-2-2: Use module_guide or project_task before assigning pins; unknown and conflicting fields are generation
+    blockers.

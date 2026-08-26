@@ -2,7 +2,7 @@ schema_version: "1.0"
 kind: component
 id: idms-0003-starcore-potentiometer
 hardware_id: IDMS-0003
-name: IDMS-0003 星核板电位器旋钮
+name: 电位器旋钮
 aliases: [星核电位器, 自研旋钮传感器, IDMS-0003电位器]
 category: input
 interface: three-wire-analog-output

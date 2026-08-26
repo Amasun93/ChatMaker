@@ -370,6 +370,7 @@ class ReleasePackageTests(unittest.TestCase):
                 "docs/installation.md",
                 "docs/roadmap.md",
                 "docs/contributing/board-research-workflow.md",
+                "docs/hardware/self-developed-modules.md",
             },
         )
         self.assertIn(prefix + "skills/chatmaker/SKILL.md", names)
@@ -403,6 +404,7 @@ class ReleasePackageTests(unittest.TestCase):
         self.assertIn(prefix + "knowledge/boards/arduino-nano-classic.yaml", names)
         self.assertIn(prefix + "knowledge/boards/mpython-classic-v2x.yaml", names)
         self.assertIn(prefix + "knowledge/boards/mpython-v3.yaml", names)
+        self.assertIn(prefix + "knowledge/hardware/self-developed-modules.yaml", names)
         self.assertIn(prefix + "knowledge/mechanical/boards/arduino-nano-classic.json", names)
         self.assertIn(prefix + "knowledge/mechanical/boards/microbit-v2.json", names)
         self.assertIn(prefix + "knowledge/fabrication/equipment/lasermaker-generic.json", names)

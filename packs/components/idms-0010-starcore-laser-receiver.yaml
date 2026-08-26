@@ -1,0 +1,62 @@
+schema_version: '1.0'
+kind: component
+id: idms-0010-starcore-laser-receiver
+hardware_id: IDMS-0010
+name: 激光接收传感器
+aliases:
+- 激光接收传感器
+- IDMS-0010
+category: digital_sensor
+interface: digital-output
+supply_voltage:
+  minimum: null
+  maximum: null
+  status: confirmed
+logic_boundary: 说明文档的技术规格与接口段给出的供电范围不一致
+source_ids:
+- self-developed-hardware-handoff-2026-07-25
+sources:
+- title: ChatMaker self-developed hardware source manifest
+  url: https://github.com/Amasun93/ChatMaker/tree/main/knowledge_sources
+verification:
+  source_reviewed:
+    status: verified
+    checked_at: '2026-08-27'
+    evidence: The 2026-07-25 handoff index and selected raw source files were reviewed; unresolved fields remain explicit.
+  code_compiled:
+    status: unverified
+    checked_at: null
+    evidence: null
+  firmware_uploaded:
+    status: unverified
+    checked_at: null
+    evidence: null
+  physical_effect_verified:
+    status: unverified
+    checked_at: null
+    evidence: null
+pins:
+- id: GND
+  role: source-labelled-signal
+- id: VCC
+  role: source-labelled-signal
+- id: SIG
+  role: source-labelled-signal
+supported_boards:
+- idmc-0001-starcore-v4-2-2
+constraints:
+- 说明文档的技术规格与接口段给出的供电范围不一致
+- 按实物丝印确认供电，SIG 接入前确认 3.3V 安全
+- 资料未形成可直接执行的完整电气或协议结论，必须核对原文和实物版本。
+- 尚无经过当前 ChatMaker 证据链确认的星核板具体引脚分配。
+- 供电范围在说明材料中存在冲突，不能自动选择 3.3V 或 5V。
+identification:
+- Confirm the IDMS-0010 marking and the beginner name '激光接收传感器' before applying this record.
+libraries: []
+example_files:
+- docs/hardware/self-developed-modules.md
+common_failures:
+- Substituting a similarly named generic module can change voltage, pin order, active level, dimensions, or protocol.
+board_notes:
+  idmc-0001-starcore-v4-2-2: Use module_guide or project_task before assigning pins; unknown and conflicting fields are generation
+    blockers.

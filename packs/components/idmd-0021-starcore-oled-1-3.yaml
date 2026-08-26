@@ -2,7 +2,7 @@ schema_version: "1.0"
 kind: component
 id: idmd-0021-starcore-oled-1-3
 hardware_id: IDMD-0021
-name: IDMD-0021 自研 1.3 寸 OLED
+name: 1.3 寸 OLED 显示屏
 aliases: [星核1.3寸OLED, 自研OLED显示模块, IDMD-0021显示屏]
 category: display
 interface: i2c-ssd1306-128x64

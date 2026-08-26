@@ -2,7 +2,7 @@ schema_version: "1.0"
 kind: component
 id: idmm-0007-starcore-serial-servo-driver
 hardware_id: IDMM-0007
-name: IDMM-0007 星核板串口舵机驱动
+name: 串口舵机驱动模块
 aliases: [星核串口舵机驱动, 串口舵机控制板]
 category: actuator-driver
 interface: uart-protocol-unknown

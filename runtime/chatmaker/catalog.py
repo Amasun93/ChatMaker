@@ -22,6 +22,7 @@ CATALOG_FOLDERS = {
     "recipe": "recipes",
 }
 _ID_INDEX_CACHE: dict[Path, tuple[tuple[tuple[str, int, int], ...], dict[str, Path]]] = {}
+_MODULE_PROFILE_CACHE: dict[Path, tuple[int, int, dict[str, dict[str, Any]]]] = {}
 _TOP_LEVEL_ID_PATTERN = re.compile(r"^id\s*:\s*(?P<value>.*)$")
 _SEARCH_FRAGMENT_PATTERN = re.compile(r"[\s,，、。；;：:!?！？/|()（）\[\]{}]+")
 
@@ -32,12 +33,48 @@ def _root(project_root: Path | None = None) -> Path:
     return Path(__file__).resolve().parents[2]
 
 
+def _module_profiles(project_root: Path | None = None) -> dict[str, dict[str, Any]]:
+    path = _root(project_root) / "knowledge" / "hardware" / "self-developed-modules.yaml"
+    if not path.is_file():
+        return {}
+    stat = path.stat()
+    cached = _MODULE_PROFILE_CACHE.get(path)
+    if cached is not None and cached[:2] == (stat.st_mtime_ns, stat.st_size):
+        return cached[2]
+    value = yaml.safe_load(path.read_text(encoding="utf-8"))
+    if not isinstance(value, dict) or value.get("module_count") != 23:
+        raise ValueError("self-developed module runtime index is invalid")
+    modules = value.get("modules", [])
+    if not isinstance(modules, list):
+        raise ValueError("self-developed module runtime index modules must be a list")
+    profiles = {
+        str(item.get("catalog_id")): item
+        for item in modules
+        if isinstance(item, dict) and item.get("catalog_id")
+    }
+    if len(profiles) != 23:
+        raise ValueError("self-developed module runtime index identities are incomplete")
+    _MODULE_PROFILE_CACHE[path] = (stat.st_mtime_ns, stat.st_size, profiles)
+    return profiles
+
+
+def _attach_module_profile(
+    record: dict[str, Any], project_root: Path | None = None
+) -> dict[str, Any]:
+    profile = _module_profiles(project_root).get(str(record.get("id")))
+    if profile is None:
+        return record
+    attached = dict(record)
+    attached["module_profile"] = profile
+    return attached
+
+
 def _records(project_root: Path | None = None) -> list[tuple[Path, dict[str, Any]]]:
     root = _root(project_root)
     records: list[tuple[Path, dict[str, Any]]] = []
     for folder in CATALOG_FOLDERS.values():
         for path in sorted((root / "packs" / folder).glob("*.yaml")):
-            records.append((path, load_record(path)))
+            records.append((path, _attach_module_profile(load_record(path), project_root)))
     return records
 
 
@@ -172,6 +209,7 @@ def _search_text(
         record.get("components", []),
         identity,
         record.get("onboard_hardware", []),
+        record.get("module_profile", {}) if record.get("kind") == "component" else {},
     ]
     flattened: list[str] = []
     for value in values:
@@ -267,6 +305,186 @@ def _summary(record: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _self_developed_records(
+    project_root: Path | None = None,
+) -> list[tuple[Path, dict[str, Any]]]:
+    records = []
+    for path, record in _records(project_root):
+        profile = record.get("module_profile")
+        if isinstance(profile, dict) and profile.get("source_ref") == "self-developed-hardware-handoff-2026-07-25":
+            records.append((path, record))
+    return records
+
+
+def _module_card(record: dict[str, Any]) -> dict[str, Any]:
+    profile = record["module_profile"]
+    mechanical = profile.get("mechanical", {})
+    return {
+        "name": profile.get("display_name") or record.get("name"),
+        "purpose": profile.get("purpose"),
+        "io_role": profile.get("io_role"),
+        "interface": profile.get("interface"),
+        "usability": profile.get("usability"),
+        "evidence_status": profile.get("evidence_status"),
+        "mechanical_outline": mechanical.get("outline") if isinstance(mechanical, dict) else None,
+        "identity": {
+            "hardware_id": profile.get("hardware_id"),
+            "catalog_id": record.get("id"),
+        },
+    }
+
+
+def list_modules(*, project_root: Path | None = None) -> dict[str, Any]:
+    records = [record for _, record in _self_developed_records(project_root)]
+    records.sort(key=lambda item: str(item.get("module_profile", {}).get("hardware_id", "")))
+    return {
+        "success": True,
+        "action": "list_modules",
+        "module_count": len(records),
+        "modules": [_module_card(record) for record in records],
+        "status_legend": {
+            "guidance_ready": "可直接生成证据约束下的指导；编译、烧录和实物效果仍按各自证据门报告。",
+            "teacher_validation": "可生成核对与实验任务；关键电气、引脚、有效电平或实物行为需老师确认。",
+            "retrieval_only": "只提供资料检索和风险提示，不生成可执行接线、协议命令或控制代码。",
+        },
+    }
+
+
+def _resolve_module(
+    identifier: str,
+    *,
+    project_root: Path | None = None,
+) -> tuple[Path, dict[str, Any]] | None:
+    normalized = identifier.casefold().strip()
+    if not normalized:
+        return None
+    candidates: list[tuple[int, Path, dict[str, Any]]] = []
+    for path, record in _self_developed_records(project_root):
+        profile = record["module_profile"]
+        identities = {
+            str(record.get("id", "")).casefold(),
+            str(profile.get("hardware_id", "")).casefold(),
+        }
+        if normalized in identities:
+            return path, record
+        score = _score(record, identifier, project_root)
+        if score:
+            candidates.append((score, path, record))
+    candidates.sort(key=lambda item: (-item[0], str(item[2].get("id", ""))))
+    if not candidates:
+        return None
+    if len(candidates) > 1 and candidates[0][0] == candidates[1][0]:
+        return None
+    return candidates[0][1], candidates[0][2]
+
+
+def _module_recipes(
+    record: dict[str, Any], project_root: Path | None = None
+) -> list[dict[str, Any]]:
+    record_id = record.get("id")
+    recipes = []
+    for _, candidate in _records(project_root):
+        if candidate.get("kind") != "recipe":
+            continue
+        if record.get("kind") == "board" and record_id in candidate.get("boards", []):
+            recipes.append(_summary(candidate))
+        elif record.get("kind") == "component" and record_id in candidate.get("components", []):
+            recipes.append(_summary(candidate))
+    recipes.sort(key=lambda item: str(item.get("id", "")))
+    return recipes
+
+
+def module_guide(
+    identifier: str,
+    *,
+    project_root: Path | None = None,
+) -> dict[str, Any]:
+    resolved = _resolve_module(identifier, project_root=project_root)
+    if resolved is None:
+        return {
+            "success": False,
+            "action": "module_guide",
+            "error": "self_developed_module_not_found_or_ambiguous",
+            "query": identifier,
+        }
+    path, record = resolved
+    profile = record["module_profile"]
+    root = _root(project_root)
+    return {
+        "success": True,
+        "action": "module_guide",
+        "module": _module_card(record),
+        "guidance": {
+            "confirmed_wiring": profile.get("confirmed_wiring", []),
+            "power": profile.get("power", {}),
+            "unknowns": profile.get("unknowns", []),
+            "constraints": record.get("constraints", []),
+            "example_capabilities": profile.get("example_capabilities", []),
+            "mechanical": profile.get("mechanical", {}),
+        },
+        "recipes": _module_recipes(record, project_root),
+        "verification": record.get("verification", {}),
+        "source_evidence": profile.get("source_evidence", []),
+        "source_path": path.relative_to(root).as_posix(),
+    }
+
+
+def project_task(
+    identifier: str,
+    *,
+    goal: str = "",
+    project_root: Path | None = None,
+) -> dict[str, Any]:
+    guide = module_guide(identifier, project_root=project_root)
+    if not guide.get("success"):
+        guide["action"] = "project_task"
+        return guide
+    module = guide["module"]
+    guidance = guide["guidance"]
+    usability = module["usability"]
+    desired_goal = goal.strip() or str(module["purpose"])
+    steps = [
+        f"按丝印确认这是 {module['name']}；内部编号只用于匹配底层资料。",
+        "断开 USB 和外部电源，先核对供电、接口、引脚标签和共地要求。",
+    ]
+    if usability == "guidance_ready":
+        steps.extend([
+            "优先选择返回的受控配方；只使用其中已确认的接线，未分配引脚仍需结合板卡占用情况选择。",
+            "生成完整程序后先编译；烧录、串口现象和实物效果分别验证，不用编译通过代替实物成功。",
+        ])
+    elif usability == "teacher_validation":
+        steps.extend([
+            "由老师或实物检查补齐 unknowns 中的关键项，并把确认依据记录下来。",
+            "关键项确认前只生成核对步骤和最小只读实验，不生成可能驱动执行器、超过 3.3V 或依赖未知有效电平的代码。",
+            "确认后再分配引脚、编译，并把实物观察作为独立验收。",
+        ])
+    else:
+        steps.extend([
+            "本模块当前只允许检索资料和制定测量清单，不生成 GPIO 接线、协议命令或控制代码。",
+            "如要进入项目，先由老师确认实际端口、电压、协议和负载边界，再提升模块可用状态。",
+        ])
+    return {
+        "success": True,
+        "action": "project_task",
+        "title": f"{module['name']}项目任务",
+        "goal": desired_goal,
+        "module": module,
+        "generation_level": usability,
+        "steps": steps,
+        "confirmed_wiring": guidance.get("confirmed_wiring", []),
+        "blocked_facts": guidance.get("unknowns", []),
+        "mechanical_guidance": guidance.get("mechanical", {}),
+        "candidate_recipes": guide.get("recipes", []),
+        "acceptance": {
+            "source_or_plan": "generated",
+            "code_compiled": "unverified",
+            "firmware_uploaded": "unverified",
+            "serial_or_runtime_observed": "unverified",
+            "physical_effect_verified": "unverified",
+        },
+    }
+
+
 def search_catalog(
     query: str = "",
     *,
@@ -303,7 +521,7 @@ def get_catalog_record(
 ) -> dict[str, Any]:
     path = _record_path(record_id, project_root)
     if path is not None:
-        record = load_record(path)
+        record = _attach_module_profile(load_record(path), project_root)
         if record.get("id") == record_id:
             root = _root(project_root)
             return {
@@ -399,6 +617,16 @@ def execute_request(
         return get_catalog_record(str(request.get("id", "")), project_root=project_root)
     if action == "open_board":
         return open_board(str(request.get("board_id", "")), project_root=project_root)
+    if action == "list_modules":
+        return list_modules(project_root=project_root)
+    if action == "module_guide":
+        return module_guide(str(request.get("module", request.get("id", ""))), project_root=project_root)
+    if action == "project_task":
+        return project_task(
+            str(request.get("module", request.get("id", ""))),
+            goal=str(request.get("goal", "")),
+            project_root=project_root,
+        )
     return {"success": False, "error": "unknown_catalog_action", "action": action}
 
 

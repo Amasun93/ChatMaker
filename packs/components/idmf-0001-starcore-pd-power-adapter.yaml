@@ -1,0 +1,58 @@
+schema_version: '1.0'
+kind: component
+id: idmf-0001-starcore-pd-power-adapter
+hardware_id: IDMF-0001
+name: PD 快充电源适配模块
+aliases:
+- PD快充电源适配
+- PD 快充电源适配模块
+- IDMF-0001
+category: power
+interface: power-adapter
+supply_voltage:
+  minimum: null
+  maximum: null
+  status: unknown
+logic_boundary: 连接负载前测量并确认 PD 协商后的实际输出电压
+source_ids:
+- self-developed-hardware-handoff-2026-07-25
+sources:
+- title: ChatMaker self-developed hardware source manifest
+  url: https://github.com/Amasun93/ChatMaker/tree/main/knowledge_sources
+verification:
+  source_reviewed:
+    status: verified
+    checked_at: '2026-08-27'
+    evidence: The 2026-07-25 handoff index and selected raw source files were reviewed; unresolved fields remain explicit.
+  code_compiled:
+    status: not_applicable
+    checked_at: null
+    evidence: null
+  firmware_uploaded:
+    status: not_applicable
+    checked_at: null
+    evidence: null
+  physical_effect_verified:
+    status: unverified
+    checked_at: null
+    evidence: null
+pins:
+- id: CONNECTION
+  role: connector-details-require-source-review
+supported_boards:
+- idmc-0001-starcore-v4-2-2
+constraints:
+- 连接负载前测量并确认 PD 协商后的实际输出电压
+- 不是普通 GPIO 模块
+- 资料未形成可直接执行的完整电气或协议结论，必须核对原文和实物版本。
+- 交接资料的结构化提取未确认统一供电范围。
+identification:
+- Confirm the IDMF-0001 marking and the beginner name 'PD 快充电源适配模块' before applying this record.
+libraries: []
+example_files:
+- docs/hardware/self-developed-modules.md
+common_failures:
+- Substituting a similarly named generic module can change voltage, pin order, active level, dimensions, or protocol.
+board_notes:
+  idmc-0001-starcore-v4-2-2: Use module_guide or project_task before assigning pins; unknown and conflicting fields are generation
+    blockers.

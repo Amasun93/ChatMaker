@@ -1,0 +1,68 @@
+schema_version: '1.0'
+kind: component
+id: idms-0036-starcore-analog-accelerometer
+hardware_id: IDMS-0036
+name: 模拟三轴加速度传感器
+aliases:
+- 模拟型三轴加速度传感器
+- 模拟三轴加速度传感器
+- IDMS-0036
+category: analog_sensor
+interface: three-axis-analog-output
+supply_voltage:
+  minimum: null
+  maximum: null
+  status: unknown
+logic_boundary: 归档编号为 IDMS-0036，但随附原理图文件名包含 IDMS-0013；生成项目时以实物丝印为准
+source_ids:
+- self-developed-hardware-handoff-2026-07-25
+sources:
+- title: ChatMaker self-developed hardware source manifest
+  url: https://github.com/Amasun93/ChatMaker/tree/main/knowledge_sources
+verification:
+  source_reviewed:
+    status: verified
+    checked_at: '2026-08-27'
+    evidence: The 2026-07-25 handoff index and selected raw source files were reviewed; unresolved fields remain explicit.
+  code_compiled:
+    status: unverified
+    checked_at: null
+    evidence: null
+  firmware_uploaded:
+    status: unverified
+    checked_at: null
+    evidence: null
+  physical_effect_verified:
+    status: unverified
+    checked_at: null
+    evidence: null
+pins:
+- id: VCC
+  role: source-labelled-signal
+- id: GND
+  role: source-labelled-signal
+- id: XOUT
+  role: source-labelled-signal
+- id: YOUT
+  role: source-labelled-signal
+- id: ZOUT
+  role: source-labelled-signal
+supported_boards:
+- idmc-0001-starcore-v4-2-2
+constraints:
+- 归档编号为 IDMS-0036，但随附原理图文件名包含 IDMS-0013；生成项目时以实物丝印为准
+- 供电与输出范围需按实物版本确认，三路输出均不得超过 3.3V
+- 资料未形成可直接执行的完整电气或协议结论，必须核对原文和实物版本。
+- 交接资料的结构化提取未确认统一供电范围。
+- 尚无经过当前 ChatMaker 证据链确认的星核板具体引脚分配。
+- 归档编号为 IDMS-0036，但随附机械/原理图文件名含 IDMS-0013，需核对实物丝印。
+identification:
+- Confirm the IDMS-0036 marking and the beginner name '模拟三轴加速度传感器' before applying this record.
+libraries: []
+example_files:
+- docs/hardware/self-developed-modules.md
+common_failures:
+- Substituting a similarly named generic module can change voltage, pin order, active level, dimensions, or protocol.
+board_notes:
+  idmc-0001-starcore-v4-2-2: Use module_guide or project_task before assigning pins; unknown and conflicting fields are generation
+    blockers.

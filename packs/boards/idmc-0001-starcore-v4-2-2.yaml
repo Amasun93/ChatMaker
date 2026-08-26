@@ -1,7 +1,7 @@
 schema_version: "1.0"
 kind: board
 id: idmc-0001-starcore-v4-2-2
-name: IDMC-0001 星核板 v4.2.2
+name: 星核板主控
 family: esp32
 mcu: ESP32-D0WDQ6-V3
 logic_voltage: 3.3

@@ -2,7 +2,7 @@ schema_version: "1.0"
 kind: component
 id: idms-0009-starcore-ultrasonic
 hardware_id: IDMS-0009
-name: IDMS-0009 星核板 GPIO 超声波模块
+name: 超声波测距传感器
 aliases: [星核超声波测距, 自研超声波传感器, IDMS-0009测距模块]
 category: input
 interface: gpio-trigger-echo
