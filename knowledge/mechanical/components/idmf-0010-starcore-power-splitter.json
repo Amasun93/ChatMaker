@@ -1,9 +1,9 @@
 {
   "schema_version": "1.0",
   "kind": "component-mechanical-profile",
-  "component_id": "idms-0001-starcore-button",
-  "hardware_id": "IDMS-0001",
-  "name": "按钮传感器",
+  "component_id": "idmf-0010-starcore-power-splitter",
+  "hardware_id": "IDMF-0010",
+  "name": "电源与信号并线器",
   "units": "mm",
   "coordinate_system": {
     "origin": "PCB outline center",
@@ -49,14 +49,14 @@
     "base",
     "lid"
   ],
-  "default_mount_surface": "lid",
+  "default_mount_surface": "base",
   "panel_features": [
     {
-      "id": "button",
+      "id": "panel-clearance",
       "purpose": "functional_clearance",
-      "status": "requires_measurement",
+      "status": "not_available",
       "availability": "not_available",
-      "note": "The feature exists, but its callable opening geometry still requires a real measurement."
+      "note": "No source-reviewed functional opening geometry is available; keep the module internal or measure the real feature before cutting a panel."
     }
   ],
   "source_ids": [

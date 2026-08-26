@@ -1,9 +1,9 @@
 {
   "schema_version": "1.0",
   "kind": "component-mechanical-profile",
-  "component_id": "idms-0001-starcore-button",
-  "hardware_id": "IDMS-0001",
-  "name": "按钮传感器",
+  "component_id": "idms-0012-starcore-limit-switch",
+  "hardware_id": "IDMS-0012",
+  "name": "微动限位开关",
   "units": "mm",
   "coordinate_system": {
     "origin": "PCB outline center",
@@ -12,36 +12,15 @@
   },
   "outline": {
     "shape": "rectangle",
-    "width": 30.0,
+    "width": 33.5,
     "depth": 30.0,
     "status": "source_reviewed"
   },
   "mounting": {
-    "status": "source_reviewed",
-    "pattern_x": 20.0,
-    "pattern_y": 20.0,
-    "holes": [
-      {
-        "x": -10.0,
-        "y": -10.0,
-        "status": "source_reviewed"
-      },
-      {
-        "x": 10.0,
-        "y": -10.0,
-        "status": "source_reviewed"
-      },
-      {
-        "x": 10.0,
-        "y": 10.0,
-        "status": "source_reviewed"
-      },
-      {
-        "x": -10.0,
-        "y": 10.0,
-        "status": "source_reviewed"
-      }
-    ],
+    "status": "requires_measurement",
+    "pattern_x": null,
+    "pattern_y": null,
+    "holes": [],
     "fastener_class": "M3",
     "hole_diameter_status": "requires_measurement"
   },
@@ -52,7 +31,7 @@
   "default_mount_surface": "lid",
   "panel_features": [
     {
-      "id": "button",
+      "id": "limit-switch-motion",
       "purpose": "functional_clearance",
       "status": "requires_measurement",
       "availability": "not_available",

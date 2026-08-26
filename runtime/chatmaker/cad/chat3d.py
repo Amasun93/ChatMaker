@@ -9,6 +9,8 @@ from pathlib import Path
 import re
 from typing import Any
 
+from . import placements as placement_contract
+
 
 def _num(values: dict[str, Any], key: str, default: float, low: float, high: float) -> float:
     value = values.get(key, default)
@@ -19,16 +21,85 @@ def _num(values: dict[str, Any], key: str, default: float, low: float, high: flo
 
 def geometry(profile: dict[str, Any], values: dict[str, Any]) -> dict[str, Any]:
     board = profile["outline"]
-    return {
-        "inner_width": _num(values, "inner_width", float(board["width"]) + 12, 20, 500),
-        "inner_depth": _num(values, "inner_depth", float(board["depth"]) + 12, 20, 500),
+    has_components = bool(values.get("component_ids") or values.get("placements"))
+    result = {
+        "inner_width": _num(values, "inner_width", max(float(board["width"]) + 12, 160 if has_components else 0), 20, 500),
+        "inner_depth": _num(values, "inner_depth", max(float(board["depth"]) + 12, 120 if has_components else 0), 20, 500),
         "inner_height": _num(values, "inner_height", 35, 8, 300),
         "wall": _num(values, "wall", 2.4, 1, 8),
         "floor": _num(values, "floor", 2.4, 1, 8),
         "lid": _num(values, "lid", 2.0, 1, 8),
         "standoff_height": _num(values, "standoff_height", 5, 0, 20),
         "hole_diameter": _num(values, "hole_diameter", 2.8, 1, 8),
+        "lid_hole_diameter": _num(values, "lid_hole_diameter", 3.6, 1, 8),
+        "opening_clearance": _num(values, "opening_clearance", 0.4, 0, 3),
         "holes": profile["mounting"]["holes"],
+    }
+    placed, validation = placement_contract.normalize(
+        profile, values, result["inner_width"], result["inner_depth"]
+    )
+    result["placed_items"] = placed
+    result["placements"] = placement_contract.public_placements(placed)
+    result.update(_placement_geometry(placed))
+    for item_id in result["skipped_mounting"]:
+        validation["warnings"].append(
+            f"{item_id} has no callable mounting-hole geometry; no holes or standoffs were generated"
+        )
+    result["layout_validation"] = validation
+    return result
+
+
+def _rotated_point(item: dict[str, Any], x: float, y: float) -> tuple[float, float]:
+    angle = math.radians(float(item["rotation"]))
+    cosine, sine = math.cos(angle), math.sin(angle)
+    return (
+        float(item["x"]) + cosine * x - sine * y,
+        float(item["y"]) + sine * x + cosine * y,
+    )
+
+
+def _placement_geometry(items: list[dict[str, Any]]) -> dict[str, Any]:
+    base_mount_points: list[list[float]] = []
+    lid_mount_points: list[list[float]] = []
+    lid_features: list[dict[str, Any]] = []
+    skipped_mounting: list[str] = []
+    for item in items:
+        points = base_mount_points if item["face"] == "bottom" else lid_mount_points
+        if item["mechanical_status"] == "ready":
+            for hole in item["mounting_holes"]:
+                x, y = _rotated_point(item, float(hole["x"]), float(hole["y"]))
+                points.append([x, y])
+        elif item["kind"] == "component":
+            skipped_mounting.append(item["item_id"])
+        if item["face"] != "top":
+            continue
+        for feature in item["panel_features"]:
+            center = feature.get("center", [0, 0])
+            center_x, center_y = float(center[0]), float(center[1])
+            if feature["shape"] == "dual_round":
+                for offset in (-float(feature["center_spacing"]) / 2, float(feature["center_spacing"]) / 2):
+                    x, y = _rotated_point(item, center_x + offset, center_y)
+                    lid_features.append({
+                        "shape": "round", "x": x, "y": y,
+                        "diameter": float(feature["diameter"]), "rotation": 0,
+                        "item_id": item["item_id"],
+                    })
+            else:
+                x, y = _rotated_point(item, center_x, center_y)
+                output = {
+                    "shape": feature["shape"], "x": x, "y": y,
+                    "rotation": float(item["rotation"]), "item_id": item["item_id"],
+                }
+                if feature["shape"] == "round":
+                    output["diameter"] = float(feature["diameter"])
+                else:
+                    output["size"] = [float(value) for value in feature["size"]]
+                lid_features.append(output)
+    return {
+        "base_mount_points": base_mount_points,
+        "lid_mount_points": lid_mount_points,
+        "lid_features": lid_features,
+        "skipped_mounting": skipped_mounting,
     }
 
 
@@ -80,7 +151,22 @@ def _engrave_plan(values: dict[str, Any], g: dict[str, Any]) -> dict[str, Any] |
 
 
 def _scad(name: str, g: dict[str, Any], engrave: dict[str, Any] | None = None) -> str:
-    holes = ",".join(f"[{float(h['x'])},{float(h['y'])}]" for h in g["holes"])
+    base_mounts = ",".join(f"[{point[0]},{point[1]}]" for point in g["base_mount_points"])
+    lid_mounts = ",".join(f"[{point[0]},{point[1]}]" for point in g["lid_mount_points"])
+    feature_cutters: list[str] = []
+    for feature in g["lid_features"]:
+        if feature["shape"] == "round":
+            feature_cutters.append(
+                f'  translate([wall+inner_width/2+{feature["x"]}, wall+inner_depth/2-{feature["y"]}, -.1]) '
+                f'cylinder(h=lid+.2, d={feature["diameter"]}+2*opening_clearance); // {feature["item_id"]}'
+            )
+        else:
+            width, depth = feature["size"]
+            feature_cutters.append(
+                f'  translate([wall+inner_width/2+{feature["x"]}, wall+inner_depth/2-{feature["y"]}, lid/2]) '
+                f'rotate([0,0,{-float(feature["rotation"])}]) cube([{width}+2*opening_clearance, {depth}+2*opening_clearance, lid+.2], center=true); // {feature["item_id"]}'
+            )
+    feature_cutters_text = "\n".join(feature_cutters)
     label_params = ""
     label_module = ""
     label_calls = ""
@@ -129,23 +215,32 @@ lid = {g["lid"]}; // 上盖厚 (mm)
 /* [安装柱] */
 standoff_height = {g["standoff_height"]}; // 安装柱高度 (mm)
 hole_diameter = {g["hole_diameter"]}; // 安装孔直径 (mm)
+lid_hole_diameter = {g["lid_hole_diameter"]}; // 顶盖 M3 通孔校准起点 (mm)
+opening_clearance = {g["opening_clearance"]}; // 功能开口单边余量 (mm)
 {label_params}
 $fn = 64;
-holes = [{holes}];
+base_mount_points = [{base_mounts}];
+lid_mount_points = [{lid_mounts}];
 
 module base_part(){{
   difference(){{
     cube([inner_width+2*wall, inner_depth+2*wall, inner_height+floor]);
     translate([wall,wall,floor]) cube([inner_width, inner_depth, inner_height+1]);
   }}
-  for(p=holes)
+  for(p=base_mount_points)
     translate([wall+inner_width/2+p[0], wall+inner_depth/2-p[1], floor])
       difference(){{
         cylinder(h=standoff_height, d=hole_diameter+3);
         translate([0,0,-.1]) cylinder(h=standoff_height+.2, d=hole_diameter);
       }}
 }}
-module cover_part(){{cube([inner_width+2*wall, inner_depth+2*wall, lid]);}}
+module lid_cutouts(){{
+  for(p=lid_mount_points)
+    translate([wall+inner_width/2+p[0], wall+inner_depth/2-p[1], -.1])
+      cylinder(h=lid+.2, d=lid_hole_diameter);
+{feature_cutters_text}
+}}
+module cover_part(){{difference(){{cube([inner_width+2*wall, inner_depth+2*wall, lid]);lid_cutouts();}}}}
 {label_module}
 if (part == "base") base_part();
 if (part == "lid") {{
@@ -199,6 +294,7 @@ def _stl(name: str, g: dict[str, Any], engrave: dict[str, Any] | None = None) ->
 
 def _lab(name: str, g: dict[str, Any], engrave: dict[str, Any] | None = None) -> str:
     data=json.dumps(g,separators=(",",":"));safe=html.escape(name)
+    placement_scad = json.dumps(_scad(name, g, engrave), ensure_ascii=False).replace("</", "<\\/")
     if engrave:
         label_json=json.dumps({"depth":engrave["depth"],"glyphs":engrave["contours"]},separators=(",",":"))
         engrave_note=(f'<p class="engrave">盖面浮凸文字：<strong>{html.escape(engrave["text"])}</strong>'
@@ -215,7 +311,11 @@ const c=$('view'),ctx=c.getContext('2d');let rx=-.55,ry=.7,zoom=3,panX=0,panY=0,
 const drawWireframe=draw;draw=()=>{drawWireframe();labelContours(s.inner_height+s.floor+8+s.lid+.02)};
 c.onpointerdown=e=>drag={x:e.clientX,y:e.clientY,rx,ry,panX,panY,shift:e.shiftKey};c.onpointermove=e=>{if(!drag)return;if(drag.shift){panX=drag.panX+(e.clientX-drag.x)*devicePixelRatio;panY=drag.panY+(e.clientY-drag.y)*devicePixelRatio}else{ry=drag.ry+(e.clientX-drag.x)*.01;rx=drag.rx+(e.clientY-drag.y)*.01}draw()};c.onpointerup=()=>drag=null;c.onwheel=e=>{e.preventDefault();zoom=Math.max(.5,Math.min(10,zoom-e.deltaY*.004));draw()};window.onresize=draw;
 function scad(){const L=label,ow=s.inner_width+2*s.wall,od=s.inner_depth+2*s.wall,holes=(s.holes||[]).map(h=>`[${h.x},${h.y}]`).join(",");let lp="",lm="",la="",ll="";if(L){const polys=L.glyphs.filter(cs=>cs.length).map(cs=>{let pts=[],paths=[];for(const c of cs){paths.push("["+Array.from({length:c.length},(_,i)=>pts.length+i).join(",")+"]");for(const p of c)pts.push("["+p[0].toFixed(4)+","+p[1].toFixed(4)+"]")}return`  polygon(points=[${pts.join(",")}],paths=[${paths.join(",")}]);`}).join("\n");lp=`\n/* [文字雕刻] */\nshow_label = true; // 显示中文文字\nlabel_depth = ${L.depth}; // 文字浮凸深度 (mm)\nlabel_scale = 1.0; // 文字缩放\nlabel_x = 0; // 文字水平偏移 (mm)\nlabel_y = 0; // 文字垂直偏移 (mm)\n`;lm=`\nmodule label_glyphs(){\n${polys}\n}\nmodule label_on(cover_y){\n  if(show_label)\n    translate([inner_width/2+wall+label_x,cover_y+inner_depth/2+wall+label_y,lid])\n      linear_extrude(height=label_depth) scale(label_scale) children();\n}\n`;la=`  label_on(inner_depth+2*wall+8) label_glyphs();\n`;ll=`  label_on(0) label_glyphs();\n`}return`// ChatMaker Chat3D V1\n/* [输出] */\npart = "assembled"; // [assembled,base,lid]\n\n/* [内腔尺寸] */\ninner_width = ${s.inner_width}; // 内腔宽度 (mm)\ninner_depth = ${s.inner_depth}; // 内腔深度 (mm)\ninner_height = ${s.inner_height}; // 内腔高度 (mm)\n\n/* [壁厚] */\nwall = ${s.wall}; // 侧壁厚 (mm)\nfloor = ${s.floor}; // 底板厚 (mm)\nlid = ${s.lid}; // 上盖厚 (mm)\n\n/* [安装柱] */\nstandoff_height = ${s.standoff_height}; // 安装柱高度 (mm)\nhole_diameter = ${s.hole_diameter}; // 安装孔直径 (mm)${lp}\n$fn = 64;\nholes = [${holes}];\n\nmodule base_part(){difference(){cube([inner_width+2*wall,inner_depth+2*wall,inner_height+floor]);translate([wall,wall,floor])cube([inner_width,inner_depth,inner_height+1]);}for(p=holes)translate([wall+inner_width/2+p[0],wall+inner_depth/2-p[1],floor])difference(){cylinder(h=standoff_height,d=hole_diameter+3);translate([0,0,-.1])cylinder(h=standoff_height+.2,d=hole_diameter);}}\nmodule cover_part(){cube([inner_width+2*wall,inner_depth+2*wall,lid]);}${lm}\nif(part=="base")base_part();\nif(part=="lid"){cover_part();${ll}}\nif(part=="assembled"){base_part();translate([0,inner_depth+2*wall+8,0])cover_part();${la}}\n`};function box(x,y,z,w,d,h){const v=[[x,y,z],[x+w,y,z],[x+w,y+d,z],[x,y+d,z],[x,y,z+h],[x+w,y,z+h],[x+w,y+d,z+h],[x,y+d,z+h]],q=[[0,2,1],[0,3,2],[4,5,6],[4,6,7],[0,1,5],[0,5,4],[1,2,6],[1,6,5],[2,3,7],[2,7,6],[3,0,4],[3,4,7]];return q.map(t=>`facet normal 0 0 0\n outer loop\n${t.map(i=>`  vertex ${v[i].join(' ')}`).join('\n')}\n endloop\nendfacet\n`).join('')}function stl(){const w=s.inner_width,d=s.inner_depth,t=s.wall,h=s.inner_height;return`solid chat3d\n`+box(0,0,0,w+2*t,d+2*t,s.floor)+box(0,0,s.floor,t,d+2*t,h)+box(w+t,0,s.floor,t,d+2*t,h)+box(t,0,s.floor,w,t,h)+box(t,d+t,s.floor,w,t,h)+box(0,d+2*t+8,0,w+2*t,d+2*t,s.lid)+`endsolid chat3d\n`}function dl(n,t){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([t]));a.download=n;a.click()}$('scad').onclick=()=>dl('__FILE__.scad',scad());$('stl').onclick=()=>dl('__FILE__.stl',stl());draw();
-</script></body></html>'''.replace("__NAME__",safe).replace("__FILE__",name).replace("__DATA__",data).replace("__LABEL__",label_json).replace("__ENGRAVE__",engrave_note)
+</script><script>
+const placementScad=__PLACEMENT_SCAD__;
+function placementAwareScad(){let out=placementScad;for(const key of['inner_width','inner_depth','inner_height','wall','floor','lid','standoff_height','hole_diameter'])out=out.replace(new RegExp('^'+key+' = .*?;','m'),key+' = '+s[key]+';');return out}
+const placementDraw=draw;draw=()=>{placementDraw();for(const item of s.placed_items||[]){const z=item.face==='top'?s.inner_height+s.floor+8+s.lid+.4:s.floor+.4;cuboid(item.x-item.width/2,item.y-item.depth/2,z,item.width,item.depth,1.5,item.kind==='board'?'#d28d2d':'#d83b45')}};$('scad').onclick=()=>dl('__FILE__.scad',placementAwareScad());draw();
+</script></body></html>'''.replace("__NAME__",safe).replace("__FILE__",name).replace("__DATA__",data).replace("__LABEL__",label_json).replace("__ENGRAVE__",engrave_note).replace("__PLACEMENT_SCAD__",placement_scad)
 
 
 def generate(request: dict[str, Any], profile: dict[str, Any], output: Path, name: str) -> dict[str, Any]:
@@ -237,6 +337,8 @@ def generate(request: dict[str, Any], profile: dict[str, Any], output: Path, nam
             "mode": "chat3d",
             "delivery_mode": delivery_mode,
             "scad_code": _scad(name, g, engrave),
+            "placements": g["placements"],
+            "layout_validation": g["layout_validation"],
             "files": {},
             "scad_generated": "verified",
             "model_generated": "unverified",
@@ -247,6 +349,6 @@ def generate(request: dict[str, Any], profile: dict[str, Any], output: Path, nam
     files={"project":output/"project.json","scad":output/f"{name}.scad","stl":output/f"{name}.stl","preview_lab":output/"preview-lab.html"}
     scad_code=_scad(name,g,engrave)
     files["scad"].write_text(scad_code,encoding="utf-8");files["stl"].write_text(_stl(name,g,engrave),encoding="ascii");files["preview_lab"].write_text(_lab(name,g,engrave),encoding="utf-8")
-    project={"schema_version":"1.0","mode":"chat3d","project_name":name,"board_id":profile["board_id"],"parameters":g,"engrave_text":engrave["text"] if engrave else "","model_generated":"verified","file_opened":"unverified","physical_fit":"unverified"}
+    project={"schema_version":"1.0","mode":"chat3d","project_name":name,"board_id":profile["board_id"],"parameters":g,"placements":g["placements"],"layout_validation":g["layout_validation"],"engrave_text":engrave["text"] if engrave else "","model_generated":"verified","file_opened":"unverified","physical_fit":"unverified"}
     files["project"].write_text(json.dumps(project,ensure_ascii=False,indent=2)+"\n",encoding="utf-8")
-    return {"success":True,"action":"generate","mode":"chat3d","delivery_mode":delivery_mode,"scad_code":scad_code,"preview_lab":str(files["preview_lab"]),"files":{k:str(v) for k,v in files.items()},"model_generated":"verified","file_opened":"unverified","physical_fit":"unverified"}
+    return {"success":True,"action":"generate","mode":"chat3d","delivery_mode":delivery_mode,"scad_code":scad_code,"preview_lab":str(files["preview_lab"]),"files":{k:str(v) for k,v in files.items()},"placements":g["placements"],"layout_validation":g["layout_validation"],"model_generated":"verified","file_opened":"unverified","physical_fit":"unverified"}

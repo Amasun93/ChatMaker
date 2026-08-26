@@ -42,7 +42,9 @@ class SelfDevelopedHardwareTests(unittest.TestCase):
             with self.subTest(card=card["name"]):
                 self.assertNotRegex(card["name"], r"IDM[CDFMS]-\d{4}")
                 self.assertRegex(card["identity"]["hardware_id"], r"^IDM[CDFMS]-\d{4}$")
-                self.assertIn(card["usability"], {"guidance_ready", "teacher_validation", "retrieval_only"})
+                self.assertEqual(card["usability"], "guidance_ready")
+                self.assertIn(card["capability_gates"]["programming"], {"ready", "conditional", "not_applicable"})
+                self.assertEqual(card["historical_use"]["status"], "owner_confirmed")
 
     def test_sensor_output_and_actuator_are_searchable_and_task_aware(self):
         search = execute_request({"action": "search", "query": "U 形槽光电计数"}, project_root=ROOT)
@@ -58,7 +60,8 @@ class SelfDevelopedHardwareTests(unittest.TestCase):
         self.assertEqual(output["generation_level"], "guidance_ready")
         self.assertTrue(output["candidate_recipes"])
         self.assertEqual(actuator["module"]["io_role"], "actuator")
-        self.assertEqual(actuator["generation_level"], "teacher_validation")
+        self.assertEqual(actuator["generation_level"], "guidance_ready")
+        self.assertEqual(actuator["capability_gates"]["programming"], "conditional")
         self.assertEqual(actuator["acceptance"]["physical_effect_verified"], "unverified")
 
     def test_starcore_board_context_contains_all_22_companion_modules(self):
@@ -68,13 +71,18 @@ class SelfDevelopedHardwareTests(unittest.TestCase):
         self.assertTrue(opened["success"])
         self.assertTrue(expected.issubset(actual))
 
-    def test_conflict_and_retrieval_only_states_block_unsafe_generation(self):
+    def test_conflict_and_non_programmable_states_keep_fact_level_gates(self):
         laser = execute_request({"action": "project_task", "module": "激光接收"}, project_root=ROOT)
         servo = execute_request({"action": "project_task", "module": "串口舵机驱动"}, project_root=ROOT)
-        self.assertEqual(laser["generation_level"], "teacher_validation")
+        hub = execute_request({"action": "project_task", "module": "一分四 USB 集线器"}, project_root=ROOT)
+        self.assertEqual(laser["generation_level"], "guidance_ready")
+        self.assertEqual(laser["capability_gates"]["wiring"], "version_check")
         self.assertTrue(any("冲突" in item for item in laser["blocked_facts"]))
-        self.assertEqual(servo["generation_level"], "retrieval_only")
+        self.assertEqual(servo["generation_level"], "guidance_ready")
+        self.assertEqual(servo["capability_gates"]["programming"], "conditional")
         self.assertTrue(any("禁止生成运动命令" in item for item in servo["blocked_facts"]))
+        self.assertEqual(hub["capability_gates"]["programming"], "not_applicable")
+        self.assertTrue(any("不需要 Arduino 控制程序" in item for item in hub["steps"]))
 
     def test_existing_owned_recipe_modules_remain_connected(self):
         expected = {

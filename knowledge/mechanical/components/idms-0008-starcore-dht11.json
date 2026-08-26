@@ -3,26 +3,81 @@
   "kind": "component-mechanical-profile",
   "component_id": "idms-0008-starcore-dht11",
   "hardware_id": "IDMS-0008",
-  "name": "IDMS-0008 星核板 DHT11 温湿度传感器",
+  "name": "温湿度传感器",
   "units": "mm",
-  "coordinate_system": {"origin": "PCB outline center", "x_positive": "right", "y_positive": "up"},
-  "outline": {"shape": "rectangle", "width": 30, "depth": 30, "status": "source_reviewed"},
+  "coordinate_system": {
+    "origin": "PCB outline center",
+    "x_positive": "right",
+    "y_positive": "up"
+  },
+  "outline": {
+    "shape": "rectangle",
+    "width": 30.0,
+    "depth": 30.0,
+    "status": "source_reviewed"
+  },
   "mounting": {
     "status": "source_reviewed",
-    "pattern_x": 20,
-    "pattern_y": 20,
+    "pattern_x": 20.0,
+    "pattern_y": 20.0,
     "holes": [
-      {"x": -10, "y": -10, "status": "source_reviewed"},
-      {"x": 10, "y": -10, "status": "source_reviewed"},
-      {"x": 10, "y": 10, "status": "source_reviewed"},
-      {"x": -10, "y": 10, "status": "source_reviewed"}
+      {
+        "x": -10.0,
+        "y": -10.0,
+        "status": "source_reviewed"
+      },
+      {
+        "x": 10.0,
+        "y": -10.0,
+        "status": "source_reviewed"
+      },
+      {
+        "x": 10.0,
+        "y": 10.0,
+        "status": "source_reviewed"
+      },
+      {
+        "x": -10.0,
+        "y": 10.0,
+        "status": "source_reviewed"
+      }
     ],
     "fastener_class": "M3",
     "hole_diameter_status": "requires_measurement"
   },
-  "panel_features": [
-    {"id": "sensor-window", "purpose": "ventilation_opening", "status": "source_reviewed", "availability": "available", "shape": "rect", "center": [0, 0.239], "size": [17, 14], "note": "Nominal ventilation opening; maintain free airflow and verify sensor protrusion on the real module."}
+  "mount_surfaces": [
+    "base",
+    "lid"
   ],
-  "source_ids": ["starcore-module-catalog-snapshot", "starcore-mechanical-facts-snapshot"],
-  "verification": {"source_reviewed": {"status": "verified", "checked_at": "2026-08-17", "evidence_level": "sanitized_internal_source"}, "physical_fit": "unverified"}
+  "default_mount_surface": "lid",
+  "panel_features": [
+    {
+      "id": "sensor-window",
+      "purpose": "panel_cutout",
+      "status": "source_reviewed",
+      "availability": "available",
+      "note": "Nominal feature geometry from the reviewed handoff DXF; connector height and print clearance remain physically unverified.",
+      "shape": "rect",
+      "center": [
+        0,
+        0.239
+      ],
+      "size": [
+        17,
+        14
+      ]
+    }
+  ],
+  "source_ids": [
+    "starcore-module-catalog-snapshot",
+    "starcore-mechanical-facts-snapshot"
+  ],
+  "verification": {
+    "source_reviewed": {
+      "status": "verified",
+      "checked_at": "2026-08-27",
+      "evidence_level": "sanitized_internal_source"
+    },
+    "physical_fit": "unverified"
+  }
 }

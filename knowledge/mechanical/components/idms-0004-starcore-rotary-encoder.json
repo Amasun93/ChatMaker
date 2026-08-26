@@ -1,9 +1,9 @@
 {
   "schema_version": "1.0",
   "kind": "component-mechanical-profile",
-  "component_id": "idms-0001-starcore-button",
-  "hardware_id": "IDMS-0001",
-  "name": "按钮传感器",
+  "component_id": "idms-0004-starcore-rotary-encoder",
+  "hardware_id": "IDMS-0004",
+  "name": "编码器旋钮",
   "units": "mm",
   "coordinate_system": {
     "origin": "PCB outline center",
@@ -52,7 +52,7 @@
   "default_mount_surface": "lid",
   "panel_features": [
     {
-      "id": "button",
+      "id": "encoder-shaft",
       "purpose": "functional_clearance",
       "status": "requires_measurement",
       "availability": "not_available",

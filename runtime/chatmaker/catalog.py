@@ -325,6 +325,8 @@ def _module_card(record: dict[str, Any]) -> dict[str, Any]:
         "io_role": profile.get("io_role"),
         "interface": profile.get("interface"),
         "usability": profile.get("usability"),
+        "capability_gates": profile.get("capability_gates", {}),
+        "historical_use": profile.get("historical_use", {}),
         "evidence_status": profile.get("evidence_status"),
         "mechanical_outline": mechanical.get("outline") if isinstance(mechanical, dict) else None,
         "identity": {
@@ -344,8 +346,8 @@ def list_modules(*, project_root: Path | None = None) -> dict[str, Any]:
         "modules": [_module_card(record) for record in records],
         "status_legend": {
             "guidance_ready": "可直接生成证据约束下的指导；编译、烧录和实物效果仍按各自证据门报告。",
-            "teacher_validation": "可生成核对与实验任务；关键电气、引脚、有效电平或实物行为需老师确认。",
-            "retrieval_only": "只提供资料检索和风险提示，不生成可执行接线、协议命令或控制代码。",
+            "conditional": "允许生成项目指导，但版本、协议或电气条件未知的部分保持占位并要求核对。",
+            "not_applicable": "该模块不需要控制程序，生成连接、使用和验收指导。",
         },
     }
 
@@ -421,6 +423,8 @@ def module_guide(
             "constraints": record.get("constraints", []),
             "example_capabilities": profile.get("example_capabilities", []),
             "mechanical": profile.get("mechanical", {}),
+            "capability_gates": profile.get("capability_gates", {}),
+            "historical_use": profile.get("historical_use", {}),
         },
         "recipes": _module_recipes(record, project_root),
         "verification": record.get("verification", {}),
@@ -442,26 +446,34 @@ def project_task(
     module = guide["module"]
     guidance = guide["guidance"]
     usability = module["usability"]
+    gates = module.get("capability_gates", {})
+    programming = gates.get("programming", "conditional")
+    wiring = gates.get("wiring", "version_check")
     desired_goal = goal.strip() or str(module["purpose"])
     steps = [
         f"按丝印确认这是 {module['name']}；内部编号只用于匹配底层资料。",
         "断开 USB 和外部电源，先核对供电、接口、引脚标签和共地要求。",
     ]
-    if usability == "guidance_ready":
+    if wiring == "ready":
+        steps.append("按返回的已确认接线连接；仍要逐一核对模块与主板丝印，并保持共地。")
+    elif wiring == "assignment_required":
+        steps.append("根据板卡当前占用情况分配空闲兼容引脚；保留资料已确认的接口类型、电压和有效电平。")
+    else:
+        steps.append("先按丝印或随附版本资料确认供电、接口或模块批次；未确认字段保持为空，不猜测。")
+    if programming == "ready":
         steps.extend([
             "优先选择返回的受控配方；只使用其中已确认的接线，未分配引脚仍需结合板卡占用情况选择。",
             "生成完整程序后先编译；烧录、串口现象和实物效果分别验证，不用编译通过代替实物成功。",
         ])
-    elif usability == "teacher_validation":
+    elif programming == "conditional":
         steps.extend([
-            "由老师或实物检查补齐 unknowns 中的关键项，并把确认依据记录下来。",
-            "关键项确认前只生成核对步骤和最小只读实验，不生成可能驱动执行器、超过 3.3V 或依赖未知有效电平的代码。",
-            "确认后再分配引脚、编译，并把实物观察作为独立验收。",
+            "可以生成完整项目结构和已确认部分；版本相关命令、阈值或有效电平必须保留为待确认参数。",
+            "先编译不依赖未知字段的部分；执行器、电机和高于 3.3V 的信号在条件确认前不动作。",
         ])
     else:
         steps.extend([
-            "本模块当前只允许检索资料和制定测量清单，不生成 GPIO 接线、协议命令或控制代码。",
-            "如要进入项目，先由老师确认实际端口、电压、协议和负载边界，再提升模块可用状态。",
+            "这个模块不需要 Arduino 控制程序；生成供电、连接、机械安装和使用验收步骤。",
+            "不要为了让项目看起来完整而虚构 GPIO、串口命令或控制代码。",
         ])
     return {
         "success": True,
@@ -470,6 +482,7 @@ def project_task(
         "goal": desired_goal,
         "module": module,
         "generation_level": usability,
+        "capability_gates": gates,
         "steps": steps,
         "confirmed_wiring": guidance.get("confirmed_wiring", []),
         "blocked_facts": guidance.get("unknowns", []),

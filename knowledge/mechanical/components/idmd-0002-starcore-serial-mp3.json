@@ -3,26 +3,78 @@
   "kind": "component-mechanical-profile",
   "component_id": "idmd-0002-starcore-serial-mp3",
   "hardware_id": "IDMD-0002",
-  "name": "IDMD-0002 星核板串口 MP3",
+  "name": "串口 MP3 播放模块",
   "units": "mm",
-  "coordinate_system": {"origin": "PCB outline center", "x_positive": "right", "y_positive": "up"},
-  "outline": {"shape": "rectangle", "width": 55.021, "depth": 30.021, "status": "source_reviewed"},
+  "coordinate_system": {
+    "origin": "PCB outline center",
+    "x_positive": "right",
+    "y_positive": "up"
+  },
+  "outline": {
+    "shape": "rectangle",
+    "width": 55.021,
+    "depth": 30.021,
+    "status": "source_reviewed"
+  },
   "mounting": {
     "status": "source_reviewed",
-    "pattern_x": 45,
-    "pattern_y": 20,
+    "pattern_x": 45.0,
+    "pattern_y": 20.0,
     "holes": [
-      {"x": -22.5, "y": -10, "status": "source_reviewed"},
-      {"x": 22.5, "y": -10, "status": "source_reviewed"},
-      {"x": 22.5, "y": 10, "status": "source_reviewed"},
-      {"x": -22.5, "y": 10, "status": "source_reviewed"}
+      {
+        "x": -22.5,
+        "y": -10.0,
+        "status": "source_reviewed"
+      },
+      {
+        "x": 22.5,
+        "y": -10.0,
+        "status": "source_reviewed"
+      },
+      {
+        "x": 22.5,
+        "y": 10.0,
+        "status": "source_reviewed"
+      },
+      {
+        "x": -22.5,
+        "y": 10.0,
+        "status": "source_reviewed"
+      }
     ],
     "fastener_class": "M3",
     "hole_diameter_status": "requires_measurement"
   },
-  "panel_features": [
-    {"id": "speaker-opening", "purpose": "panel_cutout", "status": "source_reviewed", "availability": "available", "shape": "round", "center": [0, 0], "diameter": 23, "note": "Nominal speaker opening only; cable and speaker depth clearance still require a real-module check."}
+  "mount_surfaces": [
+    "base",
+    "lid"
   ],
-  "source_ids": ["starcore-module-catalog-snapshot", "starcore-mechanical-facts-snapshot"],
-  "verification": {"source_reviewed": {"status": "verified", "checked_at": "2026-08-17", "evidence_level": "sanitized_internal_source"}, "physical_fit": "unverified"}
+  "default_mount_surface": "lid",
+  "panel_features": [
+    {
+      "id": "speaker-opening",
+      "purpose": "panel_cutout",
+      "status": "source_reviewed",
+      "availability": "available",
+      "note": "Nominal feature geometry from the reviewed handoff DXF; connector height and print clearance remain physically unverified.",
+      "shape": "round",
+      "center": [
+        0,
+        0
+      ],
+      "diameter": 23
+    }
+  ],
+  "source_ids": [
+    "starcore-module-catalog-snapshot",
+    "starcore-mechanical-facts-snapshot"
+  ],
+  "verification": {
+    "source_reviewed": {
+      "status": "verified",
+      "checked_at": "2026-08-27",
+      "evidence_level": "sanitized_internal_source"
+    },
+    "physical_fit": "unverified"
+  }
 }

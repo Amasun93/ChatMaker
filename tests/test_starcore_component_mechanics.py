@@ -5,6 +5,7 @@ from pathlib import Path
 import subprocess
 import sys
 import unittest
+import yaml
 
 from jsonschema import Draft202012Validator
 
@@ -15,7 +16,7 @@ sys.path.insert(0, str(ROOT / "runtime"))
 from chatmaker.cad import generator  # noqa: E402
 
 
-COMPONENT_IDS = {
+LEGACY_COMPONENT_IDS = {
     "idmd-0001-starcore-rgb-light",
     "idmd-0002-starcore-serial-mp3",
     "idmd-0021-starcore-oled-1-3",
@@ -37,9 +38,19 @@ class StarcoreComponentMechanicalTests(unittest.TestCase):
             value["component_id"]: value
             for value in (json.loads(path.read_text(encoding="utf-8")) for path in cls.profile_paths)
         }
+        manifest = yaml.safe_load(
+            (ROOT / "knowledge_sources/manifests/self-developed-hardware.yaml").read_text(
+                encoding="utf-8"
+            )
+        )
+        cls.expected_component_ids = {
+            item["catalog_id"]
+            for item in manifest["modules"]
+            if item["hardware_id"] != "IDMC-0001"
+        }
 
-    def test_schema_accepts_exactly_the_seven_owned_profiles(self):
-        self.assertEqual(set(self.profiles), COMPONENT_IDS)
+    def test_schema_accepts_all_twenty_two_owned_component_profiles(self):
+        self.assertEqual(set(self.profiles), self.expected_component_ids)
         registry = json.loads(
             (ROOT / "knowledge/mechanical/source-registry.json").read_text(encoding="utf-8")
         )
@@ -49,6 +60,7 @@ class StarcoreComponentMechanicalTests(unittest.TestCase):
             self.validator.validate(value)
             self.assertEqual(path.stem, value["component_id"])
             self.assertEqual(value["verification"]["physical_fit"], "unverified")
+            self.assertNotRegex(value["name"], r"IDM[DFMS]-\d{4}")
             self.assertTrue(value["source_ids"])
             for source_id in value["source_ids"]:
                 self.assertRegex(sources[source_id]["artifact_sha256"], r"^[0-9a-f]{64}$")
@@ -97,12 +109,16 @@ class StarcoreComponentMechanicalTests(unittest.TestCase):
             "idms-0003-starcore-potentiometer",
         }:
             feature = self.profiles[component_id]["panel_features"][0]
-            self.assertEqual(feature["status"], "requires_measurement")
+            self.assertIn(feature["status"], {"requires_measurement", "not_available"})
             self.assertEqual(feature["availability"], "not_available")
             self.assertFalse(
                 {"center", "diameter", "size", "center_spacing"} & set(feature),
                 feature,
             )
+
+        limit_switch = self.profiles["idms-0012-starcore-limit-switch"]
+        self.assertEqual(limit_switch["mounting"]["status"], "requires_measurement")
+        self.assertEqual(limit_switch["mounting"]["holes"], [])
 
     def test_profiles_do_not_publish_manufacturing_files_or_local_paths(self):
         serialized = "\n".join(
@@ -126,7 +142,7 @@ class StarcoreComponentMechanicalTests(unittest.TestCase):
         )
         self.assertEqual(rejected["error"], "invalid_component_id")
 
-    def test_doctor_reports_seven_valid_component_profiles(self):
+    def test_doctor_reports_twenty_two_valid_component_profiles(self):
         completed = subprocess.run(
             [sys.executable, "-m", "chatmaker.doctor", "--packs"],
             cwd=ROOT,
@@ -137,7 +153,7 @@ class StarcoreComponentMechanicalTests(unittest.TestCase):
         )
         self.assertEqual(completed.returncode, 0, completed.stdout + completed.stderr)
         payload = json.loads(completed.stdout)
-        self.assertEqual(payload["component_mechanics"], {"ok": True, "count": 7, "errors": []})
+        self.assertEqual(payload["component_mechanics"], {"ok": True, "count": 22, "errors": []})
 
 
 if __name__ == "__main__":

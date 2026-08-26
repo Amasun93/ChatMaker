@@ -39,6 +39,9 @@ modules:
         - 21.0
       pcb_hole_diameter: 4.25
       fastener_geometry_status: M3-class geometry suspected; supplied fastener requires physical verification
+    supported_mount_surfaces:
+    - base
+    default_mount_surface: base
     panel_features: []
     source_files:
       mechanical-step: 02_自研硬件资料/01自研硬件资料/IDMC-0001 星核板/IDMC-0001 星核板v4.2.2 3D.step
@@ -46,6 +49,16 @@ modules:
     physical_fit: unverified
   evidence_status: verified
   usability: guidance_ready
+  capability_gates:
+    programming: ready
+    wiring: ready
+    mechanical_placement: ready
+    panel_cutout: not_available
+  historical_use:
+    status: owner_confirmed
+    confirmed_at: '2026-08-27'
+    evidence: Project owner confirmed that all 23 handoff modules were previously used successfully in Mind+ classroom projects.
+    current_physical_retest: unverified
   source_ref: self-developed-hardware-handoff-2026-07-25
   source_evidence:
   - path: 02_自研硬件资料/01自研硬件资料/IDMC-0001 星核板/IDMC-0001 星核板v4.2.2 3D.step
@@ -120,6 +133,10 @@ modules:
         - 10.0
       nominal_fastener_class: M3
       printed_hole_diameter: null
+    supported_mount_surfaces:
+    - base
+    - lid
+    default_mount_surface: base
     panel_features: []
     source_files:
       mechanical-step: 02_自研硬件资料/01自研硬件资料/IDMD-0001 RGB灯/IDMD-0001 RGB_LED_LIGHT v1.5 3D.step
@@ -127,6 +144,16 @@ modules:
     physical_fit: unverified
   evidence_status: verified
   usability: guidance_ready
+  capability_gates:
+    programming: ready
+    wiring: assignment_required
+    mechanical_placement: ready
+    panel_cutout: not_available
+  historical_use:
+    status: owner_confirmed
+    confirmed_at: '2026-08-27'
+    evidence: Project owner confirmed that all 23 handoff modules were previously used successfully in Mind+ classroom projects.
+    current_physical_retest: unverified
   source_ref: self-developed-hardware-handoff-2026-07-25
   source_evidence:
   - path: 02_自研硬件资料/01自研硬件资料/IDMD-0001 RGB灯/IDMD-0001 RGB_LED_LIGHT v1.5 3D.step
@@ -208,6 +235,10 @@ modules:
         - 10.0
       nominal_fastener_class: M3
       printed_hole_diameter: null
+    supported_mount_surfaces:
+    - base
+    - lid
+    default_mount_surface: lid
     panel_features:
     - id: speaker_opening
       shape: round
@@ -223,6 +254,16 @@ modules:
     physical_fit: unverified
   evidence_status: verified
   usability: guidance_ready
+  capability_gates:
+    programming: ready
+    wiring: ready
+    mechanical_placement: ready
+    panel_cutout: ready
+  historical_use:
+    status: owner_confirmed
+    confirmed_at: '2026-08-27'
+    evidence: Project owner confirmed that all 23 handoff modules were previously used successfully in Mind+ classroom projects.
+    current_physical_retest: unverified
   source_ref: self-developed-hardware-handoff-2026-07-25
   source_evidence:
   - path: 02_自研硬件资料/01自研硬件资料/IDMD-0002 串口MP3播放/IDMD-0002 串口MP3播放v1.3 3D.step
@@ -292,13 +333,27 @@ modules:
         - 10.0
       nominal_fastener_class: M3
       printed_hole_diameter: null
+    supported_mount_surfaces:
+    - base
+    - lid
+    default_mount_surface: base
     panel_features: []
     source_files:
       mechanical-step: 02_自研硬件资料/01自研硬件资料/IDMD-0003 ASR语音识别/IDMD-0003 ASR语音识别v1.4 3D.step
       mechanical-dxf: 02_自研硬件资料/01自研硬件资料/IDMD-0003 ASR语音识别/IDMD-0003 ASR语音识别v1.4 2D.dxf
     physical_fit: unverified
   evidence_status: verified
-  usability: teacher_validation
+  usability: guidance_ready
+  capability_gates:
+    programming: conditional
+    wiring: version_check
+    mechanical_placement: ready
+    panel_cutout: not_available
+  historical_use:
+    status: owner_confirmed
+    confirmed_at: '2026-08-27'
+    evidence: Project owner confirmed that all 23 handoff modules were previously used successfully in Mind+ classroom projects.
+    current_physical_retest: unverified
   source_ref: self-developed-hardware-handoff-2026-07-25
   source_evidence:
   - path: 02_自研硬件资料/01自研硬件资料/IDMD-0003 ASR语音识别/IDMD-0003 ASR语音识别v1.4 3D.step
@@ -384,6 +439,10 @@ modules:
         - 10.0
       nominal_fastener_class: M3
       printed_hole_diameter: null
+    supported_mount_surfaces:
+    - base
+    - lid
+    default_mount_surface: lid
     panel_features:
     - id: display_window
       shape: rect
@@ -401,6 +460,16 @@ modules:
     physical_fit: unverified
   evidence_status: verified
   usability: guidance_ready
+  capability_gates:
+    programming: ready
+    wiring: ready
+    mechanical_placement: ready
+    panel_cutout: ready
+  historical_use:
+    status: owner_confirmed
+    confirmed_at: '2026-08-27'
+    evidence: Project owner confirmed that all 23 handoff modules were previously used successfully in Mind+ classroom projects.
+    current_physical_retest: unverified
   source_ref: self-developed-hardware-handoff-2026-07-25
   source_evidence:
   - path: 02_自研硬件资料/01自研硬件资料/IDMD-0021 OLED1.3寸/IDMD-0021 OLED1.3寸v1.3 3D.step
@@ -457,13 +526,27 @@ modules:
         - 10.0
       nominal_fastener_class: M3
       printed_hole_diameter: null
+    supported_mount_surfaces:
+    - base
+    - lid
+    default_mount_surface: base
     panel_features: []
     source_files:
       mechanical-step: 02_自研硬件资料/01自研硬件资料/IDMF-0001 PD快充电源适配/IDMF-0001 PD快充电源适配v1.3 3D.step
       mechanical-dxf: 02_自研硬件资料/01自研硬件资料/IDMF-0001 PD快充电源适配/IDMF-0001 PD快充电源适配v1.3 平面图.dxf
     physical_fit: unverified
   evidence_status: partial
-  usability: retrieval_only
+  usability: guidance_ready
+  capability_gates:
+    programming: not_applicable
+    wiring: version_check
+    mechanical_placement: ready
+    panel_cutout: not_available
+  historical_use:
+    status: owner_confirmed
+    confirmed_at: '2026-08-27'
+    evidence: Project owner confirmed that all 23 handoff modules were previously used successfully in Mind+ classroom projects.
+    current_physical_retest: unverified
   source_ref: self-developed-hardware-handoff-2026-07-25
   source_evidence:
   - path: 02_自研硬件资料/01自研硬件资料/IDMF-0001 PD快充电源适配/IDMF-0001 PD快充电源适配v1.3 3D.step
@@ -519,13 +602,27 @@ modules:
         - 10.0
       nominal_fastener_class: M3
       printed_hole_diameter: null
+    supported_mount_surfaces:
+    - base
+    - lid
+    default_mount_surface: base
     panel_features: []
     source_files:
       mechanical-step: 02_自研硬件资料/01自研硬件资料/IDMF-0010 并线器/IDMF-0010 并线器v1.3 3D.step
       mechanical-dxf: 02_自研硬件资料/01自研硬件资料/IDMF-0010 并线器/IDMF-0010 并线器v1.3 平面图.dxf
     physical_fit: unverified
   evidence_status: partial
-  usability: retrieval_only
+  usability: guidance_ready
+  capability_gates:
+    programming: not_applicable
+    wiring: assignment_required
+    mechanical_placement: ready
+    panel_cutout: not_available
+  historical_use:
+    status: owner_confirmed
+    confirmed_at: '2026-08-27'
+    evidence: Project owner confirmed that all 23 handoff modules were previously used successfully in Mind+ classroom projects.
+    current_physical_retest: unverified
   source_ref: self-developed-hardware-handoff-2026-07-25
   source_evidence:
   - path: 02_自研硬件资料/01自研硬件资料/IDMF-0010 并线器/IDMF-0010 并线器v1.3 3D.step
@@ -578,13 +675,27 @@ modules:
         - 10.0
       nominal_fastener_class: M3
       printed_hole_diameter: null
+    supported_mount_surfaces:
+    - base
+    - lid
+    default_mount_surface: base
     panel_features: []
     source_files:
       mechanical-step: 02_自研硬件资料/01自研硬件资料/IDMF-0011 USB-HUB1分4/IDMF-0011 USB-HUB1分4v1.0 3D.step
       mechanical-dxf: 02_自研硬件资料/01自研硬件资料/IDMF-0011 USB-HUB1分4/IDMF-0011 USB-HUB1分4v1.0 平面图.dxf
     physical_fit: unverified
   evidence_status: verified
-  usability: retrieval_only
+  usability: guidance_ready
+  capability_gates:
+    programming: not_applicable
+    wiring: assignment_required
+    mechanical_placement: ready
+    panel_cutout: not_available
+  historical_use:
+    status: owner_confirmed
+    confirmed_at: '2026-08-27'
+    evidence: Project owner confirmed that all 23 handoff modules were previously used successfully in Mind+ classroom projects.
+    current_physical_retest: unverified
   source_ref: self-developed-hardware-handoff-2026-07-25
   source_evidence:
   - path: 02_自研硬件资料/01自研硬件资料/IDMF-0011 USB-HUB1分4/IDMF-0011 USB-HUB1分4v1.0 3D.step
@@ -648,13 +759,27 @@ modules:
         - 10.0
       nominal_fastener_class: M3
       printed_hole_diameter: null
+    supported_mount_surfaces:
+    - base
+    - lid
+    default_mount_surface: base
     panel_features: []
     source_files:
       mechanical-step: 02_自研硬件资料/01自研硬件资料/IDMM-0001 四路直流电机驱动/IDMM-0001 四路直流电机驱动v1.3 3D.step
       mechanical-dxf: 02_自研硬件资料/01自研硬件资料/IDMM-0001 四路直流电机驱动/IDMM-0001 四路直流电机驱动v1.3 平面图.dxf
     physical_fit: unverified
   evidence_status: verified
-  usability: teacher_validation
+  usability: guidance_ready
+  capability_gates:
+    programming: conditional
+    wiring: assignment_required
+    mechanical_placement: ready
+    panel_cutout: not_available
+  historical_use:
+    status: owner_confirmed
+    confirmed_at: '2026-08-27'
+    evidence: Project owner confirmed that all 23 handoff modules were previously used successfully in Mind+ classroom projects.
+    current_physical_retest: unverified
   source_ref: self-developed-hardware-handoff-2026-07-25
   source_evidence:
   - path: 02_自研硬件资料/01自研硬件资料/IDMM-0001 四路直流电机驱动/IDMM-0001 四路直流电机驱动v1.3 3D.step
@@ -721,13 +846,27 @@ modules:
         - 10.0
       nominal_fastener_class: M3
       printed_hole_diameter: null
+    supported_mount_surfaces:
+    - base
+    - lid
+    default_mount_surface: base
     panel_features: []
     source_files:
       mechanical-step: 02_自研硬件资料/01自研硬件资料/IDMM-0007 串口舵机驱动/IDMM-0007 串口舵机驱动v1.2 3D.step
       mechanical-dxf: 02_自研硬件资料/01自研硬件资料/IDMM-0007 串口舵机驱动/IDMM-0007 串口舵机驱动v1.2 平面图.dxf
     physical_fit: unverified
   evidence_status: partial
-  usability: retrieval_only
+  usability: guidance_ready
+  capability_gates:
+    programming: conditional
+    wiring: version_check
+    mechanical_placement: ready
+    panel_cutout: not_available
+  historical_use:
+    status: owner_confirmed
+    confirmed_at: '2026-08-27'
+    evidence: Project owner confirmed that all 23 handoff modules were previously used successfully in Mind+ classroom projects.
+    current_physical_retest: unverified
   source_ref: self-developed-hardware-handoff-2026-07-25
   source_evidence:
   - path: 02_自研硬件资料/01自研硬件资料/IDMM-0007 串口舵机驱动/IDMM-0007 串口舵机驱动v1.2 3D.step
@@ -794,6 +933,10 @@ modules:
         - 10.0
       nominal_fastener_class: M3
       printed_hole_diameter: null
+    supported_mount_surfaces:
+    - base
+    - lid
+    default_mount_surface: lid
     panel_features:
     - id: button
       shape: round
@@ -805,6 +948,16 @@ modules:
     physical_fit: unverified
   evidence_status: verified
   usability: guidance_ready
+  capability_gates:
+    programming: ready
+    wiring: assignment_required
+    mechanical_placement: ready
+    panel_cutout: requires_measurement
+  historical_use:
+    status: owner_confirmed
+    confirmed_at: '2026-08-27'
+    evidence: Project owner confirmed that all 23 handoff modules were previously used successfully in Mind+ classroom projects.
+    current_physical_retest: unverified
   source_ref: self-developed-hardware-handoff-2026-07-25
   source_evidence:
   - path: 02_自研硬件资料/01自研硬件资料/IDMS-0001 按钮传感器/IDMS-0001 按钮v1.3 3D.step
@@ -868,6 +1021,10 @@ modules:
         - 10.0
       nominal_fastener_class: M3
       printed_hole_diameter: null
+    supported_mount_surfaces:
+    - base
+    - lid
+    default_mount_surface: lid
     panel_features:
     - id: toggle
       shape: slot
@@ -878,7 +1035,17 @@ modules:
       mechanical-dxf: 02_自研硬件资料/01自研硬件资料/IDMS-0002 钮子开关/IDMS-0002 钮子开关v1.3 平面图.dxf
     physical_fit: unverified
   evidence_status: verified
-  usability: teacher_validation
+  usability: guidance_ready
+  capability_gates:
+    programming: ready
+    wiring: assignment_required
+    mechanical_placement: ready
+    panel_cutout: requires_measurement
+  historical_use:
+    status: owner_confirmed
+    confirmed_at: '2026-08-27'
+    evidence: Project owner confirmed that all 23 handoff modules were previously used successfully in Mind+ classroom projects.
+    current_physical_retest: unverified
   source_ref: self-developed-hardware-handoff-2026-07-25
   source_evidence:
   - path: 02_自研硬件资料/01自研硬件资料/IDMS-0002 钮子开关/IDMS-0002 钮子开关v1.3 3D.step
@@ -945,6 +1112,10 @@ modules:
         - 10.0
       nominal_fastener_class: M3
       printed_hole_diameter: null
+    supported_mount_surfaces:
+    - base
+    - lid
+    default_mount_surface: lid
     panel_features:
     - id: potentiometer_shaft
       shape: round
@@ -956,6 +1127,16 @@ modules:
     physical_fit: unverified
   evidence_status: verified_with_safe_default
   usability: guidance_ready
+  capability_gates:
+    programming: ready
+    wiring: assignment_required
+    mechanical_placement: ready
+    panel_cutout: requires_measurement
+  historical_use:
+    status: owner_confirmed
+    confirmed_at: '2026-08-27'
+    evidence: Project owner confirmed that all 23 handoff modules were previously used successfully in Mind+ classroom projects.
+    current_physical_retest: unverified
   source_ref: self-developed-hardware-handoff-2026-07-25
   source_evidence:
   - path: 02_自研硬件资料/01自研硬件资料/IDMS-0003 电位器旋钮/IDMS-0003 电位器旋钮v1.3 3D.step
@@ -1020,6 +1201,10 @@ modules:
         - 10.0
       nominal_fastener_class: M3
       printed_hole_diameter: null
+    supported_mount_surfaces:
+    - base
+    - lid
+    default_mount_surface: lid
     panel_features:
     - id: encoder_shaft
       shape: round
@@ -1030,7 +1215,17 @@ modules:
       mechanical-dxf: 02_自研硬件资料/01自研硬件资料/IDMS-0004 编码器旋钮/IDMS-0004 编码旋钮v1.3 平面图.dxf
     physical_fit: unverified
   evidence_status: partial
-  usability: teacher_validation
+  usability: guidance_ready
+  capability_gates:
+    programming: conditional
+    wiring: assignment_required
+    mechanical_placement: ready
+    panel_cutout: requires_measurement
+  historical_use:
+    status: owner_confirmed
+    confirmed_at: '2026-08-27'
+    evidence: Project owner confirmed that all 23 handoff modules were previously used successfully in Mind+ classroom projects.
+    current_physical_retest: unverified
   source_ref: self-developed-hardware-handoff-2026-07-25
   source_evidence:
   - path: 02_自研硬件资料/01自研硬件资料/IDMS-0004 编码器旋钮/IDMS-0004 编码旋钮v1.3 3D.step
@@ -1094,13 +1289,27 @@ modules:
         - 10.0
       nominal_fastener_class: M3
       printed_hole_diameter: null
+    supported_mount_surfaces:
+    - base
+    - lid
+    default_mount_surface: base
     panel_features: []
     source_files:
       mechanical-step: 02_自研硬件资料/01自研硬件资料/IDMS-0005 光照强度传感器/IDMS-0005 光照v1.3 3D.step
       mechanical-dxf: 02_自研硬件资料/01自研硬件资料/IDMS-0005 光照强度传感器/IDMS-0005 光照v1.3 平面图.dxf
     physical_fit: unverified
   evidence_status: verified
-  usability: teacher_validation
+  usability: guidance_ready
+  capability_gates:
+    programming: ready
+    wiring: assignment_required
+    mechanical_placement: ready
+    panel_cutout: not_available
+  historical_use:
+    status: owner_confirmed
+    confirmed_at: '2026-08-27'
+    evidence: Project owner confirmed that all 23 handoff modules were previously used successfully in Mind+ classroom projects.
+    current_physical_retest: unverified
   source_ref: self-developed-hardware-handoff-2026-07-25
   source_evidence:
   - path: 02_自研硬件资料/01自研硬件资料/IDMS-0005 光照强度传感器/IDMS-0005 光照v1.3 3D.step
@@ -1171,13 +1380,27 @@ modules:
         - 10.0
       nominal_fastener_class: M3
       printed_hole_diameter: null
+    supported_mount_surfaces:
+    - base
+    - lid
+    default_mount_surface: base
     panel_features: []
     source_files:
       mechanical-step: 02_自研硬件资料/01自研硬件资料/IDMS-0006 麦克风声音传感器/IDMS-0006 麦克风v1.3 3D.step
       mechanical-dxf: 02_自研硬件资料/01自研硬件资料/IDMS-0006 麦克风声音传感器/IDMS-0006 麦克风v1.3 平面图.dxf
     physical_fit: unverified
   evidence_status: verified
-  usability: teacher_validation
+  usability: guidance_ready
+  capability_gates:
+    programming: ready
+    wiring: assignment_required
+    mechanical_placement: ready
+    panel_cutout: not_available
+  historical_use:
+    status: owner_confirmed
+    confirmed_at: '2026-08-27'
+    evidence: Project owner confirmed that all 23 handoff modules were previously used successfully in Mind+ classroom projects.
+    current_physical_retest: unverified
   source_ref: self-developed-hardware-handoff-2026-07-25
   source_evidence:
   - path: 02_自研硬件资料/01自研硬件资料/IDMS-0006 麦克风声音传感器/IDMS-0006 麦克风v1.3 3D.step
@@ -1242,13 +1465,27 @@ modules:
         - 10.0
       nominal_fastener_class: M3
       printed_hole_diameter: null
+    supported_mount_surfaces:
+    - base
+    - lid
+    default_mount_surface: base
     panel_features: []
     source_files:
       mechanical-step: 02_自研硬件资料/01自研硬件资料/IDMS-0007 可燃烟雾酒精等气体传感器/IDMS-0007 气体v1.3 3D.step
       mechanical-dxf: 02_自研硬件资料/01自研硬件资料/IDMS-0007 可燃烟雾酒精等气体传感器/IDMS-0007 气体v1.3 平面图.dxf
     physical_fit: unverified
   evidence_status: verified
-  usability: teacher_validation
+  usability: guidance_ready
+  capability_gates:
+    programming: conditional
+    wiring: assignment_required
+    mechanical_placement: ready
+    panel_cutout: not_available
+  historical_use:
+    status: owner_confirmed
+    confirmed_at: '2026-08-27'
+    evidence: Project owner confirmed that all 23 handoff modules were previously used successfully in Mind+ classroom projects.
+    current_physical_retest: unverified
   source_ref: self-developed-hardware-handoff-2026-07-25
   source_evidence:
   - path: 02_自研硬件资料/01自研硬件资料/IDMS-0007 可燃烟雾酒精等气体传感器/IDMS-0007 气体v1.3 3D.step
@@ -1324,6 +1561,10 @@ modules:
         - 10.0
       nominal_fastener_class: M3
       printed_hole_diameter: null
+    supported_mount_surfaces:
+    - base
+    - lid
+    default_mount_surface: lid
     panel_features:
     - id: sensor_window
       shape: rect
@@ -1341,6 +1582,16 @@ modules:
     physical_fit: unverified
   evidence_status: verified
   usability: guidance_ready
+  capability_gates:
+    programming: ready
+    wiring: ready
+    mechanical_placement: ready
+    panel_cutout: ready
+  historical_use:
+    status: owner_confirmed
+    confirmed_at: '2026-08-27'
+    evidence: Project owner confirmed that all 23 handoff modules were previously used successfully in Mind+ classroom projects.
+    current_physical_retest: unverified
   source_ref: self-developed-hardware-handoff-2026-07-25
   source_evidence:
   - path: 02_自研硬件资料/01自研硬件资料/IDMS-0008 温湿度传感器/IDMS-0008 温湿度v1.3 3D.step
@@ -1433,6 +1684,10 @@ modules:
         - 10.0
       nominal_fastener_class: M3
       printed_hole_diameter: null
+    supported_mount_surfaces:
+    - base
+    - lid
+    default_mount_surface: lid
     panel_features:
     - id: ultrasonic_transducers
       shape: dual_round
@@ -1449,6 +1704,16 @@ modules:
     physical_fit: unverified
   evidence_status: verified
   usability: guidance_ready
+  capability_gates:
+    programming: ready
+    wiring: ready
+    mechanical_placement: ready
+    panel_cutout: ready
+  historical_use:
+    status: owner_confirmed
+    confirmed_at: '2026-08-27'
+    evidence: Project owner confirmed that all 23 handoff modules were previously used successfully in Mind+ classroom projects.
+    current_physical_retest: unverified
   source_ref: self-developed-hardware-handoff-2026-07-25
   source_evidence:
   - path: 02_自研硬件资料/01自研硬件资料/IDMS-0009 超声波测距传感器/IDMS-0009 超声测距v1.3 3D.step
@@ -1518,13 +1783,27 @@ modules:
         - 10.0
       nominal_fastener_class: M3
       printed_hole_diameter: null
+    supported_mount_surfaces:
+    - base
+    - lid
+    default_mount_surface: base
     panel_features: []
     source_files:
       mechanical-step: 02_自研硬件资料/01自研硬件资料/IDMS-0010 激光接收传感器/IDMS-0010 激光接收模组v1.3 3D.step
       mechanical-dxf: 02_自研硬件资料/01自研硬件资料/IDMS-0010 激光接收传感器/IDMS-0010 激光接收模组v1.3 平面图.dxf
     physical_fit: unverified
   evidence_status: documentation_conflict
-  usability: teacher_validation
+  usability: guidance_ready
+  capability_gates:
+    programming: conditional
+    wiring: version_check
+    mechanical_placement: ready
+    panel_cutout: not_available
+  historical_use:
+    status: owner_confirmed
+    confirmed_at: '2026-08-27'
+    evidence: Project owner confirmed that all 23 handoff modules were previously used successfully in Mind+ classroom projects.
+    current_physical_retest: unverified
   source_ref: self-developed-hardware-handoff-2026-07-25
   source_evidence:
   - path: 02_自研硬件资料/01自研硬件资料/IDMS-0010 激光接收传感器/IDMS-0010 激光接收模组v1.3 3D.step
@@ -1593,13 +1872,27 @@ modules:
         - 10.0
       nominal_fastener_class: M3
       printed_hole_diameter: null
+    supported_mount_surfaces:
+    - base
+    - lid
+    default_mount_surface: base
     panel_features: []
     source_files:
       mechanical-step: 02_自研硬件资料/01自研硬件资料/IDMS-0011 U形槽光电计数器/IDMS-0011 U槽光电计数器v1.0 3D.step
       mechanical-dxf: 02_自研硬件资料/01自研硬件资料/IDMS-0011 U形槽光电计数器/IDMS-0011 U槽光电计数器v1.0 平面图.dxf
     physical_fit: unverified
   evidence_status: verified
-  usability: teacher_validation
+  usability: guidance_ready
+  capability_gates:
+    programming: ready
+    wiring: assignment_required
+    mechanical_placement: ready
+    panel_cutout: not_available
+  historical_use:
+    status: owner_confirmed
+    confirmed_at: '2026-08-27'
+    evidence: Project owner confirmed that all 23 handoff modules were previously used successfully in Mind+ classroom projects.
+    current_physical_retest: unverified
   source_ref: self-developed-hardware-handoff-2026-07-25
   source_evidence:
   - path: 02_自研硬件资料/01自研硬件资料/IDMS-0011 U形槽光电计数器/IDMS-0011 U槽光电计数器v1.0 3D.step
@@ -1657,6 +1950,10 @@ modules:
       centers: null
       nominal_fastener_class: M3
       printed_hole_diameter: null
+    supported_mount_surfaces:
+    - base
+    - lid
+    default_mount_surface: lid
     panel_features:
     - id: limit_switch_motion
       shape: motion_envelope
@@ -1667,7 +1964,17 @@ modules:
       mechanical-dxf: 02_自研硬件资料/01自研硬件资料/IDMS-0012 微动限位开关/IDMS-0012 限位开关v1.0 平面图.dxf
     physical_fit: unverified
   evidence_status: verified_with_safe_default
-  usability: teacher_validation
+  usability: guidance_ready
+  capability_gates:
+    programming: conditional
+    wiring: assignment_required
+    mechanical_placement: requires_measurement
+    panel_cutout: requires_measurement
+  historical_use:
+    status: owner_confirmed
+    confirmed_at: '2026-08-27'
+    evidence: Project owner confirmed that all 23 handoff modules were previously used successfully in Mind+ classroom projects.
+    current_physical_retest: unverified
   source_ref: self-developed-hardware-handoff-2026-07-25
   source_evidence:
   - path: 02_自研硬件资料/01自研硬件资料/IDMS-0012 微动限位开关/IDMS-0012 限位开关v1.0 3D.step
@@ -1736,13 +2043,27 @@ modules:
         - 10.0
       nominal_fastener_class: M3
       printed_hole_diameter: null
+    supported_mount_surfaces:
+    - base
+    - lid
+    default_mount_surface: base
     panel_features: []
     source_files:
       mechanical-step: 02_自研硬件资料/01自研硬件资料/IDMS-0036 模拟型三轴加速度传感器/IDMS-0013 三轴加速度计v1.0 3D.step
       mechanical-dxf: 02_自研硬件资料/01自研硬件资料/IDMS-0036 模拟型三轴加速度传感器/IDMS-0013 三轴加速度计v1.0 平面图.dxf
     physical_fit: unverified
   evidence_status: partial
-  usability: teacher_validation
+  usability: guidance_ready
+  capability_gates:
+    programming: conditional
+    wiring: version_check
+    mechanical_placement: ready
+    panel_cutout: not_available
+  historical_use:
+    status: owner_confirmed
+    confirmed_at: '2026-08-27'
+    evidence: Project owner confirmed that all 23 handoff modules were previously used successfully in Mind+ classroom projects.
+    current_physical_retest: unverified
   source_ref: self-developed-hardware-handoff-2026-07-25
   source_evidence:
   - path: 02_自研硬件资料/01自研硬件资料/IDMS-0036 模拟型三轴加速度传感器/IDMS-0013 三轴加速度计v1.0 3D.step

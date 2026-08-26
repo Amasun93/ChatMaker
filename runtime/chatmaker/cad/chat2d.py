@@ -9,7 +9,8 @@ from pathlib import Path
 from typing import Any
 
 from . import box_model
-from .profiles import get_component_profile, get_profile
+from . import placements as placement_contract
+from .profiles import get_component_profile, get_profile, list_component_profiles
 
 
 BOARD_LIBRARY_IDS = (
@@ -17,15 +18,6 @@ BOARD_LIBRARY_IDS = (
     "arduino-nano-classic",
     "esp32-devkit-v1",
     "idmc-0001-starcore-v4-2-2",
-)
-COMPONENT_LIBRARY_IDS = (
-    "idmd-0001-starcore-rgb-light",
-    "idmd-0002-starcore-serial-mp3",
-    "idmd-0021-starcore-oled-1-3",
-    "idms-0001-starcore-button",
-    "idms-0003-starcore-potentiometer",
-    "idms-0008-starcore-dht11",
-    "idms-0009-starcore-ultrasonic",
 )
 LIBRARY_PRESENTATION = {
     "arduino-uno-r3": {"name": "Arduino UNO", "series": ["open-hardware"]},
@@ -119,12 +111,24 @@ def _library() -> list[dict[str, Any]]:
             }
         )
 
-    for component_id in COMPONENT_LIBRARY_IDS:
+    listed = list_component_profiles()
+    if not listed.get("success"):
+        raise ValueError(str(listed.get("error")))
+    for listed_profile in listed["profiles"]:
+        component_id = listed_profile["component_id"]
         loaded = get_component_profile(component_id)
         if not loaded.get("success"):
             raise ValueError(f"library_component_missing:{component_id}")
         profile = loaded["profile"]
-        presentation = LIBRARY_PRESENTATION[component_id]
+        presentation = LIBRARY_PRESENTATION.get(component_id)
+        if presentation is None:
+            presentation = {
+                "name": profile["name"],
+                "series": [
+                    "starcore",
+                    *(["sensor"] if profile["hardware_id"].startswith("IDMS-") else []),
+                ],
+            }
         centers = [
             {"x": float(hole["x"]), "y": float(hole["y"])}
             for hole in profile["mounting"]["holes"]
@@ -133,15 +137,27 @@ def _library() -> list[dict[str, Any]]:
             {
                 "id": component_id,
                 "kind": "component",
-                "category": "星核模块",
+                "category": (
+                    "星核传感器" if profile["hardware_id"].startswith("IDMS-")
+                    else "星核执行器" if profile["hardware_id"].startswith("IDMM-")
+                    else "星核连接与供电" if profile["hardware_id"].startswith("IDMF-")
+                    else "星核输出模块"
+                ),
                 "name": presentation["name"],
-                "revision": profile["hardware_id"],
+                "revision": "自研模块",
                 "series": presentation["series"],
                 "width": float(profile["outline"]["width"]),
                 "depth": float(profile["outline"]["depth"]),
                 "holes": [],
-                "measurement_required": True,
-                "note": "外形和孔中心已有资料；安装孔径待实测，因此不自动生成切孔。",
+                "measurement_required": (
+                    profile["mounting"]["status"] != "source_reviewed"
+                    or any(feature.get("availability") != "available" for feature in profile["panel_features"])
+                ),
+                "note": (
+                    "外形和孔中心已有资料；安装孔径与未发布的功能开口仍需实测，因此不自动生成这些切孔。"
+                    if profile["mounting"]["status"] == "source_reviewed"
+                    else "外形已有资料，但固定孔位和功能开口仍需实测。"
+                ),
                 "visual": {
                     "outline_shape": profile["outline"].get("shape", "rectangle"),
                     "holes": [],
@@ -192,47 +208,29 @@ def geometry(
     include_bottom = _bool(parameters, "include_bottom", True)
     initial_panel = "bottom" if include_bottom else ("top" if include_top else "front")
     library = _library()
-    initial_source = next(
-        (item for item in library if item["id"] == profile["board_id"]), None
+    resolved, layout_validation = placement_contract.normalize(
+        profile, parameters, inner_width, inner_depth
     )
-    if initial_source is None:
-        initial_source = {
-            "id": profile["board_id"],
-            "kind": "board",
-            "name": profile["name"],
-            "width": float(board["width"]),
-            "depth": float(board["depth"]),
-            "holes": [
-                {
-                    "x": float(hole["x"]),
-                    "y": float(hole["y"]),
-                    "diameter": float(hole["diameter"]),
-                }
-                for hole in profile["mounting"]["holes"]
-            ],
-            "measurement_required": True,
-            "note": profile["mounting"].get("note", ""),
-            "visual": {
-                "outline_shape": board.get("shape", "rectangle"),
-                "holes": [],
-                "center_marks": [],
-                "features": [],
-                "edge_badges": [],
-            },
-        }
-    panel_width = outer_width if initial_panel in {"top", "bottom", "front", "back"} else outer_depth
-    panel_depth = outer_depth if initial_panel in {"top", "bottom"} else outer_height
-    board_item = {
-        **{key: initial_source[key] for key in (
-            "id", "kind", "name", "width", "depth", "holes",
-            "measurement_required", "note", "visual"
-        )},
-        "source_id": initial_source["id"],
-        "x": panel_width / 2,
-        "y": panel_depth / 2,
-        "rotation": 0,
-        "panel": initial_panel,
-    }
+    by_id = {item["id"]: item for item in library}
+    items: list[dict[str, Any]] = []
+    for placement in resolved:
+        source = by_id.get(placement["item_id"])
+        if source is None:
+            raise ValueError(f"library_profile_missing:{placement['item_id']}")
+        panel_width = outer_width
+        panel_depth = outer_depth
+        items.append({
+            **{key: source[key] for key in (
+                "id", "kind", "name", "width", "depth", "holes",
+                "measurement_required", "note", "visual"
+            )},
+            "source_id": source["id"],
+            "x": panel_width / 2 + float(placement["x"]),
+            "y": panel_depth / 2 - float(placement["y"]),
+            "rotation": float(placement["rotation"]),
+            "panel": placement["face"],
+        })
+    board_item = next((item for item in items if item["kind"] == "board"), None)
     return {
         "box_width": width,
         "box_depth": depth,
@@ -260,7 +258,11 @@ def geometry(
         "include_top": include_top,
         "include_bottom": include_bottom,
         "include_panel_labels": _bool(parameters, "include_panel_labels", True),
+        "board_id": profile["board_id"],
         "board": board_item,
+        "items": items,
+        "placements": placement_contract.public_placements(resolved),
+        "layout_validation": layout_validation,
         "library": library,
     }
 
@@ -352,8 +354,7 @@ def _svg(name: str, g: dict[str, Any]) -> str:
                 f'{panel["label"]} {float(panel["width"]):.1f} x '
                 f'{float(panel["depth"]):.1f} mm</text>'
             )
-    item = g.get("board")
-    if item:
+    for item in g.get("items", []):
         panel = next(
             (candidate for candidate in panel_list if candidate["name"] == item["panel"]),
             None,
@@ -474,8 +475,7 @@ def _dxf(g: dict[str, Any]) -> str:
                 f"40\n4\n1\n{panel['label']} {float(panel['width']):.1f} x "
                 f"{float(panel['depth']):.1f} mm\n"
             )
-    item = g.get("board")
-    if item:
+    for item in g.get("items", []):
         panel = next(
             (candidate for candidate in panel_list if candidate["name"] == item["panel"]),
             None,
@@ -508,10 +508,10 @@ def _lab(name: str, g: dict[str, Any]) -> str:
 <style>
 *{box-sizing:border-box}body{margin:0;background:#edf0f3;color:#17212b;font-family:Inter,"Microsoft YaHei",sans-serif}button,input,select{font:inherit}.app{display:grid;grid-template-columns:minmax(620px,1fr) 360px;min-height:100vh}.lab{padding:14px;min-width:0}.toolbar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}.toolbar-left,.toolbar-right,.tabs{display:flex;gap:7px;align-items:center}.button,.tabs button,.card{border:1px solid #cbd3dc;background:#fff;border-radius:9px;cursor:pointer}.button,.tabs button{min-height:39px;padding:7px 12px}.tabs button.active{background:#17212b;color:#fff;border-color:#17212b}.status{font-size:12px;color:#687583}.stage{height:calc(100vh - 67px);min-height:620px;border:1px solid #dbe1e7;border-radius:14px;background:#f8f9fb;overflow:hidden;display:grid;place-items:center}.canvas{width:98%;height:96%;touch-action:none}.panel-shape{fill:#fff;stroke:#111;stroke-width:.32}.panel-name{fill:#ef3340;font-size:5px;font-weight:700;pointer-events:none}.panel-size{fill:#667481;font-size:3.2px;pointer-events:none}.module-outline{fill:#fff5f5;stroke:#ef3340;stroke-width:.55}.module-cut{fill:#fff;stroke:#111;stroke-width:.55}.module-feature{fill:none;stroke:#111;stroke-width:.65}.module-mark{fill:none;stroke:#d28b00;stroke-width:.45;stroke-dasharray:1 1}.module-badge{fill:#657687;font-size:2.6px}.module-label{fill:#b51e28;font-size:3.5px;pointer-events:none}.module-item{cursor:grab}.module-item.selected .module-outline{fill:#ffdfe1;stroke-width:.9}.drag-ghost{pointer-events:none}.drag-ghost.drag-valid .module-outline{fill:#dcfce7;stroke:#159447;stroke-width:1}.drag-ghost.drag-invalid .module-outline{fill:#fee2e2;stroke:#dc2626;stroke-width:1}.drag-note{font-size:4px;font-weight:700}.drag-valid .drag-note{fill:#15803d}.drag-invalid .drag-note{fill:#b91c1c}.three{display:none;width:100%;height:100%;place-items:center;perspective:900px;touch-action:none}.box3d{position:relative;width:260px;height:190px;transform-style:preserve-3d;transform:rotateX(-25deg) rotateY(32deg)}.face{position:absolute;border:2px solid #17212b;background:#dab77f88;transform-style:preserve-3d}.face.front,.face.back{width:260px;height:120px;left:0;top:35px}.face.front{transform:translateZ(95px)}.face.back{transform:rotateY(180deg) translateZ(95px)}.face.left,.face.right{width:190px;height:120px;left:35px;top:35px}.face.left{transform:rotateY(-90deg) translateZ(130px)}.face.right{transform:rotateY(90deg) translateZ(130px)}.face.bottom,.face.top{width:260px;height:190px;left:0;top:0}.face.bottom{transform:rotateX(90deg) translateZ(-60px)}.face.top{transform:rotateX(90deg) translateZ(60px);background:#dab77f44}.module3d{position:absolute;background:#d83b45cc;border:1px solid #86141b;color:#fff;font-size:8px;display:grid;place-items:center;overflow:hidden;transform-origin:center}.right{background:#fff;border-left:1px solid #dbe1e7;overflow:auto}.right-tabs{display:flex;gap:6px;padding:13px 11px;border-bottom:1px solid #dbe1e7;position:sticky;top:0;background:#fff;z-index:3}.right-tabs button{flex:1;border:1px solid #cbd3dc;background:#fff;border-radius:9px;min-height:38px;font-size:12px;cursor:pointer}.right-tabs button.active{background:#17212b;color:#fff}.right-body{padding:16px}.right h2{font-size:15px;margin:12px 0 9px}.hint,.muted{font-size:11px;line-height:1.55;color:#687583}.field{margin:10px 0}.field label,.props label{display:grid;gap:5px;font-size:12px}.field input,.field select,.props input,.search{width:100%;min-height:37px;padding:7px 8px;border:1px solid #cbd3dc;border-radius:8px;background:#fff}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}.check{display:flex!important;align-items:center;gap:7px!important}.check input{width:auto!important;min-height:0!important}.summary{padding:10px;border-radius:9px;background:#f2f5f7;font-size:11px;line-height:1.6}.library-tools{display:grid;grid-template-columns:1fr 105px;gap:7px;margin-bottom:10px}.gallery{display:grid;grid-template-columns:1fr 1fr;gap:8px}.card{padding:8px;text-align:left;min-height:132px;touch-action:none}.card:hover{border-color:#ef3340}.thumb{height:72px;background:#f6f7f8;border-radius:7px;margin-bottom:6px;display:grid;place-items:center;overflow:hidden}.thumb svg{width:96%;height:96%}.card strong{display:block;font-size:11px;line-height:1.3}.card small{display:block;font-size:9px;color:#687583}.warn{font-size:9px;color:#a35b00;margin-top:3px}.empty{padding:16px;border:1px dashed #cbd3dc;border-radius:9px;color:#687583;text-align:center;font-size:12px}.note{padding:9px;border-left:3px solid #e4a62f;background:#fff8e8;font-size:11px;line-height:1.5}.danger{width:100%;color:#a51f28;border-color:#e2b2b5;margin-top:13px}.selected-preview{height:130px;border:1px solid #dbe1e7;border-radius:10px;background:#fafbfc;display:grid;place-items:center}.selected-preview svg{width:95%;height:95%}.drop-help{padding:10px;background:#eef8ff;border-radius:9px;color:#35607c;font-size:11px;line-height:1.5}@media(max-width:900px){.app{grid-template-columns:1fr}.right{border-left:0;border-top:1px solid #dbe1e7;min-height:700px}.stage{height:650px}}
 </style></head>
-<body><main class="app"><section class="lab"><div class="toolbar"><div class="toolbar-left"><div class="tabs"><button id="flat" class="active">六面展开</button><button id="assembled">三维近似预览</button></div><span id="status" class="status">从右侧图库拖到任意板面</span></div><div class="toolbar-right"><button class="button" id="svgExport">导出 SVG</button><button class="button" id="dxfExport">导出 DXF</button></div></div><div class="stage"><svg id="canvas" class="canvas"></svg><div id="three" class="three"><div id="box3d" class="box3d"><div class="face front" id="front3d"></div><div class="face back" id="back3d"></div><div class="face left" id="left3d"></div><div class="face right" id="right3d"></div><div class="face bottom" id="bottom3d"></div><div class="face top" id="top3d"></div></div></div></div></section><aside class="right"><div class="right-tabs"><button data-tab="library" class="active">元件图库</button><button data-tab="box">盒子参数</button><button data-tab="selected">当前元件</button></div><div id="rightBody" class="right-body"></div></aside></main>
+<body><main class="app"><section class="lab"><div class="toolbar"><div class="toolbar-left"><div class="tabs"><button id="flat" class="active">六面展开</button><button id="assembled">三维近似预览</button></div><span id="status" class="status">从右侧图库拖到任意板面</span></div><div class="toolbar-right"><button class="button" id="projectExport">导出 3D 配置</button><button class="button" id="svgExport">导出 SVG</button><button class="button" id="dxfExport">导出 DXF</button></div></div><div class="stage"><svg id="canvas" class="canvas"></svg><div id="three" class="three"><div id="box3d" class="box3d"><div class="face front" id="front3d"></div><div class="face back" id="back3d"></div><div class="face left" id="left3d"></div><div class="face right" id="right3d"></div><div class="face bottom" id="bottom3d"></div><div class="face top" id="top3d"></div></div></div></div></section><aside class="right"><div class="right-tabs"><button data-tab="library" class="active">元件图库</button><button data-tab="box">盒子参数</button><button data-tab="selected">当前元件</button></div><div id="rightBody" class="right-body"></div></aside></main>
 <script>
 const initial=__DATA__,$=id=>document.getElementById(id),clone=v=>JSON.parse(JSON.stringify(v)),esc=v=>String(v).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-const s=clone(initial);s.items=s.board?[clone(s.board)]:[];let selected=s.items.length?0:null,rightTab="library",librarySearch="",librarySeries="all",drag=null,rx=-25,ry=32;
+const s=clone(initial);s.items=Array.isArray(s.items)?clone(s.items):(s.board?[clone(s.board)]:[]);let selected=s.items.length?0:null,rightTab="library",librarySearch="",librarySeries="all",drag=null,rx=-25,ry=32;
 function message(text){$("status").textContent=text}function panelName(name){return{top:"顶板",bottom:"底板",front:"前板",back:"后板",left:"左板",right:"右板"}[name]||name}
 function outerDims(){const add=s.dimension_mode==="internal"?2*s.material_thickness:0;return{width:s.box_width+add,depth:s.box_depth+add,height:s.box_height+add}}
 function innerDims(){const q=outerDims();return{width:q.width-2*s.material_thickness,depth:q.depth-2*s.material_thickness,height:q.height-2*s.material_thickness}}
@@ -557,11 +557,13 @@ function itemSvg(m,p){let cut="";for(const h of m.holes||[]){const v=itemTransfo
 function svgText(){const ps=panels(),margin=Math.max(12,s.material_thickness*5),sw=Math.max(...ps.map(p=>p.x+p.width))+margin,sh=Math.max(...ps.map(p=>p.y+p.depth))+margin;let cut=ps.map(p=>'<polygon data-panel="'+p.name+'" points="'+panelOutline(p).map(q=>q.join(",")).join(" ")+'"/>').join(""),red=s.include_panel_labels?ps.map(p=>'<text x="'+(p.x+p.width/2)+'" y="'+(p.y+p.depth/2)+'" text-anchor="middle" fill="#ff0000">'+p.label+' '+p.width.toFixed(1)+' x '+p.depth.toFixed(1)+' mm</text>').join(""):"";for(const m of s.items){const p=panelForItem(m,ps);if(!p)continue;const q=itemSvg(m,p);cut+=q.cut;red+=q.red}return'<svg xmlns="http://www.w3.org/2000/svg" width="'+sw+'mm" height="'+sh+'mm" viewBox="0 0 '+sw+' '+sh+'"><g id="cut-through" fill="none" stroke="#000000" stroke-width=".2">'+cut+'</g><g id="line-engrave" fill="none" stroke="#ff0000" stroke-width=".2">'+red+'</g><g id="shallow-engrave" fill="none" stroke="#ffff00" stroke-width=".2"/><g id="deep-engrave" fill="none" stroke="#0000ff" stroke-width=".2"/></svg>'}
 function dxfLine(layer,a,b){return"0\nLINE\n8\n"+layer+"\n10\n"+a[0]+"\n20\n"+a[1]+"\n11\n"+b[0]+"\n21\n"+b[1]+"\n"}function dxfCircle(x,y,r){return"0\nCIRCLE\n8\nBLACK_CUT_THROUGH\n10\n"+x+"\n20\n"+y+"\n40\n"+r+"\n"}
 function dxf(){const ps=panels();let e="";for(const p of ps){const q=panelOutline(p);for(let i=0;i<q.length;i++)e+=dxfLine("BLACK_CUT_THROUGH",q[i],q[(i+1)%q.length]);if(s.include_panel_labels)e+="0\nTEXT\n8\nRED_LINE_ENGRAVE\n10\n"+(p.x+p.width/2)+"\n20\n"+(p.y+p.depth/2)+"\n40\n4\n1\n"+p.label+" "+p.width.toFixed(1)+" x "+p.depth.toFixed(1)+" mm\n"}for(const m of s.items){const p=panelForItem(m,ps);if(!p)continue;const a=(m.rotation||0)*Math.PI/180,c=Math.cos(a),q=Math.sin(a),corners=[[-m.width/2,-m.depth/2],[m.width/2,-m.depth/2],[m.width/2,m.depth/2],[-m.width/2,m.depth/2]].map(v=>[p.x+m.x+c*v[0]-q*v[1],p.y+m.y+q*v[0]+c*v[1]]);for(let i=0;i<4;i++)e+=dxfLine("RED_LINE_ENGRAVE",corners[i],corners[(i+1)%4]);for(const h of m.holes||[]){const v=itemTransform(m,p,h.x,-h.y);e+=dxfCircle(v.x,v.y,h.diameter/2)}for(const f of m.visual.features||[]){const center=f.center||[0,0],x=center[0],y=-center[1];if(f.shape==="round"){const v=itemTransform(m,p,x,y);e+=dxfCircle(v.x,v.y,f.diameter/2)}if(f.shape==="dual_round"){for(const dx of[-f.center_spacing/2,f.center_spacing/2]){const v=itemTransform(m,p,x+dx,y);e+=dxfCircle(v.x,v.y,f.diameter/2)}}if(f.shape==="rect"){const a=(m.rotation||0)*Math.PI/180,c=Math.cos(a),q=Math.sin(a),corners=[[-f.size[0]/2,-f.size[1]/2],[f.size[0]/2,-f.size[1]/2],[f.size[0]/2,f.size[1]/2],[-f.size[0]/2,f.size[1]/2]].map(v=>itemTransform(m,p,x+v[0],y+v[1]));for(let i=0;i<4;i++)e+=dxfLine("BLACK_CUT_THROUGH",[corners[i].x,corners[i].y],[corners[(i+1)%4].x,corners[(i+1)%4].y])}}}const layers="0\nTABLE\n2\nLAYER\n70\n4\n0\nLAYER\n2\nBLACK_CUT_THROUGH\n70\n0\n62\n7\n6\nCONTINUOUS\n0\nLAYER\n2\nRED_LINE_ENGRAVE\n70\n0\n62\n1\n6\nCONTINUOUS\n0\nLAYER\n2\nYELLOW_SHALLOW_ENGRAVE\n70\n0\n62\n2\n6\nCONTINUOUS\n0\nLAYER\n2\nBLUE_DEEP_ENGRAVE\n70\n0\n62\n5\n6\nCONTINUOUS\n0\nENDTAB\n";return"0\nSECTION\n2\nHEADER\n9\n$INSUNITS\n70\n4\n0\nENDSEC\n0\nSECTION\n2\nTABLES\n"+layers+"0\nENDSEC\n0\nSECTION\n2\nENTITIES\n"+e+"0\nENDSEC\n0\nEOF\n"}
+function canonicalPlacements(){const ps=panels();return s.items.map(m=>{const p=panelForItem(m,ps);return{item_id:m.source_id||m.id,kind:m.kind,face:m.panel,x:Number((m.x-p.width/2).toFixed(3)),y:Number((p.depth/2-m.y).toFixed(3)),rotation:Number(m.rotation||0)}})}
+function projectRequest(){const q=innerDims(),placements=canonicalPlacements();if(placements.some(p=>!['top','bottom'].includes(p.face)))throw new Error('请先把要进入 3D 的模块放到顶板或底板');if(placements.some(p=>p.kind==='custom'))throw new Error('自定义模板要补齐机械 profile 后才能进入 3D');return{mode:"chat3d",delivery_mode:"chatmaker-preview",generation_confirmed:true,board_id:s.board_id,project_name:"__FILE__-3d",parameters:{inner_width:q.width,inner_depth:q.depth,inner_height:Math.max(20,q.height),placements}}}
 function download(filename,text,type){const a=document.createElement("a"),url=URL.createObjectURL(new Blob([text],{type:type||"text/plain"}));a.href=url;a.download=filename;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}
 function render(){renderCanvas();renderRight();render3d()}
-document.querySelectorAll("[data-tab]").forEach(b=>b.onclick=()=>setRightTab(b.dataset.tab));$("svgExport").onclick=()=>download("__FILE__.svg",svgText(),"image/svg+xml");$("dxfExport").onclick=()=>download("__FILE__.dxf",dxf());window.addEventListener("pointermove",updateDrag);window.addEventListener("pointerup",finishDrag);window.addEventListener("pointercancel",finishDrag);
+document.querySelectorAll("[data-tab]").forEach(b=>b.onclick=()=>setRightTab(b.dataset.tab));$("projectExport").onclick=()=>{try{download("__FILE__-chat3d.json",JSON.stringify(projectRequest(),null,2),"application/json")}catch(error){message(error.message)}};$("svgExport").onclick=()=>download("__FILE__.svg",svgText(),"image/svg+xml");$("dxfExport").onclick=()=>download("__FILE__.dxf",dxf());window.addEventListener("pointermove",updateDrag);window.addEventListener("pointerup",finishDrag);window.addEventListener("pointercancel",finishDrag);
 $("flat").onclick=()=>{$("canvas").style.display="block";$("three").style.display="none";$("flat").classList.add("active");$("assembled").classList.remove("active")};$("assembled").onclick=()=>{$("canvas").style.display="none";$("three").style.display="grid";$("assembled").classList.add("active");$("flat").classList.remove("active");render3d()};$("three").onpointerdown=e=>drag={kind:"three",startX:e.clientX,startY:e.clientY,rx,ry};$("three").onpointermove=e=>{if(drag?.kind!=="three")return;ry=drag.ry+(e.clientX-drag.startX)*.4;rx=drag.rx-(e.clientY-drag.startY)*.4;boxTransform()};$("three").onpointerup=$("three").onpointercancel=()=>drag=null;
-window.chat2d={state:s,panels,panelOutline,fingerIntervals,templateSvg,startLibraryDrag,startItemDrag,updateDrag,finishDrag,hitPanel,svgText,dxf,render};render();
+window.chat2d={state:s,panels,panelOutline,fingerIntervals,templateSvg,startLibraryDrag,startItemDrag,updateDrag,finishDrag,hitPanel,canonicalPlacements,projectRequest,svgText,dxf,render};render();
 </script></body></html>'''
     return (
         template.replace("__DATA__", data)

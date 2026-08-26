@@ -30,6 +30,8 @@ properties:
         - mechanical
         - evidence_status
         - usability
+        - capability_gates
+        - historical_use
         - source_evidence
       properties:
         hardware_id: {type: string, pattern: "^IDM[CDFMS]-[0-9]{4}$"}
@@ -48,7 +50,25 @@ properties:
           type: object
           required: [outline, mounting_status, source_files]
         evidence_status: {enum: [verified, verified_with_safe_default, partial, documentation_conflict]}
-        usability: {enum: [guidance_ready, teacher_validation, retrieval_only]}
+        usability: {const: guidance_ready}
+        capability_gates:
+          type: object
+          required: [programming, wiring, mechanical_placement, panel_cutout]
+          properties:
+            programming: {enum: [ready, conditional, not_applicable]}
+            wiring: {enum: [ready, assignment_required, version_check]}
+            mechanical_placement: {enum: [ready, requires_measurement]}
+            panel_cutout: {enum: [ready, requires_measurement, not_available]}
+          additionalProperties: false
+        historical_use:
+          type: object
+          required: [status, confirmed_at, evidence, current_physical_retest]
+          properties:
+            status: {const: owner_confirmed}
+            confirmed_at: {const: "2026-08-27"}
+            evidence: {type: string, minLength: 1}
+            current_physical_retest: {const: unverified}
+          additionalProperties: false
         source_evidence:
           type: array
           minItems: 2

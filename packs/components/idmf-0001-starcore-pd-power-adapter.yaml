@@ -25,11 +25,11 @@ verification:
     checked_at: '2026-08-27'
     evidence: The 2026-07-25 handoff index and selected raw source files were reviewed; unresolved fields remain explicit.
   code_compiled:
-    status: not_applicable
+    status: unverified
     checked_at: null
     evidence: null
   firmware_uploaded:
-    status: not_applicable
+    status: unverified
     checked_at: null
     evidence: null
   physical_effect_verified:

@@ -20,6 +20,7 @@ ROOT = Path(__file__).resolve().parents[1]
 MANIFEST_PATH = ROOT / "knowledge_sources/catalogs/self-developed-hardware.yaml"
 SCHEMA_PATH = ROOT / "knowledge_sources/schemas/self-developed-hardware.schema.yaml"
 RUNTIME_INDEX_PATH = ROOT / "knowledge/hardware/self-developed-modules.yaml"
+MECHANICAL_PROFILE_ROOT = ROOT / "knowledge/mechanical/components"
 BOARD_ID = "idmc-0001-starcore-v4-2-2"
 SOURCE_ID = "self-developed-hardware-handoff-2026-07-25"
 SOURCE_URL = "https://github.com/Amasun93/ChatMaker/tree/main/knowledge_sources"
@@ -120,19 +121,31 @@ IO_ROLES = {
     "distance_sensor": "input",
 }
 
-USABILITY = {
-    "IDMC-0001": "guidance_ready",
-    "IDMD-0001": "guidance_ready",
-    "IDMD-0002": "guidance_ready",
-    "IDMD-0021": "guidance_ready",
-    "IDMS-0001": "guidance_ready",
-    "IDMS-0003": "guidance_ready",
-    "IDMS-0008": "guidance_ready",
-    "IDMS-0009": "guidance_ready",
-    "IDMF-0001": "retrieval_only",
-    "IDMF-0010": "retrieval_only",
-    "IDMF-0011": "retrieval_only",
-    "IDMM-0007": "retrieval_only",
+PROGRAMMING_SCOPE = {
+    "IDMF-0001": "not_applicable",
+    "IDMF-0010": "not_applicable",
+    "IDMF-0011": "not_applicable",
+    "IDMD-0003": "conditional",
+    "IDMM-0001": "conditional",
+    "IDMM-0007": "conditional",
+    "IDMS-0004": "conditional",
+    "IDMS-0007": "conditional",
+    "IDMS-0010": "conditional",
+    "IDMS-0012": "conditional",
+    "IDMS-0036": "conditional",
+}
+
+WIRING_SCOPE = {
+    "IDMC-0001": "ready",
+    "IDMD-0002": "ready",
+    "IDMD-0021": "ready",
+    "IDMS-0008": "ready",
+    "IDMS-0009": "ready",
+    "IDMD-0003": "version_check",
+    "IDMF-0001": "version_check",
+    "IDMM-0007": "version_check",
+    "IDMS-0010": "version_check",
+    "IDMS-0036": "version_check",
 }
 
 EXAMPLE_CAPABILITIES = {
@@ -269,6 +282,25 @@ def _unknowns(module: dict[str, Any], hardware_id: str) -> list[str]:
     return list(dict.fromkeys(unknown))
 
 
+def _capability_gates(hardware_id: str, mechanics: dict[str, Any]) -> dict[str, str]:
+    features = list(mechanics.get("panel_features") or [])
+    if any(item.get("status") == "verified" for item in features):
+        panel_cutout = "ready"
+    elif features:
+        panel_cutout = "requires_measurement"
+    else:
+        panel_cutout = "not_available"
+    release_gate = mechanics.get("release_gate") or {}
+    return {
+        "programming": PROGRAMMING_SCOPE.get(hardware_id, "ready"),
+        "wiring": WIRING_SCOPE.get(hardware_id, "assignment_required"),
+        "mechanical_placement": (
+            "ready" if release_gate.get("outline_and_holes_callable") else "requires_measurement"
+        ),
+        "panel_cutout": panel_cutout,
+    }
+
+
 def import_manifest(source_root: Path, legacy_catalog: Path, legacy_mechanics: Path) -> dict[str, Any]:
     index_path = source_root / "03_归档索引/自研模块索引.json"
     file_index_path = source_root / "03_归档索引/全文件清单.csv"
@@ -320,12 +352,21 @@ def import_manifest(source_root: Path, legacy_catalog: Path, legacy_mechanics: P
                 "outline": {"width_mm": source["二维外形宽_mm"], "height_mm": source["二维外形高_mm"]},
                 "mounting_status": mech.get("mounting", {}).get("status", "unknown"),
                 "mounting": deepcopy(mech.get("mounting", {})),
+                "supported_mount_surfaces": deepcopy(mech.get("supported_mount_surfaces") or ["base"]),
+                "default_mount_surface": mech.get("default_mount_surface", "base"),
                 "panel_features": deepcopy(mech.get("panel_features")),
                 "source_files": source_files,
                 "physical_fit": "unverified",
             },
             "evidence_status": facts.get("verification_status", "partial"),
-            "usability": USABILITY.get(hardware_id, "teacher_validation"),
+            "usability": "guidance_ready",
+            "capability_gates": _capability_gates(hardware_id, mech),
+            "historical_use": {
+                "status": "owner_confirmed",
+                "confirmed_at": "2026-08-27",
+                "evidence": "Project owner confirmed that all 23 handoff modules were previously used successfully in Mind+ classroom projects.",
+                "current_physical_retest": "unverified",
+            },
             "source_evidence": evidence,
         })
     manifest = {
@@ -393,6 +434,8 @@ def _runtime_profile(module: dict[str, Any]) -> dict[str, Any]:
         "mechanical": module["mechanical"],
         "evidence_status": module["evidence_status"],
         "usability": module["usability"],
+        "capability_gates": module["capability_gates"],
+        "historical_use": module["historical_use"],
         "source_ref": SOURCE_ID,
         "source_evidence": module["source_evidence"],
     }
@@ -459,6 +502,115 @@ def _update_existing_name(path: Path, display_name: str, *, check: bool) -> bool
     raise ValueError(f"runtime_record_name_missing:{path.relative_to(ROOT).as_posix()}")
 
 
+def _slug(value: str) -> str:
+    return "-".join(part for part in value.lower().replace("_", "-").split("-") if part)
+
+
+def _mechanical_panel_features(module: dict[str, Any]) -> list[dict[str, Any]]:
+    features: list[dict[str, Any]] = []
+    for source in module["mechanical"].get("panel_features") or []:
+        verified = source.get("status") == "verified"
+        feature: dict[str, Any] = {
+            "id": _slug(str(source.get("id") or "panel-feature")),
+            "purpose": "panel_cutout" if verified else "functional_clearance",
+            "status": "source_reviewed" if verified else "requires_measurement",
+            "availability": "available" if verified else "not_available",
+            "note": (
+                "Nominal feature geometry from the reviewed handoff DXF; connector height and print clearance remain physically unverified."
+                if verified
+                else "The feature exists, but its callable opening geometry still requires a real measurement."
+            ),
+        }
+        if verified:
+            for key in ("shape", "center", "diameter", "size", "center_spacing"):
+                value = source.get(key)
+                if value is not None:
+                    feature[key] = deepcopy(value)
+        features.append(feature)
+    if not features:
+        features.append({
+            "id": "panel-clearance",
+            "purpose": "functional_clearance",
+            "status": "not_available",
+            "availability": "not_available",
+            "note": "No source-reviewed functional opening geometry is available; keep the module internal or measure the real feature before cutting a panel.",
+        })
+    return features
+
+
+def _mechanical_profile(module: dict[str, Any]) -> dict[str, Any]:
+    mechanics = module["mechanical"]
+    mounting = mechanics.get("mounting") or {}
+    centers = list(mounting.get("centers") or [])
+    mounting_ready = (
+        module["capability_gates"]["mechanical_placement"] == "ready"
+        and mounting.get("pattern_x") is not None
+        and mounting.get("pattern_y") is not None
+        and len(centers) == 4
+    )
+    holes = [
+        {"x": float(center[0]), "y": float(center[1]), "status": "source_reviewed"}
+        for center in centers
+    ] if mounting_ready else []
+    surfaces = list(mechanics.get("supported_mount_surfaces") or ["base"])
+    default_surface = mechanics.get("default_mount_surface") or surfaces[0]
+    return {
+        "schema_version": "1.0",
+        "kind": "component-mechanical-profile",
+        "component_id": module["catalog_id"],
+        "hardware_id": module["hardware_id"],
+        "name": module["display_name"],
+        "units": "mm",
+        "coordinate_system": {
+            "origin": "PCB outline center",
+            "x_positive": "right",
+            "y_positive": "up",
+        },
+        "outline": {
+            "shape": "rectangle",
+            "width": float(mechanics["outline"]["width_mm"]),
+            "depth": float(mechanics["outline"]["height_mm"]),
+            "status": "source_reviewed",
+        },
+        "mounting": {
+            "status": "source_reviewed" if mounting_ready else "requires_measurement",
+            "pattern_x": float(mounting["pattern_x"]) if mounting_ready else None,
+            "pattern_y": float(mounting["pattern_y"]) if mounting_ready else None,
+            "holes": holes,
+            "fastener_class": "M3",
+            "hole_diameter_status": "requires_measurement",
+        },
+        "mount_surfaces": surfaces,
+        "default_mount_surface": default_surface,
+        "panel_features": _mechanical_panel_features(module),
+        "source_ids": ["starcore-module-catalog-snapshot", "starcore-mechanical-facts-snapshot"],
+        "verification": {
+            "source_reviewed": {
+                "status": "verified",
+                "checked_at": "2026-08-27",
+                "evidence_level": "sanitized_internal_source",
+            },
+            "physical_fit": "unverified",
+        },
+    }
+
+
+def sync_component_mechanics(manifest: dict[str, Any], *, check: bool) -> list[Path]:
+    changed: list[Path] = []
+    for module in manifest["modules"]:
+        if module["hardware_id"] == "IDMC-0001":
+            continue
+        path = MECHANICAL_PROFILE_ROOT / f"{module['catalog_id']}.json"
+        expected = json.dumps(_mechanical_profile(module), ensure_ascii=False, indent=2) + "\n"
+        if not path.is_file() or path.read_text(encoding="utf-8") != expected:
+            if check:
+                raise ValueError(f"runtime_record_out_of_date:{path.relative_to(ROOT).as_posix()}")
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(expected, encoding="utf-8", newline="\n")
+            changed.append(path)
+    return changed
+
+
 def sync_runtime(manifest: dict[str, Any], *, check: bool = False) -> list[Path]:
     validate_manifest(manifest)
     changed: list[Path] = []
@@ -498,6 +650,7 @@ def sync_runtime(manifest: dict[str, Any], *, check: bool = False) -> list[Path]
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(expected, encoding="utf-8")
             changed.append(path)
+    changed.extend(sync_component_mechanics(manifest, check=check))
     return changed
 
 

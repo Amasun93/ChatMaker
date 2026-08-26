@@ -104,6 +104,24 @@ def _load_component(path: Path) -> dict[str, Any]:
         raise ValueError(f"invalid_component_mechanical_profile: {errors[0].message}")
     if value["component_id"] != path.stem:
         raise ValueError("invalid_component_mechanical_profile: component_id does not match filename")
+    mounting = value["mounting"]
+    if mounting["status"] == "source_reviewed":
+        if (
+            not isinstance(mounting["pattern_x"], (int, float))
+            or not isinstance(mounting["pattern_y"], (int, float))
+            or len(mounting["holes"]) != 4
+        ):
+            raise ValueError(
+                "invalid_component_mechanical_profile: reviewed mounting requires two pitches and four holes"
+            )
+    elif mounting["pattern_x"] is not None or mounting["pattern_y"] is not None or mounting["holes"]:
+        raise ValueError(
+            "invalid_component_mechanical_profile: unreviewed mounting must omit pitches and holes"
+        )
+    if value["default_mount_surface"] not in value["mount_surfaces"]:
+        raise ValueError(
+            "invalid_component_mechanical_profile: default mount surface is unsupported"
+        )
 
     registry = json.loads(
         (project_root() / "knowledge" / "mechanical" / "source-registry.json").read_text(
@@ -168,6 +186,29 @@ def get_component_profile(component_id: str) -> dict[str, Any]:
         "action": "component-profile",
         "profile": value,
         "source_path": path.relative_to(project_root()).as_posix(),
+    }
+
+
+def list_component_profiles() -> dict[str, Any]:
+    profiles: list[dict[str, Any]] = []
+    root = component_profile_root()
+    if not root.is_dir():
+        return {"success": False, "error": "component_mechanical_profile_directory_missing"}
+    for path in sorted(root.glob("*.json")):
+        try:
+            profiles.append(_load_component(path))
+        except (OSError, ValueError, json.JSONDecodeError) as exc:
+            return {
+                "success": False,
+                "error": "invalid_component_mechanical_profile",
+                "component_id": path.stem,
+                "detail": str(exc),
+            }
+    return {
+        "success": True,
+        "action": "list-component-profiles",
+        "count": len(profiles),
+        "profiles": profiles,
     }
 
 

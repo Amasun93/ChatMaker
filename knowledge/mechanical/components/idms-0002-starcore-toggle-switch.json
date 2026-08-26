@@ -1,9 +1,9 @@
 {
   "schema_version": "1.0",
   "kind": "component-mechanical-profile",
-  "component_id": "idms-0001-starcore-button",
-  "hardware_id": "IDMS-0001",
-  "name": "按钮传感器",
+  "component_id": "idms-0002-starcore-toggle-switch",
+  "hardware_id": "IDMS-0002",
+  "name": "三档钮子开关",
   "units": "mm",
   "coordinate_system": {
     "origin": "PCB outline center",
@@ -52,7 +52,7 @@
   "default_mount_surface": "lid",
   "panel_features": [
     {
-      "id": "button",
+      "id": "toggle",
       "purpose": "functional_clearance",
       "status": "requires_measurement",
       "availability": "not_available",

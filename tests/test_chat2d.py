@@ -86,9 +86,9 @@ class Chat2DTests(unittest.TestCase):
             dxf = Path(result["files"]["dxf"]).read_text(encoding="utf-8")
 
         library = project["parameters"]["library"]
-        self.assertEqual(len(library), 11)
+        self.assertEqual(len(library), 26)
         self.assertEqual(len([item for item in library if item["kind"] == "board"]), 4)
-        self.assertEqual(len([item for item in library if item["kind"] == "component"]), 7)
+        self.assertEqual(len([item for item in library if item["kind"] == "component"]), 22)
         self.assertTrue(all("visual" in item for item in library))
         oled = next(item for item in library if item["id"] == "idmd-0021-starcore-oled-1-3")
         ultrasonic = next(item for item in library if item["id"] == "idms-0009-starcore-ultrasonic")
@@ -106,6 +106,9 @@ class Chat2DTests(unittest.TestCase):
             "function hitPanel",
             "drag-invalid",
             "拖到任意板面",
+            "导出 3D 配置",
+            "function canonicalPlacements",
+            "function projectRequest",
         ):
             self.assertIn(hook, preview)
         self.assertNotIn("已放置模块", preview)
@@ -124,6 +127,7 @@ class Chat2DTests(unittest.TestCase):
         self.assertEqual(result["model_generated"], "verified")
         self.assertEqual(result["file_opened"], "unverified")
         self.assertEqual(result["physical_fit"], "unverified")
+        self.assertEqual(project["parameters"]["placements"][0]["face"], "bottom")
 
     def test_library_uses_beginner_names_and_series_filters(self):
         library = chat2d._library()
