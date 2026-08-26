@@ -39,10 +39,11 @@ class StarcoreComponentMechanicalTests(unittest.TestCase):
             for value in (json.loads(path.read_text(encoding="utf-8")) for path in cls.profile_paths)
         }
         manifest = yaml.safe_load(
-            (ROOT / "knowledge_sources/manifests/self-developed-hardware.yaml").read_text(
+            (ROOT / "knowledge_sources/catalogs/self-developed-hardware.yaml").read_text(
                 encoding="utf-8"
             )
         )
+        cls.manifest_by_id = {item["hardware_id"]: item for item in manifest["modules"]}
         cls.expected_component_ids = {
             item["catalog_id"]
             for item in manifest["modules"]
@@ -75,6 +76,7 @@ class StarcoreComponentMechanicalTests(unittest.TestCase):
             "idms-0003-starcore-potentiometer": (30, 30, 20, 20),
             "idms-0008-starcore-dht11": (30, 30, 20, 20),
             "idms-0009-starcore-ultrasonic": (55.021, 30.021, 45, 20),
+            "idms-0012-starcore-limit-switch": (33.5, 30, 20, 20),
         }
         for component_id, facts in expected.items():
             profile = self.profiles[component_id]
@@ -117,8 +119,15 @@ class StarcoreComponentMechanicalTests(unittest.TestCase):
             )
 
         limit_switch = self.profiles["idms-0012-starcore-limit-switch"]
-        self.assertEqual(limit_switch["mounting"]["status"], "requires_measurement")
-        self.assertEqual(limit_switch["mounting"]["holes"], [])
+        self.assertEqual(limit_switch["mounting"]["status"], "source_reviewed")
+        self.assertEqual(len(limit_switch["mounting"]["holes"]), 4)
+        self.assertEqual(
+            self.manifest_by_id["IDMS-0012"]["mechanical"]["mounting"]["nominal_dxf_hole_diameter"],
+            3.0,
+        )
+        feature = limit_switch["panel_features"][0]
+        self.assertEqual(feature["availability"], "not_available")
+        self.assertNotIn("size", feature)
 
     def test_profiles_do_not_publish_manufacturing_files_or_local_paths(self):
         serialized = "\n".join(

@@ -1,0 +1,452 @@
+{
+  "schema_version": "1.0",
+  "mode": "chat3d",
+  "project_name": "starcore-smart-sensing-enclosure",
+  "board_id": "idmc-0001-starcore-v4-2-2",
+  "parameters": {
+    "inner_width": 200.0,
+    "inner_depth": 150.0,
+    "inner_height": 45.0,
+    "wall": 2.4,
+    "floor": 2.4,
+    "lid": 2.0,
+    "standoff_height": 5.0,
+    "hole_diameter": 2.8,
+    "lid_hole_diameter": 3.6,
+    "opening_clearance": 0.4,
+    "holes": [
+      {
+        "x": -40.0,
+        "y": -16.255166,
+        "diameter": 4.25
+      },
+      {
+        "x": 40.0,
+        "y": -16.255166,
+        "diameter": 4.25
+      },
+      {
+        "x": 40.0,
+        "y": 25.744834,
+        "diameter": 4.25
+      },
+      {
+        "x": -40.0,
+        "y": 25.744834,
+        "diameter": 4.25
+      }
+    ],
+    "placed_items": [
+      {
+        "item_id": "idmc-0001-starcore-v4-2-2",
+        "kind": "board",
+        "name": "IDMC-0001 星核板",
+        "width": 90.021458,
+        "depth": 61.511127,
+        "mounting_holes": [
+          {
+            "x": -40.0,
+            "y": -16.255166,
+            "diameter": 4.25
+          },
+          {
+            "x": 40.0,
+            "y": -16.255166,
+            "diameter": 4.25
+          },
+          {
+            "x": 40.0,
+            "y": 25.744834,
+            "diameter": 4.25
+          },
+          {
+            "x": -40.0,
+            "y": 25.744834,
+            "diameter": 4.25
+          }
+        ],
+        "panel_features": [],
+        "mount_surfaces": [
+          "base"
+        ],
+        "default_mount_surface": "base",
+        "mechanical_status": "ready",
+        "face": "bottom",
+        "x": 0.0,
+        "y": 15.0,
+        "rotation": 0.0
+      },
+      {
+        "item_id": "idmd-0021-starcore-oled-1-3",
+        "kind": "component",
+        "name": "1.3 寸 OLED 显示屏",
+        "width": 55.283,
+        "depth": 30.255,
+        "mounting_holes": [
+          {
+            "x": -22.5,
+            "y": -10.0,
+            "status": "source_reviewed"
+          },
+          {
+            "x": 22.5,
+            "y": -10.0,
+            "status": "source_reviewed"
+          },
+          {
+            "x": 22.5,
+            "y": 10.0,
+            "status": "source_reviewed"
+          },
+          {
+            "x": -22.5,
+            "y": 10.0,
+            "status": "source_reviewed"
+          }
+        ],
+        "panel_features": [
+          {
+            "id": "display-window",
+            "purpose": "panel_cutout",
+            "status": "source_reviewed",
+            "availability": "available",
+            "note": "Nominal feature geometry from the reviewed handoff DXF; connector height and print clearance remain physically unverified.",
+            "shape": "rect",
+            "center": [
+              0,
+              0
+            ],
+            "size": [
+              37,
+              25
+            ]
+          }
+        ],
+        "mount_surfaces": [
+          "base",
+          "lid"
+        ],
+        "default_mount_surface": "lid",
+        "mechanical_status": "ready",
+        "face": "top",
+        "x": -55.0,
+        "y": 30.0,
+        "rotation": 0.0
+      },
+      {
+        "item_id": "idms-0009-starcore-ultrasonic",
+        "kind": "component",
+        "name": "超声波测距传感器",
+        "width": 55.021,
+        "depth": 30.021,
+        "mounting_holes": [
+          {
+            "x": -22.5,
+            "y": -10.0,
+            "status": "source_reviewed"
+          },
+          {
+            "x": 22.5,
+            "y": -10.0,
+            "status": "source_reviewed"
+          },
+          {
+            "x": 22.5,
+            "y": 10.0,
+            "status": "source_reviewed"
+          },
+          {
+            "x": -22.5,
+            "y": 10.0,
+            "status": "source_reviewed"
+          }
+        ],
+        "panel_features": [
+          {
+            "id": "ultrasonic-transducers",
+            "purpose": "panel_cutout",
+            "status": "source_reviewed",
+            "availability": "available",
+            "note": "Nominal feature geometry from the reviewed handoff DXF; connector height and print clearance remain physically unverified.",
+            "shape": "dual_round",
+            "center": [
+              0,
+              0
+            ],
+            "diameter": 15.8,
+            "center_spacing": 25.525
+          }
+        ],
+        "mount_surfaces": [
+          "base",
+          "lid"
+        ],
+        "default_mount_surface": "lid",
+        "mechanical_status": "ready",
+        "face": "top",
+        "x": 45.0,
+        "y": 30.0,
+        "rotation": 0.0
+      },
+      {
+        "item_id": "idms-0008-starcore-dht11",
+        "kind": "component",
+        "name": "温湿度传感器",
+        "width": 30.0,
+        "depth": 30.0,
+        "mounting_holes": [
+          {
+            "x": -10.0,
+            "y": -10.0,
+            "status": "source_reviewed"
+          },
+          {
+            "x": 10.0,
+            "y": -10.0,
+            "status": "source_reviewed"
+          },
+          {
+            "x": 10.0,
+            "y": 10.0,
+            "status": "source_reviewed"
+          },
+          {
+            "x": -10.0,
+            "y": 10.0,
+            "status": "source_reviewed"
+          }
+        ],
+        "panel_features": [
+          {
+            "id": "sensor-window",
+            "purpose": "panel_cutout",
+            "status": "source_reviewed",
+            "availability": "available",
+            "note": "Nominal feature geometry from the reviewed handoff DXF; connector height and print clearance remain physically unverified.",
+            "shape": "rect",
+            "center": [
+              0,
+              0.239
+            ],
+            "size": [
+              17,
+              14
+            ]
+          }
+        ],
+        "mount_surfaces": [
+          "base",
+          "lid"
+        ],
+        "default_mount_surface": "lid",
+        "mechanical_status": "ready",
+        "face": "top",
+        "x": 0.0,
+        "y": -35.0,
+        "rotation": 0.0
+      }
+    ],
+    "placements": [
+      {
+        "item_id": "idmc-0001-starcore-v4-2-2",
+        "kind": "board",
+        "face": "bottom",
+        "x": 0.0,
+        "y": 15.0,
+        "rotation": 0.0
+      },
+      {
+        "item_id": "idmd-0021-starcore-oled-1-3",
+        "kind": "component",
+        "face": "top",
+        "x": -55.0,
+        "y": 30.0,
+        "rotation": 0.0
+      },
+      {
+        "item_id": "idms-0009-starcore-ultrasonic",
+        "kind": "component",
+        "face": "top",
+        "x": 45.0,
+        "y": 30.0,
+        "rotation": 0.0
+      },
+      {
+        "item_id": "idms-0008-starcore-dht11",
+        "kind": "component",
+        "face": "top",
+        "x": 0.0,
+        "y": -35.0,
+        "rotation": 0.0
+      }
+    ],
+    "base_mount_points": [
+      [
+        -40.0,
+        -1.2551659999999991
+      ],
+      [
+        40.0,
+        -1.2551659999999991
+      ],
+      [
+        40.0,
+        40.744834
+      ],
+      [
+        -40.0,
+        40.744834
+      ]
+    ],
+    "lid_mount_points": [
+      [
+        -77.5,
+        20.0
+      ],
+      [
+        -32.5,
+        20.0
+      ],
+      [
+        -32.5,
+        40.0
+      ],
+      [
+        -77.5,
+        40.0
+      ],
+      [
+        22.5,
+        20.0
+      ],
+      [
+        67.5,
+        20.0
+      ],
+      [
+        67.5,
+        40.0
+      ],
+      [
+        22.5,
+        40.0
+      ],
+      [
+        -10.0,
+        -45.0
+      ],
+      [
+        10.0,
+        -45.0
+      ],
+      [
+        10.0,
+        -25.0
+      ],
+      [
+        -10.0,
+        -25.0
+      ]
+    ],
+    "lid_features": [
+      {
+        "shape": "rect",
+        "x": -55.0,
+        "y": 30.0,
+        "rotation": 0.0,
+        "item_id": "idmd-0021-starcore-oled-1-3",
+        "size": [
+          37.0,
+          25.0
+        ]
+      },
+      {
+        "shape": "round",
+        "x": 32.2375,
+        "y": 30.0,
+        "diameter": 15.8,
+        "rotation": 0,
+        "item_id": "idms-0009-starcore-ultrasonic"
+      },
+      {
+        "shape": "round",
+        "x": 57.7625,
+        "y": 30.0,
+        "diameter": 15.8,
+        "rotation": 0,
+        "item_id": "idms-0009-starcore-ultrasonic"
+      },
+      {
+        "shape": "rect",
+        "x": 0.0,
+        "y": -34.761,
+        "rotation": 0.0,
+        "item_id": "idms-0008-starcore-dht11",
+        "size": [
+          17.0,
+          14.0
+        ]
+      }
+    ],
+    "skipped_mounting": [],
+    "side_openings": [
+      {
+        "face": "front",
+        "position": 0.0,
+        "z": 10.0,
+        "width": 22.0,
+        "height": 9.0,
+        "clearance": 0.4,
+        "label": "可调电源与线束出口"
+      }
+    ],
+    "layout_validation": {
+      "ok": true,
+      "errors": [],
+      "warnings": []
+    }
+  },
+  "placements": [
+    {
+      "item_id": "idmc-0001-starcore-v4-2-2",
+      "kind": "board",
+      "face": "bottom",
+      "x": 0.0,
+      "y": 15.0,
+      "rotation": 0.0
+    },
+    {
+      "item_id": "idmd-0021-starcore-oled-1-3",
+      "kind": "component",
+      "face": "top",
+      "x": -55.0,
+      "y": 30.0,
+      "rotation": 0.0
+    },
+    {
+      "item_id": "idms-0009-starcore-ultrasonic",
+      "kind": "component",
+      "face": "top",
+      "x": 45.0,
+      "y": 30.0,
+      "rotation": 0.0
+    },
+    {
+      "item_id": "idms-0008-starcore-dht11",
+      "kind": "component",
+      "face": "top",
+      "x": 0.0,
+      "y": -35.0,
+      "rotation": 0.0
+    }
+  ],
+  "layout_validation": {
+    "ok": true,
+    "errors": [],
+    "warnings": []
+  },
+  "engrave_text": "星核智能感应盒",
+  "model_generated": "verified",
+  "file_opened": "unverified",
+  "physical_fit": "unverified"
+}

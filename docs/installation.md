@@ -16,6 +16,17 @@ https://github.com/Amasun93/ChatMaker
 
 旧版曾经注册过 ChatMaker MCP 的用户，建议按下面顺序做一次断代升级：
 
+老师在公屏上可以直接说：
+
+```text
+WorkBuddy，帮我把旧 ChatMaker 升级到 GitHub 正式仓库的最新版。
+只清理旧 ChatMaker Skill 和它自己的旧 MCP，别动学生项目、Mind+ 和其他 Skill；
+删除前先告诉我准备删什么，等我确认。重启后重新安装，
+最后检查只有一个 ChatMaker，并且能找到 23 项星核版自研硬件。
+```
+
+如果需要给学生看仓库地址，再补充一行：`https://github.com/Amasun93/ChatMaker`。
+
 1. 在 WorkBuddy 的 MCP 设置中删除旧的 `chatmaker` 项；如果 `arduino-nano-mindplus` 明确指向旧 ChatMaker 服务，也一并删除。
 2. 退出并重新启动 WorkBuddy。
 3. 删除旧 ChatMaker Skill，再通过原生 Skill 安装入口安装新版。

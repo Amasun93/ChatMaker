@@ -1941,14 +1941,23 @@ modules:
     outline:
       width_mm: 33.5
       height_mm: 30.0
-    mounting_status: incomplete
+    mounting_status: verified_profile
     mounting:
-      status: incomplete
+      status: verified_profile
       count: 4
-      pattern_x: null
-      pattern_y: null
-      centers: null
+      pattern_x: 20
+      pattern_y: 20
+      centers:
+      - - -10.0
+        - -10.0
+      - - 10.0
+        - -10.0
+      - - 10.0
+        - 10.0
+      - - -10.0
+        - 10.0
       nominal_fastener_class: M3
+      nominal_dxf_hole_diameter: 3.0
       printed_hole_diameter: null
     supported_mount_surfaces:
     - base
@@ -1968,7 +1977,7 @@ modules:
   capability_gates:
     programming: conditional
     wiring: assignment_required
-    mechanical_placement: requires_measurement
+    mechanical_placement: ready
     panel_cutout: requires_measurement
   historical_use:
     status: owner_confirmed

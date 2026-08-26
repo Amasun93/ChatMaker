@@ -1,0 +1,64 @@
+{
+  "action": "generate",
+  "mode": "chat3d",
+  "delivery_mode": "chatmaker-preview",
+  "generation_confirmed": true,
+  "board_id": "idmc-0001-starcore-v4-2-2",
+  "project_name": "starcore-smart-sensing-enclosure",
+  "parameters": {
+    "inner_width": 200,
+    "inner_depth": 150,
+    "inner_height": 45,
+    "wall": 2.4,
+    "floor": 2.4,
+    "lid": 2.0,
+    "standoff_height": 5.0,
+    "hole_diameter": 2.8,
+    "lid_hole_diameter": 3.6,
+    "opening_clearance": 0.4,
+    "engrave_text": "星核智能感应盒",
+    "text_size": 8.0,
+    "text_depth": 0.8,
+    "placements": [
+      {
+        "item_id": "idmc-0001-starcore-v4-2-2",
+        "face": "bottom",
+        "x": 0,
+        "y": 15,
+        "rotation": 0
+      },
+      {
+        "item_id": "idmd-0021-starcore-oled-1-3",
+        "face": "top",
+        "x": -55,
+        "y": 30,
+        "rotation": 0
+      },
+      {
+        "item_id": "idms-0009-starcore-ultrasonic",
+        "face": "top",
+        "x": 45,
+        "y": 30,
+        "rotation": 0
+      },
+      {
+        "item_id": "idms-0008-starcore-dht11",
+        "face": "top",
+        "x": 0,
+        "y": -35,
+        "rotation": 0
+      }
+    ],
+    "side_openings": [
+      {
+        "face": "front",
+        "position": 0,
+        "z": 10,
+        "width": 22,
+        "height": 9,
+        "clearance": 0.4,
+        "label": "可调电源与线束出口"
+      }
+    ]
+  }
+}

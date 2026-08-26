@@ -20,4 +20,4 @@ chatmaker-catalog --request-json '{"action":"module_guide","module":"U 形槽光
 chatmaker-catalog --request-json '{"action":"project_task","module":"四路直流电机驱动模块","goal":"做一辆小车"}'
 ```
 
-22 个配套模块均已进入 ChatCAD 机械 profile。Chat2D 可自动初排或拖动模块，并导出统一 `placements`；Chat3D 使用同一数据生成底板安装柱、顶盖固定孔和已经确认的功能开口。微动限位开关的固定孔位仍未发布，因此只显示外形且不生成孔。所有模型继续保留实物公差和 `physical_fit: unverified` 边界。
+22 个配套模块均已进入 ChatCAD 机械 profile，并具有可调用安装孔位。Chat2D 可自动初排或拖动模块，并导出统一 `placements`；Chat3D 使用同一数据生成底板安装柱、顶盖固定孔、已经确认的功能开口和可调侧边线束出口。微动限位开关的 DXF 已确认 20×20 mm 四孔阵列；拨杆活动开口仍需实物尺寸，因此只生成固定孔、不编造活动开口。所有模型继续保留实物公差和 `physical_fit: unverified` 边界。

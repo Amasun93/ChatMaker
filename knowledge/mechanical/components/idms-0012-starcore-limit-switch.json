@@ -17,10 +17,31 @@
     "status": "source_reviewed"
   },
   "mounting": {
-    "status": "requires_measurement",
-    "pattern_x": null,
-    "pattern_y": null,
-    "holes": [],
+    "status": "source_reviewed",
+    "pattern_x": 20.0,
+    "pattern_y": 20.0,
+    "holes": [
+      {
+        "x": -10.0,
+        "y": -10.0,
+        "status": "source_reviewed"
+      },
+      {
+        "x": 10.0,
+        "y": -10.0,
+        "status": "source_reviewed"
+      },
+      {
+        "x": 10.0,
+        "y": 10.0,
+        "status": "source_reviewed"
+      },
+      {
+        "x": -10.0,
+        "y": 10.0,
+        "status": "source_reviewed"
+      }
+    ],
     "fastener_class": "M3",
     "hole_diameter_status": "requires_measurement"
   },

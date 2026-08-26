@@ -99,7 +99,7 @@ class ChatcadPlacementTests(unittest.TestCase):
         self.assertFalse(result["success"])
         self.assertIn("placement_validation_failed", result["detail"])
 
-    def test_unknown_limit_switch_holes_are_not_invented(self):
+    def test_limit_switch_uses_dxf_reviewed_mounting_holes_without_inventing_cutout(self):
         result = generator.generate_project(
             {
                 "mode": "chat3d",
@@ -117,10 +117,14 @@ class ChatcadPlacementTests(unittest.TestCase):
             }
         )
         self.assertTrue(result["success"], result)
-        self.assertNotIn(LIMIT_SWITCH, result["scad_code"])
-        self.assertTrue(
+        self.assertIn(
+            "lid_mount_points = [[35.0,20.0],[55.0,20.0],[55.0,40.0],[35.0,40.0]];",
+            result["scad_code"],
+        )
+        self.assertFalse(
             any(LIMIT_SWITCH in warning for warning in result["layout_validation"]["warnings"])
         )
+        self.assertNotIn("limit_switch_motion", result["scad_code"])
 
 
 if __name__ == "__main__":
