@@ -202,7 +202,7 @@ docs/         设计、路线和贡献说明
 
 ## 路线
 
-当前按 P0 到 P4 管理：P0 精简与证据归一化已完成；P1 星核板独立 CLI 已完成 Windows x64 最小闭环；P2 将打通 SkillHub 自动部署、版本更新和 Beta 反馈闭环；P3.1 补齐经典掌控板，P3.2 调研并接入 micro:bit V2；P4 收口稳定版。
+当前按 P0 到 P4 管理：P0 精简与证据归一化已完成；P1 星核板独立 CLI 已完成 Windows x64 最小闭环；当前优先进入 P2 板卡扩展，P2.1 补齐经典掌控板 V2.x，P2.2 调研并接入 micro:bit V2；P3 再打通 SkillHub 自动部署、版本更新和 Beta 反馈闭环；P4 收口稳定版。
 
 每完成一个阶段，先根据体验者反馈调整下一阶段范围。详见 [ChatMaker Beta 路线图](docs/roadmap.md)。
 

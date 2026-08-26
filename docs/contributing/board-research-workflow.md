@@ -37,5 +37,5 @@ Knowledge：板卡记录、索引、章节和知识包状态
 
 ## 掌控板和 micro:bit 的安排
 
-- **P3.1 经典掌控板 V2.x**：仓库已经有板卡记录和 Knowledge，下一步是补独立工具链与实体验证。掌控板 3.0 必须另开精确型号路线。
-- **P3.2 micro:bit V2**：先比较 MakeCode、MicroPython/CODAL 等官方路线，再选择最适合 ChatMaker 的 CLI；不直接复制星核板的 Arduino 方案。micro:bit V1 只有在真实需求出现时再补。
+- **P2.1 经典掌控板 V2.x**：当前第一优先。仓库已经有板卡记录和 Knowledge，下一步是补独立工具链与实体验证。掌控板 3.0 必须另开精确型号路线。
+- **P2.2 micro:bit V2**：当前第二优先。先比较 MakeCode、MicroPython/CODAL 等官方路线，再选择最适合 ChatMaker 的 CLI；不直接复制星核板的 Arduino 方案。micro:bit V1 只有在真实需求出现时再补。
