@@ -10,4 +10,4 @@ source_refs: [source-stardust-atmega328p-observed]
 
 使用配方 `stardust-idmd-0021-oled-status` 和其登记的完整源码。案例只在启动时绘制一次，并在串口输出 `STARDUST_OLED_READY` 与持续心跳。
 
-串口就绪标记可帮助定位程序运行状态，但仍需用户确认文字、方向、清晰度和闪烁情况。
+串口就绪标记可帮助定位程序运行状态，但不能代替肉眼检查。本次连接的 IDMD-0021 OLED 已由用户确认显示内容正常；其他模块或硬件批次仍需单独验证。

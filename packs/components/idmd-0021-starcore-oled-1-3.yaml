@@ -73,7 +73,7 @@ libraries:
   - name: DFRobot SSD1306 I2C for Stardust
     headers: [DFRobot_SSD1306_I2C.h]
     status: compile_verified
-    notes: The exact Stardust status source compiled and uploaded; visible output remains a separate user-confirmation gate.
+    notes: The exact Stardust status source compiled and uploaded, and the user later confirmed that the displayed content was normal.
 mindplus:
   extension: esp32
   headers: [MPython.h]
@@ -86,4 +86,4 @@ common_failures:
   - English working while Chinese is blank or garbled usually points to the separate Mind+ font asset at 0x400000, not to a need for U8g2.
 board_notes:
   idmc-0001-starcore-v4-2-2: Use a matching-voltage I2C connector; P19 is SCL and P20 is SDA on the shared bus.
-  stardust-atmega328p: The connected module responded at address 0x3C on A4(SDA)/A5(SCL); visible output for the Stardust recipe still requires user confirmation.
+  stardust-atmega328p: The connected module responded at address 0x3C on A4(SDA)/A5(SCL); the exact Stardust status page was later confirmed visible and normal by the user.

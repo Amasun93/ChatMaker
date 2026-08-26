@@ -58,9 +58,12 @@ verification:
     evidence_ref: docs/verification/2026-08-26-stardust-oled-physical-board.md
     method: serial-observation
   physical_effect_verified:
-    status: unverified
-    checked_at: null
-    evidence: The display write path and serial marker ran, but visible pixels and text still require the user's observation.
+    status: verified
+    checked_at: "2026-08-26"
+    evidence: The user confirmed that the connected IDMD-0021 OLED displayed the status-page content normally after the verified upload and serial run.
+    evidence_id: stardust-oled-visible-user-confirmation-2026-08-26
+    evidence_ref: docs/verification/2026-08-26-stardust-oled-physical-board.md
+    method: user-confirmation
 pins:
   - {id: USB, kind: connector-signal, capabilities: [usb-data, serial-upload], source_ids: [stardust-observed-com8]}
   - {id: 5V, kind: power-rail, capabilities: [five-volt-power], source_ids: [stardust-nano-compatible-profile]}
