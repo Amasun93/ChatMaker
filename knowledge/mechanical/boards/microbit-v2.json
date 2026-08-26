@@ -1,0 +1,22 @@
+{
+  "schema_version": "1.0",
+  "kind": "mechanical-profile",
+  "board_id": "microbit-v2",
+  "name": "BBC micro:bit V2.x",
+  "revision": "V2 reference dimensions",
+  "units": "mm",
+  "coordinate_system": {"origin": "board outline center", "x_positive": "right", "y_positive": "toward USB"},
+  "outline": {"shape": "microbit-edge-board", "width": 51.6, "depth": 42.0, "overall_thickness": 11.65},
+  "mounting": {
+    "method": "edge-connector-or-large-ring-attachment",
+    "holes": [],
+    "note": "Use the official reference-design CAD before placing ring holes or edge-connector geometry in a tight attachment."
+  },
+  "keepouts": [
+    {"id": "micro-usb", "edge": "+y", "status": "keep_accessible"},
+    {"id": "antenna", "edge": "+y", "status": "keep_clear"},
+    {"id": "buttons-speaker-jst", "status": "height_reference_available"}
+  ],
+  "source_ids": ["microbit-foundation-hardware-mechanical-v2"],
+  "verification": {"source_reviewed": "official_reference", "physical_fit": "unverified"}
+}

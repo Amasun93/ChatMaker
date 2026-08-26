@@ -5,6 +5,15 @@ name: Arduino Nano Classic ATmega328P
 family: avr
 mcu: ATmega328P
 logic_voltage: 5.0
+chatmaker:
+  runtime_cli: chatmaker-nano
+  runtime_module: chatmaker.hardware.nano_mindplus
+  identification: manual
+mechanics:
+  status: profile-available
+  profile_path: knowledge/mechanical/boards/arduino-nano-classic.json
+  fit_verified: false
+  notes: Official board dimensions are recorded; enclosure fit still requires a physical check.
 sources:
   - title: Arduino Nano documentation
     url: https://docs.arduino.cc/hardware/nano/

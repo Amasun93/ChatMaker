@@ -1,6 +1,6 @@
 # ChatMaker Beta 路线图
 
-当前 Beta 版本：**0.2.0-beta.2**。状态基准：2026-08-26。
+当前 Beta 版本：**0.2.0-beta.3**。状态基准：2026-08-26。
 
 维护者已邀请 20 多位体验者参与测试。Beta 的大白话意思是：核心体验已经能用，也欢迎真实用户使用，但我们仍会根据反馈调整；它不代表所有板卡和模块都完成了实体验收。
 
@@ -32,9 +32,9 @@
 
 ### P2.2：micro:bit V2
 
-- 先按[新板卡调研流程](contributing/board-research-workflow.md)核对精确版本和官方资料。
-- 比较 MakeCode、MicroPython/CODAL 等正式工具链，再决定 ChatMaker 的独立 CLI 路线。
-- V2 优先；V1 只有在真实课堂需求出现时再补兼容。
+- 官方路线比较已经完成，第一层采用固定 MicroPython V2 + `microbit-fs` + DAPLink MSC/CDC。
+- Windows x64 的环境准备、源码检查、HEX 打包、V2虚拟盘识别、安全写入和 `FAIL.TXT` 测试已完成。
+- 当前没有实板，真实 DAPLink 写入、重新枚举、115200 串口、断电重启和 LED/按键效果仍待验证；V1 不在当前范围。
 
 ### P2.3：其他板卡
 

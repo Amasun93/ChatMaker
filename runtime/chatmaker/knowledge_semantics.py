@@ -9,16 +9,15 @@ from typing import Any, Mapping
 
 import yaml
 
+from .catalog_registry import (
+    KNOWLEDGE_BOARD_IDS,
+    KNOWLEDGE_PACK_IDS,
+    KNOWLEDGE_SOURCE_REFS,
+)
+
 
 MAX_BODY_BYTES = 65_536
-BOARD_IDS = (
-    "arduino-nano-classic",
-    "arduino-uno-r3",
-    "esp32-devkit-v1",
-    "idmc-0001-starcore-v4-2-2",
-    "mpython-classic-v2x",
-    "mpython-v3",
-)
+BOARD_IDS = KNOWLEDGE_BOARD_IDS
 CONSUMERS = ("chatmaker", "chatduino", "chatweb", "chatcad")
 SECTION_IDS = (
     "start-here",
@@ -30,17 +29,8 @@ SECTION_IDS = (
     "web-and-protocol",
     "troubleshooting",
 )
-PACK_IDS = {
-    board_id: f"chatmaker-board-{board_id}-knowledge" for board_id in BOARD_IDS
-}
-SOURCE_REFS = {
-    "arduino-nano-classic": "source-arduino-nano-classic-documentation",
-    "arduino-uno-r3": "source-arduino-uno-r3-documentation",
-    "esp32-devkit-v1": "source-esp32-devkit-v1-doit-board-definition",
-    "idmc-0001-starcore-v4-2-2": "source-idmc-0001-starcore-v4-2-2-owned-docs",
-    "mpython-classic-v2x": "source-mpython-classic-v2x-official",
-    "mpython-v3": "source-mpython-v3-official",
-}
+PACK_IDS = dict(KNOWLEDGE_PACK_IDS)
+SOURCE_REFS = dict(KNOWLEDGE_SOURCE_REFS)
 
 _SAFE_ID = re.compile(r"^[a-z0-9][a-z0-9-]*$")
 _INDEX_KEYS = {"schema_version", "kind", "board_id", "max_section_bytes", "sections"}

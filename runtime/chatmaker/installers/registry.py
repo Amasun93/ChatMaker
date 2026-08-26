@@ -16,6 +16,8 @@ import stat
 from typing import Any, Callable, Mapping
 from urllib.parse import urlsplit
 
+from ..catalog_registry import ALLOWED_KNOWLEDGE_PACKS
+
 import jsonschema
 from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
@@ -35,20 +37,16 @@ DEFAULT_TRUST_STORE_PATH = (
 DEFAULT_STATE_PATH = Path.home() / ".chatmaker" / "state" / "registry-sequences.json"
 _REGISTRY_SCHEMA_PATH = _REPO_ROOT / "packs" / "schemas" / "registry.schema.json"
 _SIGNATURE_PATTERN = re.compile(r"^[A-Za-z0-9+/]{85}[AQgw]==$")
+_PACK_ID_PATTERN = "(?:" + "|".join(
+    re.escape(pack_id) for pack_id in sorted(ALLOWED_KNOWLEDGE_PACKS)
+) + ")"
 _PACK_URL_PATTERN = re.compile(
     r"^https://raw\.githubusercontent\.com/Amasun93/ChatMaker/"
     r"[0-9a-f]{40}/distribution/packs/"
-    r"chatmaker-board-(?:arduino-nano-classic|arduino-uno-r3|esp32-devkit-v1|idmc-0001-starcore-v4-2-2|mpython-classic-v2x|mpython-v3)"
-    r"-knowledge-[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.-]+)?\.cmpack$"
+    + _PACK_ID_PATTERN
+    + r"-[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.-]+)?\.cmpack$"
 )
-_ALLOWED_PACK_IDS = {
-    "chatmaker-board-arduino-nano-classic-knowledge",
-    "chatmaker-board-arduino-uno-r3-knowledge",
-    "chatmaker-board-esp32-devkit-v1-knowledge",
-    "chatmaker-board-idmc-0001-starcore-v4-2-2-knowledge",
-    "chatmaker-board-mpython-classic-v2x-knowledge",
-    "chatmaker-board-mpython-v3-knowledge",
-}
+_ALLOWED_PACK_IDS = set(ALLOWED_KNOWLEDGE_PACKS)
 MAX_REGISTRY_VALIDITY = timedelta(days=31)
 
 VERIFICATION_PHASES = {

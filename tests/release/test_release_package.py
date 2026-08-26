@@ -21,7 +21,7 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 
 ROOT = Path(__file__).resolve().parents[2]
 PROJECT_VERSION = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))["project"]["version"]
-RELEASE_VERSION = "0.2.0-beta.2"
+RELEASE_VERSION = "0.2.0-beta.3"
 TEST_PLATFORM = "windows-amd64"
 
 
@@ -390,6 +390,11 @@ class ReleasePackageTests(unittest.TestCase):
         self.assertIn(prefix + "runtime/chatmaker/web/embed.py", names)
         self.assertIn(prefix + "runtime/chatmaker/web/planner.py", names)
         self.assertIn(prefix + "runtime/chatmaker/web/playground.py", names)
+        self.assertIn(prefix + "runtime/chatmaker/catalog_registry.json", names)
+        self.assertIn(prefix + "runtime/chatmaker/hardware/microbit_v2.py", names)
+        self.assertIn(prefix + "runtime/chatmaker/hardware/microbit_tool/package-lock.json", names)
+        self.assertIn(prefix + "runtime/chatmaker/hardware/microbit_tool/package_hex.cjs", names)
+        self.assertIn(prefix + "examples/chatduino/microbit-v2/heart-status/main.py", names)
         self.assertIn(prefix + "examples/chatduino/esp32/ap-led-sensor/ap-led-sensor.ino", names)
         self.assertIn(prefix + "examples/chatduino/esp32/ap-led-sensor/page_html.h", names)
         self.assertIn(prefix + "examples/chatweb/esp32-ap-control.html", names)
@@ -399,24 +404,26 @@ class ReleasePackageTests(unittest.TestCase):
         self.assertIn(prefix + "knowledge/boards/mpython-classic-v2x.yaml", names)
         self.assertIn(prefix + "knowledge/boards/mpython-v3.yaml", names)
         self.assertIn(prefix + "knowledge/mechanical/boards/arduino-nano-classic.json", names)
+        self.assertIn(prefix + "knowledge/mechanical/boards/microbit-v2.json", names)
         self.assertIn(prefix + "knowledge/fabrication/equipment/lasermaker-generic.json", names)
         self.assertIn(prefix + "knowledge/fabrication/materials/wood-sheet-3mm.json", names)
         self.assertIn(prefix + "packs/schemas/registry.schema.json", names)
+        generated_registry = json.loads((ROOT / "runtime" / "chatmaker" / "catalog_registry.json").read_text(encoding="utf-8"))
         self.assertEqual(
             len([name for name in names if name.startswith(prefix + "packs/boards/")]),
-            7,
+            len(generated_registry["boards"]),
         )
         self.assertEqual(
             len([name for name in names if name.startswith(prefix + "packs/components/")]),
-            21,
+            len(generated_registry["components"]),
         )
         self.assertEqual(
             len([name for name in names if name.startswith(prefix + "packs/recipes/")]),
-            27,
+            len(list((ROOT / "packs" / "recipes").glob("*.yaml"))),
         )
         self.assertEqual(
             len([name for name in names if name.startswith(prefix + "knowledge/boards/")]),
-            6,
+            len([item for item in generated_registry["boards"].values() if item["knowledge"] is not None]),
         )
         forbidden_parts = {
             ".git",

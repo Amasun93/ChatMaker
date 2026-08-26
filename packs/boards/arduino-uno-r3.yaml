@@ -5,6 +5,15 @@ name: Arduino Uno Rev3
 family: avr
 mcu: ATmega328P
 logic_voltage: 5.0
+chatmaker:
+  runtime_cli: chatmaker-uno
+  runtime_module: chatmaker.hardware.uno_mindplus
+  identification: manual
+mechanics:
+  status: profile-available
+  profile_path: knowledge/mechanical/boards/arduino-uno-r3.json
+  fit_verified: false
+  notes: Official board dimensions and mounting holes are recorded; enclosure fit remains unverified.
 sources:
   - title: Arduino Uno Rev3 documentation
     url: https://docs.arduino.cc/hardware/uno-rev3/

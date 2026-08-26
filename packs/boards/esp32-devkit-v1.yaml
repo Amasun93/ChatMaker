@@ -5,6 +5,15 @@ name: DOIT ESP32 DEVKIT V1 (ESP-WROOM-32)
 family: esp32
 mcu: ESP32
 logic_voltage: 3.3
+chatmaker:
+  runtime_cli: chatmaker-esp32
+  runtime_module: chatmaker.hardware.esp32_devkit_v1
+  identification: manual
+mechanics:
+  status: profile-available
+  profile_path: knowledge/mechanical/boards/esp32-devkit-v1.json
+  fit_verified: false
+  notes: A community reference profile exists, but clone dimensions must be measured before a tight enclosure.
 identity:
   profile_id: doit-esp32-devkit-v1-wroom32
   carrier_board: DOIT ESP32 DEVKIT V1

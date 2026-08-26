@@ -7,6 +7,15 @@ summary: ESP32 经典掌控板，带 128×64 OLED、按键、触摸、声光输�
 family: mpython-classic
 mcu: ESP32
 logic_voltage: 3.3
+chatmaker:
+  runtime_cli: chatmaker-mpython
+  runtime_module: chatmaker.hardware.mpython_classic
+  identification: automatic
+mechanics:
+  status: research-required
+  profile_path: null
+  fit_verified: false
+  notes: Exact V2.x outline, thickness, mounting and keepout dimensions still require official-source research.
 identity:
   product_line: mPython 掌控板
   sku: DFR0608

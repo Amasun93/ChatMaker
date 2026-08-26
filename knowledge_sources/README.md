@@ -35,8 +35,9 @@ knowledge_sources/
         <section-id>.md
 ```
 
-The current workspace contains eight approved pages for each of four boards
-(32 pages total). A page must carry the exact six-field YAML frontmatter
+Each board with published Knowledge contains the same eight governed sections.
+The current board/page count is derived from `runtime/chatmaker/catalog_registry.json`
+instead of being copied into this document. A page must carry the exact six-field YAML frontmatter
 contract with its stable ID, exact board ID, section ID, and `source_refs`; its
 nonempty body alone is limited to 65,536 UTF-8 bytes. The validator rejects
 paths outside that layout, unknown sources, malformed frontmatter, duplicate

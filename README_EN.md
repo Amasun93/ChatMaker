@@ -12,7 +12,7 @@ ChatMaker is the only user entry. ChatDuino, ChatWeb, and ChatCAD remain separat
 
 Install the current Beta from GitHub `main` through the host's native GitHub Skill flow, then: "Use $chatmaker as the only user entry." Ordinary installation does not scan Codex/WorkBuddy or install a separate tool service. Source developers who need local CLIs may run `python -m pip install -e .` followed by `chatmaker-install local`.
 
-> Current version: **0.2.0-beta.2**. The maintainer reports more than 20 invited testers, and GitHub `main` is the recommended source. Physical evidence remains board-specific rather than inferred from software checks.
+> Current version: **0.2.0-beta.3**. The maintainer reports more than 20 invited testers, and GitHub `main` is the recommended source. Physical evidence remains board-specific rather than inferred from software checks.
 
 See the beginner-facing [WHAT'S NEW](WHATS_NEW.md) for a short summary of this update.
 
@@ -44,7 +44,7 @@ Compilation, firmware upload, browser interaction, serial evidence, and physical
 
 ## Progressive board knowledge
 
-The current source Core contains the Python runtime, four Skill directories, 7 boards, 21 components, 26 recipes, six compact Knowledge indexes, schemas, and current runnable examples. UNIHIKER M10 is an alpha source-level route with a canonical board record, Skill guidance, project checker, and example; it does not yet have a signed Knowledge pack or physical-board evidence. The Core deliberately excludes detailed Knowledge bodies, the knowledge workspace, tests, optional `.cmpack` artifacts, and development caches.
+The current source Core contains the Python runtime, four Skill directories, 8 boards, 21 components, 28 recipes, six compact Knowledge indexes, schemas, and current runnable examples. micro:bit V2 now has a pinned MicroPython HEX packaging and virtual DAPLink safety route, while real flashing, serial, reboot, and physical effects still require hardware. UNIHIKER M10 remains an alpha source-level route. Neither route has a signed Knowledge pack yet. The Core deliberately excludes detailed Knowledge bodies, the knowledge workspace, tests, optional `.cmpack` artifacts, and development caches.
 
 When an AI first requests a detailed board section, `chatmaker-knowledge` defaults to automatic installation. It accepts a pack only after checking the official registry signature, immutable URL, length, SHA-256, manifest, and every payload file. Later reads reuse the verified installation. An installed version remains readable after offline revalidation; an exact cache can authorize a new offline install only while its signed receipt is unexpired.
 

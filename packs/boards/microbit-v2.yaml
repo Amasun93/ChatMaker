@@ -1,0 +1,89 @@
+schema_version: "1.0"
+kind: board
+id: microbit-v2
+name: BBC micro:bit V2.x
+family: nrf52
+mcu: nRF52833
+logic_voltage: 3.3
+chatmaker:
+  runtime_cli: chatmaker-microbit
+  runtime_module: chatmaker.hardware.microbit_v2
+  identification: assisted
+mechanics:
+  status: profile-available
+  profile_path: knowledge/mechanical/boards/microbit-v2.json
+  fit_verified: false
+  notes: Official V2 dimensions are recorded; attachment fit still requires a physical board check.
+identity:
+  target_mcu: nRF52833
+  supported_revisions: [V2.00, V2.2x]
+  interface_mcu_variants: [KL27, nRF52820, nRF52833]
+  forbidden_aliases: [micro:bit V1]
+  physical_confirmation_required: true
+sources:
+  - title: micro:bit Foundation hardware overview
+    url: https://tech.microbit.org/hardware/
+  - title: micro:bit Foundation DAPLink and USB interface
+    url: https://tech.microbit.org/software/daplink-interface/
+  - title: micro:bit MicroPython V2 release 2.1.1
+    url: https://github.com/microbit-foundation/micropython-microbit-v2/releases/tag/v2.1.1
+  - title: microbit-fs 0.10.0
+    url: https://github.com/microbit-foundation/microbit-fs/tree/v0.10.0
+verification:
+  source_reviewed:
+    status: verified
+    checked_at: "2026-08-26"
+    evidence: Official hardware, DAPLink, MicroPython V2 and microbit-fs sources define the V2 target and independent packaging/upload route.
+    method: source-review
+  code_compiled:
+    status: not_applicable
+    checked_at: "2026-08-26"
+    evidence: The first route packages checked MicroPython source into a fixed runtime HEX; it is not a native compile.
+    method: not-applicable
+  firmware_uploaded: &unverified
+    status: unverified
+    checked_at: null
+    evidence: null
+  physical_effect_verified: *unverified
+  source_checked:
+    status: verified
+    checked_at: "2026-08-26"
+    evidence: The representative heart-status main.py passed the local Python source gate.
+    evidence_ref: docs/verification/2026-08-26-microbit-v2-virtual-chain.md
+    method: command-result
+  hex_packaged:
+    status: verified
+    checked_at: "2026-08-26"
+    evidence: MicroPython V2 2.1.1 and microbit-fs 0.10.0 produced a verified HEX with a byte-for-byte main.py round trip.
+    evidence_ref: docs/verification/2026-08-26-microbit-v2-virtual-chain.md
+    method: command-result
+  daplink_write: *unverified
+  serial_observed: *unverified
+  power_cycle_verified: *unverified
+pins:
+  - id: P0
+    capabilities: [digital, analog-input, pwm, touch]
+  - id: P1
+    capabilities: [digital, analog-input, pwm, touch]
+  - id: P2
+    capabilities: [digital, analog-input, pwm, touch]
+  - id: P19
+    capabilities: [digital, i2c-scl]
+  - id: P20
+    capabilities: [digital, i2c-sda]
+  - id: 3V
+    capabilities: [power, 3.3v]
+  - id: GND
+    capabilities: [ground, shared]
+constraints:
+  - Confirm V2.x; the V1 target MCU, memory and runtime are different.
+  - Write ordinary programs only to a volume labelled MICROBIT with a V2 interface version in DETAILS.TXT.
+  - Never write an ordinary program to MAINTENANCE; that mode updates the interface MCU.
+  - A completed file copy does not prove re-enumeration, program start, serial output or a physical effect.
+toolchains:
+  - id: micropython-v2-microbit-fs
+    status: exact_version_required
+    runtime_version: 2.1.1
+    packager_version: 0.10.0
+  - id: daplink-msc-cdc
+    status: hardware_required_for_final_gates

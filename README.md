@@ -14,7 +14,7 @@ ChatMaker 是唯一入口；ChatDuino、ChatWeb 和 ChatCAD 是由它在内部�
 
 对话窗口就是创作环境。编译器、串口和浏览器在后台完成专业工作；部分旧板卡仍可复用 Mind+，用户不需要先学习一套 IDE。
 
-> 当前版本：**0.2.0-beta.2**。维护者已邀请 20 多位体验者参与测试，GitHub `main` 是当前推荐安装来源。各板卡的真实证据按下方状态表分别报告。
+> 当前版本：**0.2.0-beta.3**。维护者已邀请 20 多位体验者参与测试，GitHub `main` 是当前推荐安装来源。各板卡的真实证据按下方状态表分别报告。
 
 想快速了解这次变化，请看面向普通用户的 [WHAT'S NEW](WHATS_NEW.md)。
 
@@ -73,7 +73,7 @@ ChatMaker
 
 ### ChatDuino
 
-帮助用户识别板卡和模块，给出简单直白的文字接线、完整程序和真实编译结果。星核板与经典掌控板 V2.x 在 Windows x64 上已可由 ChatMaker 自己准备独立 CLI；已有 Mind+ 仍可作为兼容后端。Nano、Uno 暂时继续复用已有 Mind+。
+帮助用户识别板卡和模块，给出简单直白的文字接线、完整程序和真实编译结果。星核板、经典掌控板 V2.x 与 micro:bit V2 在 Windows x64 上已有 ChatMaker 独立软件链；已有 Mind+ 仍可作为兼容后端。Nano、Uno 暂时继续复用已有 Mind+。
 
 默认接线长这样。
 
@@ -136,13 +136,13 @@ Skill 负责告诉 AI 应该怎样判断、哪些技术事实不能猜、什么�
 
 这套结构让 AI 保留判断能力，同时在接线安全、端口选择、编译烧录和完成状态上受到明确约束。
 
-V1.0 采用渐进创作流程：先帮助用户跑通最小硬件作品，再按需推荐显示屏、传感器、网页交互、激光切割盒子或 3D 打印外壳。网页和 CAD 不是每个项目的必经步骤。当前主线已覆盖 Nano、Uno、星核板 v4.2.2、经典掌控板 V2.x 和掌控板 3.0；经典掌控板在 Windows x64 上已有独立编译链，Nano、Uno 继续把现有 Mind+ 当作后台工具链。当前源码另加入 UNIHIKER M10 Alpha：可识别 M10/K10 分流、生成完整 Python 项目并做 Python 3.7 源码检查，但尚未提供签名知识包或实板运行证据。完整边界见 [V1.0 创作流程合同](https://github.com/Amasun93/ChatMaker/blob/main/docs/contracts/v1-creative-flow.md)。
+V1.0 采用渐进创作流程：先帮助用户跑通最小硬件作品，再按需推荐显示屏、传感器、网页交互、激光切割盒子或 3D 打印外壳。网页和 CAD 不是每个项目的必经步骤。当前主线已覆盖 Nano、Uno、星核板 v4.2.2、经典掌控板 V2.x、掌控板 3.0 和 micro:bit V2；经典掌控板已有独立编译链，micro:bit 已验证独立 HEX 软件链，Nano、Uno 继续把现有 Mind+ 当作后台工具链。当前源码另加入 UNIHIKER M10 Alpha：可识别 M10/K10 分流、生成完整 Python 项目并做 Python 3.7 源码检查，但尚未提供签名知识包或实板运行证据。完整边界见 [V1.0 创作流程合同](https://github.com/Amasun93/ChatMaker/blob/main/docs/contracts/v1-creative-flow.md)。
 
 完整设计见 [ChatMaker 创作伙伴设计](https://github.com/Amasun93/ChatMaker/blob/main/docs/plans/2026-08-14-chatmaker-creative-partner-design.md)。
 
 ## 板卡知识怎样按需出现
 
-当前源码构建的 Core 只带运行层、ChatMaker / ChatDuino / ChatWeb / ChatCAD 四个 Skill、7 块板卡、21 种元器件、27 个配方、六个紧凑索引、首批机械资料、schema 与当前案例，不带体积较大的扩展正文。M10 目前只有规范板卡记录、Skill 参考、项目检查器和示例；其签名 Knowledge 知识包尚未发布。这样基础安装更小，也不会把测试或构建缓存交给普通用户。
+当前源码构建的 Core 只带运行层、ChatMaker / ChatDuino / ChatWeb / ChatCAD 四个 Skill、8 块板卡、21 种元器件、28 个配方、六个紧凑索引、首批机械资料、schema 与当前案例，不带体积较大的扩展正文。M10 和 micro:bit V2 暂未发布签名 Knowledge 包；micro:bit 已有独立软件链，M10 仍是源码检查路线。这样基础安装更小，也不会把测试或构建缓存交给普通用户。
 
 当 AI 第一次读取某块板卡的详细章节时，`chatmaker-knowledge` 可以按需取得对应知识包并在之后复用。这个动作只安装知识资料，不会安装驱动、Mind+、Arduino Core、Node 或 Chromium。
 
@@ -168,12 +168,13 @@ chatmaker-pack rollback chatmaker-board-arduino-nano-classic-knowledge --version
 | Nano Mind+ 编译和烧录迁移 | 部分验证 | 原 33 项行为测试已迁移；当前共有 12 个示例从 ChatMaker 路径真实编译；烧录等待有线 Nano |
 | Nano/Uno Mind+ 项目流程 | 部分验证 | 独立板型规则、Blink 和 OLED 仪表盘已真实编译；新增连续入口自动检查环境、编译并在有唯一有线端口时烧录，实体板效果等待用户测试 |
 | 经典掌控板 V2.x 独立 CLI | Beta P2.1 编译已验证 | Windows x64 可独立准备环境、doctor、编译、端口筛选、安全上传、复位和串口读取；中文静态状态页已真实编译。当前没有已确认实板，因此上传、串口、断电重启和 OLED 肉眼效果仍未验证。 |
+| micro:bit V2 独立软件链 | Beta P2.2 软件门已验证 | 固定 MicroPython 2.1.1 与 `microbit-fs 0.10.0` 已真实生成代表案例 HEX；虚拟测试覆盖目标盘识别、安全写入和 `FAIL.TXT`。当前无实板，真实写盘、重新枚举、串口、断电和实体效果仍未验证。 |
 <!-- starcore-evidence-summary:start -->
 | 星核板独立 CLI | Beta P1 实测 | ChatMaker 管理的隔离工具链已完成准备、地震预警站编译、COM4 上传、硬复位和 115200 串口验证，不要求安装 Mind+ 应用。已有 Mind+ 1.8 或 2 仍可作为兼容后端。此前用户确认中文 OLED、防闪、蜂鸣器与 A/B 键均正常；本轮只重新验证了编译、上传和串口数据。 |
 <!-- starcore-evidence-summary:end -->
 | DOIT ESP32 DevKit V1 | 部分验证 | 官方 `esp32:esp32@3.3.11` 已安装；`prepare-environment` 真实 no-op 成功；`esp32:esp32:esp32doit-devkit-v1` 已通过 Blink 和 AP 案例真实编译；烧录、启动、串口、SoftAP、HTTP 和实体效果仍待实板 |
 | UNIHIKER M10 | Alpha 源码检查可用 | 官方页面已核对 M10 为 Debian/Python 路线、K10 为独立 MCU 路线；板卡记录、完整项目示例和本地项目检查 CLI 已接入，尚未同步到实板或验证屏幕/外设效果 |
-| 常用模块、库和示例 | 继续扩充 | 21 种元器件、27 个配方已接入；新增经典掌控板中文状态页，星核板板载自检现有独立 Recipe，WS2812 与 SG90 课堂示例已真实编译，IDMM-0007 只读诊断、I²C 排错和 OLED 中文分板卡引导已加入 |
+| 常用模块、库和示例 | 继续扩充 | 21 种元器件、28 个配方已接入；新增 micro:bit V2 心形状态案例和经典掌控板中文状态页，星核板板载自检现有独立 Recipe，WS2812 与 SG90 课堂示例已真实编译，IDMM-0007 只读诊断、I²C 排错和 OLED 中文分板卡引导已加入 |
 | ESP32 AP 手机控制案例 | 部分验证 | `examples/chatweb/esp32-ap-control.html` 是唯一页面源，`chatmaker-web-embed` 生成 `examples/chatduino/esp32/ap-led-sensor/page_html.h`，固件用 `send_P` 和显式长度嵌入页面；浏览器模拟和固件真实编译已通过，硬件仍未验证 |
 | ChatWeb 生成和本地预览 | 部分验证 | 一句话可自动获得空间玻璃课堂页、科幻模拟设备台或舞台闪光挑战；仍支持小游戏、ESP32 HTTP 页面和 Nano/Uno Web Serial 控制台，模拟预览不代表硬件已连接 |
 | ChatWeb 小游戏 | Alpha 可试玩 | 新增 `mini-game` 路由和反应挑战、躲避收集、拖拽解谜三种单文件模板；默认离线、支持触控，复杂平台与节奏玩法保留为进阶方向 |
@@ -203,7 +204,7 @@ docs/         设计、路线和贡献说明
 
 ## 路线
 
-当前按 P0 到 P4 管理：P0 精简与证据归一化已完成；P1 星核板独立 CLI 已完成 Windows x64 最小闭环；P2.1 经典掌控板 V2.x 已完成独立编译链并停在实板证据门，P2.2 已形成 micro:bit V2 官方路线设计，后续再实现；P3 再打通 SkillHub 自动部署、版本更新和 Beta 反馈闭环；P4 收口稳定版。
+当前按 P0 到 P4 管理：P0 精简与证据归一化已完成；P1 星核板独立 CLI 已完成 Windows x64 最小闭环；P2.1 经典掌控板 V2.x 已完成独立编译链并停在实板证据门，P2.2 micro:bit V2 已完成环境、源码、HEX和虚拟下载链并停在实板证据门；P3 再打通 SkillHub 自动部署、版本更新和 Beta 反馈闭环；P4 收口稳定版。
 
 每完成一个阶段，先根据体验者反馈调整下一阶段范围。详见 [ChatMaker Beta 路线图](docs/roadmap.md)。
 

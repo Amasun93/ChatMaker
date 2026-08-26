@@ -1,0 +1,57 @@
+schema_version: "1.0"
+kind: recipe
+id: microbit-v2-heart-status
+name: micro:bit V2 心形状态程序
+summary: 在 micro:bit V2 点阵上显示心形，并通过串口输出中文启动标记。
+sources:
+  - title: micro:bit Foundation MicroPython overview
+    url: https://tech.microbit.org/software/micropython/
+  - title: microbit-fs 0.10.0 documentation
+    url: https://microbit-foundation.github.io/microbit-fs/
+verification:
+  source_reviewed:
+    status: verified
+    checked_at: "2026-08-26"
+    evidence: Official MicroPython and microbit-fs documentation define the V2 runtime and HEX packaging route.
+    evidence_ref: docs/verification/2026-08-26-microbit-v2-virtual-chain.md
+    method: source-review
+  code_compiled:
+    status: not_applicable
+    checked_at: "2026-08-26"
+    evidence: This route packages MicroPython source into a fixed runtime HEX and does not perform native compilation.
+    method: not-applicable
+  source_checked:
+    status: verified
+    checked_at: "2026-08-26"
+    evidence: The checked-in main.py passed the ChatMaker Python syntax gate.
+    evidence_ref: docs/verification/2026-08-26-microbit-v2-virtual-chain.md
+    method: command-result
+  hex_packaged:
+    status: verified
+    checked_at: "2026-08-26"
+    evidence: The fixed MicroPython V2 2.1.1 runtime and microbit-fs 0.10.0 produced a 1,240,048-byte HEX and round-tripped main.py.
+    evidence_ref: docs/verification/2026-08-26-microbit-v2-virtual-chain.md
+    method: command-result
+  firmware_uploaded: &unverified
+    status: unverified
+    checked_at: null
+    evidence: null
+  daplink_failure_checked: *unverified
+  reenumeration_verified: *unverified
+  serial_evidence: *unverified
+  power_cycle_verified: *unverified
+  physical_effect_verified: *unverified
+effect_verification:
+  - effect_id: led-heart-visible
+    name: 5×5 LED点阵显示心形
+    verification:
+      physical_effect_verified: *unverified
+  - effect_id: serial-start-marker
+    name: 115200 串口出现中文启动标记
+    verification:
+      serial_evidence: *unverified
+boards: [microbit-v2]
+components: []
+wiring: []
+source_file: examples/chatduino/microbit-v2/heart-status/main.py
+expected_effect: 上电后点阵显示心形，115200 串口输出“ChatMaker micro:bit V2 已启动”；目前只验证到源码和 HEX，实板效果仍未验证。

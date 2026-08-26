@@ -1,0 +1,8 @@
+{
+  "name": "chatmaker-microbit-v2-tool",
+  "private": true,
+  "version": "1.0.0",
+  "dependencies": {
+    "@microbit/microbit-fs": "0.10.0"
+  }
+}

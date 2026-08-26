@@ -25,6 +25,8 @@ from urllib.error import HTTPError, URLError
 from urllib.parse import urljoin, urlsplit
 from urllib.request import HTTPRedirectHandler, Request, build_opener
 
+from ..catalog_registry import ALLOWED_KNOWLEDGE_PACKS
+
 from .file_lock import FileLockFailure, UnsafeLockPath, exclusive_file_lock
 from .knowledge_state_migration import (
     KnowledgeStateMigrationError,
@@ -50,14 +52,7 @@ from .registry import (
 
 DEFAULT_USER_ROOT = Path.home() / ".chatmaker"
 DEFAULT_CORE_VERSION = "0.1.0"
-ALLOWED_PACKS = {
-    "chatmaker-board-arduino-nano-classic-knowledge": "arduino-nano-classic",
-    "chatmaker-board-arduino-uno-r3-knowledge": "arduino-uno-r3",
-    "chatmaker-board-esp32-devkit-v1-knowledge": "esp32-devkit-v1",
-    "chatmaker-board-idmc-0001-starcore-v4-2-2-knowledge": "idmc-0001-starcore-v4-2-2",
-    "chatmaker-board-mpython-classic-v2x-knowledge": "mpython-classic-v2x",
-    "chatmaker-board-mpython-v3-knowledge": "mpython-v3",
-}
+ALLOWED_PACKS = dict(ALLOWED_KNOWLEDGE_PACKS)
 _VERSION_PATTERN = re.compile(
     r"^(?P<major>0|[1-9][0-9]*)\.(?P<minor>0|[1-9][0-9]*)\."
     r"(?P<patch>0|[1-9][0-9]*)(?:-(?P<pre>[0-9A-Za-z.-]+))?$"

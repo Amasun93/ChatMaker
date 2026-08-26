@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "chatmaker"
-version = "0.2.0b2"
+version = "0.2.0b3"
 description = "AI-native beginner maker workflows for hardware and native web projects"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -28,6 +28,7 @@ chatmaker-nano-examples = "chatmaker.hardware.nano_examples:main"
 chatmaker-avr-project = "chatmaker.hardware.project_flow:main"
 chatmaker-starcore = "chatmaker.hardware.starcore:main"
 chatmaker-mpython = "chatmaker.hardware.mpython_classic:main"
+chatmaker-microbit = "chatmaker.hardware.microbit_v2:main"
 chatmaker-board-identify = "chatmaker.hardware.board_identification:main"
 chatmaker-unihiker = "chatmaker.hardware.unihiker_m10:main"
 chatmaker-serial = "chatmaker.hardware.serial_monitor:main"
@@ -49,4 +50,4 @@ package-dir = {"" = "runtime"}
 where = ["runtime"]
 
 [tool.setuptools.package-data]
-chatmaker = ["cad/assets/*.otf", "cad/assets/*.txt", "cad/assets/*.json"]
+chatmaker = ["catalog_registry.json", "cad/assets/*.otf", "cad/assets/*.txt", "cad/assets/*.json", "hardware/microbit_tool/*.json", "hardware/microbit_tool/*.cjs"]

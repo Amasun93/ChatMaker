@@ -1,6 +1,6 @@
 $schema: https://json-schema.org/draft/2020-12/schema
 type: object
-required: [schema_version, kind, id, name, family, mcu, logic_voltage, sources, verification, pins, constraints, toolchains]
+required: [schema_version, kind, id, name, family, mcu, logic_voltage, chatmaker, mechanics, sources, verification, pins, constraints, toolchains]
 properties:
   schema_version: {const: "1.0"}
   kind: {const: board}
@@ -9,6 +9,23 @@ properties:
   family: {type: string, minLength: 1}
   mcu: {type: string, minLength: 1}
   logic_voltage: {type: number, exclusiveMinimum: 0}
+  chatmaker:
+    type: object
+    additionalProperties: false
+    required: [runtime_cli, runtime_module, identification]
+    properties:
+      runtime_cli: {type: [string, "null"], minLength: 1}
+      runtime_module: {type: [string, "null"], pattern: "^chatmaker\\.[a-z0-9_.]+$"}
+      identification: {enum: [automatic, assisted, manual]}
+  mechanics:
+    type: object
+    additionalProperties: false
+    required: [status, profile_path, fit_verified, notes]
+    properties:
+      status: {enum: [profile-available, research-required, not-applicable]}
+      profile_path: {type: [string, "null"], pattern: "^knowledge/mechanical/boards/[a-z0-9-]+\\.json$"}
+      fit_verified: {type: boolean}
+      notes: {type: string, minLength: 1}
   sources: {$ref: "#/$defs/sources"}
   verification: {$ref: "#/$defs/verification"}
   feature_verification:

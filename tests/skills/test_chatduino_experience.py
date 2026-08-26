@@ -52,7 +52,8 @@ class TeacherExperienceContractTests(unittest.TestCase):
             encoding="utf-8"
         )
 
-        self.assertIn("默认调用 `nano_compile_upload`", skill)
+        self.assertIn("`chatmaker-nano --request-json", skill)
+        self.assertIn('"action":"compile-upload"', skill)
         self.assertIn("不等待老师额外确认", skill)
         self.assertIn("最多自动修改并重试 2 次", skill)
         self.assertIn("未检测到硬件", contract)
@@ -61,7 +62,8 @@ class TeacherExperienceContractTests(unittest.TestCase):
     def test_esp32_compile_upload_keeps_runtime_gates_separate(self):
         skill = (SKILL / "SKILL.md").read_text(encoding="utf-8")
 
-        self.assertIn("`esp32_compile_upload`", skill)
+        self.assertIn("`chatmaker-esp32 --request-json", skill)
+        self.assertIn("`compile-upload` action", skill)
         self.assertIn("`awaiting-hardware`", skill)
         self.assertIn("one non-Bluetooth wired port", skill)
         for gate in ("Wi-Fi AP", "HTTP exchange", "LED behavior", "sensor readings"):
@@ -87,7 +89,7 @@ class TeacherExperienceContractTests(unittest.TestCase):
         chatduino = (SKILL / "SKILL.md").read_text(encoding="utf-8")
 
         for text in (chatmaker, chatduino):
-            self.assertIn("board_identify", text)
+            self.assertIn("chatmaker-board-identify", text)
             self.assertIn("临时识别程序", text)
             self.assertIn("完整备份", text)
             self.assertIn("正反面照片", text)

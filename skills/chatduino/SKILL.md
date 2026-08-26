@@ -1,6 +1,6 @@
 ---
 name: chatduino
-description: Act as a beginner hardware creative partner for Arduino Uno, classic Nano, ESP32, Starcore, and UNIHIKER M10 projects from an AI workspace. Use for board identification, wiring, complete Arduino/C++ or M10 Python projects, Mind+ environment discovery, compile/upload or M10 source checks, serial/runtime observation, and evidence-based physical verification. Do not use for 3D modeling or unsupported board variants.
+description: Act as a beginner hardware creative partner for Arduino Uno, classic Nano, ESP32, micro:bit V2, Starcore, and UNIHIKER M10 projects from an AI workspace. Use for board identification, wiring, complete Arduino/C++ or Python projects, environment discovery, compile/HEX-package/upload checks, serial/runtime observation, and evidence-based physical verification. Do not use for 3D modeling or unsupported board variants.
 ---
 
 # ChatDuino
@@ -123,6 +123,15 @@ Read [oled-i2c-troubleshooting.md](references/oled-i2c-troubleshooting.md) when 
 - The local Mind+ index knows the 3.0 package, but the exact package is not currently installed or hardware-verified. Report the missing toolchain and use markings/正反面照片 rather than silently substituting a classic target.
 - Its MicroPython display object is `display`, and `light.read()` reports lux. Preserve these semantic differences when generating web or hardware code.
 - A temporary probe remains subject to the same backup, restore, and verification gates; no restored program means no completed identification.
+
+## BBC micro:bit V2.x
+
+- Use canonical board `microbit-v2`. Confirm V2.x; V1 uses a different target MCU and is not part of this route.
+- Use `chatmaker-microbit --request-json '<request>'` with `prepare-environment`, `doctor`, `package-hex`, `volumes`, or `flash`.
+- The first layer pins official MicroPython V2 `2.1.1` and `@microbit/microbit-fs@0.10.0`. `package-hex` checks Python syntax and packages `main.py` into the fixed runtime. Call this `source_checked` and `hex_packaged`, not native compilation.
+- Upload only to a uniquely selected volume whose real Windows label is `MICROBIT`, whose `DETAILS.TXT` exists, and whose interface version identifies V2. Reject ordinary USB disks, `MAINTENANCE`, V1 interfaces and ambiguous multiple targets.
+- A completed copy only proves the DAPLink write command returned. Keep `FAIL.TXT`, re-enumeration, 115200 CDC serial, power-cycle recovery, LED/buttons and other physical effects separate.
+- Without a physical board, finish at the source/HEX and virtual safety gates. Do not infer real flashing or device behavior from the MakeCode simulator or a temporary directory.
 
 ## Safety boundaries
 

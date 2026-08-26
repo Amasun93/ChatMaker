@@ -5,6 +5,15 @@ name: UNIHIKER M10 行空板
 family: linux-sbc
 mcu: Quad-core ARM Cortex-A35 with GD32VF103 co-processor
 logic_voltage: 3.3
+chatmaker:
+  runtime_cli: chatmaker-unihiker
+  runtime_module: chatmaker.hardware.unihiker_m10
+  identification: manual
+mechanics:
+  status: research-required
+  profile_path: null
+  fit_verified: false
+  notes: Exact M10 outline, thickness, connector and mounting keepouts still require official-source research.
 identity:
   model: UNIHIKER M10
   operating_system: Debian 10

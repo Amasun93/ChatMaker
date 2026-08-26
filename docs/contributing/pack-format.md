@@ -13,7 +13,7 @@ A contribution must cite its sources and preserve all four baseline evidence gat
 
 ## Canonical data stays in Core
 
-`packs/boards`, `packs/components`, and `packs/recipes` are the only source of canonical board, component, and recipe facts. The minimal Core contains exactly 3 board files, 12 component files, and 14 recipe files, plus every schema and three compact files under `knowledge/boards`.
+`packs/boards`, `packs/components`, and `packs/recipes` are the only source of canonical board, component, and recipe facts. Do not maintain a second handwritten board/component allowlist. Run `python scripts/sync_catalog_registry.py` after adding or changing a record; CI uses `python scripts/sync_catalog_registry.py --check` to prove the packaged runtime snapshot still matches those canonical directories. Knowledge indexes, mechanical profiles, runtime CLIs and source manifests are linked through that generated snapshot.
 
 Do not copy canonical YAML into a knowledge pack. A silently installed pack containing a board, component, recipe, hook, dependency, script, or executable is invalid.
 
