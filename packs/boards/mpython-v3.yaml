@@ -12,10 +12,10 @@ chatmaker:
   runtime_module: null
   identification: automatic
 mechanics:
-  status: research-required
-  profile_path: null
+  status: profile-available
+  profile_path: knowledge/mechanical/boards/mpython-v3.json
   fit_verified: false
-  notes: Exact 3.0 outline, display, connector and mounting keepouts still require official-source research.
+  notes: Official outline, overall thickness and partial mounting dimensions are recorded; normalized hole placement and tight physical fit remain unverified.
 identity:
   product_line: mPython 掌控板 3.0
   historical_source_name: mpython_pro
@@ -62,6 +62,8 @@ gpio_map:
 sources:
   - title: 掌控板 3.0 技术参数
     url: https://mpython-esp32s3-doc.readthedocs.io/zh-cn/latest/1_hardware/1_2_Technical_parameters.html
+  - title: 掌控板 3.0 结构尺寸
+    url: https://mpython-esp32s3-doc.readthedocs.io/zh-cn/latest/1_hardware/1_4_Structural_dimensions.html
   - title: 掌控板 3.0 引脚排布
     url: https://mpython-esp32s3-doc.readthedocs.io/zh-cn/latest/1_hardware/1_3_IO.html
   - title: mPython ESP32-S3 official source
@@ -69,8 +71,8 @@ sources:
 verification:
   source_reviewed:
     status: verified
-    checked_at: "2026-08-23"
-    evidence: Official hardware, IO, API, source, license and local Mind+ package-index facts were reviewed; the local 3.0 toolchain is not installed.
+    checked_at: "2026-08-26"
+    evidence: Official hardware, IO, structural dimensions, API, source, license and local Mind+ package-index facts were reviewed; the local 3.0 toolchain is not installed and physical fit is unverified.
   code_compiled: {status: unverified, checked_at: null, evidence: null}
   firmware_uploaded: {status: unverified, checked_at: null, evidence: null}
   physical_effect_verified: {status: unverified, checked_at: null, evidence: null}

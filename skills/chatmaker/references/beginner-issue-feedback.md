@@ -5,6 +5,8 @@ Use this reference for two different outcomes:
 1. **Problem report:** the beginner remains blocked after one focused troubleshooting pass, or evidence suggests a ChatMaker defect rather than an ordinary wiring or usage mistake.
 2. **Successful knowledge contribution:** the project produced reusable evidence that the current catalog or Knowledge does not cover, such as a new module, a corrected API or pin fact, or a repeatable workaround.
 
+An unsupported board or module request is a third, simpler path. ChatMaker developers maintain hardware records and toolchains; do not ask the user to register hardware themselves. Help collect the exact model, front/back photos, visible markings and intended project, then use `https://github.com/Amasun93/ChatMaker/issues/new` or contact the author on WeChat at `13621625854` with note `chatmaker`. The user must confirm before anything is submitted or sent.
+
 Do not confuse these paths. A blocked attempt is not a successful recipe, and one unexplained success is not yet reliable knowledge.
 
 ## Invite without burdening the beginner
@@ -37,6 +39,7 @@ Use one of these clear titles:
 ```text
 [问题] 板卡或模块 + 一句话现象
 [知识贡献] 板卡或模块 + 已跑通的新经验
+[新板卡] 准确型号 + 希望实现的项目
 ```
 
 Draft the body in this beginner-readable shape:

@@ -16,24 +16,24 @@ verification:
     method: source-review
   code_compiled:
     status: verified
-    checked_at: "2026-08-25"
-    evidence: Mind+ 2 CLI compiled the exact onboard-self-test source for mindplus:esp32:mpython with exit code 0.
-    evidence_id: starcore-self-test-mindplus2-2026-08-25
-    evidence_ref: docs/verification/2026-08-25-p0-no-mcp-starcore.md
+    checked_at: "2026-08-26"
+    evidence: The ChatMaker-managed independent toolchain compiled the exact onboard-self-test source with exit code 0.
+    evidence_id: starcore-self-test-managed-compile-2026-08-26
+    evidence_ref: docs/verification/2026-08-26-starcore-independent-cli.md
     method: command-result
   firmware_uploaded:
     status: verified
-    checked_at: "2026-08-25"
-    evidence: The compiled firmware was written to the identified board on COM4; all four Flash segment hashes passed and RTS hard reset completed.
-    evidence_id: starcore-self-test-upload-2026-08-25
-    evidence_ref: docs/verification/2026-08-25-p0-no-mcp-starcore.md
+    checked_at: "2026-08-26"
+    evidence: The managed-toolchain firmware was written to the identified board on COM4; all four Flash segment hashes passed and RTS hard reset completed.
+    evidence_id: starcore-self-test-managed-upload-2026-08-26
+    evidence_ref: docs/verification/2026-08-26-starcore-independent-cli.md
     method: command-result
   serial_evidence:
     status: verified
-    checked_at: "2026-08-25"
-    evidence: 115200 serial matched STARCORE_SELF_TEST_READY and included BUZZER_COMMAND_COMPLETE, button idle states, and continuing QMI8658 data.
-    evidence_id: starcore-self-test-serial-2026-08-25
-    evidence_ref: docs/verification/2026-08-25-p0-no-mcp-starcore.md
+    checked_at: "2026-08-26"
+    evidence: 115200 serial matched STARCORE_SELF_TEST_READY and included BUZZER_COMMAND_COMPLETE, button idle states, and continuing QMI8658 data near 1g.
+    evidence_id: starcore-self-test-managed-serial-2026-08-26
+    evidence_ref: docs/verification/2026-08-26-starcore-independent-cli.md
     method: serial-observation
   physical_effect_verified:
     status: not_applicable

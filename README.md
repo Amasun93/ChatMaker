@@ -18,6 +18,13 @@ ChatMaker 是唯一入口；ChatDuino、ChatWeb 和 ChatCAD 是由它在内部�
 
 想快速了解这次变化，请看面向普通用户的 [WHAT'S NEW](WHATS_NEW.md)。
 
+## 想让 ChatMaker 支持新板卡或模块？
+
+板卡和模块适配由 ChatMaker 开发者统一维护。请附上准确型号、正反面照片和想实现的项目，通过下面任一方式联系我们：
+
+- [提交 GitHub Issue](https://github.com/Amasun93/ChatMaker/issues/new)
+- 联系作者微信：`13621625854`，备注 `chatmaker`
+
 ## 从 GitHub 安装当前 Beta
 
 把下面这段话和仓库链接交给你正在使用的 AI 即可：

@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0",
-  "updated_at": "2026-08-18",
+  "updated_at": "2026-08-26",
   "policy": "Publish normalized mechanical facts and provenance only. Keep proprietary manufacturing files private.",
   "sources": [
     {
@@ -22,6 +22,48 @@
       "title": "Wokwi ESP32 DevKit V1 board definition",
       "url": "https://github.com/wokwi/wokwi-boards/blob/main/boards/esp32-devkit-v1/board.json",
       "evidence_level": "community_reference_unverified"
+    },
+    {
+      "id": "mpython-classic-v2-official-mechanical-cad",
+      "title": "mPython V2.0 official 2D and 3D mechanical archive",
+      "url": "https://mpython.readthedocs.io/zh-cn/master/_downloads/a5c23c5f4209018ab2c99c36e80793d4/%E6%8E%8C%E6%8E%A7%E6%9D%BFV2.0-3D-2D%E5%9B%BE%E6%A1%A3-20200102.rar",
+      "artifact_size": 1220670,
+      "artifact_sha256": "a3df0fde86088c5884b5ccea44d5b399d37b21c81f4388f7e0c2f75207487949",
+      "evidence_level": "official_cad_v2_0"
+    },
+    {
+      "id": "mpython-v3-official-structural-dimensions",
+      "title": "mPython 3.0 official structural dimensions drawing",
+      "url": "https://mpython-esp32s3-doc.readthedocs.io/zh-cn/latest/_images/Structural_dimensions.jpg",
+      "context_url": "https://mpython-esp32s3-doc.readthedocs.io/zh-cn/latest/1_hardware/1_4_Structural_dimensions.html",
+      "artifact_size": 107129,
+      "artifact_sha256": "48350604f7919eef3fbcb835b8baa633c9c23f1883b3a277a3e912cb4bd2aedc",
+      "evidence_level": "official_dimension_drawing"
+    },
+    {
+      "id": "unihiker-m10-official-product-dimensions",
+      "title": "DFRobot UNIHIKER M10 official product dimensions",
+      "url": "https://dfimg.dfrobot.com/enshop/image/data/DFR0706-EN/DFR0706_Dim_02.jpg",
+      "context_url": "https://www.dfrobot.com/product-2691.html",
+      "artifact_size": 212716,
+      "artifact_sha256": "d3858d7f80eb5691dab56370738557e93ab98ad5c914f5bde9595f2890a14b19",
+      "evidence_level": "official_product_dimension"
+    },
+    {
+      "id": "unihiker-m10-official-step-v1-2-0",
+      "title": "DFRobot UNIHIKER M10 official V1.2.0 STEP archive",
+      "url": "https://dfimg.dfrobot.com/64228321aa9508d63a42c28b/wiki/4821f046ff9b4d5fe7c7cb12740b06cd.zip",
+      "artifact_size": 1976037,
+      "artifact_sha256": "76231df918795e753db749f3bc92575af26794df98b89207aca4816617625f14",
+      "evidence_level": "official_cad"
+    },
+    {
+      "id": "unihiker-m10-official-svg-v1-1-1",
+      "title": "DFRobot UNIHIKER M10 official front and back SVG archive",
+      "url": "https://dfimg.dfrobot.com/64228321aa9508d63a42c28b/wikien/00ef98a3b9b94433c35cc6ba53ab894d.zip",
+      "artifact_size": 1152781,
+      "artifact_sha256": "586e3eabed3762d11a49fea483822826a6a73cab30629daf5419fe1ff3567004",
+      "evidence_level": "official_vector_reference"
     },
     {
       "id": "starcore-v4-2-2-sanitized-mechanical",

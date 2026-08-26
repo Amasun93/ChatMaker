@@ -98,13 +98,15 @@ class SerialMonitorTests(unittest.TestCase):
         self.assertEqual(result["error"], "bluetooth_port_rejected")
         self.assertEqual(created, [])
 
-    def test_serial_diagnostics_detect_malformed_text_and_restart_loops(self):
-        diagnostics = analyze_lines(["ets Jan 8", "boot:0x13", "bad \ufffd text"])
+    def test_serial_diagnostics_do_not_treat_one_normal_boot_as_a_loop(self):
+        diagnostics = analyze_lines(["ets Jan 8", "rst:0x1", "boot:0x13", "bad \ufffd text"])
 
-        self.assertEqual(
-            diagnostics,
-            ["malformed_serial_text", "restart_loop_suspected"],
-        )
+        self.assertEqual(diagnostics, ["malformed_serial_text"])
+
+    def test_serial_diagnostics_detect_repeated_restart_starts(self):
+        diagnostics = analyze_lines(["ets Jan 8", "boot:0x13", "ets Jan 8", "boot:0x13"])
+
+        self.assertEqual(diagnostics, ["restart_loop_suspected"])
 
     def test_jsonl_cli_lists_ports_for_codex(self):
         environment = dict(os.environ)

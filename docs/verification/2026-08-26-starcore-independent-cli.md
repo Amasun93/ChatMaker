@@ -42,5 +42,17 @@ QUAKE_DATA:{..."level":"STABLE","muted":false}
 ## 已知边界
 
 - 当前自动准备仅支持 Windows x64；macOS/Linux 继续使用已有兼容后端，直到各自下载物和实机路径完成验证。
-- Arduino CLI 的旧串口诊断会把同一轮 ESP32 正常启动中的 `ets/rst/boot` 三行误标为 `restart_loop_suspected`；连续 `QUAKE_DATA` 证明本次不是重启循环，此诊断修正留给后续聚焦任务。
+- 本轮未由现场人员按下 A/B 键、听蜂鸣器或执行物理断电，因此这些实体门没有升级。
 - 本轮未发布 GitHub Release 或 SkillHub 包。
+
+## 同日连接板回归
+
+在用户确认当前只连接星核板后，使用仓库内 `examples/chatduino/starcore/onboard-self-test` 再次走完独立链路：
+
+- Knowledge 的 `start-here`、`identify-and-safety`、`pins-and-electrical` 和 `toolchains-and-upload` 均成功读取；
+- doctor 确认隔离环境可编译、可上传，COM4 是唯一合格的非蓝牙端口；
+- 代表案例编译成功（242,348 bytes Flash，17,820 bytes 动态内存），COM4 四段写入哈希校验通过并由 RTS 复位；
+- 115200 串口观察到 `STARCORE_SELF_TEST_READY`、`BUZZER_COMMAND_COMPLETE` 和持续 `STARCORE_SELF_TEST`，静止总加速度约 1g；
+- 第二段连续串口读取没有再次出现启动行，证明固件稳定运行。
+
+本次串口回归还复现并修正了一个诊断误报：同一次正常 ESP32 启动会同时输出 `ets`、`rst` 和 `boot`，旧规则把多个启动字段误认为多次重启。新规则只在观察到至少两次启动起点时提示疑似重启循环，并增加了聚焦测试。

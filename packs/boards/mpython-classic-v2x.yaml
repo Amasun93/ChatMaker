@@ -12,10 +12,10 @@ chatmaker:
   runtime_module: chatmaker.hardware.mpython_classic
   identification: automatic
 mechanics:
-  status: research-required
-  profile_path: null
+  status: profile-available
+  profile_path: knowledge/mechanical/boards/mpython-classic-v2x.json
   fit_verified: false
-  notes: Exact V2.x outline, thickness, mounting and keepout dimensions still require official-source research.
+  notes: Official V2.0 outline dimensions and CAD are recorded; later V2.x revisions and any tight physical fit still require exact-board verification.
 identity:
   product_line: mPython 掌控板
   sku: DFR0608
@@ -76,6 +76,8 @@ gpio_map:
 sources:
   - title: mPython 掌控板硬件与版本记录
     url: https://mpython.readthedocs.io/zh-cn/master/board/hardware.html
+  - title: mPython 掌控板 V2.0 官方 2D/3D 图档
+    url: https://mpython.readthedocs.io/zh-cn/master/_downloads/a5c23c5f4209018ab2c99c36e80793d4/%E6%8E%8C%E6%8E%A7%E6%9D%BFV2.0-3D-2D%E5%9B%BE%E6%A1%A3-20200102.rar
   - title: mPython 掌控板 API
     url: https://mpython.readthedocs.io/zh-cn/master/library/mPython/mpython.html
   - title: mPython official source
@@ -83,8 +85,8 @@ sources:
 verification:
   source_reviewed:
     status: verified
-    checked_at: "2026-08-23"
-    evidence: Official hardware, version, API, OSHWA and local Mind+ 1.8/2.0 package facts were reviewed; revision contradictions remain explicit.
+    checked_at: "2026-08-26"
+    evidence: Official hardware, version, API, OSHWA, mechanical CAD and local Mind+ 1.8/2.0 package facts were reviewed; later V2.x physical fit remains separate from the V2.0 drawing.
   code_compiled:
     status: verified
     checked_at: "2026-08-26"

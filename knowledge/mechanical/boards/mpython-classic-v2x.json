@@ -1,0 +1,22 @@
+{
+  "schema_version": "1.0",
+  "kind": "mechanical-profile",
+  "board_id": "mpython-classic-v2x",
+  "name": "经典掌控板 V2.x",
+  "revision": "V2.0 official mechanical drawing; later V2.x revisions require fit recheck",
+  "units": "mm",
+  "coordinate_system": {"origin": "board outline center", "x_positive": "right", "y_positive": "toward USB-C"},
+  "outline": {"shape": "mpython-edge-board", "width": 51.8, "depth": 47.4, "width_tolerance": 0.1, "depth_tolerance": 0.1},
+  "mounting": {
+    "method": "edge-ring-attachment-or-cradle",
+    "holes": [],
+    "note": "The large edge rings are electrical contacts rather than normalized mounting holes. Use the official V2.0 CAD or measure the exact revision before a tight enclosure."
+  },
+  "keepouts": [
+    {"id": "usb-c", "edge": "+y", "status": "keep_accessible"},
+    {"id": "oled-front", "status": "keep_visible"},
+    {"id": "buttons-and-sensors-front", "status": "keep_accessible"}
+  ],
+  "source_ids": ["mpython-classic-v2-official-mechanical-cad"],
+  "verification": {"source_reviewed": "official_cad_v2_0", "physical_fit": "unverified"}
+}

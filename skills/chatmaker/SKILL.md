@@ -36,6 +36,8 @@ Local execution is an optional second layer. When the AI workspace can run local
 8. Routing a 3D request to `$chatcad` does not authorize generation. Let `$chatcad` finish its task-card confirmation and MakerLab-versus-ChatMaker delivery choice before running the `generate` action through `chatmaker-cad`.
 9. For combined projects, define the shared board identity and interface requirements first, then invoke the relevant specialists.
 
+If an exact board or module is not supported, do not ask a beginner to edit YAML, registries, Knowledge files, or toolchain definitions. Hardware support is maintained by ChatMaker developers. Offer to help the user prepare the exact model, front/back photos, visible markings, and intended project, then direct them to `https://github.com/Amasun93/ChatMaker/issues/new` or the author's WeChat `13621625854` with note `chatmaker`. Never publish an Issue or send a message without the user's explicit confirmation.
+
 Use the phrase "exact board identity" literally: do not read optional ChatMaker Knowledge guidance until the board ID is confirmed. Once confirmed, start with the `start-here` section and then continue with canonical board, component, and recipe facts.
 
 Read [project-contract.md](references/project-contract.md) before planning a combined project or reporting completion.

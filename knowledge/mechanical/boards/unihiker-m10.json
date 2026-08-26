@@ -1,0 +1,22 @@
+{
+  "schema_version": "1.0",
+  "kind": "mechanical-profile",
+  "board_id": "unihiker-m10",
+  "name": "UNIHIKER M10 行空板",
+  "revision": "DFR0706 / official V1.2.0 STEP reference",
+  "units": "mm",
+  "coordinate_system": {"origin": "board outline center", "x_positive": "right", "y_positive": "toward top sensors"},
+  "outline": {"shape": "unihiker-edge-board", "width": 51.6, "depth": 83.0, "overall_thickness": 13.0},
+  "mounting": {
+    "method": "case-or-edge-cradle",
+    "holes": [],
+    "note": "No dedicated mounting-hole pattern is published in the product dimensions. Use the official V1.2.0 STEP for connector envelopes and measure the exact board before a tight enclosure."
+  },
+  "keepouts": [
+    {"id": "edge-connector", "edge": "-y", "status": "keep_accessible"},
+    {"id": "touch-display-front", "status": "keep_visible"},
+    {"id": "usb-c-and-usb-a", "status": "keep_accessible"}
+  ],
+  "source_ids": ["unihiker-m10-official-product-dimensions", "unihiker-m10-official-step-v1-2-0", "unihiker-m10-official-svg-v1-1-1"],
+  "verification": {"source_reviewed": "official_product_and_cad", "physical_fit": "unverified"}
+}

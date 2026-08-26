@@ -10,10 +10,10 @@ chatmaker:
   runtime_module: chatmaker.hardware.unihiker_m10
   identification: manual
 mechanics:
-  status: research-required
-  profile_path: null
+  status: profile-available
+  profile_path: knowledge/mechanical/boards/unihiker-m10.json
   fit_verified: false
-  notes: Exact M10 outline, thickness, connector and mounting keepouts still require official-source research.
+  notes: Official product dimensions, SVG and V1.2.0 STEP are recorded; connector envelopes and tight physical fit still require CAD use or exact-board measurement.
 identity:
   model: UNIHIKER M10
   operating_system: Debian 10
@@ -24,6 +24,10 @@ sources:
     url: https://www.dfrobot.com/product-2691.html
   - title: UNIHIKER M10 official getting started documentation
     url: https://www.unihiker.com/wiki/get-started
+  - title: UNIHIKER M10 official dimension documentation
+    url: https://www.unihiker.com/wiki/HardwareReference/hardware_reference_dimension/
+  - title: UNIHIKER M10 official SVG and 3D files
+    url: https://www.unihiker.com/wiki/HardwareReference/hardware_reference_svg_3d_file/
   - title: UNIHIKER M10 official Python version guidance
     url: https://www.unihiker.com/wiki/Troubleshooting/How_to_Install_Multiple_Python_Versions_on_Unihiker
   - title: UNIHIKER K10 official getting started documentation
@@ -31,8 +35,8 @@ sources:
 verification:
   source_reviewed:
     status: verified
-    checked_at: "2026-08-21"
-    evidence: Official M10 product and documentation pages confirm the Linux/Python route; the K10 page confirms a separate MCU route.
+    checked_at: "2026-08-26"
+    evidence: Official M10 product, dimension, SVG/STEP and workflow pages confirm the Linux/Python route and mechanical envelope; the K10 page confirms a separate MCU route, while physical fit remains unverified.
   code_compiled:
     status: unverified
     checked_at: null

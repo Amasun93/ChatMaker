@@ -31,6 +31,8 @@ class KnowledgeContributionContractTests(unittest.TestCase):
         self.assertIn("highest evidence state", reference)
         self.assertIn("Never turn an unverified guess into shared knowledge", reference)
         self.assertIn("Amasun93/ChatMaker/issues/new", reference)
+        self.assertIn("13621625854", reference)
+        self.assertIn("chatmaker", reference)
 
     def test_feedback_uses_github_first_and_feishu_without_github(self):
         router = (ROOT / "skills" / "chatmaker" / "SKILL.md").read_text(

@@ -44,7 +44,7 @@ class ChatCadAlphaTests(unittest.TestCase):
         )
         self.assertIsNone(result["material"]["machine_parameters"]["power"])
 
-    def test_four_board_profiles_are_available(self):
+    def test_registered_board_profiles_are_available(self):
         result = generator.execute_request({"action": "list-profiles"})
 
         self.assertTrue(result["success"])
@@ -55,6 +55,10 @@ class ChatCadAlphaTests(unittest.TestCase):
                 "arduino-uno-r3",
                 "esp32-devkit-v1",
                 "idmc-0001-starcore-v4-2-2",
+                "microbit-v2",
+                "mpython-classic-v2x",
+                "mpython-v3",
+                "unihiker-m10",
             },
         )
         self.assertTrue(all(item["physical_fit"] == "unverified" for item in result["profiles"]))

@@ -90,9 +90,9 @@
       },
       "mechanics": {
         "fit_verified": false,
-        "notes": "Exact V2.x outline, thickness, mounting and keepout dimensions still require official-source research.",
-        "profile_path": null,
-        "status": "research-required"
+        "notes": "Official V2.0 outline dimensions and CAD are recorded; later V2.x revisions and any tight physical fit still require exact-board verification.",
+        "profile_path": "knowledge/mechanical/boards/mpython-classic-v2x.json",
+        "status": "profile-available"
       },
       "record_path": "packs/boards/mpython-classic-v2x.yaml",
       "runtime_cli": "chatmaker-mpython",
@@ -107,9 +107,9 @@
       },
       "mechanics": {
         "fit_verified": false,
-        "notes": "Exact 3.0 outline, display, connector and mounting keepouts still require official-source research.",
-        "profile_path": null,
-        "status": "research-required"
+        "notes": "Official outline, overall thickness and partial mounting dimensions are recorded; normalized hole placement and tight physical fit remain unverified.",
+        "profile_path": "knowledge/mechanical/boards/mpython-v3.json",
+        "status": "profile-available"
       },
       "record_path": "packs/boards/mpython-v3.yaml",
       "runtime_cli": null,
@@ -120,9 +120,9 @@
       "knowledge": null,
       "mechanics": {
         "fit_verified": false,
-        "notes": "Exact M10 outline, thickness, connector and mounting keepouts still require official-source research.",
-        "profile_path": null,
-        "status": "research-required"
+        "notes": "Official product dimensions, SVG and V1.2.0 STEP are recorded; connector envelopes and tight physical fit still require CAD use or exact-board measurement.",
+        "profile_path": "knowledge/mechanical/boards/unihiker-m10.json",
+        "status": "profile-available"
       },
       "record_path": "packs/boards/unihiker-m10.yaml",
       "runtime_cli": "chatmaker-unihiker",

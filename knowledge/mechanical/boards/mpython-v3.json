@@ -1,0 +1,24 @@
+{
+  "schema_version": "1.0",
+  "kind": "mechanical-profile",
+  "board_id": "mpython-v3",
+  "name": "掌控板 3.0",
+  "revision": "official published structural dimensions",
+  "units": "mm",
+  "coordinate_system": {"origin": "board outline center", "x_positive": "right", "y_positive": "toward USB-C"},
+  "outline": {"shape": "mpython-edge-board", "width": 51.8, "depth": 47.39, "width_tolerance": 0.2, "depth_tolerance": 0.2, "overall_thickness": 7.65, "overall_thickness_tolerance": 0.2},
+  "mounting": {
+    "method": "two-top-holes-or-cradle",
+    "holes": [],
+    "published_hole_diameter": 3.0,
+    "published_horizontal_spacing": 24.0,
+    "note": "The official drawing gives two 3 mm holes with 24 mm horizontal spacing, but does not publish enough origin-relative placement data here to normalize safe hole coordinates."
+  },
+  "keepouts": [
+    {"id": "usb-c", "edge": "+y", "status": "keep_accessible"},
+    {"id": "color-display-front", "status": "keep_visible"},
+    {"id": "antenna", "status": "keep_clear"}
+  ],
+  "source_ids": ["mpython-v3-official-structural-dimensions"],
+  "verification": {"source_reviewed": "official_dimension_drawing", "physical_fit": "unverified"}
+}

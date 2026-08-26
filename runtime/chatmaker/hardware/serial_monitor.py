@@ -20,11 +20,13 @@ def _pyserial_factory(**kwargs: Any):
 def analyze_lines(lines: list[str]) -> list[str]:
     diagnostics: list[str] = []
     text = "\n".join(lines)
-    joined = text.casefold()
     if "\ufffd" in text:
         diagnostics.append("malformed_serial_text")
-    restart_markers = sum(joined.count(marker) for marker in ("rst cause", "ets ", "boot:"))
-    if restart_markers >= 2:
+    normalized = [line.casefold().lstrip() for line in lines]
+    ets_starts = sum(line.startswith("ets ") for line in normalized)
+    reset_starts = sum(line.startswith(("rst:", "rst cause")) for line in normalized)
+    restart_starts = max(ets_starts, reset_starts)
+    if restart_starts >= 2:
         diagnostics.append("restart_loop_suspected")
     return diagnostics
 
