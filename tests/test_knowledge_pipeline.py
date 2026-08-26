@@ -122,6 +122,8 @@ class KnowledgePublicationPipelineTests(unittest.TestCase):
         return load_validator().validate_knowledge_publication(root)
 
     def run_cli(self, root: Path) -> subprocess.CompletedProcess[str]:
+        environment = dict(os.environ)
+        environment["PYTHONIOENCODING"] = "cp1252"
         return subprocess.run(
             [
                 sys.executable,
@@ -133,6 +135,7 @@ class KnowledgePublicationPipelineTests(unittest.TestCase):
             text=True,
             capture_output=True,
             check=False,
+            env=environment,
         )
 
     def test_checked_in_manifests_cover_exact_governed_pages_without_promoting_source_gates(self):

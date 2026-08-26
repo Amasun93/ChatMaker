@@ -16,7 +16,7 @@ import yaml
 
 
 ROOT = Path(__file__).resolve().parents[1]
-MANIFEST = ROOT / "knowledge_sources/manifests/self-developed-hardware.yaml"
+MANIFEST = ROOT / "knowledge_sources/catalogs/self-developed-hardware.yaml"
 
 
 def digest(path: Path) -> str:

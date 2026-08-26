@@ -45,6 +45,17 @@ def board(record_id: str = "board-one") -> dict:
         "family": "avr",
         "mcu": "ATmega328P",
         "logic_voltage": 5.0,
+        "chatmaker": {
+            "runtime_cli": None,
+            "runtime_module": None,
+            "identification": "manual",
+        },
+        "mechanics": {
+            "status": "research-required",
+            "profile_path": None,
+            "fit_verified": False,
+            "notes": "No governed mechanical profile is available for this fixture.",
+        },
         "sources": [{"title": "Manufacturer", "url": "https://example.com/board"}],
         "verification": deepcopy(GATES),
         "pins": [

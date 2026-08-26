@@ -10,7 +10,7 @@
 
 沿用 ChatMaker 已有的 `board` / `component` / `recipe` 目录，不增加一套互相竞争的模块目录。`IDMC-0001` 继续映射到现有星核板板卡记录，其余 22 项映射到组件记录；每条记录都携带同构的 `module_profile`，其中包含初学者显示名、用途、输入/输出角色、接口与供电、已确认接线、未知项、示例能力、机械资料、来源摘要和可用状态。
 
-`knowledge_sources/manifests/self-developed-hardware.yaml` 是受控来源层。它从交接包索引、原始模块目录和既有的原始资料提取结果生成，只记录关键证据文件的归档相对路径、SHA-256 和结构化结论，不复制 PDF、DOCX、STEP、DXF、图片或压缩包本体。`packs/boards`、`packs/components` 与 `knowledge/mechanical` 是精简运行时层。
+`knowledge_sources/catalogs/self-developed-hardware.yaml` 是包级受控来源目录。它从交接包索引、原始模块目录和既有的原始资料提取结果生成，只记录关键证据文件的归档相对路径、SHA-256 和结构化结论，不复制 PDF、DOCX、STEP、DXF、图片或压缩包本体。它不属于只容纳“每块板一个来源清单”的 `knowledge_sources/manifests`；使用 `python scripts/sync_self_developed_hardware.py --check` 和独立的 `self-developed-hardware.schema.yaml` 校验。`packs/boards`、`packs/components` 与 `knowledge/mechanical` 是精简运行时层。
 
 `chatmaker-catalog` 增加三个动作：`list_modules` 返回 23 项友好目录；`module_guide` 返回单模块证据化指导；`project_task` 根据模块状态生成可执行的教学任务。已有配方的模块可进入“可直接生成指导”，资料足够但电气/协议/实物仍有门槛的模块进入“需老师或实物验证”，供电/分线等非 GPIO 或资料不足的模块进入“仅资料检索”。任务生成不得越过该状态。
 

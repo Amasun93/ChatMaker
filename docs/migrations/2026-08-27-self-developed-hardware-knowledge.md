@@ -48,7 +48,7 @@
 
 ## 运行时接入位置
 
-- 受控来源：`knowledge_sources/manifests/self-developed-hardware.yaml`
+- 包级受控来源目录：`knowledge_sources/catalogs/self-developed-hardware.yaml`
 - 来源 Schema：`knowledge_sources/schemas/self-developed-hardware.schema.yaml`
 - 精简运行时索引：`knowledge/hardware/self-developed-modules.yaml`
 - 组件/板卡：`packs/components/*.yaml`、`packs/boards/idmc-0001-starcore-v4-2-2.yaml`

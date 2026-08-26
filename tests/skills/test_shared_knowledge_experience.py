@@ -15,10 +15,10 @@ class SharedKnowledgeExperienceTests(unittest.TestCase):
 
         self.assertIn("exact board identity", skill)
         self.assertIn("start-here", skill)
-        self.assertIn("knowledge_get", skill)
-        self.assertIn("WorkBuddy", skill)
         self.assertIn("chatmaker-knowledge --request-json", skill)
-        self.assertIn("Codex", skill)
+        self.assertIn("AI workspace", skill)
+        self.assertIn("single execution route", skill)
+        self.assertNotIn("knowledge_get", skill)
 
     def test_chatduino_skill_reads_safety_pins_toolchain_and_canonical_facts(self):
         skill = (ROOT / "skills" / "chatduino" / "SKILL.md").read_text(encoding="utf-8")
@@ -27,10 +27,10 @@ class SharedKnowledgeExperienceTests(unittest.TestCase):
         self.assertIn("pins-and-electrical", skill)
         self.assertIn("toolchains-and-upload", skill)
         self.assertIn("canonical facts", skill)
-        self.assertIn("WorkBuddy", skill)
-        self.assertIn("knowledge_get", skill)
         self.assertIn("chatmaker-knowledge --request-json", skill)
-        self.assertIn("Codex", skill)
+        self.assertIn("AI workspace", skill)
+        self.assertNotIn("WorkBuddy", skill)
+        self.assertNotIn("knowledge_get", skill)
 
     def test_chatweb_skill_documents_hardware_only_board_wiki_boundary(self):
         skill = (ROOT / "skills" / "chatweb" / "SKILL.md").read_text(encoding="utf-8")

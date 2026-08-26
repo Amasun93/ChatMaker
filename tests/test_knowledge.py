@@ -442,8 +442,10 @@ class KnowledgeReaderTests(unittest.TestCase):
                 "arduino-uno-r3",
                 "esp32-devkit-v1",
                 "idmc-0001-starcore-v4-2-2",
+                "microbit-v2",
                 "mpython-classic-v2x",
                 "mpython-v3",
+                "stardust-atmega328p",
             ),
         )
         self.assertEqual(PACK_IDS[BOARD_ID], PACK_ID)

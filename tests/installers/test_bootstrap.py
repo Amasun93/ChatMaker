@@ -103,9 +103,10 @@ class BootstrapTests(unittest.TestCase):
                 install_root=selected,
                 legacy_home_override=False,
             )
-
-        self.assertEqual(default_root, project / ".chatmaker-runtime")
-        self.assertEqual(explicit_root, selected)
+            default_root.mkdir(parents=True)
+            explicit_root.mkdir(parents=True)
+            self.assertTrue(os.path.samefile(default_root, project / ".chatmaker-runtime"))
+            self.assertTrue(os.path.samefile(explicit_root, selected))
 
     def test_runtime_location_record_explains_recovery(self):
         bootstrap = runpy.run_path(str(BOOTSTRAP))

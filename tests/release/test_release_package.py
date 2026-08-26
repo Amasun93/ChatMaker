@@ -371,6 +371,10 @@ class ReleasePackageTests(unittest.TestCase):
                 "docs/roadmap.md",
                 "docs/contributing/board-research-workflow.md",
                 "docs/hardware/self-developed-modules.md",
+            }
+            | {
+                "docs/" + path.relative_to(ROOT / "docs").as_posix()
+                for path in (ROOT / "docs" / "verification").glob("*.md")
             },
         )
         self.assertIn(prefix + "skills/chatmaker/SKILL.md", names)

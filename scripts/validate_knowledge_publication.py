@@ -366,7 +366,9 @@ def main(argv: list[str] | None = None) -> int:
             "errors": [f"validation_failed: {type(exc).__name__}: {exc}"],
             "counts": {"manifests": 0, "pages": 0},
         }
-    print(json.dumps(result, ensure_ascii=False, sort_keys=True))
+    # This is a machine interface. ASCII-escaped JSON stays valid even when a
+    # Windows runner inherits a legacy stdout encoding such as cp1252.
+    print(json.dumps(result, ensure_ascii=True, sort_keys=True))
     return 0 if result["success"] else 1
 
 

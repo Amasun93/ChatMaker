@@ -13,7 +13,7 @@ sys.path.insert(0, str(ROOT / "runtime"))
 from chatmaker.catalog import execute_request
 
 
-MANIFEST = ROOT / "knowledge_sources/manifests/self-developed-hardware.yaml"
+MANIFEST = ROOT / "knowledge_sources/catalogs/self-developed-hardware.yaml"
 SCHEMA = ROOT / "knowledge_sources/schemas/self-developed-hardware.schema.yaml"
 
 
@@ -23,6 +23,8 @@ class SelfDevelopedHardwareTests(unittest.TestCase):
         cls.manifest = yaml.safe_load(MANIFEST.read_text(encoding="utf-8"))
 
     def test_manifest_schema_and_exact_unique_scope(self):
+        self.assertTrue(MANIFEST.is_file())
+        self.assertFalse((ROOT / "knowledge_sources/manifests/self-developed-hardware.yaml").exists())
         schema = yaml.safe_load(SCHEMA.read_text(encoding="utf-8"))
         errors = list(Draft202012Validator(schema).iter_errors(self.manifest))
         self.assertEqual(errors, [])

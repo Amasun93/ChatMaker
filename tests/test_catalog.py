@@ -315,7 +315,12 @@ class CatalogTests(unittest.TestCase):
                 record = result["record"]
                 self.assertEqual(record["hardware_id"], hardware_id)
                 self.assertTrue(any(any("\u4e00" <= char <= "\u9fff" for char in alias) for alias in record["aliases"]))
-                self.assertEqual(record["supported_boards"], [STARCORE_BOARD_ID])
+                expected_boards = (
+                    {STARCORE_BOARD_ID, "stardust-atmega328p"}
+                    if component_id == "idmd-0021-starcore-oled-1-3"
+                    else {STARCORE_BOARD_ID}
+                )
+                self.assertEqual(set(record["supported_boards"]), expected_boards)
                 self.assertEqual(record["verification"]["source_reviewed"]["status"], "verified")
                 compiled = record["verification"]["code_compiled"]
                 self.assertEqual(compiled["status"], "verified")

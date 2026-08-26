@@ -2,6 +2,7 @@ import tempfile
 import unittest
 import hashlib
 import json
+import os
 from pathlib import Path
 from unittest import mock
 import zipfile
@@ -169,7 +170,12 @@ class StarcoreTests(unittest.TestCase):
             self.assertTrue(result["installation_performed"])
             self.assertEqual(result["environment"]["backend"], managed.BACKEND)
             config = json.loads((root / "arduino-cli.yaml").read_text(encoding="ascii"))
-            self.assertEqual(config["directories"]["data"], (root / "data").as_posix())
+            self.assertTrue(
+                os.path.samefile(
+                    Path(config["directories"]["data"]),
+                    root / "data",
+                )
+            )
             self.assertEqual(
                 config["board_manager"]["additional_urls"],
                 [managed.MINDPLUS_PACKAGE_INDEX_URL],

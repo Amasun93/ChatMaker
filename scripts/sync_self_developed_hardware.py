@@ -17,7 +17,7 @@ import yaml
 
 
 ROOT = Path(__file__).resolve().parents[1]
-MANIFEST_PATH = ROOT / "knowledge_sources/manifests/self-developed-hardware.yaml"
+MANIFEST_PATH = ROOT / "knowledge_sources/catalogs/self-developed-hardware.yaml"
 SCHEMA_PATH = ROOT / "knowledge_sources/schemas/self-developed-hardware.schema.yaml"
 RUNTIME_INDEX_PATH = ROOT / "knowledge/hardware/self-developed-modules.yaml"
 BOARD_ID = "idmc-0001-starcore-v4-2-2"
