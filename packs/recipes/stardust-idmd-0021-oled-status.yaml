@@ -1,10 +1,10 @@
 schema_version: "1.0"
 kind: recipe
 id: stardust-idmd-0021-oled-status
-name: 星尘板自研 OLED 状态页
+name: 星辰板自研 OLED 状态页
 summary: 在已确认的 IDMD-0021 1.3 寸屏上静态显示状态，并用串口报告程序持续运行。
 sources:
-  - title: ChatMaker 星尘板与自研 OLED 实板记录
+  - title: ChatMaker 星辰板与自研 OLED 实板记录
     url: https://github.com/Amasun93/ChatMaker/blob/main/docs/verification/2026-08-26-stardust-oled-physical-board.md
 verification:
   source_reviewed:
@@ -35,6 +35,13 @@ verification:
     evidence_id: stardust-oled-serial-2026-08-26
     evidence_ref: docs/verification/2026-08-26-stardust-oled-physical-board.md
     method: serial-observation
+  power_cycle_verified:
+    status: verified
+    checked_at: "2026-08-26"
+    evidence: After disconnecting and reconnecting power, the user confirmed that the OLED status text returned normally.
+    evidence_id: xingchen-oled-power-cycle-user-confirmation-2026-08-26
+    evidence_ref: docs/verification/2026-08-26-stardust-oled-physical-board.md
+    method: user-confirmation
   physical_effect_verified:
     status: verified
     checked_at: "2026-08-26"

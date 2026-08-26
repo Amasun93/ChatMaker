@@ -1,22 +1,88 @@
 from __future__ import annotations
 
 from pathlib import Path
+import json
 import sys
 import tempfile
 import unittest
 from unittest import mock
+
+import yaml
 
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "runtime"))
 
 from chatmaker.hardware import microbit_v2
+from chatmaker.installers.pack_artifact import build_pack
 
 
 DETAILS_V2 = "# DAPLink Firmware - see https://mbed.com/daplink\nVersion: 0257\nBuild ID: v0257\n"
 
 
 class MicrobitV2Tests(unittest.TestCase):
+    def test_registered_board_can_build_a_knowledge_pack(self):
+        pack_id = "chatmaker-board-microbit-v2-knowledge"
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            knowledge_root = root / "knowledge"
+            sections_root = knowledge_root / "sections"
+            sections_root.mkdir(parents=True)
+            (knowledge_root / "index.yaml").write_bytes(
+                (ROOT / "knowledge/boards/microbit-v2.yaml").read_bytes()
+            )
+            for source in (
+                ROOT / "knowledge_sources/published/boards/microbit-v2"
+            ).glob("*.md"):
+                (sections_root / source.name).write_bytes(source.read_bytes())
+            manifest = build_pack(
+                root,
+                root / "microbit-v2.cmpack",
+                pack_id=pack_id,
+                pack_version="0.1.0",
+                board_id="microbit-v2",
+                core_minimum="0.1.0",
+                core_maximum_exclusive="0.2.0",
+            )
+
+        self.assertEqual(manifest["pack_id"], pack_id)
+        self.assertEqual(manifest["board_id"], "microbit-v2")
+
+    def test_board_has_standard_knowledge_pack_and_generated_registration(self):
+        section_ids = {
+            "start-here",
+            "identify-and-safety",
+            "pins-and-electrical",
+            "toolchains-and-upload",
+            "components-and-wiring",
+            "libraries-and-examples",
+            "web-and-protocol",
+            "troubleshooting",
+        }
+        index = yaml.safe_load(
+            (ROOT / "knowledge/boards/microbit-v2.yaml").read_text(encoding="utf-8")
+        )
+        self.assertEqual({item["section_id"] for item in index["sections"]}, section_ids)
+        self.assertEqual(
+            {item["pack_id"] for item in index["sections"]},
+            {"chatmaker-board-microbit-v2-knowledge"},
+        )
+        for section_id in section_ids:
+            page = ROOT / "knowledge_sources/published/boards/microbit-v2" / f"{section_id}.md"
+            self.assertTrue(page.is_file(), page)
+            _, frontmatter, body = page.read_text(encoding="utf-8").split("---", 2)
+            metadata = yaml.safe_load(frontmatter)
+            self.assertEqual(metadata["board_id"], "microbit-v2")
+            self.assertEqual(metadata["section_id"], section_id)
+            self.assertTrue(body.strip())
+        registry = json.loads(
+            (ROOT / "runtime/chatmaker/catalog_registry.json").read_text(encoding="utf-8")
+        )
+        self.assertEqual(
+            registry["boards"]["microbit-v2"]["knowledge"]["pack_id"],
+            "chatmaker-board-microbit-v2-knowledge",
+        )
+
     def test_prepare_environment_runs_npm_inside_the_isolated_tool_root(self):
         with tempfile.TemporaryDirectory() as directory:
             tool_root = Path(directory) / "tool"

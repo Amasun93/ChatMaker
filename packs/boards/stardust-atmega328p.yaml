@@ -1,7 +1,7 @@
 schema_version: "1.0"
 kind: board
 id: stardust-atmega328p
-name: 星尘板（ATmega328P）
+name: 星辰板（ATmega328P）
 family: stardust-avr
 mcu: ATmega328P
 logic_voltage: 5.0
@@ -15,16 +15,20 @@ mechanics:
   fit_verified: false
   notes: The supplied self-developed hardware archive does not contain a Stardust board drawing; dimensions and mounting holes require the exact board source or physical measurement.
 identity:
-  product_line: 星尘板
+  product_line: 星辰板
   exact_revision: unconfirmed
   user_confirmed_name: true
+  owner_description:
+    status: unverified
+    summary: The product owner currently understands Xingchen Board as a self-developed Arduino Nano variant with additional student-friendly pins and otherwise similar basic behavior.
+    confirmation_needed: Obtain the developer schematic and full pin map before treating the additional pins or complete Nano equivalence as verified facts.
   observed_mcu_signature: 0x1E950F
   observed_usb_uart: CH340
   observed_bootloader_baud: 115200
   compatible_target: mindplus:avr:nano:cpu=atmega328
   physical_board_is_not: IDMC-0001 星核板、掌控板 3.0 或通用 Arduino Nano 商品板
 sources:
-  - title: ChatMaker 星尘板与自研 OLED 实板记录
+  - title: ChatMaker 星辰板与自研 OLED 实板记录
     url: https://github.com/Amasun93/ChatMaker/blob/main/docs/verification/2026-08-26-stardust-oled-physical-board.md
   - title: Arduino Nano official ATmega328P compatibility reference
     url: https://docs.arduino.cc/hardware/nano/
@@ -57,6 +61,13 @@ verification:
     evidence_id: stardust-oled-serial-2026-08-26
     evidence_ref: docs/verification/2026-08-26-stardust-oled-physical-board.md
     method: serial-observation
+  power_cycle_verified:
+    status: verified
+    checked_at: "2026-08-26"
+    evidence: The user disconnected and reconnected power, and confirmed that the OLED status text returned normally after restart.
+    evidence_id: xingchen-oled-power-cycle-user-confirmation-2026-08-26
+    evidence_ref: docs/verification/2026-08-26-stardust-oled-physical-board.md
+    method: user-confirmation
   physical_effect_verified:
     status: verified
     checked_at: "2026-08-26"
@@ -75,6 +86,7 @@ constraints:
   - Keep D0/D1 free during upload even when the exact external header names are not yet documented.
   - The connected IDMD-0021 OLED was discovered at 0x3C; an address response does not prove visible output.
   - The current representative target is Nano-compatible for compilation and upload, but the product remains a distinct self-developed board record.
+  - The owner describes the board as a Nano variant with extra student-friendly pins, but the additional pin map remains unverified until developer documentation is available.
 constraint_pin_refs: [USB, 5V, GND, A4, A5]
 toolchains:
   - id: mindplus-2-avr-nano-compatible

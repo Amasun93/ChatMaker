@@ -70,7 +70,11 @@
     },
     "microbit-v2": {
       "identification": "assisted",
-      "knowledge": null,
+      "knowledge": {
+        "index_path": "knowledge/boards/microbit-v2.yaml",
+        "pack_id": "chatmaker-board-microbit-v2-knowledge",
+        "source_ref": "source-microbit-v2-official"
+      },
       "mechanics": {
         "fit_verified": false,
         "notes": "Official V2 dimensions are recorded; attachment fit still requires a physical board check.",

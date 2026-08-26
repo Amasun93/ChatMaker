@@ -3,7 +3,7 @@ kind: knowledge-index
 board_id: stardust-atmega328p
 max_section_bytes: 65536
 sections:
-  - {section_id: start-here, title: 星尘板从这里开始, summary: 先确认自研产品身份，再使用已验证的 ATmega328P 兼容链。, consumers: [chatmaker, chatduino, chatweb, chatcad], topics: [stardust, identity, workflow], pack_id: chatmaker-board-stardust-atmega328p-knowledge}
+  - {section_id: start-here, title: 星辰板从这里开始, summary: 先确认自研产品身份，再使用已验证的 ATmega328P 兼容链。, consumers: [chatmaker, chatduino, chatweb, chatcad], topics: [stardust, identity, workflow], pack_id: chatmaker-board-stardust-atmega328p-knowledge}
   - {section_id: identify-and-safety, title: 识别与安全, summary: 产品名由用户确认；电子线索只证明当前兼容范围。, consumers: [chatmaker, chatduino, chatweb, chatcad], topics: [stardust, identity, safety], pack_id: chatmaker-board-stardust-atmega328p-knowledge}
   - {section_id: pins-and-electrical, title: 引脚与电气规则, summary: 当前只使用已验证的 5V、GND、A4 和 A5；其余针脚待资料。, consumers: [chatmaker, chatduino, chatweb], topics: [stardust, pins, electrical, i2c], pack_id: chatmaker-board-stardust-atmega328p-knowledge}
   - {section_id: toolchains-and-upload, title: 编译、上传与串口, summary: 使用 115200 引导程序兼容链，并将各证据门分开。, consumers: [chatmaker, chatduino], topics: [stardust, toolchain, compile, upload, serial], pack_id: chatmaker-board-stardust-atmega328p-knowledge}

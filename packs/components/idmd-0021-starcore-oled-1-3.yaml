@@ -14,7 +14,7 @@ source_ids: [starcore-module-catalog-snapshot, starcore-classroom-module-cards-s
 sources:
   - title: ChatMaker governed Starcore source manifest
     url: https://github.com/Amasun93/ChatMaker/tree/main/knowledge_sources
-  - title: ChatMaker 星尘板与 IDMD-0021 OLED 实板记录
+  - title: ChatMaker 星辰板与 IDMD-0021 OLED 实板记录
     url: https://github.com/Amasun93/ChatMaker/blob/main/docs/verification/2026-08-26-stardust-oled-physical-board.md
 verification:
   source_reviewed:
@@ -86,4 +86,4 @@ common_failures:
   - English working while Chinese is blank or garbled usually points to the separate Mind+ font asset at 0x400000, not to a need for U8g2.
 board_notes:
   idmc-0001-starcore-v4-2-2: Use a matching-voltage I2C connector; P19 is SCL and P20 is SDA on the shared bus.
-  stardust-atmega328p: The connected module responded at address 0x3C on A4(SDA)/A5(SCL); the exact Stardust status page was later confirmed visible and normal by the user.
+  stardust-atmega328p: The connected module responded at address 0x3C on A4(SDA)/A5(SCL); the exact Xingchen Board status page was confirmed visible after upload and again after a power cycle.

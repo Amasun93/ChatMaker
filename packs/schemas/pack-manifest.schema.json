@@ -21,13 +21,15 @@
         "chatmaker-board-arduino-uno-r3-knowledge",
         "chatmaker-board-esp32-devkit-v1-knowledge",
         "chatmaker-board-idmc-0001-starcore-v4-2-2-knowledge",
+        "chatmaker-board-microbit-v2-knowledge",
         "chatmaker-board-mpython-classic-v2x-knowledge",
-        "chatmaker-board-mpython-v3-knowledge"
+        "chatmaker-board-mpython-v3-knowledge",
+        "chatmaker-board-stardust-atmega328p-knowledge"
       ]
     },
     "pack_version": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:-[0-9A-Za-z.-]+)?$"},
     "pack_type": {"const": "knowledge"},
-    "board_id": {"enum": ["arduino-nano-classic", "arduino-uno-r3", "esp32-devkit-v1", "idmc-0001-starcore-v4-2-2", "mpython-classic-v2x", "mpython-v3"]},
+    "board_id": {"enum": ["arduino-nano-classic", "arduino-uno-r3", "esp32-devkit-v1", "idmc-0001-starcore-v4-2-2", "microbit-v2", "mpython-classic-v2x", "mpython-v3", "stardust-atmega328p"]},
     "compatibility": {"$ref": "#/$defs/compatibility"},
     "files": {
       "type": "array",
@@ -95,12 +97,20 @@
       "then": {"properties": {"pack_id": {"const": "chatmaker-board-idmc-0001-starcore-v4-2-2-knowledge"}}}
     },
     {
+      "if": {"properties": {"board_id": {"const": "microbit-v2"}}},
+      "then": {"properties": {"pack_id": {"const": "chatmaker-board-microbit-v2-knowledge"}}}
+    },
+    {
       "if": {"properties": {"board_id": {"const": "mpython-classic-v2x"}}},
       "then": {"properties": {"pack_id": {"const": "chatmaker-board-mpython-classic-v2x-knowledge"}}}
     },
     {
       "if": {"properties": {"board_id": {"const": "mpython-v3"}}},
       "then": {"properties": {"pack_id": {"const": "chatmaker-board-mpython-v3-knowledge"}}}
+    },
+    {
+      "if": {"properties": {"board_id": {"const": "stardust-atmega328p"}}},
+      "then": {"properties": {"pack_id": {"const": "chatmaker-board-stardust-atmega328p-knowledge"}}}
     }
   ]
 }

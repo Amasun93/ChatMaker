@@ -1,0 +1,13 @@
+schema_version: "1.0"
+kind: knowledge-index
+board_id: microbit-v2
+max_section_bytes: 65536
+sections:
+  - {section_id: start-here, title: micro:bit V2 从这里开始, summary: 先确认 V2 身份，再从已验证的 MicroPython 程序打包链开始。, consumers: [chatmaker, chatduino, chatweb, chatcad], topics: [microbit, identity, workflow], pack_id: chatmaker-board-microbit-v2-knowledge}
+  - {section_id: identify-and-safety, title: 识别与安全, summary: 区分 V2、V1、MICROBIT 程序盘和 MAINTENANCE 维护盘。, consumers: [chatmaker, chatduino, chatweb, chatcad], topics: [microbit, identity, safety, daplink], pack_id: chatmaker-board-microbit-v2-knowledge}
+  - {section_id: pins-and-electrical, title: 引脚与电气规则, summary: 使用 V2 的 3.3V 电气规则和官方引脚定义，不混用 V1 资料。, consumers: [chatmaker, chatduino, chatweb], topics: [microbit, pins, electrical], pack_id: chatmaker-board-microbit-v2-knowledge}
+  - {section_id: toolchains-and-upload, title: 程序准备、下载与串口, summary: 固定 MicroPython V2 和打包器版本，安全识别目标盘并分开记录各证据门。, consumers: [chatmaker, chatduino], topics: [microbit, micropython, upload, serial, daplink], pack_id: chatmaker-board-microbit-v2-knowledge}
+  - {section_id: components-and-wiring, title: 模块与接线, summary: 优先使用板载功能；外接模块前核对 3.3V、共地和针脚占用。, consumers: [chatmaker, chatduino, chatweb, chatcad], topics: [microbit, components, wiring], pack_id: chatmaker-board-microbit-v2-knowledge}
+  - {section_id: libraries-and-examples, title: 库与案例, summary: 从心形状态代表案例开始，当前只证明源码检查与 HEX 生成。, consumers: [chatmaker, chatduino], topics: [microbit, libraries, examples], pack_id: chatmaker-board-microbit-v2-knowledge}
+  - {section_id: web-and-protocol, title: 网页与通信, summary: 浏览器或无线交互需要单独定义协议和连接边界。, consumers: [chatmaker, chatduino, chatweb], topics: [microbit, web, protocol, serial, bluetooth], pack_id: chatmaker-board-microbit-v2-knowledge}
+  - {section_id: troubleshooting, title: 排错与证据状态, summary: 区分程序生成、文件写入、DAPLink 结果、串口和实体效果。, consumers: [chatmaker, chatduino, chatweb, chatcad], topics: [microbit, diagnosis, evidence], pack_id: chatmaker-board-microbit-v2-knowledge}

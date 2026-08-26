@@ -1,0 +1,34 @@
+schema_version: "1.0"
+id: source-microbit-v2-official
+title: BBC micro:bit V2 官方资料与独立程序链
+board_id: microbit-v2
+source_type: canonical-board-documentation
+canonical_url: https://tech.microbit.org/hardware/
+license_use_boundary: >-
+  Official hardware and DAPLink pages are summarized with links. The fixed
+  MicroPython V2 runtime and microbit-fs package retain their upstream licenses
+  and provenance; this Knowledge pack publishes original guidance, not copied
+  documentation or bundled third-party binaries.
+cleaning_version: pending-hardware-review-v1
+review_date: "2026-08-26"
+cleaning_verified:
+  status: unverified
+  date: null
+  evidence: Official-source guidance and the software-only chain are normalized, but final cleaning remains open until the pages can be checked against a physical V2 board.
+source_reviewed:
+  status: verified
+  date: "2026-08-26"
+  evidence: Official V2 hardware, DAPLink, MicroPython V2 2.1.1 and microbit-fs 0.10.0 sources were reviewed without mixing the V1 target.
+publication_approved:
+  status: verified
+  date: "2026-08-26"
+  evidence: Approved beginner guidance for verified software stages; physical upload, serial, power-cycle, LED and button results remain explicitly unverified without a board.
+page_declarations:
+  - {stable_id: microbit-v2-start-here, path: published/boards/microbit-v2/start-here.md}
+  - {stable_id: microbit-v2-identify-and-safety, path: published/boards/microbit-v2/identify-and-safety.md}
+  - {stable_id: microbit-v2-pins-and-electrical, path: published/boards/microbit-v2/pins-and-electrical.md}
+  - {stable_id: microbit-v2-toolchains-and-upload, path: published/boards/microbit-v2/toolchains-and-upload.md}
+  - {stable_id: microbit-v2-components-and-wiring, path: published/boards/microbit-v2/components-and-wiring.md}
+  - {stable_id: microbit-v2-libraries-and-examples, path: published/boards/microbit-v2/libraries-and-examples.md}
+  - {stable_id: microbit-v2-web-and-protocol, path: published/boards/microbit-v2/web-and-protocol.md}
+  - {stable_id: microbit-v2-troubleshooting, path: published/boards/microbit-v2/troubleshooting.md}

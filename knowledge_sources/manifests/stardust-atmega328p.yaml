@@ -1,6 +1,6 @@
 schema_version: "1.0"
 id: source-stardust-atmega328p-observed
-title: 星尘板与 IDMD-0021 OLED 实板记录
+title: 星辰板与 IDMD-0021 OLED 实板记录
 board_id: stardust-atmega328p
 source_type: owned-local-source
 owned_local_source:

@@ -50,12 +50,19 @@ class StardustTests(unittest.TestCase):
         board = yaml.safe_load(
             (ROOT / "packs/boards/stardust-atmega328p.yaml").read_text(encoding="utf-8")
         )
+        self.assertEqual(board["name"], "星辰板（ATmega328P）")
         self.assertEqual(board["identity"]["compatible_target"], "mindplus:avr:nano:cpu=atmega328")
+        self.assertEqual(board["identity"]["owner_description"]["status"], "unverified")
         self.assertEqual(board["mechanics"]["status"], "research-required")
         self.assertEqual({pin["id"] for pin in board["pins"]}, {"USB", "5V", "GND", "A4", "A5"})
         self.assertEqual(board["verification"]["physical_effect_verified"]["status"], "verified")
         self.assertEqual(
             board["verification"]["physical_effect_verified"]["method"],
+            "user-confirmation",
+        )
+        self.assertEqual(board["verification"]["power_cycle_verified"]["status"], "verified")
+        self.assertEqual(
+            board["verification"]["power_cycle_verified"]["method"],
             "user-confirmation",
         )
 
@@ -72,6 +79,7 @@ class StardustTests(unittest.TestCase):
             recipe["verification"]["physical_effect_verified"]["method"],
             "user-confirmation",
         )
+        self.assertEqual(recipe["verification"]["power_cycle_verified"]["status"], "verified")
 
     def test_oled_component_records_the_stardust_driver_without_replacing_starcore_api(self):
         component = yaml.safe_load(
