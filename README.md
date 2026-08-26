@@ -23,7 +23,11 @@ ChatMaker 是唯一入口；ChatDuino、ChatWeb 和 ChatCAD 是由它在内部�
 板卡和模块适配由 ChatMaker 开发者统一维护。请附上准确型号、正反面照片和想实现的项目，通过下面任一方式联系我们：
 
 - [提交 GitHub Issue](https://github.com/Amasun93/ChatMaker/issues/new)
-- 联系作者微信：`13621625854`，备注 `chatmaker`
+- 微信号：`13621625854`（David），添加时备注 `chatmaker`
+
+<a href="docs/assets/contact/wechat-david.jpg">
+  <img src="docs/assets/contact/wechat-david.jpg" alt="作者微信二维码（David）" width="220">
+</a>
 
 ## 从 GitHub 安装当前 Beta
 
