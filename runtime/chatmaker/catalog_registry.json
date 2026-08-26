@@ -184,7 +184,7 @@
       "record_path": "packs/components/idmd-0002-starcore-serial-mp3.yaml"
     },
     "idmd-0003-starcore-asr": {
-      "mechanical_profile": null,
+      "mechanical_profile": "knowledge/mechanical/components/idmd-0003-starcore-asr.json",
       "record_path": "packs/components/idmd-0003-starcore-asr.yaml"
     },
     "idmd-0021-starcore-oled-1-3": {
@@ -192,23 +192,23 @@
       "record_path": "packs/components/idmd-0021-starcore-oled-1-3.yaml"
     },
     "idmf-0001-starcore-pd-power-adapter": {
-      "mechanical_profile": null,
+      "mechanical_profile": "knowledge/mechanical/components/idmf-0001-starcore-pd-power-adapter.json",
       "record_path": "packs/components/idmf-0001-starcore-pd-power-adapter.yaml"
     },
     "idmf-0010-starcore-power-splitter": {
-      "mechanical_profile": null,
+      "mechanical_profile": "knowledge/mechanical/components/idmf-0010-starcore-power-splitter.json",
       "record_path": "packs/components/idmf-0010-starcore-power-splitter.yaml"
     },
     "idmf-0011-starcore-usb-hub-1-to-4": {
-      "mechanical_profile": null,
+      "mechanical_profile": "knowledge/mechanical/components/idmf-0011-starcore-usb-hub-1-to-4.json",
       "record_path": "packs/components/idmf-0011-starcore-usb-hub-1-to-4.yaml"
     },
     "idmm-0001-starcore-four-channel-dc-motor-driver": {
-      "mechanical_profile": null,
+      "mechanical_profile": "knowledge/mechanical/components/idmm-0001-starcore-four-channel-dc-motor-driver.json",
       "record_path": "packs/components/idmm-0001-starcore-four-channel-dc-motor-driver.yaml"
     },
     "idmm-0007-starcore-serial-servo-driver": {
-      "mechanical_profile": null,
+      "mechanical_profile": "knowledge/mechanical/components/idmm-0007-starcore-serial-servo-driver.json",
       "record_path": "packs/components/idmm-0007-starcore-serial-servo-driver.yaml"
     },
     "idms-0001-starcore-button": {
@@ -216,7 +216,7 @@
       "record_path": "packs/components/idms-0001-starcore-button.yaml"
     },
     "idms-0002-starcore-toggle-switch": {
-      "mechanical_profile": null,
+      "mechanical_profile": "knowledge/mechanical/components/idms-0002-starcore-toggle-switch.json",
       "record_path": "packs/components/idms-0002-starcore-toggle-switch.yaml"
     },
     "idms-0003-starcore-potentiometer": {
@@ -224,19 +224,19 @@
       "record_path": "packs/components/idms-0003-starcore-potentiometer.yaml"
     },
     "idms-0004-starcore-rotary-encoder": {
-      "mechanical_profile": null,
+      "mechanical_profile": "knowledge/mechanical/components/idms-0004-starcore-rotary-encoder.json",
       "record_path": "packs/components/idms-0004-starcore-rotary-encoder.yaml"
     },
     "idms-0005-starcore-light-sensor": {
-      "mechanical_profile": null,
+      "mechanical_profile": "knowledge/mechanical/components/idms-0005-starcore-light-sensor.json",
       "record_path": "packs/components/idms-0005-starcore-light-sensor.yaml"
     },
     "idms-0006-starcore-microphone-sensor": {
-      "mechanical_profile": null,
+      "mechanical_profile": "knowledge/mechanical/components/idms-0006-starcore-microphone-sensor.json",
       "record_path": "packs/components/idms-0006-starcore-microphone-sensor.yaml"
     },
     "idms-0007-starcore-gas-sensor": {
-      "mechanical_profile": null,
+      "mechanical_profile": "knowledge/mechanical/components/idms-0007-starcore-gas-sensor.json",
       "record_path": "packs/components/idms-0007-starcore-gas-sensor.yaml"
     },
     "idms-0008-starcore-dht11": {
@@ -248,19 +248,19 @@
       "record_path": "packs/components/idms-0009-starcore-ultrasonic.yaml"
     },
     "idms-0010-starcore-laser-receiver": {
-      "mechanical_profile": null,
+      "mechanical_profile": "knowledge/mechanical/components/idms-0010-starcore-laser-receiver.json",
       "record_path": "packs/components/idms-0010-starcore-laser-receiver.yaml"
     },
     "idms-0011-starcore-slot-counter": {
-      "mechanical_profile": null,
+      "mechanical_profile": "knowledge/mechanical/components/idms-0011-starcore-slot-counter.json",
       "record_path": "packs/components/idms-0011-starcore-slot-counter.yaml"
     },
     "idms-0012-starcore-limit-switch": {
-      "mechanical_profile": null,
+      "mechanical_profile": "knowledge/mechanical/components/idms-0012-starcore-limit-switch.json",
       "record_path": "packs/components/idms-0012-starcore-limit-switch.yaml"
     },
     "idms-0036-starcore-analog-accelerometer": {
-      "mechanical_profile": null,
+      "mechanical_profile": "knowledge/mechanical/components/idms-0036-starcore-analog-accelerometer.json",
       "record_path": "packs/components/idms-0036-starcore-analog-accelerometer.yaml"
     },
     "lcd1602-i2c-pcf8574": {
