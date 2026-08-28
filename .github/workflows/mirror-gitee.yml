@@ -1,0 +1,48 @@
+name: Mirror main to Gitee
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - "*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mirror-main-to-gitee
+  cancel-in-progress: false
+
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Configure the dedicated Gitee SSH key
+        env:
+          GITEE_SSH_PRIVATE_KEY: ${{ secrets.GITEE_SSH_PRIVATE_KEY }}
+        run: |
+          test -n "$GITEE_SSH_PRIVATE_KEY"
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "$GITEE_SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          cat >> ~/.ssh/known_hosts <<'EOF'
+          gitee.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEKxHSJ7084RmkJ4YdEi5tngynE8aZe2uEoVVsB/OvYN
+          EOF
+
+      - name: Configure the Gitee mirror remote
+        run: git remote add gitee git@gitee.com:amasun93/ChatMaker.git
+
+      - name: Push the GitHub main commit
+        if: github.ref == 'refs/heads/main'
+        run: |
+          git push gitee HEAD:refs/heads/main --follow-tags
+
+      - name: Push the GitHub tag
+        if: startsWith(github.ref, 'refs/tags/')
+        run: git push gitee "refs/tags/${GITHUB_REF_NAME}:refs/tags/${GITHUB_REF_NAME}"

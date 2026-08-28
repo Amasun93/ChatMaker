@@ -14,7 +14,7 @@ ChatMaker 是唯一入口；ChatDuino、ChatWeb 和 ChatCAD 是由它在内部�
 
 对话窗口就是创作环境。编译器、串口和浏览器在后台完成专业工作；部分旧板卡仍可复用 Mind+，用户不需要先学习一套 IDE。
 
-> 当前版本：**0.2.0-beta.3**。维护者已邀请 20 多位体验者参与测试，GitHub `main` 是当前推荐安装来源。各板卡的真实证据按下方状态表分别报告。
+> 当前版本：**0.2.0-beta.3**。维护者已邀请 20 多位体验者参与测试；GitHub `main` 是唯一主仓库，Gitee 是自动更新的国内只读镜像。各板卡的真实证据按下方状态表分别报告。
 
 想快速了解这次变化，请看面向普通用户的 [WHAT'S NEW](WHATS_NEW.md)。
 
@@ -29,7 +29,7 @@ ChatMaker 是唯一入口；ChatDuino、ChatWeb 和 ChatCAD 是由它在内部�
   <img src="docs/assets/contact/wechat-david.jpg" alt="作者微信二维码（David）" width="220">
 </a>
 
-## 从 GitHub 安装当前 Beta
+## 从 GitHub 或 Gitee 安装当前 Beta
 
 把下面这段话和仓库链接交给你正在使用的 AI 即可：
 
@@ -43,6 +43,12 @@ https://github.com/Amasun93/ChatMaker
 再说明需要启用的本地能力。
 ```
 
+国内访问 GitHub 较慢时，可把仓库链接替换为自动同步镜像：
+
+```text
+https://gitee.com/amasun93/ChatMaker
+```
+
 SkillHub、WorkBuddy、Codex 或其他支持 GitHub Skill 的宿主，均使用宿主自己的 Skill 安装入口。纯生成能力只读取 Skill 文件，不要求 Python、Mind+ 或 OpenSCAD。
 
 需要本地 CLI 时，不要求小白先学会安装 Python。源码目录里的脚本会优先复用已有 Python 3.11；缺少时把固定便携 Python 安装在当前项目的 `.chatmaker-runtime`，国内镜像优先且不改全局 PATH：
@@ -52,7 +58,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts/setup_local_runtime.
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/setup_local_runtime.ps1
 ```
 
-Python/Node/PyPI/npm 的版本、国内首选源、官方回退源、大小和 SHA-256 都在固定清单中；AI 不再临时全网寻找环境教程。micro:bit V2 需要 Node.js 时才增加 `-IncludeNode`。完整边界见 [安装说明](docs/installation.md)。
+Python/Node/PyPI/npm 的版本、国内首选源、官方回退源、大小和 SHA-256 都在固定清单中。AI 会依次检查项目环境、电脑已有环境、国内固定包和官方回退；这些路线都失败后才进入联网诊断。没有 Python 的 Windows x64 用户也可以从 [Gitee 发行版](https://gitee.com/amasun93/ChatMaker/releases) 下载独立环境包。micro:bit V2 需要 Node.js 时才增加 `-IncludeNode`。完整边界见 [安装说明](docs/installation.md)。
 
 ## 它补上的能力
 

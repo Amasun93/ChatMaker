@@ -60,6 +60,14 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts/setup_local_runtime.
 
 学校或机构已有自己的 Gitee、OSS、COS 镜像时，可以只为当前命令设置 `CHATMAKER_DOWNLOAD_MIRROR_BASE`。该地址必须使用 HTTPS，文件名必须与清单一致；自有镜像不会绕过大小和 SHA-256 校验。
 
+面向没有 Python 的 Windows x64 小白，还可以使用版本化的 `ChatMaker-Environment-<version>-windows-amd64.zip`。这个独立环境包包含离线 ChatMaker Core wheelhouse 和固定的便携 Python，不包含可选 Node.js。解压后在目标项目目录运行：
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File <环境包目录>\install.ps1 -ProjectRoot <项目目录>
+```
+
+安装器仍把运行时放在 `<项目目录>\.chatmaker-runtime`，先检查电脑现有 Python，再使用包内缓存；不会修改全局 PATH 或 AI 宿主配置。环境 ZIP、外部 manifest 和 `.sha256` 应作为 Release 附件发布，不要提交进 Git 历史。
+
 `chatmaker-install local` 只读检查操作系统、Python、终端、浏览器、串口、Mind+ 和 Arduino CLI。它不读取或写入 AI 宿主配置，返回值包含 `host_scan_performed=false`。
 
 常用入口：
