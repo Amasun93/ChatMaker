@@ -118,6 +118,8 @@ class MicrobitV2Tests(unittest.TestCase):
 
         self.assertTrue(result["success"])
         self.assertEqual(calls[0][1], tool_root.resolve())
+        self.assertIn("--registry=https://registry.npmmirror.com", calls[0][0])
+        self.assertEqual(result["npm_source"]["id"], "npmmirror-npm")
 
     def test_source_check_keeps_packaging_separate_from_compilation(self):
         valid = microbit_v2.source_check("from microbit import *\ndisplay.show('中')\n")

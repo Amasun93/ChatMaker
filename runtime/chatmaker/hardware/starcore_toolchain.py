@@ -16,8 +16,9 @@ import platform
 import shutil
 import tempfile
 from typing import Any, Callable
-from urllib.request import Request, urlopen
 import zipfile
+
+from chatmaker.installers import downloads
 
 
 BACKEND = "chatmaker-managed-starcore"
@@ -27,6 +28,15 @@ ARDUINO_CLI_ARTIFACT = {
     "url": "https://github.com/arduino/arduino-cli/releases/download/0.33.1/arduino-cli_0.33.1_Windows_64bit.zip",
     "size": 14311609,
     "sha256": "58e7474a5873dbd7cad811ed4193223497d90445a6312397a65c08156b6c96d3",
+    "source_id": "arduino-github",
+    "source_kind": "official_fallback",
+    "sources": [
+        {
+            "id": "arduino-github",
+            "kind": "official_fallback",
+            "url": "https://github.com/arduino/arduino-cli/releases/download/0.33.1/arduino-cli_0.33.1_Windows_64bit.zip",
+        }
+    ],
 }
 MINDPLUS_PACKAGE_INDEX_URL = "https://resource.mindplus.top/mindplus/package/package_mindplus_index.json"
 CORE_ID = "mindplus:esp32"
@@ -36,6 +46,15 @@ CORE_ARCHIVE = {
     "url": "https://resource.mindplus.top/mindplus/package/esp32/esp32-0.0.1.zip",
     "size": 35008313,
     "sha256": "00b08da1ee9e42a08480868ec2f8ec5c5159f7f54c6dec3fe4ba05eaa41ef0db",
+    "source_id": "mindplus-cn",
+    "source_kind": "domestic_official",
+    "sources": [
+        {
+            "id": "mindplus-cn",
+            "kind": "domestic_official",
+            "url": "https://resource.mindplus.top/mindplus/package/esp32/esp32-0.0.1.zip",
+        }
+    ],
 }
 LIBRARIES = (
     {
@@ -66,6 +85,15 @@ LIBRARIES = (
 for _library in LIBRARIES:
     _library["filename"] = f"{_library['name']}-{_library['version']}.zip"
     _library["url"] = f"https://resource.mindplus.top/mindplus/arduino-libraries/{_library['filename']}"
+    _library["source_id"] = "mindplus-cn"
+    _library["source_kind"] = "domestic_official"
+    _library["sources"] = [
+        {
+            "id": "mindplus-cn",
+            "kind": "domestic_official",
+            "url": _library["url"],
+        }
+    ]
 
 
 def default_root() -> Path:
@@ -144,20 +172,10 @@ def managed_context(root: Path | None = None) -> dict[str, Any] | None:
     }
 
 
-def _download_locked(item: dict[str, Any], destination: Path, *, timeout: int = 300) -> None:
-    if destination.is_file() and destination.stat().st_size == item["size"] and _sha256(destination) == item["sha256"]:
-        return
-    destination.parent.mkdir(parents=True, exist_ok=True)
-    request = Request(str(item["url"]), headers={"User-Agent": "ChatMaker-Starcore/1"})
-    temporary = destination.with_suffix(destination.suffix + ".part")
-    try:
-        with urlopen(request, timeout=timeout) as response, temporary.open("wb") as output:
-            shutil.copyfileobj(response, output)
-        if temporary.stat().st_size != item["size"] or _sha256(temporary) != item["sha256"]:
-            raise ValueError(f"download_integrity_failed:{item['filename']}")
-        temporary.replace(destination)
-    finally:
-        temporary.unlink(missing_ok=True)
+def _download_locked(item: dict[str, Any], destination: Path, *, timeout: int = 300) -> dict[str, Any]:
+    return downloads.download_locked(
+        downloads.legacy_artifact(item), destination, timeout=timeout
+    ).to_dict()
 
 
 def _install_cli(archive: Path, cli: Path) -> None:

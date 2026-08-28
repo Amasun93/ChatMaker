@@ -43,14 +43,22 @@ python scripts/cleanup_legacy_mcp.py --config "$env:USERPROFILE\.workbuddy\.mcp.
 
 ## 需要编译、烧录、串口或真实渲染时
 
-本地执行统一使用 `chatmaker-*` CLI。源码开发者可以运行：
+本地执行统一使用 `chatmaker-*` CLI。源码目录已经提供小白环境脚本；它先复用电脑里可用的 Python 3.11，没有时才把固定的便携 Python 下载到当前项目，不改全局 PATH：
 
 ```powershell
-git clone https://github.com/Amasun93/ChatMaker.git
-Set-Location ChatMaker
-python -m pip install -e .
-chatmaker-install local
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/setup_local_runtime.ps1 -CheckOnly
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/setup_local_runtime.ps1
 ```
+
+micro:bit V2 的 HEX 打包确实需要 Node.js；只有这条路线才增加：
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/setup_local_runtime.ps1 -IncludeNode
+```
+
+脚本使用 `runtime/chatmaker/installers/runtime_sources.json` 中的固定清单：便携 CPython 3.11.10 和 Node.js 22.22.0 优先从 npmmirror 下载，Python 包优先使用阿里云 PyPI、失败后使用清华镜像，npm 优先使用 npmmirror；Python/Node 归档固定版本、大小和 SHA-256，并保留上游与许可证说明，最终才回退到清单内的官方地址。不得让 AI 临时搜索“最新版”、博客附件、网盘或未经审查的 GitHub 加速地址。
+
+学校或机构已有自己的 Gitee、OSS、COS 镜像时，可以只为当前命令设置 `CHATMAKER_DOWNLOAD_MIRROR_BASE`。该地址必须使用 HTTPS，文件名必须与清单一致；自有镜像不会绕过大小和 SHA-256 校验。
 
 `chatmaker-install local` 只读检查操作系统、Python、终端、浏览器、串口、Mind+ 和 Arduino CLI。它不读取或写入 AI 宿主配置，返回值包含 `host_scan_performed=false`。
 
@@ -94,7 +102,7 @@ dfrobot:mpython:mpython:FlashMode=dio,FlashFreq=80,UploadSpeed=1500000,DebugLeve
 
 ## 可选择的运行环境位置
 
-受信任的 Core bootstrap 默认把运行环境放在当前项目的隐藏目录：
+小白环境脚本和受信任的 Core bootstrap 都默认把运行环境放在当前项目的隐藏目录：
 
 ```text
 <项目目录>\.chatmaker-runtime\
@@ -116,11 +124,11 @@ python .\trusted-bootstrap\bootstrap.py `
 
 bootstrap 会在用户目录保存轻量位置记录 `.chatmaker-location.json`，其中不含程序主体、密码或密钥。
 
-- 项目和 `.chatmaker-runtime` 一起移动：launcher 按自身新位置继续工作。
-- 项目被移动但隐藏目录没有一起移动：在新项目目录重新运行 bootstrap，重建环境并刷新位置记录。
+- 项目被移动后：在新项目目录重新运行环境脚本或 bootstrap，重建包含绝对路径的 venv；不要直接把旧 venv 当成便携环境。
+- 项目被移动但隐藏目录没有一起移动：在新项目目录重新运行环境脚本或 bootstrap，重建环境并刷新位置记录。
 - 项目或运行目录被删除：重新取得已验证的发布文件，再运行 bootstrap；不要依赖已经失效的位置记录猜测文件仍然存在。
 
-本轮没有把完整便携 Python、OpenSCAD 或国内 CDN 打进仓库。后续课堂运行包应使用独立的版本化压缩包或对象存储，附 manifest、SHA-256、大小、版本和许可证记录；不建议把几十兆二进制直接提交到 Git 历史。
+便携 Python 和 Node.js 不提交进 Git 历史，而是按固定清单下载到项目目录；第三方包的版本、来源、大小、SHA-256 和许可证仍应随发布记录保留。OpenSCAD 和大型板卡工具链继续按真实功能需要单独准备。
 
 ## OpenSCAD 边界
 
@@ -136,7 +144,7 @@ chatmaker-cad --request-json '{"action":"openscad-status"}'
 chatmaker-cad --request-json '{"action":"openscad-prepare","allow_install":true}'
 ```
 
-当前 P0 仍使用官方 WinGet 包 `OpenSCAD.OpenSCAD`。国内镜像、便携 OpenSCAD 和最小 Python 运行包属于后续独立部署任务；安装 OpenSCAD 只能解决“缺少渲染器”，不能修复几何代码本身的错误。
+当前 OpenSCAD 仍使用官方 WinGet 包 `OpenSCAD.OpenSCAD`；最小 Python 运行包已经改为项目内、国内镜像优先。便携 OpenSCAD 仍是后续独立任务；安装 OpenSCAD 只能解决“缺少渲染器”，不能修复几何代码本身的错误。
 
 ## 版本检查接口边界
 
@@ -149,7 +157,7 @@ chatmaker-cad --request-json '{"action":"openscad-prepare","allow_install":true}
 
 当 `update_available=true` 时，必须先询问用户：“发现新版本，是否更新？”只有用户明确回答同意，更新动作才可以下载或覆盖文件。启动 ChatMaker 不等于授权更新；不得静默强制覆盖。
 
-GitHub Actions 到 SkillHub 的自动发布属于 P2 后续任务；国内 CDN 和自动分发仍不在本轮范围。
+GitHub Actions 到 SkillHub 的自动发布、ChatMaker 自有 Gitee/OSS 制品仓库仍是后续发布任务；当前环境清单已经支持通过 `CHATMAKER_DOWNLOAD_MIRROR_BASE` 接入该自有镜像。
 
 ## 无 MCP 的星核板代表路径
 

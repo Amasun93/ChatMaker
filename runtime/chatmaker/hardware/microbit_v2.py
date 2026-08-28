@@ -17,7 +17,8 @@ import subprocess
 import sys
 import tempfile
 from typing import Any, Callable, Iterable
-from urllib.request import Request, urlopen
+
+from chatmaker.installers import downloads
 
 
 BOARD_ID = "microbit-v2"
@@ -28,9 +29,25 @@ MICROPYTHON_URL = (
 )
 MICROPYTHON_SIZE = 1_239_726
 MICROPYTHON_SHA256 = "5bd5d4584a5caae740a66d38f93651968569dd4b52f4bc132ebf3c6fdf3847ac"
+MICROPYTHON_ARTIFACT = {
+    "filename": "micropython-microbit-v2.1.1.hex",
+    "url": MICROPYTHON_URL,
+    "size": MICROPYTHON_SIZE,
+    "sha256": MICROPYTHON_SHA256,
+    "source_id": "microbit-github",
+    "source_kind": "official_fallback",
+    "sources": [
+        {
+            "id": "microbit-github",
+            "kind": "official_fallback",
+            "url": MICROPYTHON_URL,
+        }
+    ],
+}
 MICROBIT_FS_VERSION = "0.10.0"
 MICROBIT_FS_INTEGRITY = "sha512-n6DEVqqaQAL/EDLyXh+1nsdRV16ePFqROeFeNlOoTS23eB8zF8qhA+IaNHRT07sy0zgCGg3YCZgP+zcCIRzP6A=="
-DEFAULT_TOOL_ROOT = Path.home() / ".chatmaker" / "toolchains" / "microbit-v2" / MICROPYTHON_VERSION
+_RUNTIME_ROOT = Path(os.environ.get("CHATMAKER_RUNTIME_ROOT", Path.home() / ".chatmaker"))
+DEFAULT_TOOL_ROOT = _RUNTIME_ROOT / "toolchains" / "microbit-v2" / MICROPYTHON_VERSION
 _TOOL_SOURCE = Path(__file__).with_name("microbit_tool")
 _INTERFACE_VERSION = re.compile(r"(?:Interface Version|Version|Build ID)[^0-9]*v?(0[0-9]{3})", re.IGNORECASE)
 
@@ -80,16 +97,16 @@ def _run(
         }
 
 
-def _download(url: str, destination: Path, *, downloader: Callable | None = None) -> None:
-    destination.parent.mkdir(parents=True, exist_ok=True)
-    temporary = destination.with_suffix(destination.suffix + ".part")
+def _download(url: str, destination: Path, *, downloader: Callable | None = None) -> dict[str, Any] | None:
     if downloader is not None:
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        temporary = destination.with_suffix(destination.suffix + ".part")
         downloader(url, temporary)
-    else:
-        request = Request(url, headers={"User-Agent": "ChatMaker/0.2 microbit-v2"})
-        with urlopen(request, timeout=60) as response, temporary.open("wb") as output:
-            shutil.copyfileobj(response, output)
-    os.replace(temporary, destination)
+        os.replace(temporary, destination)
+        return None
+    return downloads.download_locked(
+        downloads.legacy_artifact(MICROPYTHON_ARTIFACT), destination, timeout=60
+    ).to_dict()
 
 
 def _runtime_hex(tool_root: Path) -> Path:
@@ -99,8 +116,10 @@ def _runtime_hex(tool_root: Path) -> Path:
 def _environment_status(tool_root: Path, *, node: str | None = None, npm: str | None = None) -> dict[str, Any]:
     runtime = _runtime_hex(tool_root)
     package = tool_root / "node_modules" / "@microbit" / "microbit-fs" / "package.json"
-    actual_node = node or shutil.which("node")
-    actual_npm = npm or shutil.which("npm")
+    portable_node = _RUNTIME_ROOT / "node" / "node.exe"
+    portable_npm = _RUNTIME_ROOT / "node" / "npm.cmd"
+    actual_node = node or shutil.which("node") or (str(portable_node) if portable_node.is_file() else None)
+    actual_npm = npm or shutil.which("npm") or (str(portable_npm) if portable_npm.is_file() else None)
     runtime_ok = (
         runtime.is_file()
         and runtime.stat().st_size == MICROPYTHON_SIZE
@@ -149,20 +168,27 @@ def prepare_environment_result(
     if refreshed["ready_for_packaging"] and not bundled_changed:
         return {"success": True, "action": "prepare-environment", "changed": False, **refreshed}
     runtime = _runtime_hex(tool_root)
+    download_receipt = None
     if not runtime.is_file() or runtime.stat().st_size != MICROPYTHON_SIZE or _sha256(runtime) != MICROPYTHON_SHA256:
         try:
-            _download(MICROPYTHON_URL, runtime, downloader=downloader)
-        except (OSError, TimeoutError) as exc:
+            download_receipt = _download(MICROPYTHON_URL, runtime, downloader=downloader)
+        except (OSError, TimeoutError, downloads.DownloadError) as exc:
             return {"success": False, "action": "prepare-environment", "error": "micropython_download_failed", "detail": str(exc)}
     if runtime.stat().st_size != MICROPYTHON_SIZE or _sha256(runtime) != MICROPYTHON_SHA256:
         runtime.unlink(missing_ok=True)
         return {"success": False, "action": "prepare-environment", "error": "micropython_identity_mismatch"}
-    execution = runner(
-        [str(before["npm"]), "ci", "--ignore-scripts", "--no-audit", "--no-fund"],
-        timeout=300,
-        cwd=tool_root,
-    )
-    if execution.get("returncode") != 0:
+    execution = None
+    npm_source = None
+    for registry in downloads.package_sources("npm_registries"):
+        execution = runner(
+            [str(before["npm"]), "ci", "--ignore-scripts", "--no-audit", "--no-fund", f"--registry={registry['url']}"],
+            timeout=300,
+            cwd=tool_root,
+        )
+        if execution.get("returncode") == 0:
+            npm_source = registry
+            break
+    if execution is None or execution.get("returncode") != 0:
         return {"success": False, "action": "prepare-environment", "error": "microbit_fs_install_failed", "execution": execution}
     after = _environment_status(tool_root, node=str(before["node"]), npm=str(before["npm"]))
     return {
@@ -170,6 +196,8 @@ def prepare_environment_result(
         "action": "prepare-environment",
         "changed": True,
         "execution": execution,
+        "npm_source": npm_source,
+        "download": download_receipt,
         **after,
         **({} if after["ready_for_packaging"] else {"error": "environment_not_ready_after_install"}),
     }

@@ -10,13 +10,12 @@ import os
 from pathlib import Path
 import platform
 import re
-import shutil
 import sys
 import tempfile
 from typing import Any, Callable
-from urllib.request import Request, urlopen
 import zipfile
 
+from chatmaker.installers import downloads
 from . import nano_mindplus as shared
 
 
@@ -29,6 +28,15 @@ ARDUINO_CLI = {
     "url": "https://github.com/arduino/arduino-cli/releases/download/0.33.1/arduino-cli_0.33.1_Windows_64bit.zip",
     "size": 14311609,
     "sha256": "58e7474a5873dbd7cad811ed4193223497d90445a6312397a65c08156b6c96d3",
+    "source_id": "arduino-github",
+    "source_kind": "official_fallback",
+    "sources": [
+        {
+            "id": "arduino-github",
+            "kind": "official_fallback",
+            "url": "https://github.com/arduino/arduino-cli/releases/download/0.33.1/arduino-cli_0.33.1_Windows_64bit.zip",
+        }
+    ],
 }
 PACKAGE_INDEX_URL = "https://labplus-cn.github.io/arduino-esp32/package_esp32_mpython_index_cn.json"
 CORE_ID = "mpython:esp32"
@@ -118,20 +126,10 @@ def _sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
-def _download_locked(item: dict[str, Any], destination: Path, *, timeout: int = 300) -> None:
-    if destination.is_file() and destination.stat().st_size == item["size"] and _sha256(destination) == item["sha256"]:
-        return
-    destination.parent.mkdir(parents=True, exist_ok=True)
-    temporary = destination.with_suffix(destination.suffix + ".part")
-    try:
-        request = Request(str(item["url"]), headers={"User-Agent": "ChatMaker-mPython-V3/1"})
-        with urlopen(request, timeout=timeout) as response, temporary.open("wb") as output:
-            shutil.copyfileobj(response, output)
-        if temporary.stat().st_size != item["size"] or _sha256(temporary) != item["sha256"]:
-            raise ValueError(f"download_integrity_failed:{item['filename']}")
-        temporary.replace(destination)
-    finally:
-        temporary.unlink(missing_ok=True)
+def _download_locked(item: dict[str, Any], destination: Path, *, timeout: int = 300) -> dict[str, Any]:
+    return downloads.download_locked(
+        downloads.legacy_artifact(item), destination, timeout=timeout
+    ).to_dict()
 
 
 def _install_cli(archive: Path, destination: Path) -> None:

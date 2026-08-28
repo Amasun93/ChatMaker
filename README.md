@@ -45,16 +45,14 @@ https://github.com/Amasun93/ChatMaker
 
 SkillHub、WorkBuddy、Codex 或其他支持 GitHub Skill 的宿主，均使用宿主自己的 Skill 安装入口。纯生成能力只读取 Skill 文件，不要求 Python、Mind+ 或 OpenSCAD。
 
-下面的源码安装只供开发者或需要本地 CLI 的高级用户使用：
+需要本地 CLI 时，不要求小白先学会安装 Python。源码目录里的脚本会优先复用已有 Python 3.11；缺少时把固定便携 Python 安装在当前项目的 `.chatmaker-runtime`，国内镜像优先且不改全局 PATH：
 
 ```powershell
-git clone https://github.com/Amasun93/ChatMaker.git
-Set-Location ChatMaker
-python -m pip install -e .
-chatmaker-install local
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/setup_local_runtime.ps1 -CheckOnly
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/setup_local_runtime.ps1
 ```
 
-`local` 只检查本地生成、硬件和渲染能力，不扫描或修改任何 AI 宿主。可编辑源码安装期间请保留克隆目录；更新源码后再次运行 `chatmaker-install local` 即可。
+Python/Node/PyPI/npm 的版本、国内首选源、官方回退源、大小和 SHA-256 都在固定清单中；AI 不再临时全网寻找环境教程。micro:bit V2 需要 Node.js 时才增加 `-IncludeNode`。完整边界见 [安装说明](docs/installation.md)。
 
 ## 它补上的能力
 

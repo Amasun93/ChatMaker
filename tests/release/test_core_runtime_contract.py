@@ -31,6 +31,42 @@ def load_script(name: str):
 
 
 class CoreRuntimeContractTests(unittest.TestCase):
+    def test_bootstrap_ignores_optional_dependency_data_scripts(self):
+        """Keeps fontTools utilities out while accepting its runtime library wheel."""
+        bootstrap = load_script("bootstrap.py")
+        with tempfile.TemporaryDirectory() as temporary:
+            wheel = Path(temporary) / "fonttools-1.0-py3-none-any.whl"
+            payloads = {
+                "fontTools/__init__.py": b"",
+                "fonttools-1.0.data/scripts/ttx": b"#!/usr/bin/python\n",
+                "fonttools-1.0.data/data/share/man/man1/ttx.1": b"manual\n",
+                "fonttools-1.0.dist-info/METADATA": b"Metadata-Version: 2.1\nName: fonttools\nVersion: 1.0\n",
+                "fonttools-1.0.dist-info/WHEEL": b"Wheel-Version: 1.0\nRoot-Is-Purelib: true\nTag: py3-none-any\n",
+            }
+            rows = []
+            for name, value in sorted(payloads.items()):
+                encoded = base64.urlsafe_b64encode(hashlib.sha256(value).digest()).rstrip(b"=").decode("ascii")
+                rows.append([name, f"sha256={encoded}", str(len(value))])
+            record_name = "fonttools-1.0.dist-info/RECORD"
+            rows.append([record_name, "", ""])
+            record = io.StringIO(newline="")
+            csv.writer(record, lineterminator="\n").writerows(rows)
+            with zipfile.ZipFile(wheel, "w") as archive:
+                for name, value in payloads.items():
+                    archive.writestr(name, value)
+                archive.writestr(record_name, record.getvalue())
+
+            expected, _ = bootstrap._wheel_contract(wheel)
+
+        self.assertIn("fontTools/__init__.py", expected)
+        self.assertNotIn("fonttools-1.0.data/scripts/ttx", expected)
+        self.assertNotIn("fonttools-1.0.data/data/share/man/man1/ttx.1", expected)
+
+    def test_marker_environment_defines_empty_extra_for_wheel_metadata(self):
+        """Catches fontTools-style optional extras crashing release validation."""
+        prepare = load_script("prepare_core_runtime.py")
+        self.assertEqual(prepare._marker_environment("windows-amd64")["extra"], "")
+
     def test_lock_contains_the_metadata_required_typing_extensions_for_python_311_and_312(self):
         """Catches omitting referencing's Python <3.13 transitive dependency."""
         lines = (ROOT / "distribution" / "core-runtime" / "requirements.lock").read_text(encoding="utf-8").splitlines()

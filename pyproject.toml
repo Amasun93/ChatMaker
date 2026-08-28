@@ -52,4 +52,4 @@ package-dir = {"" = "runtime"}
 where = ["runtime"]
 
 [tool.setuptools.package-data]
-chatmaker = ["catalog_registry.json", "cad/assets/*.otf", "cad/assets/*.txt", "cad/assets/*.json", "hardware/microbit_tool/*.json", "hardware/microbit_tool/*.cjs"]
+chatmaker = ["catalog_registry.json", "cad/assets/*.otf", "cad/assets/*.txt", "cad/assets/*.json", "hardware/microbit_tool/*.json", "hardware/microbit_tool/*.cjs", "installers/runtime_sources.json"]

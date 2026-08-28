@@ -630,6 +630,19 @@ def _wheel_contract(wheel: Path) -> tuple[dict[str, str], dict[str, str]]:
                 parts = _member_parts(name)
                 if len(parts) > 2 and parts[0].endswith(".data") and parts[1] in {"purelib", "platlib"}:
                     parts = parts[2:]
+                elif len(parts) > 2 and parts[0].endswith(".data") and parts[1] == "scripts":
+                    # ChatMaker installs only declared console entry points. Optional
+                    # dependency scripts (for example fonttools utilities) are not
+                    # needed by the runtime and are deliberately omitted.
+                    continue
+                elif (
+                    len(parts) > 4
+                    and parts[0].endswith(".data")
+                    and parts[1:4] == ("data", "share", "man")
+                ):
+                    # Documentation installed outside site-packages is neither
+                    # executable runtime state nor required by ChatMaker.
+                    continue
                 elif any(part.endswith(".data") for part in parts):
                     raise BootstrapError("runtime_wheel_layout_unsupported")
                 relative = "/".join(parts)
@@ -754,6 +767,20 @@ def _sanitize_install(venv_path: Path, expected: dict[str, str], entries: dict[s
             path.unlink()
     for name, data in _entrypoint_files(venv_path, entries).items():
         _atomic_write(scripts / name, data, executable=os.name != "nt" and not name.startswith("."))
+    manual_root = venv_path / "share" / "man"
+    if os.path.lexists(manual_root):
+        if not _safe_existing(manual_root, directory=True):
+            raise BootstrapError("offline_runtime_install_failed")
+        for candidate in manual_root.rglob("*"):
+            if candidate.is_dir():
+                if not _safe_existing(candidate, directory=True):
+                    raise BootstrapError("offline_runtime_install_failed")
+            elif not _safe_existing(candidate, directory=False):
+                raise BootstrapError("offline_runtime_install_failed")
+        shutil.rmtree(manual_root)
+        share_root = venv_path / "share"
+        if share_root.is_dir() and not any(share_root.iterdir()):
+            share_root.rmdir()
 
 
 def _valid_base_interpreter(venv_path: Path) -> bool:

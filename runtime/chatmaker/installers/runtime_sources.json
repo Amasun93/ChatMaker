@@ -1,0 +1,80 @@
+{
+  "schema_version": 1,
+  "policy": "domestic-first",
+  "python": {
+    "windows-amd64": {
+      "version": "3.11.10",
+      "build": "20241016",
+      "filename": "cpython-3.11.10+20241016-x86_64-pc-windows-msvc-shared-install_only.tar.gz",
+      "size": 40957796,
+      "sha256": "647b66ff4552e70aec3bf634dd470891b4a2b291e8e8715b3bdb162f577d4c55",
+      "archive_root": "python",
+      "upstream": "https://github.com/astral-sh/python-build-standalone/releases/tag/20241016",
+      "license_notice_url": "https://github.com/astral-sh/python-build-standalone/blob/20241016/LICENSE",
+      "sources": [
+        {
+          "id": "npmmirror-python-build-standalone",
+          "kind": "domestic_mirror",
+          "url": "https://registry.npmmirror.com/-/binary/python-build-standalone/20241016/cpython-3.11.10+20241016-x86_64-pc-windows-msvc-shared-install_only.tar.gz"
+        },
+        {
+          "id": "astral-python-build-standalone",
+          "kind": "official_fallback",
+          "url": "https://github.com/astral-sh/python-build-standalone/releases/download/20241016/cpython-3.11.10%2B20241016-x86_64-pc-windows-msvc-shared-install_only.tar.gz"
+        }
+      ]
+    }
+  },
+  "node": {
+    "windows-amd64": {
+      "version": "22.22.0",
+      "filename": "node-v22.22.0-win-x64.zip",
+      "size": 35556852,
+      "sha256": "c97fa376d2becdc8863fcd3ca2dd9a83a9f3468ee7ccf7a6d076ec66a645c77a",
+      "archive_root": "node-v22.22.0-win-x64",
+      "upstream": "https://nodejs.org/en/download/archive/v22.22.0",
+      "license_notice_url": "https://github.com/nodejs/node/blob/v22.22.0/LICENSE",
+      "sources": [
+        {
+          "id": "npmmirror-node",
+          "kind": "domestic_mirror",
+          "url": "https://registry.npmmirror.com/-/binary/node/v22.22.0/node-v22.22.0-win-x64.zip"
+        },
+        {
+          "id": "nodejs-dist",
+          "kind": "official_fallback",
+          "url": "https://nodejs.org/dist/v22.22.0/node-v22.22.0-win-x64.zip"
+        }
+      ]
+    }
+  },
+  "pip_indexes": [
+    {
+      "id": "aliyun-pypi",
+      "kind": "domestic_mirror",
+      "url": "https://mirrors.aliyun.com/pypi/simple/"
+    },
+    {
+      "id": "tuna-pypi",
+      "kind": "domestic_mirror",
+      "url": "https://pypi.tuna.tsinghua.edu.cn/simple/"
+    },
+    {
+      "id": "pypi",
+      "kind": "official_fallback",
+      "url": "https://pypi.org/simple/"
+    }
+  ],
+  "npm_registries": [
+    {
+      "id": "npmmirror-npm",
+      "kind": "domestic_mirror",
+      "url": "https://registry.npmmirror.com"
+    },
+    {
+      "id": "npmjs",
+      "kind": "official_fallback",
+      "url": "https://registry.npmjs.org"
+    }
+  ]
+}

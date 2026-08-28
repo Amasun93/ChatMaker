@@ -15,6 +15,20 @@ Treat the installed bundle as incomplete only when an internal specialist is mis
 
 Local execution is an optional second layer. When the AI workspace can run local commands, use the `chatmaker-*` CLIs documented below; this is the single execution route. If local commands are unavailable, report only that the requested local check, compile, upload, serial session, or render is unavailable; do not downgrade the installed Skill itself.
 
+## Prepare local environments without web searching
+
+When a local action needs Python, Node.js, a board toolchain, or another runtime, never start by searching the web for installation tutorials or arbitrary download links. First run `chatmaker-install local` when that command exists. If the local CLI is not installed and the ChatMaker source/Core bundle is available, inspect the fixed plan without changing the computer:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/setup_local_runtime.ps1 -CheckOnly
+```
+
+After the user has requested the local action and accepted the required download, run the same command without `-CheckOnly`. Add `-IncludeNode` only for a route such as micro:bit V2 that actually needs Node.js. The setup must stay under the current project's `.chatmaker-runtime`, must not change global `PATH`, pip/npm configuration, AI-host configuration, or an existing Python/Mind+ installation.
+
+The authoritative source list is `runtime/chatmaker/installers/runtime_sources.json`. It pins version, size and SHA-256, tries reviewed domestic mirrors first, and uses the named official source only as a fallback. Do not replace a failed pinned source with an unreviewed proxy, blog attachment, cloud-drive file or “latest” URL. `CHATMAKER_DOWNLOAD_MIRROR_BASE` is the only supported organization-provided mirror override; it must use HTTPS and downloaded bytes must still match the pinned size and SHA-256.
+
+Pure generation still needs no environment. Do not run environment setup merely because the user invoked ChatMaker; prepare only the optional capability required by the requested compile, upload, serial, browser, HEX packaging or real-render action.
+
 ## Adapt to the user's idea
 
 - If the goal is clear, restate it, name only assumptions that affect the result, and start.

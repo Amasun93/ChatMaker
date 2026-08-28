@@ -21,7 +21,7 @@ except ImportError:
 
 
 CORE_PATHS = (
-    "LICENSE", "README.md", "README_EN.md", "WHATS_NEW.md", "pyproject.toml", "scripts/bootstrap.py", "scripts/core_release_signature.py",
+    "LICENSE", "README.md", "README_EN.md", "WHATS_NEW.md", "pyproject.toml", "scripts/bootstrap.py", "scripts/core_release_signature.py", "scripts/setup_local_runtime.ps1",
     "docs/installation.md", "docs/roadmap.md", "docs/contributing/board-research-workflow.md", "docs/hardware/self-developed-modules.md", "docs/verification", "examples", "packs/boards", "packs/components", "knowledge/boards", "knowledge/hardware", "knowledge/mechanical", "knowledge/fabrication",
     "packs/recipes", "packs/schemas", "runtime", "skills/chatduino", "skills/chatmaker", "skills/chatweb", "skills/chatcad",
 )

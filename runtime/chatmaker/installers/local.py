@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any, Mapping, Sequence
 
 from .capabilities import probe_environment
+from .downloads import load_runtime_sources
 
 
 class _JsonArgumentParser(argparse.ArgumentParser):
@@ -47,6 +48,7 @@ def run(
         home=selected_home,
         environ=dict(os.environ if environ is None else environ),
     ).to_dict()
+    registry = load_runtime_sources()
     next_actions = _next_actions(environment)
     return {
         "success": True,
@@ -54,6 +56,14 @@ def run(
         "mode": "local",
         "environment": environment,
         "next_actions": next_actions,
+        "download_policy": {
+            "mode": registry["policy"],
+            "python": registry["python"],
+            "node": registry["node"],
+            "pip_indexes": registry["pip_indexes"],
+            "npm_registries": registry["npm_registries"],
+            "custom_mirror_environment_variable": "CHATMAKER_DOWNLOAD_MIRROR_BASE",
+        },
         "host_scan_performed": False,
     }
 

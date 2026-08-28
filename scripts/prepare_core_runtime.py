@@ -10,6 +10,7 @@ from email.parser import Parser
 import hashlib
 import importlib.util
 import json
+import os
 from pathlib import Path
 import re
 import stat
@@ -108,7 +109,7 @@ def read_lock(path: Path) -> dict[str, str]:
 
 def _marker_environment(platform_tag: str) -> dict[str, str]:
     environment = default_environment()
-    environment.update({"python_version": "3.11", "python_full_version": "3.11.0", "implementation_name": "cpython", "platform_python_implementation": "CPython"})
+    environment.update({"python_version": "3.11", "python_full_version": "3.11.0", "implementation_name": "cpython", "platform_python_implementation": "CPython", "extra": ""})
     if platform_tag == "windows-amd64":
         environment.update({"os_name": "nt", "sys_platform": "win32", "platform_system": "Windows", "platform_machine": "AMD64"})
     elif platform_tag == "macos-x86_64":
@@ -234,8 +235,8 @@ def prepare_manifest(*, wheelhouse: Path, lock_path: Path, platform_tag: str, co
     }
 
 
-def _run(command: list[str], *, cwd: Path) -> None:
-    completed = subprocess.run(command, cwd=cwd, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False)
+def _run(command: list[str], *, cwd: Path, env: dict[str, str] | None = None) -> None:
+    completed = subprocess.run(command, cwd=cwd, env=env, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False)
     if completed.returncode:
         raise PreparationError(completed.stderr.strip() or completed.stdout.strip() or "release_preparation_failed")
 
@@ -248,7 +249,29 @@ def prepare(*, source_root: Path, output_root: Path, lock_path: Path, platform_t
     target = output_root / platform_tag
     wheelhouse = target / "wheelhouse"
     wheelhouse.mkdir(parents=True, exist_ok=True)
-    _run([sys.executable, "-m", "pip", "wheel", "--no-deps", "--wheel-dir", str(wheelhouse), str(source_root)], cwd=source_root)
+    source_registry = json.loads(
+        (source_root / "runtime/chatmaker/installers/runtime_sources.json").read_text(encoding="utf-8")
+    )
+    indexes = source_registry.get("pip_indexes", [])
+    if not isinstance(indexes, list) or not indexes:
+        raise PreparationError("pip_source_registry_invalid")
+    base_env = dict(os.environ)
+    base_env["PIP_DISABLE_PIP_VERSION_CHECK"] = "1"
+
+    def run_with_pinned_indexes(command: list[str]) -> None:
+        failures: list[str] = []
+        for index in indexes:
+            if not isinstance(index, dict) or not isinstance(index.get("url"), str):
+                raise PreparationError("pip_source_registry_invalid")
+            env = {**base_env, "PIP_INDEX_URL": index["url"]}
+            try:
+                _run(command, cwd=source_root, env=env)
+                return
+            except PreparationError:
+                failures.append(str(index.get("id", "unknown")))
+        raise PreparationError("all_pinned_pip_sources_failed:" + ",".join(failures))
+
+    run_with_pinned_indexes([sys.executable, "-m", "pip", "wheel", "--no-deps", "--wheel-dir", str(wheelhouse), str(source_root)])
     core_candidates = sorted(wheelhouse.glob("chatmaker-*.whl"))
     if len(core_candidates) != 1:
         raise PreparationError("core_wheel_invalid")
@@ -258,7 +281,7 @@ def prepare(*, source_root: Path, output_root: Path, lock_path: Path, platform_t
         "--implementation", "cp", "--python-version", "311", "--abi", "cp311",
     ]
     download.extend(f"{project}=={version}" for project, version in sorted(lock.items()))
-    _run(download, cwd=source_root)
+    run_with_pinned_indexes(download)
     manifest = prepare_manifest(
         wheelhouse=wheelhouse,
         lock_path=lock_path,
