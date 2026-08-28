@@ -146,7 +146,7 @@ def _knowledge_block() -> str:
         (
             "## 当前结构化证据摘要",
             "",
-            "ChatMaker 管理的独立 CLI 是星核板首选后端；它在隔离目录中使用固定 Arduino CLI、`mindplus:esp32@0.0.1` 核心和六个校验过的 mPython/OLED/中文字库，不要求安装 Mind+ 应用。Mind+ 1.8 和 2 仍是可用的兼容后端，两者都有时兼容路线默认选择 2。",
+            "ChatMaker 管理的独立 CLI 是星核板首选后端；它在隔离目录中使用固定 Arduino CLI、`mindplus:esp32@0.0.1` 核心、六个校验过的 mPython/OLED 库，以及 Mind+ 国内官方设备包中经过 SHA-256 校验的中文字库，不要求安装 Mind+ 应用。上传前检查 Flash `0x400000` 的 `GUIX` 标记，仅在缺失时写入字库。Mind+ 1.8 和 2 仍是可用的兼容后端，两者都有时兼容路线默认选择 2。",
             "",
             "2026-08-26，独立链路用桌面地震预警站完成真实编译、COM4 上传、RTS 硬复位和 115200 串口回读，看到 `STARCORE_QUAKE_STATION_UI_V2_READY` 与连续 `QUAKE_DATA`。此前用户已确认中文 OLED、防闪、蜂鸣器、A/B 键和预警效果均正常；本轮没有重新肉眼或听觉确认这些实体效果。",
             "",
@@ -158,7 +158,7 @@ def _knowledge_block() -> str:
 def _installation_block() -> str:
     return "\n".join(
         (
-            "星核板首选 ChatMaker 管理的独立 CLI，不要求安装 Mind+ 应用。首次执行 `chatmaker-starcore --request-json '{\"action\":\"prepare-environment\"}'` 会在 ChatMaker 自己的目录中下载并校验固定 Arduino CLI、`mindplus:esp32@0.0.1` 核心和六个 mPython/OLED/中文字库。已有 Mind+ 1.8 或 2 仍可作为兼容后端。",
+            "星核板首选 ChatMaker 管理的独立 CLI，不要求安装 Mind+ 应用。首次执行 `chatmaker-starcore --request-json '{\"action\":\"prepare-environment\"}'` 会在 ChatMaker 自己的目录中下载并校验固定 Arduino CLI、`mindplus:esp32@0.0.1` 核心、六个 mPython/OLED 库，以及 Mind+ 国内官方设备包中的中文字库。上传前会检查 Flash `0x400000` 的 `GUIX` 标记，只在缺失时写入字库。已有 Mind+ 1.8 或 2 仍可作为兼容后端。",
             "",
             "独立链路已用桌面地震预警站完成编译、COM4 上传、硬复位和 115200 串口验证。此前用户确认中文 OLED、防闪、蜂鸣器、A/B 键和预警效果正常；本轮没有重新做肉眼或听觉验收。CAN、断电重启和其他模块继续分别验收。",
         )
