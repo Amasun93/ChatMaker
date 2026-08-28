@@ -105,6 +105,21 @@ class StarcoreClassroomRecipeTests(unittest.TestCase):
         self.assertIn("starcore-classroom-modules.md", skill)
         self.assertIn("oled-i2c-troubleshooting.md", skill)
 
+    def test_i2c_socket_and_ultrasonic_harness_rules_are_explicit(self):
+        board = load_yaml(ROOT / "packs/boards/idmc-0001-starcore-v4-2-2.yaml")
+        interfaces = {item["id"]: item for item in board["interfaces"]}
+        self.assertEqual(interfaces["i2c-connector-bank"]["count"], 8)
+        self.assertIn("complete four-wire module cable", interfaces["i2c-connector-bank"]["selection_rule"])
+
+        component = load_yaml(ROOT / "packs/components/idms-0009-starcore-ultrasonic.yaml")
+        self.assertEqual(component["recommended_wiring"]["board_pins"]["TRIG"], "H/P26")
+        self.assertEqual(component["recommended_wiring"]["board_pins"]["ECHO"], "O/P27")
+        self.assertIn("split the cable", component["recommended_wiring"]["beginner_note"])
+
+        guide = (ROOT / "skills/chatduino/references/starcore-classroom-modules.md").read_text(encoding="utf-8")
+        for token in ("8 个物理 I2C 插口", "SCL/C", "SDA/D", "2+2 四芯线", "H/P26", "O/P27"):
+            self.assertIn(token, guide)
+
 
 if __name__ == "__main__":
     unittest.main()

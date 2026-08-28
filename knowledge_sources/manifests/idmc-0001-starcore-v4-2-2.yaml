@@ -70,6 +70,15 @@ source_evidence:
   - source_id: starcore-physical-board-verification-2026-08-24
     description: Recorded one user-confirmed v4.2.2 board upload, serial, QMI8658, full-Flash backup and verified restore result, with unverified hardware boundaries preserved.
     sha256: 686118df7ec7a32cf40d3dbfcd18fb3eda1f1bbfe2be6c79f4e4a95c8b485e26
+  - source_id: starcore-classroom-wiring-pptx-v2
+    description: Private classroom wiring deck reviewed for repeated module-to-pin examples, including the screen SCL/SDA pair and the ultrasonic 5V/GND/H/O route. Only normalized guidance is published.
+    sha256: 67acdf4fa908d7eb70c66bdb49874324f93aa10937de9a53af7a68740575964b
+  - source_id: starcore-board-cad-dxf-v3
+    description: Private Starcore v3 DXF library reviewed as geometry evidence. It does not contain authoritative electrical labels, pin maps, or voltage data.
+    sha256: 7f55d53b9bd49ba6675d1452d4dbaf3cb24a2192bee4332c19ba604a3002d766
+  - source_id: starcore-board-library-lcpx-v3
+    description: Private Starcore v3 LCPX graphical library reviewed for component names and artwork labels such as 超声波、屏幕、NFC、MP3播放 and USB TTL; artwork alone is not electrical verification.
+    sha256: 2154353e064a1a91f1f1134ec010e8995b90d9c35acbe6e45219d69183aef0a1
 module_migrations:
   - hardware_id: IDMD-0001
     approved_rewritten_uses: [normalized-facts, beginner-wiring-guidance, derivative-examples, sanitized-mechanical-facts]

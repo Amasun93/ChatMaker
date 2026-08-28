@@ -86,8 +86,10 @@ class StarcoreCompleteBoardKnowledgeTests(unittest.TestCase):
         interfaces = {item["id"]: item for item in self.board["interfaces"]}
         self.assertEqual(interfaces["can-bus"]["controller_tx"], "P13/GPIO18")
         self.assertEqual(interfaces["can-bus"]["controller_rx"], "P14/GPIO19")
-        self.assertEqual(interfaces["i2c-3v3-bank"]["count"], 3)
-        self.assertEqual(interfaces["i2c-5v-bank"]["count"], 3)
+        self.assertEqual(interfaces["i2c-connector-bank"]["count"], 8)
+        self.assertTrue(interfaces["i2c-connector-bank"]["shared_bus"])
+        self.assertNotIn("count", interfaces["i2c-3v3-bank"])
+        self.assertNotIn("count", interfaces["i2c-5v-bank"])
         pins = {item["id"]: set(item["capabilities"]) for item in self.board["pins"]}
         for pin_id in ("P2", "P3", "P4", "P10", "IO37", "IO38"):
             self.assertIn("input-only", pins[pin_id])

@@ -26,11 +26,11 @@ GND -> GND
 TXD -> P15（主控接收）
 RXD -> P16（主控发送）
 
-IDMD-0021 1.3 寸 OLED
-VCC -> 3V3
-GND -> GND
-SCL -> P19
-SDA -> P20
+IDMD-0021 1.3 寸 OLED（I2C 四芯线，整条插入一个匹配电压的 I2C 接口）
+VCC -> 模块额定电压对应的 3V3 或 5V 插口
+GND -> 同一插口的 GND
+SCL -> 同一插口的 SCL/C（与 SDA 相邻）
+SDA -> 同一插口的 SDA/D（与 SCL 相邻）
 
 IDMS-0001 三线按钮（按下为 HIGH）
 VCC -> 3V3
@@ -47,14 +47,14 @@ VCC -> 3V3
 GND -> GND
 SIG -> P0
 
-IDMS-0009 超声波（GPIO 路线）
-VCC  -> 3V3
-GND  -> GND
-TRIG -> H（代码 P_H）
-ECHO -> O（代码 P_O）
+IDMS-0009 超声波（GPIO 路线，四芯线中的 2 根电源线 + 2 根信号线）
+红 VCC  -> 3V3（先按当前批次丝印确认）
+黑 GND  -> GND
+蓝 TRIG -> H/P26（代码 P_H）
+绿 ECHO -> O/P27（代码 P_O）
 ```
 
-P0、P15 等引脚不能同时被两个模块占用。IDMD-0002 的 TXD/RXD 必须交叉连接；IDMS-0009 的 ECHO 实际电平尚未测量，接实体板前要先确认保护方式。普通 OLED、LCD1602、WS2812、SG90 和 HC-SR04 仍有通用 Component 卡，但不能代替上述自研编号卡。
+P0、P15 等引脚不能同时被两个模块占用。IDMD-0002 的 TXD/RXD 必须交叉连接；IDMS-0009 的 ECHO 实际电平尚未测量，接实体板前要先确认保护方式。IDMS-0009 的 H/O 两根信号线不能被误接到 I2C 的 SCL/SDA；反过来，I2C 模块的 SCL/SDA 也不能拆到两个相距很远的 GPIO 插口。普通 OLED、LCD1602、WS2812、SG90 和 HC-SR04 仍有通用 Component 卡，但不能代替上述自研编号卡。
 
 外接 OLED 若使用 `MPython.h` 的全局 `display`，通常占用共享 I2C 地址 `0x3C`；它和板载 QMI8658 的 `0x6B` 可以共线，但仍要检查其他 I2C 模块地址。P13/P14 已接板载 CAN 收发器，不作为外接 RGB、舵机或普通数字模块的默认起点。
 

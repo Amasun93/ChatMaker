@@ -25,9 +25,17 @@ verification:
     method: source-review
   code_compiled:
     status: unverified
+    checked_at: null
+    evidence: null
   firmware_uploaded:
     status: unverified
+    checked_at: null
+    evidence: null
   serial_evidence:
     status: unverified
+    checked_at: null
+    evidence: null
   physical_effect_verified:
     status: unverified
+    checked_at: null
+    evidence: null

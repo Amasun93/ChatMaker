@@ -415,12 +415,23 @@ interfaces:
     controller_rx: P14/GPIO19
     connector_signals: [VIN, GND, CAN_L, CAN_H]
   - id: i2c-3v3-bank
-    count: 3
     signals: [3V3, GND, P19/SCL, P20/SDA]
+    voltage_label: 3V3
+    role: one-voltage-variant-of-shared-connector-bank
   - id: i2c-5v-bank
-    count: 3
     signals: [5V, GND, level-shifted-SCL, level-shifted-SDA]
     level_shifter: 2N7002-based bidirectional level shifting
+    voltage_label: 5V
+    role: one-voltage-variant-of-shared-connector-bank
+  - id: i2c-connector-bank
+    count: 8
+    signals: [voltage-labelled-3V3-or-5V, GND, SCL/C, SDA/D]
+    shared_bus: true
+    selection_rule: >-
+      The eight physical I2C sockets share P19/SCL and P20/SDA. Insert a
+      complete four-wire module cable into one socket marked for the module's
+      voltage; do not split SCL/C and SDA/D across distant sockets.
+    source_ids: [starcore-classroom-wiring-pptx-v2, starcore-board-cad-dxf-v3]
   - id: svg-gpio-bank
     layout: three-row signal-voltage-ground connector bank
 power_inputs:
