@@ -1,0 +1,137 @@
+name: Publish GitHub Release assets to Gitee
+
+on:
+  release:
+    types:
+      - published
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing GitHub Release tag to publish to Gitee
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: publish-gitee-release-${{ github.event.release.tag_name || inputs.tag }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    env:
+      GITEE_OWNER: amasun93
+      GITEE_REPO: ChatMaker
+      GITEE_ACCESS_TOKEN: ${{ secrets.GITEE_ACCESS_TOKEN }}
+      GH_TOKEN: ${{ github.token }}
+      RELEASE_TAG: ${{ github.event.release.tag_name || inputs.tag }}
+
+    steps:
+      - name: Validate required secrets
+        env:
+          GITEE_SSH_PRIVATE_KEY: ${{ secrets.GITEE_SSH_PRIVATE_KEY }}
+        run: |
+          test -n "$GITEE_ACCESS_TOKEN"
+          test -n "$GITEE_SSH_PRIVATE_KEY"
+
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Ensure the release tag exists on Gitee
+        env:
+          GITEE_SSH_PRIVATE_KEY: ${{ secrets.GITEE_SSH_PRIVATE_KEY }}
+        run: |
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "$GITEE_SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          cat >> ~/.ssh/known_hosts <<'EOF'
+          gitee.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEKxHSJ7084RmkJ4YdEi5tngynE8aZe2uEoVVsB/OvYN
+          EOF
+          git remote add gitee git@gitee.com:${GITEE_OWNER}/${GITEE_REPO}.git
+          git push gitee "refs/tags/${RELEASE_TAG}:refs/tags/${RELEASE_TAG}"
+
+      - name: Read GitHub Release metadata
+        run: |
+          gh api "repos/${GITHUB_REPOSITORY}/releases/tags/${RELEASE_TAG}" > github-release.json
+          jq -r '.name // .tag_name' github-release.json > release-name.txt
+          jq -r '.body // ""' github-release.json > release-body.txt
+          jq -r '.prerelease' github-release.json > release-prerelease.txt
+
+      - name: Create or reuse the Gitee Release
+        shell: bash
+        run: |
+          set -euo pipefail
+          api="https://gitee.com/api/v5/repos/${GITEE_OWNER}/${GITEE_REPO}"
+          auth="Authorization: Bearer ${GITEE_ACCESS_TOKEN}"
+
+          status="$(curl --silent --show-error \
+            --header "$auth" \
+            --output gitee-release.json \
+            --write-out '%{http_code}' \
+            "$api/releases/tags/${RELEASE_TAG}")"
+
+          if [ "$status" = "404" ]; then
+            jq -n \
+              --arg tag "$RELEASE_TAG" \
+              --rawfile name release-name.txt \
+              --rawfile body release-body.txt \
+              --argjson prerelease "$(cat release-prerelease.txt)" \
+              '{tag_name: $tag, name: ($name | rtrimstr("\n")), body: $body, prerelease: $prerelease, target_commitish: "main"}' \
+              > create-release.json
+
+            curl --fail --silent --show-error \
+              --header "$auth" \
+              --header 'Content-Type: application/json' \
+              --data-binary @create-release.json \
+              --output gitee-release.json \
+              "$api/releases"
+          elif [ "$status" -lt 200 ] || [ "$status" -ge 300 ]; then
+            echo "Gitee release lookup failed with HTTP $status" >&2
+            exit 1
+          fi
+
+          jq -e '.id' gitee-release.json >/dev/null
+
+      - name: Download GitHub Release assets
+        run: |
+          mkdir release-assets
+          if [ "$(jq '.assets | length' github-release.json)" -gt 0 ]; then
+            gh release download "$RELEASE_TAG" \
+              --repo "$GITHUB_REPOSITORY" \
+              --dir release-assets
+          else
+            echo "The GitHub Release has no assets; skipping download."
+          fi
+
+      - name: Upload missing assets to Gitee
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          api="https://gitee.com/api/v5/repos/${GITEE_OWNER}/${GITEE_REPO}"
+          auth="Authorization: Bearer ${GITEE_ACCESS_TOKEN}"
+          release_id="$(jq -r '.id' gitee-release.json)"
+          assets=(release-assets/*)
+
+          if [ "${#assets[@]}" -eq 0 ]; then
+            echo "The GitHub Release has no assets; nothing to upload."
+            exit 0
+          fi
+
+          for file in "${assets[@]}"; do
+            name="$(basename "$file")"
+            if jq -e --arg name "$name" '.assets[]? | select(.name == $name)' gitee-release.json >/dev/null; then
+              echo "Already present on Gitee: $name"
+              continue
+            fi
+
+            curl --fail --silent --show-error \
+              --header "$auth" \
+              --form "file=@${file}" \
+              --output /dev/null \
+              "$api/releases/${release_id}/attach_files"
+            echo "Uploaded to Gitee: $name"
+          done
