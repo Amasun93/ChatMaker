@@ -33,7 +33,7 @@ class CapabilityProbeTests(unittest.TestCase):
                 mock.patch.object(capabilities.platform, "system", return_value="Linux"),
                 mock.patch.object(capabilities.platform, "machine", return_value="x86_64"),
                 mock.patch.object(capabilities.nano_mindplus, "scan_ports", return_value=[]),
-                mock.patch.object(capabilities.nano_mindplus, "discover_installations", return_value=[]),
+                mock.patch.object(capabilities.nano_mindplus, "discover_installation_report", return_value={"status": "not-installed", "available": False, "installations": [], "partial_installations": []}),
                 mock.patch.object(capabilities.shutil, "which", return_value=None),
             ):
                 report = capabilities.probe_environment(home=home, environ=environment).to_dict()
@@ -49,7 +49,7 @@ class CapabilityProbeTests(unittest.TestCase):
     def test_missing_optional_tools_remain_a_successful_report(self):
         with (
             mock.patch.object(capabilities.nano_mindplus, "scan_ports", return_value=[]),
-            mock.patch.object(capabilities.nano_mindplus, "discover_installations", return_value=[]),
+            mock.patch.object(capabilities.nano_mindplus, "discover_installation_report", return_value={"status": "not-installed", "available": False, "installations": [], "partial_installations": []}),
             mock.patch.object(capabilities.shutil, "which", return_value=None),
         ):
             report = capabilities.probe_environment(environ={"PATH": ""}).to_dict()
@@ -58,6 +58,22 @@ class CapabilityProbeTests(unittest.TestCase):
         self.assertFalse(report["serial"]["available"])
         self.assertFalse(report["mindplus"]["available"])
         self.assertFalse(report["arduino_cli"]["available"])
+
+    def test_probe_preserves_incomplete_mindplus_state(self):
+        incomplete = {
+            "status": "installed-toolchain-incomplete",
+            "available": False,
+            "installations": [],
+            "partial_installations": [{"root": r"D:\\Software\\Mind+", "missing": ["board_definition"]}],
+        }
+        with (
+            mock.patch.object(capabilities.nano_mindplus, "scan_ports", return_value=[]),
+            mock.patch.object(capabilities.nano_mindplus, "discover_installation_report", return_value=incomplete),
+            mock.patch.object(capabilities.shutil, "which", return_value=None),
+        ):
+            report = capabilities.probe_environment(environ={"PATH": ""}).to_dict()
+        self.assertEqual(report["mindplus"]["status"], "installed-toolchain-incomplete")
+        self.assertEqual(report["mindplus"]["partial_installations"][0]["missing"], ["board_definition"])
 
 
 if __name__ == "__main__":

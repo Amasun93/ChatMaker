@@ -13,6 +13,30 @@ BOARD_ID = "idmc-0001-starcore-v4-2-2"
 
 
 class StarcoreOnboardAccelerometerTests(unittest.TestCase):
+    def test_motion_dice_example_and_web_demo_keep_hardware_effects_explicit(self):
+        sketch = ROOT / "examples/chatduino/starcore/motion-dice/motion-dice.ino"
+        page = ROOT / "examples/chatweb/starcore-motion-dice.html"
+        recipe = ROOT / "packs/recipes/starcore-motion-dice.yaml"
+        self.assertTrue(sketch.is_file())
+        self.assertTrue(page.is_file())
+        self.assertTrue(recipe.is_file())
+        source = sketch.read_text(encoding="utf-8")
+        for token in (
+            "accelerometer.getStrength()",
+            "display.begin(OLED_ADDRESS)",
+            "buzz.freq(880, 90)",
+            "STARCORE_MOTION_DICE_READY",
+            "DICE_ROLL",
+        ):
+            self.assertIn(token, source)
+        html = page.read_text(encoding="utf-8")
+        self.assertIn("这是浏览器模拟，不代表硬件已连接", html)
+        self.assertIn("模拟摇一摇", html)
+        data = yaml.safe_load(recipe.read_text(encoding="utf-8"))
+        self.assertEqual(data["source_file"], "examples/chatduino/starcore/motion-dice/motion-dice.ino")
+        self.assertEqual(data["web_demo"], "examples/chatweb/starcore-motion-dice.html")
+        self.assertEqual(data["verification"]["physical_effect_verified"]["status"], "unverified")
+
     def test_onboard_self_test_example_covers_safe_mainboard_only_features(self):
         sketch = (
             ROOT

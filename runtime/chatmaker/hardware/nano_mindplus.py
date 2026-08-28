@@ -145,6 +145,45 @@ def _windows_registered_mindplus_roots() -> list[Path]:
     return _unique_paths(roots)
 
 
+def _bounded_windows_mindplus_roots() -> list[Path]:
+    """Inspect a small set of common install parents without scanning a drive."""
+    if os.name != "nt":
+        return []
+    home = Path(os.environ.get("USERPROFILE", Path.home()))
+    local = Path(os.environ.get("LOCALAPPDATA", home / "AppData" / "Local"))
+    parents = [
+        local / "Programs",
+        home / "Applications",
+        home / "Programs",
+    ]
+    for drive in "CDE":
+        root = Path(f"{drive}:\\")
+        parents.extend(
+            root / name
+            for name in (
+                "Apps",
+                "Applications",
+                "Programs",
+                "Software",
+                "Tools",
+                "开发工具",
+                "软件",
+            )
+        )
+    names = {"mind+", "mindplus", "mind+2", "mindplus2", "mind-plus", "mind-plus2"}
+    roots: list[Path] = []
+    for parent in parents:
+        try:
+            if not parent.is_dir():
+                continue
+            for child in parent.iterdir():
+                if child.is_dir() and child.name.casefold().replace(" ", "") in names:
+                    roots.append(child)
+        except OSError:
+            continue
+    return _unique_paths(roots)
+
+
 def default_v1_roots() -> list[Path]:
     roots = [
         Path(r"C:\Program Files (x86)\Mind+"),
@@ -155,7 +194,8 @@ def default_v1_roots() -> list[Path]:
         roots.insert(0, Path(explicit).expanduser())
     for drive in "CDE":
         roots.extend([Path(f"{drive}:\\Mind+"), Path(f"{drive}:\\MindPlus")])
-    return merge_discovery_roots(roots, _windows_registered_mindplus_roots())
+    discovered = [*_windows_registered_mindplus_roots(), *_bounded_windows_mindplus_roots()]
+    return merge_discovery_roots(roots, discovered)
 
 
 def default_v2_roots() -> list[Path]:
@@ -168,7 +208,8 @@ def default_v2_roots() -> list[Path]:
         roots.insert(0, Path(explicit).expanduser())
     for drive in "CDE":
         roots.extend([Path(f"{drive}:\\Mind+2"), Path(f"{drive}:\\MindPlus2")])
-    return merge_discovery_roots(roots, _windows_registered_mindplus_roots())
+    discovered = [*_windows_registered_mindplus_roots(), *_bounded_windows_mindplus_roots()]
+    return merge_discovery_roots(roots, discovered)
 
 
 def default_v2_configs() -> list[Path]:
@@ -177,6 +218,14 @@ def default_v2_configs() -> list[Path]:
     if local:
         candidates.append(Path(local) / "mind+" / "Arduino" / "arduino-cli.yaml")
     candidates.append(Path.home() / "AppData" / "Local" / "mind+" / "Arduino" / "arduino-cli.yaml")
+    for root in default_v2_roots():
+        candidates.extend(
+            (
+                root / "Arduino" / "arduino-cli.yaml",
+                root / "resources" / "app" / "Arduino" / "arduino-cli.yaml",
+                root / "applications" / "deps" / "mind-link" / "tool" / "arduino-cli.yaml",
+            )
+        )
     return _unique_paths(candidates)
 
 
@@ -225,6 +274,71 @@ def discover_installations(
                 }
             )
     return results
+
+
+def discover_installation_report(
+    *,
+    v1_roots: Optional[Iterable[Path]] = None,
+    v2_roots: Optional[Iterable[Path]] = None,
+    v2_config_candidates: Optional[Iterable[Path]] = None,
+) -> dict[str, Any]:
+    """Return beginner-readable installed, incomplete, and usable states."""
+    first_roots = [Path(path) for path in (v1_roots if v1_roots is not None else default_v1_roots())]
+    second_roots = [Path(path) for path in (v2_roots if v2_roots is not None else default_v2_roots())]
+    config_paths = [Path(path) for path in (
+        v2_config_candidates if v2_config_candidates is not None else default_v2_configs()
+    )]
+    usable = discover_installations(
+        v1_roots=first_roots,
+        v2_roots=second_roots,
+        v2_config_candidates=config_paths,
+    )
+    usable_roots = {str(Path(item["root"])).casefold() for item in usable}
+    partial: list[dict[str, Any]] = []
+
+    for version, roots in (("1.x", first_roots), ("2.x", second_roots)):
+        for root in _unique_paths(roots):
+            try:
+                if not root.is_dir() or str(root.resolve()).casefold() in usable_roots:
+                    continue
+            except OSError:
+                continue
+            if version == "1.x":
+                required = {
+                    "builder": root / "Arduino" / "arduino-builder" / "arduino-builder.exe",
+                    "uploader": root / "Arduino" / "hardware" / "tools" / "avr" / "bin" / "avrdude.exe",
+                    "board_definition": root / "Arduino" / "hardware" / "arduino" / "avr" / "boards.txt",
+                }
+            else:
+                required = {
+                    "cli": root / "applications" / "deps" / "mind-link" / "tool" / "arduino-cli.exe",
+                }
+            missing = [name for name, path in required.items() if not path.is_file()]
+            if version == "2.x" and not any(path.is_file() for path in config_paths):
+                missing.append("arduino_cli_config")
+            partial.append(
+                {
+                    "root": str(root.resolve()),
+                    "version_family": version,
+                    "toolchain_present": False,
+                    "missing": missing,
+                }
+            )
+
+    if len(usable) > 1:
+        status = "multiple-usable"
+    elif usable:
+        status = "usable"
+    elif partial:
+        status = "installed-toolchain-incomplete"
+    else:
+        status = "not-installed"
+    return {
+        "status": status,
+        "available": bool(usable),
+        "installations": usable,
+        "partial_installations": partial,
+    }
 
 
 def choose_environment(installations: list[dict[str, Any]]) -> dict[str, Any]:

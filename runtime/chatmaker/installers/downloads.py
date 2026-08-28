@@ -125,7 +125,23 @@ def _candidate_sources(item: Mapping[str, Any]) -> list[dict[str, str]]:
                 "url": f"{custom}/{item['filename']}",
             }
         )
-    result.extend(dict(source) for source in item["sources"])
+    sources = [dict(source) for source in item["sources"]]
+    # A classroom or school network can explicitly refuse overseas fallbacks.
+    # This prevents a long GitHub timeout after the domestic route was already
+    # selected, while retaining the normal domestic-first + official-fallback
+    # behavior for developers who did not opt into the stricter policy.
+    if os.environ.get("CHATMAKER_DOWNLOAD_POLICY", "").strip().casefold() in {
+        "domestic-only",
+        "domestic_only",
+    }:
+        sources = [
+            source
+            for source in sources
+            if source.get("kind") in {"domestic_mirror", "domestic_official", "verified_cache"}
+        ]
+        if not result and not sources:
+            raise DownloadError("domestic_source_not_configured")
+    result.extend(sources)
     return result
 
 

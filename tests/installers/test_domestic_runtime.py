@@ -84,6 +84,22 @@ class DomesticRuntimeTests(unittest.TestCase):
         self.assertEqual(calls, ["https://mirror.example/chatmaker/runtime.bin"])
         self.assertEqual(receipt.source_id, "configured-domestic-mirror")
 
+    def test_domestic_only_skips_official_fallbacks(self):
+        artifact = {
+            "filename": "runtime.bin",
+            "size": 4,
+            "sha256": "3a6eb0790f39ac87c94f3856b2dd2c5d110e6811602261a9a923d3bb23adc8b7",
+            "sources": [
+                {"id": "official", "kind": "official_fallback", "url": "https://official.example/runtime.bin"},
+            ],
+        }
+        with tempfile.TemporaryDirectory() as folder:
+            destination = Path(folder) / "runtime.bin"
+            with mock.patch.dict(os.environ, {"CHATMAKER_DOWNLOAD_POLICY": "domestic-only"}, clear=False):
+                with self.assertRaises(downloads.DownloadError) as raised:
+                    downloads.download_locked(artifact, destination, fetcher=lambda *args, **kwargs: None)
+        self.assertIn("domestic_source_not_configured", str(raised.exception))
+
     def test_powershell_check_only_reports_plan_without_creating_runtime(self):
         powershell = shutil.which("pwsh") or shutil.which("powershell")
         if not powershell:

@@ -74,6 +74,11 @@ def _mindplus_roots(home: Path, environ: Mapping[str, str], family: str) -> tupl
             v2.extend([Path(f"{drive}:\\Mind+2"), Path(f"{drive}:\\MindPlus2")])
         local = _path_from_environ(environ, "LOCALAPPDATA") or home / "AppData" / "Local"
         configs.append(local / "mind+" / "Arduino" / "arduino-cli.yaml")
+        # Reuse the same bounded, common-parent scan as the hardware bridge;
+        # this catches D:\\Software\\Mind+ without walking an entire drive.
+        discovered = nano_mindplus._bounded_windows_mindplus_roots()
+        v1.extend(discovered)
+        v2.extend(discovered)
     elif family == "macos":
         v1.append(Path("/Applications/Mind+.app"))
         v2.append(Path("/Applications/Mind+2.app"))
@@ -232,14 +237,27 @@ def probe_environment(
     try:
         if family == "macos":
             installations = _macos_mindplus_installations(v1_roots, v2_roots, configs)
+            mindplus_report = {
+                "status": "multiple-usable" if len(installations) > 1 else ("usable" if installations else "not-installed"),
+                "available": bool(installations),
+                "installations": installations,
+                "partial_installations": [],
+            }
         else:
-            installations = nano_mindplus.discover_installations(
+            mindplus_report = nano_mindplus.discover_installation_report(
                 v1_roots=v1_roots,
                 v2_roots=v2_roots,
                 v2_config_candidates=configs,
             )
+            installations = mindplus_report["installations"]
     except OSError:
         installations = []
+        mindplus_report = {
+            "status": "probe-failed",
+            "available": False,
+            "installations": [],
+            "partial_installations": [],
+        }
     try:
         ports = _macos_serial_ports() if family == "macos" else nano_mindplus.scan_ports()
     except OSError:
@@ -257,7 +275,7 @@ def probe_environment(
         },
         "browser": {"available": bool(browser_path), "command": browser_command, "path": browser_path},
         "serial": {"available": bool(ports), "ports": ports},
-        "mindplus": {"available": bool(installations), "installations": installations},
+        "mindplus": mindplus_report,
         "arduino_cli": {"available": bool(cli_path), "path": cli_path},
     }
     return CapabilityReport(value)

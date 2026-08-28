@@ -25,9 +25,24 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts/setup_local_runtime.
 
 After the user has requested the local action and accepted the required download, run the same command without `-CheckOnly`. Add `-IncludeNode` only for a route such as micro:bit V2 that actually needs Node.js. The setup must stay under the current project's `.chatmaker-runtime`, must not change global `PATH`, pip/npm configuration, AI-host configuration, or an existing Python/Mind+ installation.
 
-For the all-in-one Windows package, use the versioned `ChatMaker-Environment-*-windows-amd64.zip` from `https://gitee.com/amasun93/ChatMaker/releases` and verify its sibling `.sha256` and `.manifest.json` before extraction. The authoritative component source list is `runtime/chatmaker/installers/runtime_sources.json`. It pins version, size and SHA-256, tries reviewed domestic mirrors first, and uses the named official source only as a fallback. If every pinned route fails, explain which stage failed and diagnose connectivity before searching for alternatives. Only add a new source after the user understands the reason and the bytes can be verified; never silently substitute an unreviewed proxy, blog attachment, cloud-drive file or “latest” URL. `CHATMAKER_DOWNLOAD_MIRROR_BASE` is the supported organization-provided mirror override; it must use HTTPS and downloaded bytes must still match the pinned size and SHA-256.
+For the all-in-one Windows package, use the versioned `ChatMaker-Environment-*-windows-amd64.zip` from `https://gitee.com/amasun93/ChatMaker/releases` and verify its sibling `.sha256` and `.manifest.json` before extraction. The authoritative component source list is `runtime/chatmaker/installers/runtime_sources.json`. It pins version, size and SHA-256, tries reviewed domestic mirrors first, and uses the named official source only as a fallback. If every pinned route fails, explain which stage failed and diagnose connectivity before searching for alternatives. Only add a new source after the user understands the reason and the bytes can be verified; never silently substitute an unreviewed proxy, blog attachment, cloud-drive file or “latest” URL. `CHATMAKER_DOWNLOAD_MIRROR_BASE` is the supported organization-provided HTTPS mirror override; downloaded bytes must still match the pinned size and SHA-256. For a school network that must stay inside China, set `CHATMAKER_DOWNLOAD_POLICY=domestic-only`: overseas fallbacks are skipped and the student receives a short offline-cache or school-mirror instruction instead of waiting for a timeout.
 
 Pure generation still needs no environment. Do not run environment setup merely because the user invoked ChatMaker; prepare only the optional capability required by the requested compile, upload, serial, browser, HEX packaging or real-render action.
+
+## Use the classroom hardware fast path
+
+For a student classroom request, source delivery is the default first result. Do not let environment discovery, downloads, compilation, or upload block the complete program and the Mind+ board/library/upload instructions.
+
+1. Generate the complete program first, with the exact board choice, any required Mind+ extension/library, and the short manual upload steps.
+2. Ask only whether the student already has Mind+ and whether they want the fastest classroom route or the independent ChatMaker route.
+3. If a usable Mind+ installation is found, present both beginner choices:
+   - **Fast and stable:** copy the complete program into Mind+ and upload manually. This avoids a new toolchain download and is the recommended in-class route.
+   - **Independent compile/upload:** keep the generated program, then configure ChatMaker's isolated environment. Explain that the first setup may take longer or fail on a restricted network.
+4. If Mind+ is not found, distinguish “not installed” from “installed but toolchain/config incomplete”. Offer the official Mind+ domestic download, the isolated ChatMaker route, and—only for a fixed teacher demo—a verified prebuilt firmware route.
+5. Run `prepare-environment` or any download only after the user chooses the independent route. Never repeat preparation while the current dialogue is still producing or revising code.
+6. When environment work could delay the creative task, suggest a separate Codex task for environment/compile/upload. Give that task a short handoff containing the exact board, generated source, selected route, and current evidence; keep the current task available for design and code changes.
+
+Explain every choice in beginner language: why it may be faster, what it can do, what may need to download, and which success gate it does not yet prove. A fixed firmware is a quick experience aid, not the default for student-authored projects.
 
 ## Adapt to the user's idea
 

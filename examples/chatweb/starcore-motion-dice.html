@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>星核板 · 摇一摇掷骰子</title>
+  <style>
+    :root{color-scheme:dark;--bg:#081018;--panel:#112331;--line:#29485b;--cyan:#5ee7d2;--amber:#ffc56b;--muted:#9bb1bd}
+    *{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(circle at 20% 0,#17435a 0,#081018 48%);color:#effaf8;font-family:Inter,"Microsoft YaHei",system-ui,sans-serif}
+    main{width:min(980px,100%);margin:auto;padding:clamp(22px,5vw,70px);display:grid;gap:22px}.eyebrow{margin:0;color:var(--cyan);font:800 .72rem/1.2 ui-monospace,monospace;letter-spacing:.16em;text-transform:uppercase}h1{margin:10px 0 0;font-size:clamp(2.1rem,6vw,4.8rem);line-height:.95;letter-spacing:-.06em}.intro{max-width:620px;color:var(--muted);line-height:1.6}.board{display:grid;grid-template-columns:1.1fr .9fr;gap:18px}.screen,.telemetry{border:1px solid var(--line);border-radius:22px;background:rgba(17,35,49,.9);box-shadow:0 20px 60px #0005}.screen{padding:28px;display:grid;place-items:center;min-height:360px}.oled{width:min(360px,90%);aspect-ratio:1.65;border:12px solid #192126;border-radius:16px;background:#061013;display:grid;align-content:center;justify-items:center;gap:12px;box-shadow:inset 0 0 0 2px #38515a,0 0 35px #5ee7d233;color:var(--cyan);font:800 clamp(1rem,3vw,1.5rem)/1.1 ui-monospace,monospace}.oled strong{font-size:clamp(3.8rem,13vw,7rem);line-height:.7;color:#f8fffd}.telemetry{padding:24px;display:grid;align-content:center;gap:14px}.row{display:flex;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid #29485b;color:var(--muted)}.row b{color:#f2fffb;font-variant-numeric:tabular-nums}.actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px}button{min-height:52px;border:1px solid var(--cyan);border-radius:12px;background:#5ee7d218;color:var(--cyan);font-weight:800;cursor:pointer}button.primary{color:#071311;background:var(--cyan)}button:active{transform:scale(.98)}.status{min-height:1.5em;color:var(--amber);line-height:1.45}.note{margin:0;color:#829aa7;font-size:.86rem;line-height:1.55}@media(max-width:720px){.board{grid-template-columns:1fr}.screen{min-height:270px}}
+  </style>
+</head>
+<body>
+  <main>
+    <header><p class="eyebrow">ChatWeb · Starcore classroom demo</p><h1>摇一摇掷骰子</h1><p class="intro">浏览器先模拟星核板的加速度读数、OLED 画面和蜂鸣器反馈。课堂上把同一份程序复制到 Mind+，再由真实星核板产生结果。</p></header>
+    <section class="board" aria-label="星核板掷骰子模拟器">
+      <div class="screen"><div class="oled"><span>SHAKE DICE</span><strong id="dice">1</strong><span id="beep">BUZZER READY</span></div></div>
+      <div class="telemetry"><div class="row"><span>加速度合量</span><b id="strength">1000 mg</b></div><div class="row"><span>触发来源</span><b id="reason">等待摇动</b></div><div class="row"><span>蜂鸣器</span><b id="buzzer">待机</b></div><div class="actions"><button id="shake" class="primary" type="button">模拟摇一摇</button><button id="button" type="button">按 A 键重掷</button></div><p class="status" id="status" aria-live="polite">这是浏览器模拟，不代表硬件已连接。</p></div>
+    </section>
+    <p class="note">真实接线：OLED VCC→3V3，GND→GND，SCL→P19，SDA→P20。星核板的加速度传感器和无源蜂鸣器是板载的；显示屏需要外接。上传成功、串口输出和肉眼看到 OLED 仍要分别确认。</p>
+  </main>
+  <script>
+    const dice=document.querySelector('#dice'),strength=document.querySelector('#strength'),reason=document.querySelector('#reason'),buzzer=document.querySelector('#buzzer'),beep=document.querySelector('#beep'),status=document.querySelector('#status');
+    function roll(source){const value=1+Math.floor(Math.random()*6);dice.textContent=value;strength.textContent=(source==='shake'?1350+Math.floor(Math.random()*600):1000)+' mg';reason.textContent=source==='shake'?'加速度超过阈值':'A 键';buzzer.textContent='880 Hz · 90 ms';beep.textContent='BUZZ!';status.textContent='模拟结果：'+value+' 点。请在真实板上分别确认串口、屏幕和声音。';setTimeout(()=>{buzzer.textContent='待机';beep.textContent='BUZZER READY'},380)}
+    document.querySelector('#shake').addEventListener('click',()=>roll('shake'));document.querySelector('#button').addEventListener('click',()=>roll('button'));
+    if('DeviceMotionEvent' in window){window.addEventListener('devicemotion',event=>{const a=event.accelerationIncludingGravity;if(!a)return;const magnitude=Math.sqrt((a.x||0)**2+(a.y||0)**2+(a.z||0)**2);if(magnitude>14)roll('shake')},{passive:true})}
+  </script>
+</body>
+</html>
