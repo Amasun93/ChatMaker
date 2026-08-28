@@ -25,13 +25,15 @@ class StarcoreOnboardAccelerometerTests(unittest.TestCase):
             "accelerometer.getStrength()",
             "display.begin(OLED_ADDRESS)",
             "buzz.freq(880, 90)",
+            "ACCEL:{",
             "STARCORE_MOTION_DICE_READY",
             "DICE_ROLL",
         ):
             self.assertIn(token, source)
         html = page.read_text(encoding="utf-8")
-        self.assertIn("这是浏览器模拟，不代表硬件已连接", html)
+        self.assertIn("不代表硬件已连接", html)
         self.assertIn("模拟摇一摇", html)
+        self.assertIn("Web Serial", html)
         data = yaml.safe_load(recipe.read_text(encoding="utf-8"))
         self.assertEqual(data["source_file"], "examples/chatduino/starcore/motion-dice/motion-dice.ino")
         self.assertEqual(data["web_demo"], "examples/chatweb/starcore-motion-dice.html")

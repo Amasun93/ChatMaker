@@ -7,6 +7,7 @@ const float SHAKE_THRESHOLD_MG = 1350.0f;
 const unsigned long ROLL_COOLDOWN_MS = 900;
 
 unsigned long lastRollAt = 0;
+unsigned long lastTelemetryAt = 0;
 int diceValue = 1;
 
 void showDice(const char* title, int value) {
@@ -38,6 +39,12 @@ void setup() {
 
 void loop() {
   const float strength = accelerometer.getStrength();
+  if (millis() - lastTelemetryAt >= 120) {
+    Serial.printf("ACCEL:{\"x_mg\":%.0f,\"y_mg\":%.0f,\"z_mg\":%.0f,\"strength_mg\":%.0f}\n",
+                  accelerometer.getX(), accelerometer.getY(),
+                  accelerometer.getZ(), strength);
+    lastTelemetryAt = millis();
+  }
   const bool buttonRoll = buttonA.isPressed() || buttonB.isPressed();
   const bool cooldownReady = millis() - lastRollAt >= ROLL_COOLDOWN_MS;
   if (cooldownReady && (strength >= SHAKE_THRESHOLD_MG || buttonRoll)) {
