@@ -47,8 +47,18 @@ def execute_request(request: dict[str, Any]) -> dict[str, Any]:
                 "stage": "identity",
                 "error": "stardust_identity_confirmation_required",
                 "upload_executed": False,
+                "next_action": "confirm_stardust_identity_then_retry",
+                "teacher_message": (
+                    "上传前请先确认实物是星辰板（ATmega328P/CH340）。"
+                    "确认后我会自动继续，不需要你填写 board_confirmed 参数。"
+                ),
             }
         )
+    if action == "compile-upload":
+        # The connected Stardust board has a physically verified 115200
+        # Optiboot-compatible loader. Do not waste a full timeout at Nano's
+        # legacy 57600 profile.
+        forwarded["bootloader_baud_order"] = [115200]
     result = avr.execute_request(forwarded)
     if action == "doctor" and forwarded.get("board_confirmed") is not True:
         result = dict(result)

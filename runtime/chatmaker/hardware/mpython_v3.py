@@ -225,8 +225,19 @@ def prepare_environment_result(
         downloader(ARDUINO_CLI, archive)
         _install_cli(archive, paths["cli"])
         _write_config(paths)
-    except (OSError, ValueError, zipfile.BadZipFile) as exc:
-        return {**base, "success": False, "error": str(exc), "stage": "arduino-cli"}
+    except (OSError, ValueError, zipfile.BadZipFile, downloads.DownloadError) as exc:
+        return {
+            **base,
+            "success": False,
+            "error": str(exc),
+            "stage": "arduino-cli",
+            "next_action": "place_verified_archive_in_managed_downloads_or_configure_mirror",
+            "required_archive": str(paths["downloads"] / ARDUINO_CLI["filename"]),
+            "teacher_message": (
+                "Arduino CLI 的固定来源当前不可达。可把已核对大小和 SHA-256 的压缩包放到提示位置，"
+                "或为学校的 HTTPS 镜像设置 CHATMAKER_DOWNLOAD_MIRROR_BASE 后重试。"
+            ),
+        }
     executions = []
     for stage, command, timeout in (
         ("index", _command(paths, "core", "update-index"), 180),
@@ -235,7 +246,24 @@ def prepare_environment_result(
         execution = runner(command, timeout=timeout)
         executions.append({"stage": stage, **execution})
         if execution.get("returncode") != 0:
-            return {**base, "success": False, "error": f"managed_mpython_v3_{stage}_failed", "stage": stage, "executions": executions}
+            result = {
+                **base,
+                "success": False,
+                "error": f"managed_mpython_v3_{stage}_failed",
+                "stage": stage,
+                "executions": executions,
+            }
+            if stage in {"index", "core"}:
+                result.update(
+                    {
+                        "next_action": "use_reviewed_board_toolchain_cache_or_mirror",
+                        "teacher_message": (
+                            "掌控板 3.0 的板卡包或编译器仍有固定 GitHub 上游未能下载。"
+                            "不要临时使用不明代理；请改用已审核的离线缓存或机构镜像。"
+                        ),
+                    }
+                )
+            return result
     platform_root = paths["data"] / "packages" / "mpython" / "hardware" / "esp32" / CORE_VERSION
     compatibility_file = platform_root / "platform.local.txt"
     try:

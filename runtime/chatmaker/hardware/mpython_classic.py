@@ -20,6 +20,7 @@ import time
 from typing import Any, Callable
 
 from . import nano_mindplus as shared
+from . import mpython_flash
 from . import serial_monitor
 from . import starcore_toolchain as managed_mpython
 
@@ -30,6 +31,8 @@ BOARD_ID = "mpython-classic-v2x"
 MANAGED_BACKEND = "chatmaker-managed-mpython-classic"
 V2_FQBN = "mindplus:esp32:mpython:FlashMode=dio,FlashFreq=80,UploadSpeed=1500000,DebugLevel=none"
 V1_FQBN = "dfrobot:mpython:mpython:FlashMode=dio,FlashFreq=80,UploadSpeed=1500000,DebugLevel=none"
+FAST_UPLOAD_BAUD = 1500000
+SAFE_UPLOAD_BAUD = 115200
 
 
 def toolchain_lock() -> dict[str, Any]:
@@ -204,40 +207,65 @@ def _select_port(
     return None, "multiple_wired_ports_require_selection", ports
 
 
-def upload_result(context: dict[str, Any], request: dict[str, Any], compiled: dict[str, Any]) -> dict[str, Any]:
+def _upload_diagnostics(execution: dict[str, Any]) -> dict[str, Any]:
+    raw = "\n".join(
+        value for value in (execution.get("stdout", ""), execution.get("stderr", "")) if value
+    )
+    lowered = raw.lower()
+    if "permissionerror" in lowered:
+        return {
+            "error_type": "high_baud_port_error",
+            "retry_at_115200": True,
+            "teacher_message": "高速串口打开失败，ChatMaker 将自动降到 115200 再试一次。",
+            "diagnostic_excerpt": raw[-12000:],
+        }
+    return {
+        "error_type": "upload_failed",
+        "retry_at_115200": False,
+        "teacher_message": "上传失败；请保留这段错误，并检查端口、数据线和复位状态。",
+        "diagnostic_excerpt": raw[-12000:],
+    }
+
+
+def upload_result(
+    context: dict[str, Any],
+    request: dict[str, Any],
+    compiled: dict[str, Any],
+    *,
+    runner=shared._run,
+) -> dict[str, Any]:
     port, error, ports = _select_port(request, identity_required=True)
     if error or not port:
-        return {"action": "upload", "success": False, "error": error, "upload_executed": False, "ports": ports}
-    if context.get("backend") in {MANAGED_BACKEND, "mindplus-2-cli"}:
-        command = [
-            str(context["cli"]),
-            "compile",
-            "--upload",
-            "--port", port,
-            "--config-file", str(context["config"]),
-            "--no-color",
-            "--fqbn", V2_FQBN,
-            "--build-path", str(compiled["build_dir"]),
-            str(compiled["sketch"]),
-        ]
-    else:
-        arduino = Path(str(context["arduino"]))
-        command = [
-            str(arduino / "hardware" / "tools" / "mpython" / "esptool.exe"),
-            "--chip", "esp32", "--port", port, "--baud", "1500000",
-            "--before", "default_reset", "--after", "hard_reset", "write_flash", "-z",
-            "--flash_mode", "dio", "--flash_freq", "80m", "--flash_size", "detect",
-            "0xe000", str(arduino / "hardware" / "dfrobot" / "mpython" / "tools" / "partitions" / "boot_app0.bin"),
-            "0x1000", str(arduino / "hardware" / "dfrobot" / "mpython" / "tools" / "sdk" / "bin" / "bootloader_dio_80m.bin"),
-            "0x10000", str(compiled["application_bin"]),
-            "0x8000", str(compiled["partitions_bin"]),
-        ]
-    execution = shared._run(command, timeout=int(request.get("upload_timeout", 300)))
-    success = execution.get("returncode") == 0
+        result = {
+            "action": "upload", "success": False, "error": error,
+            "upload_executed": False, "ports": ports,
+        }
+        if error == "mpython_classic_identity_confirmation_required":
+            result.update(
+                {
+                    "next_action": "confirm_mpython_classic_identity_then_retry",
+                    "teacher_message": (
+                        "上传前请先确认实物是经典掌控板 V2.x，而不是掌控板 3.0 或星核板。"
+                        "确认后我会自动继续，不需要你填写 board_confirmed 参数。"
+                    ),
+                }
+            )
+        return result
+    flashed = mpython_flash.upload_with_font(
+        context,
+        request,
+        compiled,
+        port,
+        fast_speed=FAST_UPLOAD_BAUD,
+        safe_speed=SAFE_UPLOAD_BAUD,
+        runner=runner,
+        diagnostics_for=_upload_diagnostics,
+        timeout=int(request.get("upload_timeout", 300)),
+    )
+    success = bool(flashed.get("success"))
     return {
         "action": "upload",
         "success": success,
-        "upload_executed": True,
         "firmware_written": success,
         "reset_requested_by_uploader": success,
         "board_restart_observed": False,
@@ -247,8 +275,7 @@ def upload_result(context: dict[str, Any], request: dict[str, Any], compiled: di
         "backend": context["backend"],
         "fqbn": str(context["fqbn"]),
         "port": port,
-        "execution": execution,
-        **({} if success else {"error": "upload_failed"}),
+        **flashed,
     }
 
 

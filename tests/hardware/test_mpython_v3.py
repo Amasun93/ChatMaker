@@ -95,6 +95,30 @@ class MpythonV3Tests(unittest.TestCase):
             self.assertIn("-isystem", override.read_text(encoding="ascii"))
             self.assertIn("xtensa-esp32s3-elf", override.read_text(encoding="ascii"))
 
+    def test_prepare_download_failure_returns_a_safe_offline_next_step(self):
+        with tempfile.TemporaryDirectory() as folder:
+            with (
+                mock.patch.object(mpython_v3.os, "name", "nt"),
+                mock.patch.object(mpython_v3.platform, "machine", return_value="AMD64"),
+            ):
+                result = mpython_v3.prepare_environment_result(
+                    root=Path(folder) / "managed",
+                    downloader=mock.Mock(
+                        side_effect=mpython_v3.downloads.DownloadError(
+                            "all_pinned_sources_failed"
+                        )
+                    ),
+                )
+
+        self.assertFalse(result["success"])
+        self.assertEqual(result["stage"], "arduino-cli")
+        self.assertEqual(
+            result["next_action"],
+            "place_verified_archive_in_managed_downloads_or_configure_mirror",
+        )
+        self.assertIn("CHATMAKER_DOWNLOAD_MIRROR_BASE", result["teacher_message"])
+        self.assertTrue(result["required_archive"].endswith(mpython_v3.ARDUINO_CLI["filename"]))
+
     def test_upload_requires_exact_board_confirmation(self):
         ports = [{"address": "COM7", "eligible_for_upload": True}]
         with mock.patch.object(mpython_v3.shared, "scan_ports", return_value=ports):

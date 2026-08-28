@@ -11,6 +11,18 @@ from chatmaker.hardware import starcore
 from chatmaker.hardware import starcore_toolchain as managed
 
 
+def flash_assets():
+    return {
+        "esptool": "esptool.exe",
+        "boot_app0": "boot_app0.bin",
+        "bootloader": "bootloader.bin",
+        "font": "font.xbf",
+        "missing": [],
+        "font_sha256": starcore.mpython_flash.FONT_SHA256,
+        "font_hash_verified": True,
+    }
+
+
 class StarcoreTests(unittest.TestCase):
     def test_current_and_historical_targets_stay_separate(self):
         self.assertTrue(starcore.CURRENT_FQBN.startswith("mindplus:esp32:mpython:"))
@@ -79,6 +91,112 @@ class StarcoreTests(unittest.TestCase):
         self.assertIsNone(port)
         self.assertEqual(error, "starcore_identity_confirmation_required")
 
+    def test_identity_block_explains_the_beginner_next_step(self):
+        with mock.patch.object(
+            starcore,
+            "scan_ports",
+            return_value=[{"address": "COM7", "eligible_for_upload": True}],
+        ):
+            result = starcore.upload_result(
+                {"backend": managed.BACKEND, "fqbn": starcore.CURRENT_FQBN},
+                {},
+                {},
+            )
+        self.assertFalse(result["success"])
+        self.assertEqual(result["next_action"], "confirm_starcore_identity_then_retry")
+        self.assertIn("V4.2.2", result["teacher_message"])
+
+    def test_upload_retries_at_115200_after_permission_error(self):
+        calls = []
+
+        def runner(command, timeout):
+            calls.append(command)
+            if "read_flash" in command and "1500000" in command:
+                return {"returncode": 1, "stdout": "", "stderr": "PermissionError: access denied"}
+            if "read_flash" in command:
+                Path(command[-1]).write_bytes(b"GUIX")
+            return {"returncode": 0, "stdout": "Hash of data verified", "stderr": ""}
+
+        context = {
+            "backend": managed.BACKEND,
+            "cli": "arduino-cli.exe",
+            "config": "arduino-cli.yaml",
+            "fqbn": starcore.CURRENT_FQBN,
+        }
+        compiled = {"application_bin": "app.bin", "partitions_bin": "partitions.bin"}
+        with (
+            mock.patch.object(starcore, "scan_ports", return_value=[{"address": "COM7", "eligible_for_upload": True}]),
+            mock.patch.object(starcore.mpython_flash, "resolve_flash_assets", return_value=flash_assets()),
+        ):
+            result = starcore.upload_result(
+                context,
+                {"board_confirmed": True},
+                compiled,
+                runner=runner,
+            )
+
+        self.assertTrue(result["success"])
+        self.assertEqual(len(calls), 3)
+        self.assertEqual(result["upload_baud"], 115200)
+        self.assertTrue(result["safe_baud_fallback_used"])
+        self.assertTrue(result["font_checked"])
+        self.assertFalse(result["font_asset_written"])
+
+    def test_invalid_packet_head_returns_manual_download_mode_guidance(self):
+        def runner(command, timeout):
+            return {"returncode": 1, "stdout": "", "stderr": "Invalid head of packet (0xE3)"}
+
+        context = {
+            "backend": managed.BACKEND,
+            "cli": "arduino-cli.exe",
+            "config": "arduino-cli.yaml",
+            "fqbn": starcore.CURRENT_FQBN,
+        }
+        compiled = {"application_bin": "app.bin", "partitions_bin": "partitions.bin"}
+        with (
+            mock.patch.object(starcore, "scan_ports", return_value=[{"address": "COM7", "eligible_for_upload": True}]),
+            mock.patch.object(starcore.mpython_flash, "resolve_flash_assets", return_value=flash_assets()),
+        ):
+            result = starcore.upload_result(
+                context,
+                {"board_confirmed": True},
+                compiled,
+                runner=runner,
+            )
+
+        self.assertFalse(result["success"])
+        self.assertEqual(result["diagnostics"]["error_type"], "manual_download_mode_required")
+        self.assertIn("A 键", result["diagnostics"]["teacher_message"])
+        self.assertIn("RST", result["diagnostics"]["teacher_message"])
+
+    def test_missing_font_marker_writes_verified_font_in_same_flash_command(self):
+        calls = []
+
+        def runner(command, timeout):
+            calls.append(command)
+            if "read_flash" in command:
+                Path(command[-1]).write_bytes(b"NONE")
+            return {"returncode": 0, "stdout": "Hash of data verified", "stderr": ""}
+
+        with (
+            mock.patch.object(starcore, "scan_ports", return_value=[{"address": "COM7", "eligible_for_upload": True}]),
+            mock.patch.object(starcore.mpython_flash, "resolve_flash_assets", return_value=flash_assets()),
+        ):
+            result = starcore.upload_result(
+                {"backend": managed.BACKEND, "fqbn": starcore.CURRENT_FQBN},
+                {"board_confirmed": True, "manual_download_mode": True},
+                {"application_bin": "app.bin", "partitions_bin": "partitions.bin"},
+                runner=runner,
+            )
+
+        self.assertTrue(result["success"])
+        self.assertTrue(result["font_checked"])
+        self.assertTrue(result["font_asset_written"])
+        upload = next(command for command in calls if "write_flash" in command)
+        self.assertIn("0x400000", upload)
+        self.assertIn("font.xbf", upload)
+        self.assertIn("no_reset", upload)
+
     def test_missing_toolchain_is_reported(self):
         original = starcore._current_context
         starcore._current_context = lambda: None
@@ -104,6 +222,8 @@ class StarcoreTests(unittest.TestCase):
         )
         self.assertEqual(lock["core"]["id"], "mindplus:esp32")
         self.assertEqual(lock["core"]["version"], "0.0.1")
+        self.assertEqual(lock["font_device_package"]["source_kind"], "domestic_official")
+        self.assertEqual(lock["font_device_package"]["font_sha256"], starcore.mpython_flash.FONT_SHA256)
         self.assertEqual(
             {item["name"] for item in lock["libraries"]},
             {
@@ -142,6 +262,12 @@ class StarcoreTests(unittest.TestCase):
                 if item["filename"].startswith("arduino-cli_"):
                     with zipfile.ZipFile(destination, "w") as archive:
                         archive.writestr("arduino-cli.exe", b"managed-cli")
+                elif item["filename"] == managed.FONT_DEVICE_ARTIFACT["filename"]:
+                    with zipfile.ZipFile(destination, "w") as archive:
+                        archive.writestr(
+                            f"firmware/{managed.FONT_DEVICE_ARTIFACT['font_filename']}",
+                            b"font-bytes",
+                        )
                 else:
                     with zipfile.ZipFile(destination, "w") as archive:
                         archive.writestr(
@@ -156,9 +282,19 @@ class StarcoreTests(unittest.TestCase):
                     board.write_text("mpython.name=mPython", encoding="utf-8")
                 return {"command": command, "returncode": 0, "stdout": "", "stderr": ""}
 
+            def install_font(_archive, destination):
+                destination.parent.mkdir(parents=True, exist_ok=True)
+                destination.write_bytes(b"0" * managed.FONT_DEVICE_ARTIFACT["font_size"])
+
             with (
                 mock.patch.object(managed.os, "name", "nt"),
                 mock.patch.object(managed.platform, "machine", return_value="AMD64"),
+                mock.patch.object(managed, "_install_font_device_archive", side_effect=install_font),
+                mock.patch.object(managed, "_sha256", side_effect=lambda path: (
+                    managed.FONT_DEVICE_ARTIFACT["font_sha256"]
+                    if Path(path).name == managed.FONT_DEVICE_ARTIFACT["font_filename"]
+                    else hashlib.sha256(Path(path).read_bytes()).hexdigest()
+                )),
             ):
                 result = managed.prepare_environment_result(
                     root=root,
@@ -186,6 +322,8 @@ class StarcoreTests(unittest.TestCase):
                 manifest["arduino_cli_executable_sha256"],
                 hashlib.sha256(b"managed-cli").hexdigest(),
             )
+            self.assertEqual(manifest["font_sha256"], managed.FONT_DEVICE_ARTIFACT["font_sha256"])
+            self.assertTrue((root / "firmware" / managed.FONT_DEVICE_ARTIFACT["font_filename"]).is_file())
 
 
 if __name__ == "__main__":

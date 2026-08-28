@@ -858,9 +858,12 @@ def run_upload_attempts(
     port: str,
     runner=_run,
     timeout: int = 180,
+    baud_order: tuple[int, ...] = (57600, 115200),
 ) -> dict[str, Any]:
+    if not baud_order or any(baud not in {57600, 115200} for baud in baud_order):
+        raise ValueError("bootloader_baud_order_invalid")
     attempts: list[dict[str, Any]] = []
-    for baud in (57600, 115200):
+    for baud in baud_order:
         execution = runner(
             _avrdude_command(avrdude, config, hex_file, port, baud), timeout=timeout
         )
@@ -947,6 +950,7 @@ def upload_result(
     return run_upload_attempts(
         avrdude=str(avrdude), config=str(avrdude_config), hex_file=hex_file,
         port=selected, timeout=int(request.get("upload_timeout", 180)),
+        baud_order=tuple(request.get("bootloader_baud_order", (57600, 115200))),
     )
 
 

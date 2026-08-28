@@ -28,6 +28,7 @@ ChatDuino is an internal specialist under the ChatMaker parent entry. Keep this 
 6. Prefer a board's documented ChatMaker-managed toolchain when it exists. On Windows x64 this currently covers Starcore v4.2.2 and classic mPython V2.x; existing Mind+ 1.x/2.x installations remain compatibility fallbacks. Never substitute one physical board identity merely because the compiler target overlaps.
 7. For MCU boards, compile with the selected board identity and record the command, exit code, and artifact path. For M10, run the Python 3.7 source preflight, then synchronize the complete project and observe a board-side run as separate gates.
 8. Upload MCU firmware only when one high-confidence wired port remains. Close serial handles before upload. Do not describe M10 file synchronization as firmware upload.
+   For CLIs that require `board_confirmed`, pass `board_confirmed=true` internally only after the user has confirmed the exact printed model or equivalent high-confidence evidence. Never ask a student to type this field or show the raw error code as the whole explanation.
 9. Reopen serial after an MCU board returns, or read the M10 process log after launch. Use the `read` or `expect` action in a `chatmaker-serial` JSONL session only for a defined serial workflow; use `write` only when the project defines an input command. Ask for physical confirmation separately.
 
 For a complete Nano or Uno program, prefer `chatmaker-avr-project --request-json '<request>'`. It checks the existing Mind+ environment, compiles, uploads only when the wired port is unambiguous, and optionally looks for an expected serial marker. Use the individual board CLIs only when diagnosing one stage.
@@ -78,6 +79,13 @@ For a confirmed Arduino Uno Rev3 / Genuino Uno with ATmega328P, use the shared C
 - Reject Bluetooth ports. Auto-select only one confirmed Uno or one remaining wired candidate; require a choice when multiple wired ports remain.
 - Keep compile, upload, serial marker, reboot, and visible LED effect as separate evidence gates.
 
+## 星辰板（ATmega328P / CH340）
+
+- Keep product identity `stardust-atmega328p` separate from a generic Nano even though compilation reuses the compatible Nano target.
+- Use `chatmaker-stardust --request-json '<request>'`. After the user confirms the physical product identity, pass `board_confirmed=true` internally.
+- The verified Stardust bootloader uses 115200. Its upload route must 只尝试已验证的 115200，不先等待 Nano 的 57600 旧 Bootloader 超时。
+- For the verified IDMD-0021 OLED, A4 is SDA and A5 is SCL. The checked `DFRobot_SSD1306_I2C` example proves ASCII display only; for Chinese, read [oled-i2c-troubleshooting.md](references/oled-i2c-troubleshooting.md) and choose an AVR-sized font route.
+
 ## DOIT ESP32 DEVKIT V1 with ESP-WROOM-32
 
 Read [esp32-doit-devkit-v1.md](references/esp32-doit-devkit-v1.md) before accepting the board identity, assigning pins, or proposing a toolchain.
@@ -100,9 +108,10 @@ Read [esp32-doit-devkit-v1.md](references/esp32-doit-devkit-v1.md) before accept
 - For onboard acceleration, tilt, shake, motion control, or gesture projects, read Starcore `start-here` and `libraries-and-examples` before asking hardware questions or writing code. The onboard QMI8658 uses Mind+ built-in acceleration blocks, while `MPython.h` provides `mPython.begin()` plus the global `accelerometer`. Do not ask the user to identify the accelerometer, add a LIS2DH12 extension, connect another sensor, or handwrite I2C unless the checked knowledge explicitly reports a different board revision. QMI8658 contains a gyroscope, but the reviewed public object does not expose gyroscope readings; do not label acceleration as angular velocity or invent a gyro API.
 - Use `buttonA/buttonB/buttonAB` for the real active-low onboard buttons and `buzz` for the real passive buzzer. Treat P5/P11 as boot-related, P6 as occupied, P7 as affected by `mPython.begin()`'s software WS2812 initialization, P13/P14 as shared with CAN, and P19/P20 as the shared I2C bus.
 - The onboard SIT3051TK is a CAN physical layer, not a complete application protocol. Use a CAN API only after the actual bit rate, termination, cable and protocol are known; unknown buses start listen-only and never receive exploratory control frames. Keep backend-specific headers paired with the selected Mind+ environment.
-- Prefer the ChatMaker-managed Starcore environment. If it is absent, run `prepare-environment`; on Windows x64 this creates an isolated, hash-locked Arduino CLI, `mindplus:esp32@0.0.1` core, and the exact mPython/OLED/Chinese-font libraries without requiring the Mind+ desktop application.
+- Prefer the ChatMaker-managed Starcore environment. If it is absent, run `prepare-environment`; on Windows x64 this creates an isolated, hash-locked Arduino CLI, `mindplus:esp32@0.0.1` core, the exact mPython/OLED libraries, and the verified Mind+ device font without requiring the Mind+ desktop application.
 - Existing usable Mind+ 1.8.x or 2.x installations remain compatibility backends. When both Mind+ versions are usable, prefer 2.x with `mindplus:esp32:mpython:FlashMode=dio,FlashFreq=80,UploadSpeed=1500000,DebugLevel=none`; 1.8 uses `dfrobot:mpython:mpython:FlashMode=dio,FlashFreq=80,UploadSpeed=1500000,DebugLevel=none`. Do not ask a student to switch between usable Mind+ versions.
 - Upload only after the user has confirmed the physical board is Starcore v4.2.2 and one unambiguous non-Bluetooth wired port remains.
+- After that confirmation, pass `board_confirmed=true` internally. Before application upload, read the 4-byte marker at Flash `0x400000`; write the verified font only when the marker is not `GUIX`, and report `font_checked` separately from `font_asset_written`. If 1500000 baud returns `PermissionError`, retry once at 115200. If it reports `Invalid head of packet`, give the visible action “按住 A 键，短按 RST，松开 RST 后再松开 A 键”，then retry with manual download mode; do not reduce this to “检查数据线”.
 - A successful compile or upload does not verify restart, serial output, connected modules, browser exchange, or physical effects.
 
 Read [starcore-classroom-modules.md](references/starcore-classroom-modules.md) before using a WS2812 strip, a three-wire PWM servo, or the IDMM-0007 serial-servo driver with Starcore. WS2812 and SG90 remain canonical common components; do not invent Starcore-owned replacements for them. IDMM-0007 is a different UART driver, and unknown protocol details permit identification and receive-only diagnosis only—never a movement command.
@@ -115,6 +124,7 @@ Read [oled-i2c-troubleshooting.md](references/oled-i2c-troubleshooting.md) when 
 - V2.0, V2.1, V2.2 and V2.3 do not have one universal sensor combination. Use verified probe identities or printed revision markings; never turn an address clue into a chip model.
 - On Windows x64 use `chatmaker-mpython --request-json '<request>'` with `prepare-environment`, `doctor`, `ports`, `compile`, `compile-upload`, `reset`, or `serial-read`. The managed path does not require the Mind+ desktop application.
 - Upload and reset require an explicit classic mPython V2.x identity confirmation. A unique non-Bluetooth COM port is not identity evidence. `reset` proves only that the control-line sequence ran; `serial-read` proves only the returned bytes.
+- Once identity is confirmed, pass `board_confirmed=true` internally. Use the same `GUIX` marker check and conditional `0x400000` font write as Starcore, keeping font check, font write, application upload and physical display evidence separate. A 1500000-baud `PermissionError` may retry once at 115200; keep both attempts in the returned evidence.
 - Mind+ 1.8 uses `dfrobot:mpython:mpython:...`; Mind+ 2.0 uses `mindplus:esp32:mpython:...`. Keep their paths and reset settings separate.
 - Arduino `MPython.h` and MicroPython `from mpython import *` expose different APIs. The classic MicroPython display object is `oled`; do not copy the 3.0 `display`/RGB565 examples.
 

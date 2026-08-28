@@ -97,6 +97,28 @@ class TeacherExperienceContractTests(unittest.TestCase):
         self.assertIn("掌控板 3.0", chatduino)
         self.assertIn("恢复", chatduino)
 
+    def test_confirmed_identity_is_passed_internally_instead_of_exposed_to_students(self):
+        chatmaker = (ROOT / "skills" / "chatmaker" / "SKILL.md").read_text(
+            encoding="utf-8"
+        )
+        chatduino = (SKILL / "SKILL.md").read_text(encoding="utf-8")
+
+        self.assertIn("board_confirmed", chatmaker)
+        self.assertIn("不要让学生手动填写", chatmaker)
+        self.assertIn("board_confirmed=true", chatduino)
+
+    def test_stardust_and_avr_chinese_oled_routes_use_verified_boundaries(self):
+        skill = (SKILL / "SKILL.md").read_text(encoding="utf-8")
+        oled = (SKILL / "references" / "oled-i2c-troubleshooting.md").read_text(
+            encoding="utf-8"
+        )
+
+        self.assertIn("星辰板", skill)
+        self.assertIn("只尝试已验证的 115200", skill)
+        self.assertIn("DFRobot_SSD1306_I2C", oled)
+        self.assertIn("不能直接显示中文", oled)
+        self.assertIn("PROGMEM", oled)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -56,6 +56,24 @@ CORE_ARCHIVE = {
         }
     ],
 }
+FONT_DEVICE_ARTIFACT = {
+    "filename": "dev-DFRobot-handpyEsp32@0.0.2.zip",
+    "url": "https://resource.mindplus.top/mindplus/upload/devices/dev-DFRobot-handpyEsp32@0.0.2.zip",
+    "size": 710058,
+    "sha256": "ba72614c6b890fa2500b50d6a40a2f71fba9156b61ce72e2a12443ca77230cdd",
+    "source_id": "mindplus-cn-device-package",
+    "source_kind": "domestic_official",
+    "sources": [
+        {
+            "id": "mindplus-cn-device-package",
+            "kind": "domestic_official",
+            "url": "https://resource.mindplus.top/mindplus/upload/devices/dev-DFRobot-handpyEsp32@0.0.2.zip",
+        }
+    ],
+    "font_filename": "Noto_Sans_CJK_SC_Light16.xbf",
+    "font_size": 1902314,
+    "font_sha256": "75f647887f54441d569e17f1310520c322bdf7d2ea555ecededa45c9911bc5be",
+}
 LIBRARIES = (
     {
         "name": "DFRobot_Mindplus_ASCIIfont", "archive_root": "DFRobot_ASCIIfont", "required_file": "DFRobot_ASCIIfont.h", "version": "1.0.0", "size": 1913,
@@ -116,6 +134,8 @@ def _paths(root: Path | None = None) -> dict[str, Path]:
         "data": selected / "data",
         "downloads": selected / "downloads",
         "user": selected / "user",
+        "firmware": selected / "firmware",
+        "font": selected / "firmware" / str(FONT_DEVICE_ARTIFACT["font_filename"]),
         "manifest": selected / "manifest.json",
     }
 
@@ -133,6 +153,7 @@ def toolchain_lock() -> dict[str, Any]:
         "arduino_cli": {"version": ARDUINO_CLI_VERSION, **ARDUINO_CLI_ARTIFACT},
         "package_index": MINDPLUS_PACKAGE_INDEX_URL,
         "core": {"id": CORE_ID, "version": CORE_VERSION, **CORE_ARCHIVE},
+        "font_device_package": dict(FONT_DEVICE_ARTIFACT),
         "libraries": [dict(item) for item in LIBRARIES],
     }
 
@@ -141,7 +162,15 @@ def _ready_files(paths: dict[str, Path]) -> bool:
     core = paths["data"] / "packages" / "mindplus" / "hardware" / "esp32" / CORE_VERSION / "boards.txt"
     libraries = paths["user"] / "libraries"
     required = [libraries / str(item["archive_root"]) / str(item["required_file"]) for item in LIBRARIES]
-    return core.is_file() and all(path.is_file() for path in required)
+    try:
+        font_ready = (
+            paths["font"].is_file()
+            and paths["font"].stat().st_size == FONT_DEVICE_ARTIFACT["font_size"]
+            and _sha256(paths["font"]) == FONT_DEVICE_ARTIFACT["font_sha256"]
+        )
+    except OSError:
+        font_ready = False
+    return core.is_file() and all(path.is_file() for path in required) and font_ready
 
 
 def managed_context(root: Path | None = None) -> dict[str, Any] | None:
@@ -155,6 +184,7 @@ def managed_context(root: Path | None = None) -> dict[str, Any] | None:
         or manifest.get("backend") != BACKEND
         or manifest.get("arduino_cli_version") != ARDUINO_CLI_VERSION
         or manifest.get("core") != f"{CORE_ID}@{CORE_VERSION}"
+        or manifest.get("font_sha256") != FONT_DEVICE_ARTIFACT["font_sha256"]
         or not paths["cli"].is_file()
         or not paths["config"].is_file()
         or _sha256(paths["cli"]) != manifest.get("arduino_cli_executable_sha256")
@@ -169,6 +199,8 @@ def managed_context(root: Path | None = None) -> dict[str, Any] | None:
         "version_family": f"arduino-cli-{ARDUINO_CLI_VERSION}",
         "toolchain_present": True,
         "managed_by_chatmaker": True,
+        "font_asset": str(paths["font"]),
+        "font_asset_verified": True,
     }
 
 
@@ -224,6 +256,31 @@ def _install_library_archive(archive: Path, library: dict[str, Any], user: Path)
         shutil.rmtree(temporary_root, ignore_errors=True)
 
 
+def _install_font_device_archive(archive: Path, destination: Path) -> None:
+    expected = f"firmware/{FONT_DEVICE_ARTIFACT['font_filename']}"
+    try:
+        with zipfile.ZipFile(archive) as bundle:
+            names = {info.filename: info for info in bundle.infolist()}
+            info = names.get(expected)
+            if (
+                info is None
+                or Path(info.filename).is_absolute()
+                or any(part in {"", ".", ".."} for part in Path(info.filename).parts)
+                or (info.external_attr >> 16) & 0o170000 == 0o120000
+                or info.file_size != FONT_DEVICE_ARTIFACT["font_size"]
+            ):
+                raise ValueError("font_device_archive_layout_invalid")
+            payload = bundle.read(info)
+    except zipfile.BadZipFile as exc:
+        raise ValueError("font_device_archive_invalid") from exc
+    if hashlib.sha256(payload).hexdigest() != FONT_DEVICE_ARTIFACT["font_sha256"]:
+        raise ValueError("font_device_asset_identity_mismatch")
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    temporary = destination.with_suffix(destination.suffix + ".part")
+    temporary.write_bytes(payload)
+    temporary.replace(destination)
+
+
 def _write_config(paths: dict[str, Path]) -> None:
     for key in ("data", "downloads", "user"):
         paths[key].mkdir(parents=True, exist_ok=True)
@@ -272,8 +329,19 @@ def prepare_environment_result(
         downloader(ARDUINO_CLI_ARTIFACT, cli_archive)
         _install_cli(cli_archive, paths["cli"])
         _write_config(paths)
-    except (OSError, ValueError) as exc:
-        return {**base, "success": False, "error": str(exc), "stage": "arduino-cli"}
+    except (OSError, ValueError, downloads.DownloadError) as exc:
+        return {
+            **base,
+            "success": False,
+            "error": str(exc),
+            "stage": "arduino-cli",
+            "next_action": "place_verified_archive_in_managed_downloads_or_configure_mirror",
+            "required_archive": str(paths["downloads"] / ARDUINO_CLI_ARTIFACT["filename"]),
+            "teacher_message": (
+                "Arduino CLI 的固定来源当前不可达。可把已核对大小和 SHA-256 的压缩包放到提示位置，"
+                "或为学校的 HTTPS 镜像设置 CHATMAKER_DOWNLOAD_MIRROR_BASE 后重试。"
+            ),
+        }
 
     executions: list[dict[str, Any]] = []
     commands = [
@@ -291,8 +359,23 @@ def prepare_environment_result(
             archive = paths["downloads"] / str(library["filename"])
             downloader(library, archive)
             _install_library_archive(archive, library, paths["user"])
-        except (OSError, ValueError) as exc:
+        except (OSError, ValueError, downloads.DownloadError) as exc:
             return {**base, "success": False, "error": str(exc), "stage": f"library:{library['name']}", "executions": executions}
+
+    try:
+        font_archive = paths["downloads"] / str(FONT_DEVICE_ARTIFACT["filename"])
+        downloader(FONT_DEVICE_ARTIFACT, font_archive)
+        _install_font_device_archive(font_archive, paths["font"])
+    except (OSError, ValueError, downloads.DownloadError) as exc:
+        return {
+            **base,
+            "success": False,
+            "error": str(exc),
+            "stage": "chinese-font",
+            "executions": executions,
+            "next_action": "place_verified_archive_in_managed_downloads_or_configure_mirror",
+            "required_archive": str(font_archive),
+        }
 
     if not _ready_files(paths):
         return {**base, "success": False, "error": "managed_starcore_files_incomplete", "stage": "verify", "executions": executions}
@@ -302,6 +385,7 @@ def prepare_environment_result(
         "arduino_cli_version": ARDUINO_CLI_VERSION,
         "arduino_cli_executable_sha256": _sha256(paths["cli"]),
         "core": f"{CORE_ID}@{CORE_VERSION}",
+        "font_sha256": FONT_DEVICE_ARTIFACT["font_sha256"],
         "libraries": [f"{item['name']}@{item['version']}" for item in LIBRARIES],
     }
     paths["manifest"].write_text(json.dumps(manifest, sort_keys=True, indent=2) + "\n", encoding="ascii")

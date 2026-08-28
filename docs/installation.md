@@ -209,7 +209,7 @@ chatmaker-mpython --request-json '{"action":"compile","sketch":"examples/chatdui
 上传或复位前必须确认实物确实是经典掌控板 V2.x，并明确设置 `board_confirmed=true`。串口可通过 `serial-read` 做一次读取，也可使用 `chatmaker-serial` 的持久 JSONL 会话。当前中文状态页已完成独立链编译；由于没有已确认的经典掌控板实物，上传、复位后启动、串口、断电重启和 OLED 肉眼效果仍未验证。
 
 <!-- starcore-install-evidence:start -->
-星核板首选 ChatMaker 管理的独立 CLI，不要求安装 Mind+ 应用。首次执行 `chatmaker-starcore --request-json '{"action":"prepare-environment"}'` 会在 ChatMaker 自己的目录中下载并校验固定 Arduino CLI、`mindplus:esp32@0.0.1` 核心和六个 mPython/OLED/中文字库。已有 Mind+ 1.8 或 2 仍可作为兼容后端。
+星核板首选 ChatMaker 管理的独立 CLI，不要求安装 Mind+ 应用。首次执行 `chatmaker-starcore --request-json '{"action":"prepare-environment"}'` 会在 ChatMaker 自己的目录中下载并校验固定 Arduino CLI、`mindplus:esp32@0.0.1` 核心、六个 mPython/OLED 库，以及 Mind+ 国内官方设备包中的中文字库。上传前会检查 Flash `0x400000` 的 `GUIX` 标记，只在缺失时写入字库。已有 Mind+ 1.8 或 2 仍可作为兼容后端。
 
 独立链路已用桌面地震预警站完成编译、COM4 上传、硬复位和 115200 串口验证。此前用户确认中文 OLED、防闪、蜂鸣器、A/B 键和预警效果正常；本轮没有重新做肉眼或听觉验收。CAN、断电重启和其他模块继续分别验收。
 <!-- starcore-install-evidence:end -->

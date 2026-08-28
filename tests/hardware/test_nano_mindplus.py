@@ -276,6 +276,30 @@ class NanoBridgeContractTests(unittest.TestCase):
         self.assertEqual(result["baud"], 115200)
         self.assertEqual(result["bootloader_profile"], "new_bootloader_compatible")
 
+    def test_upload_can_use_a_board_specific_verified_baud_order(self):
+        calls = []
+
+        def runner(command, timeout=180):
+            calls.append(command)
+            return {
+                "returncode": 0,
+                "stdout": "avrdude done.  Thank you.",
+                "stderr": "bytes of flash verified",
+            }
+
+        result = self.bridge.run_upload_attempts(
+            avrdude=r"C:\avrdude.exe",
+            config=r"C:\avrdude.conf",
+            hex_file=Path(r"C:\blink.hex"),
+            port="COM8",
+            runner=runner,
+            baud_order=(115200,),
+        )
+
+        self.assertTrue(result["success"])
+        self.assertEqual(len(calls), 1)
+        self.assertEqual(calls[0][calls[0].index("-b") + 1], "115200")
+
     def test_upload_result_does_not_invoke_avrdude_when_multiple_wired_ports_are_ambiguous(self):
         with tempfile.TemporaryDirectory() as temporary:
             hex_file = Path(temporary) / "demo.hex"

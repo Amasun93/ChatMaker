@@ -29,6 +29,27 @@ class StardustTests(unittest.TestCase):
         self.assertFalse(result["success"])
         self.assertEqual(result["error"], "stardust_identity_confirmation_required")
         self.assertFalse(result["upload_executed"])
+        self.assertEqual(result["next_action"], "confirm_stardust_identity_then_retry")
+        self.assertIn("星辰板", result["teacher_message"])
+
+    def test_confirmed_stardust_uses_the_verified_115200_bootloader_only(self):
+        captured = {}
+
+        def execute(request):
+            captured.update(request)
+            return {"action": "compile-upload", "success": True, "fqbn": "mindplus:avr:nano:cpu=atmega328"}
+
+        with mock.patch.object(stardust.avr, "execute_request", side_effect=execute):
+            result = stardust.execute_request(
+                {
+                    "action": "compile-upload",
+                    "code": "void setup(){}",
+                    "board_confirmed": True,
+                }
+            )
+
+        self.assertTrue(result["success"])
+        self.assertEqual(captured["bootloader_baud_order"], [115200])
 
     def test_doctor_does_not_promote_a_wired_port_to_confirmed_stardust(self):
         with mock.patch.object(

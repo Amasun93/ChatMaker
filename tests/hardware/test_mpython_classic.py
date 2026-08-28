@@ -13,6 +13,18 @@ from chatmaker.hardware import mpython_classic
 ROOT = Path(__file__).resolve().parents[2]
 
 
+def flash_assets():
+    return {
+        "esptool": "esptool.exe",
+        "boot_app0": "boot_app0.bin",
+        "bootloader": "bootloader.bin",
+        "font": "font.xbf",
+        "missing": [],
+        "font_sha256": mpython_classic.mpython_flash.FONT_SHA256,
+        "font_hash_verified": True,
+    }
+
+
 class FakeHandle:
     def __init__(self):
         self.dtr = None
@@ -104,6 +116,42 @@ class MpythonClassicTests(unittest.TestCase):
             result = mpython_classic.doctor_result()
         self.assertFalse(result["ready_for_upload"])
         self.assertEqual(result["upload_blocked_by"], "mpython_classic_identity_confirmation_required")
+
+    def test_upload_retries_at_115200_after_permission_error(self):
+        calls = []
+
+        def runner(command, timeout):
+            calls.append(command)
+            if "read_flash" in command and "1500000" in command:
+                return {"returncode": 1, "stdout": "", "stderr": "PermissionError: access denied"}
+            if "read_flash" in command:
+                Path(command[-1]).write_bytes(b"GUIX")
+            return {"returncode": 0, "stdout": "Hash of data verified", "stderr": ""}
+
+        context = {
+            "backend": mpython_classic.MANAGED_BACKEND,
+            "cli": "arduino-cli.exe",
+            "config": "arduino-cli.yaml",
+            "fqbn": mpython_classic.V2_FQBN,
+        }
+        compiled = {"application_bin": "app.bin", "partitions_bin": "partitions.bin"}
+        ports = [{"address": "COM7", "eligible_for_upload": True}]
+        with (
+            mock.patch.object(mpython_classic, "scan_ports", return_value=ports),
+            mock.patch.object(mpython_classic.mpython_flash, "resolve_flash_assets", return_value=flash_assets()),
+        ):
+            result = mpython_classic.upload_result(
+                context,
+                {"board_confirmed": True},
+                compiled,
+                runner=runner,
+            )
+
+        self.assertTrue(result["success"])
+        self.assertEqual(len(calls), 3)
+        self.assertEqual(result["upload_baud"], 115200)
+        self.assertTrue(result["font_checked"])
+        self.assertFalse(result["font_asset_written"])
 
     def test_reset_toggles_rts_without_claiming_restart_or_effect(self):
         handle = FakeHandle()
