@@ -10,6 +10,8 @@
 
 **Spec:** `docs/superpowers/specs/2026-11-10-esp32-s3-classroom-flow-design.md`
 
+**Software execution status:** complete on 2026-11-10. Final suite: 657 cases, 656 passed and one DOS-alias prerequisite skip; browser 5/5; doctor and Skills pass. Four example/revision compilations and a final compiler/cache reuse check passed. A fresh read-only review produced three Important findings and one unsupported-action documentation finding; all were addressed in one fix pass. Physical board and real WorkBuddy session acceptance remain pending, as detailed in the verification report.
+
 ## Global constraints
 
 - Windows x64 first. No global PATH or AI host configuration changes.
@@ -32,9 +34,9 @@ Files: `runtime/chatmaker/hardware/workflow.py`, `runtime/chatmaker/installers/l
 
 Produces: `workflow.run_project(request: dict, adapters: Mapping | None = None) -> dict`, CLI `chatmaker-hardware --request-json`. Adapters consume `doctor`, `prepare-environment`, `compile-upload` via `execute_request`.
 
-- [ ] Write/run failing behavior tests: reuse ready environment, prepare once when missing, stop on preparation failure, preserve missing-device/identity evidence, never turn local Mind+ absence into a mandatory installation.
-- [ ] Implement workflow and neutral capability guidance; update Skill routing to use it for existing managed boards and Waveshare. Preserve AVR/micro:bit-specific paths.
-- [ ] Run targeted tests and commit.
+- [x] Write/run failing behavior tests: reuse ready environment, prepare once when missing, stop on preparation failure, preserve missing-device/identity evidence, never turn local Mind+ absence into a mandatory installation.
+- [x] Implement workflow and neutral capability guidance; update Skill routing to use it for existing managed boards and Waveshare. Preserve AVR/micro:bit-specific paths.
+- [x] Run targeted tests and commit.
 
 ### Task 2: Waveshare managed adapter and examples
 
@@ -42,17 +44,17 @@ Files: `runtime/chatmaker/hardware/waveshare_s3.py`, `runtime/chatmaker/hardware
 
 Produces: `waveshare_s3.execute_request(request: dict) -> dict`, `waveshare_toolchain.prepare_environment(revision: str) -> dict`, `context(revision: str) -> dict | None`, CLI `chatmaker-waveshare-s3`.
 
-- [ ] Write/run failing tests for unknown revision, exact target selection, no upload without identity, isolated flags, stale artifact rejection, vendor revision preparation and cache integrity.
-- [ ] Implement pinned Arduino CLI + isolated official core install and hash-verified vendor packages. Prepare minimal driver library and LVGL from vendor ZIPs. Apply documented deterministic V2 touch selection.
-- [ ] Implement compilation/upload and serial re-enumeration diagnostics, examples for screen diagnostic and touch timer, board/recipe/knowledge routing.
-- [ ] Real-compile both examples for V1/V2; record output sizes and hashes. Repeat environment preparation to verify reuse.
-- [ ] Run adapter/workflow/catalog tests and commit.
+- [x] Write/run failing tests for unknown revision, exact target selection, no upload without identity, isolated flags, stale artifact rejection, vendor revision preparation and cache integrity.
+- [x] Implement pinned Arduino CLI + isolated official core install and hash-verified vendor packages. Prepare minimal driver library and LVGL from vendor ZIPs. Apply documented deterministic V2 touch selection.
+- [x] Implement compilation/upload and serial re-enumeration diagnostics, examples for screen diagnostic and touch timer, board/recipe/knowledge routing.
+- [x] Real-compile both examples for V1/V2; record output sizes and hashes. Repeat environment preparation to verify reuse.
+- [x] Run adapter/workflow/catalog tests and commit.
 
 ### Task 3: Repository and classroom verification
 
 Files: installation/readme/update notes, `tests/release/test_clean_core_integration.py`, `docs/verification/2026-11-10-waveshare-s3-independent-flow.md`.
 
-- [ ] Correct stale release fixture without weakening catalog content checks; run full Python suite, runtime doctor, Skill validation and appropriate browser suite.
-- [ ] Inspect available WorkBuddy installation/execution surface and connected hardware; perform non-destructive host validation where available. Record missing prerequisites explicitly.
-- [ ] Fresh whole-branch review, address actionable findings, rerun affected checks.
-- [ ] Update source-backed verification report. Leave physical touch and reboot unverified unless actually observed on identified hardware.
+- [x] Correct stale release fixture without weakening catalog content checks; run full Python suite, runtime doctor, Skill validation and appropriate browser suite.
+- [x] Inspect available WorkBuddy installation/execution surface and connected hardware; perform non-destructive host validation where available. Record missing prerequisites explicitly.
+- [x] Fresh whole-branch review, address actionable findings, rerun affected checks.
+- [x] Update source-backed verification report. Leave physical touch and reboot unverified unless actually observed on identified hardware.

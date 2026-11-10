@@ -10,6 +10,8 @@ Save the complete program, then use `chatmaker-hardware --request-json '<request
 
 The independent board CLI is `chatmaker-waveshare-s3` with `doctor`, `prepare-environment`, `ports`, `compile`, `compile-upload`. Missing Mind+ does not block this route. First preparation installs required tools into the managed runtime; subsequent projects reuse the verified cache. The general local check is not a board-specific readiness decision.
 
+Integrity covers the complete S3 compiler, core, SDK and relevant Arduino tools, plus all prepared drivers and recovery images. A ready receipt also requires configuration for the current local root. With `CHATMAKER_DOWNLOAD_POLICY=domestic-only`, reuse a fully verified environment; otherwise stop before core network operations and request teacher-prepared offline material. A mirror for the CLI ZIP alone does not mirror the Arduino core. A copied offline environment must use the same absolute installation path.
+
 ## Available examples
 
 - `examples/chatduino/waveshare-s3/screen-diagnostic`: color screen status; marker `CHATMAKER_WAVESHARE_SCREEN_READY`.

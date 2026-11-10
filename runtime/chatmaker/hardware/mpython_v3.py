@@ -296,19 +296,27 @@ def _safe_name(value: str) -> str:
 
 
 def compile_result(context: dict[str, Any], request: dict[str, Any]) -> dict[str, Any]:
-    code = request.get("code")
-    if not isinstance(code, str) or not code.strip():
-        return {"action": "compile", "success": False, "error": "code_required", "board": BOARD_ID}
-    digest = hashlib.sha256(code.encode("utf-8")).hexdigest()[:12]
-    sketch = Path(tempfile.gettempdir()) / "chatmaker-mpython-v3-sketches" / f"{_safe_name(request.get('project_name', 'mpython-v3-project'))}-{digest}"
-    sketch.mkdir(parents=True, exist_ok=True)
-    (sketch / f"{sketch.name}.ino").write_text(code, encoding="utf-8")
-    build = Path(tempfile.gettempdir()) / "chatmaker-mpython-v3-builds" / digest
-    build.mkdir(parents=True, exist_ok=True)
+    if request.get("sketch"):
+        sketch = Path(request["sketch"]).resolve()
+        if sketch.is_file():
+            sketch = sketch.parent
+        if not sketch.is_dir() or not (sketch / f"{sketch.name}.ino").is_file():
+            return {"action": "compile", "success": False, "error": "sketch_directory_with_matching_ino_required", "board": BOARD_ID}
+    else:
+        code = request.get("code")
+        if not isinstance(code, str) or not code.strip():
+            return {"action": "compile", "success": False, "error": "code_required", "board": BOARD_ID}
+        digest = hashlib.sha256(code.encode("utf-8")).hexdigest()[:12]
+        sketch = Path(tempfile.gettempdir()) / "chatmaker-mpython-v3-sketches" / f"{_safe_name(request.get('project_name', 'mpython-v3-project'))}-{digest}"
+        sketch.mkdir(parents=True, exist_ok=True)
+        (sketch / f"{sketch.name}.ino").write_text(code, encoding="utf-8")
+    build_root = Path(tempfile.gettempdir()) / "chatmaker-mpython-v3-builds"
+    build_root.mkdir(parents=True, exist_ok=True)
+    build = Path(tempfile.mkdtemp(prefix="project-", dir=build_root))
     execution = shared._run([str(context["cli"]), "compile", "--config-file", str(context["config"]), "--no-color", "--fqbn", FQBN, "--build-path", str(build), str(sketch)], timeout=int(request.get("timeout", 1200)))
-    binaries = sorted(build.glob("*.ino.bin"))
-    success = execution.get("returncode") == 0 and bool(binaries)
-    return {"action": "compile", "success": success, "board": BOARD_ID, "backend": BACKEND, "fqbn": FQBN, "sketch": str(sketch), "build_dir": str(build), "application_bin": str(binaries[0]) if binaries else None, "execution": execution, **({} if success else {"error": "compile_failed"})}
+    binary = build / f"{sketch.name}.ino.bin"
+    success = execution.get("returncode") == 0 and binary.is_file()
+    return {"action": "compile", "success": success, "board": BOARD_ID, "backend": BACKEND, "fqbn": FQBN, "sketch": str(sketch), "build_dir": str(build), "application_bin": str(binary) if success else None, "execution": execution, **({} if success else {"error": "compile_failed"})}
 
 
 def _select_port(request: dict[str, Any]) -> tuple[str | None, str | None, list[dict[str, Any]]]:

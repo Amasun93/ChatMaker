@@ -12,7 +12,25 @@ from chatmaker.installers.downloads import download_locked, sha256
 from .esp32_devkit_v1 import _run as run
 
 CORE_VERSION = '3.3.11'
-PREPARATION_VERSION = 1
+PREPARATION_VERSION = 2
+CORE_TREE = f'data/packages/esp32/hardware/esp32/{CORE_VERSION}'
+COMPILER_TREE = 'data/packages/esp32/tools/esp-x32/2601'
+SDK_TREE = f'data/packages/esp32/tools/esp32s3-libs/{CORE_VERSION}'
+FLASHER_TREE = 'data/packages/esp32/tools/esptool_py/5.3.1'
+TOOL_TREES = (CORE_TREE, COMPILER_TREE, SDK_TREE, FLASHER_TREE, 'data/packages/builtin/tools')
+REQUIRED_TOOL_FILES = (
+    'bin/arduino-cli.exe', 'arduino-cli.yaml',
+    f'{CORE_TREE}/boards.txt', f'{CORE_TREE}/platform.txt',
+    f'{CORE_TREE}/cores/esp32/Arduino.h', f'{CORE_TREE}/cores/esp32/main.cpp',
+    f'{CORE_TREE}/cores/esp32/HardwareSerial.cpp', f'{CORE_TREE}/variants/esp32s3/pins_arduino.h',
+    f'{COMPILER_TREE}/bin/xtensa-esp32s3-elf-gcc.exe',
+    f'{COMPILER_TREE}/bin/xtensa-esp32s3-elf-g++.exe',
+    f'{COMPILER_TREE}/bin/xtensa-esp32s3-elf-ld.exe',
+    f'{COMPILER_TREE}/libexec/gcc/xtensa-esp-elf/14.2.0/cc1.exe',
+    f'{COMPILER_TREE}/libexec/gcc/xtensa-esp-elf/14.2.0/cc1plus.exe',
+    f'{SDK_TREE}/sdkconfig', f'{FLASHER_TREE}/esptool.exe',
+    'data/packages/builtin/tools/ctags/5.8-arduino11/ctags.exe',
+)
 INDEX_URL = 'https://espressif.github.io/arduino-esp32/package_esp32_index.json'
 CLI = {
     'filename': 'arduino-cli.zip', 'size': 17736240,
@@ -34,13 +52,59 @@ def root() -> Path:
     return Path(os.environ.get('CHATMAKER_RUNTIME_ROOT', Path.cwd()/'.chatmaker-runtime')).resolve()/'toolchains'/'waveshare'
 
 
+def configuration(home: Path) -> dict:
+    return {'directories':{key:str(home/value) for key,value in [('data','data'),('downloads','downloads'),('user','user')]},
+            'build_cache':{'path':str(home/'build-cache')},
+            'board_manager':{'additional_urls':[INDEX_URL]}}
+
+
+def config_matches(home: Path) -> bool:
+    try:
+        return json.loads((home/'arduino-cli.yaml').read_text(encoding='utf-8')) == configuration(home)
+    except (OSError, ValueError):
+        return False
+
+
+def _filesystem_path(path: Path) -> Path:
+    # SDK headers can exceed MAX_PATH. Use the native Windows extended form
+    # only for our file operations; CLI arguments and receipts stay portable.
+    if os.name != 'nt':
+        return path
+    value = str(path.absolute())
+    if value.startswith('\\\\?\\'):
+        return path
+    return Path('\\\\?\\UNC\\' + value[2:] if value.startswith('\\\\') else '\\\\?\\' + value)
+
+
 def file_manifest(directory: Path) -> dict[str, str]:
+    directory = _filesystem_path(directory)
     return {p.relative_to(directory).as_posix(): sha256(p) for p in sorted(directory.rglob('*')) if p.is_file()}
+
+
+def tool_manifest(home: Path) -> dict[str, str]:
+    for relative in REQUIRED_TOOL_FILES:
+        if not _filesystem_path(home/relative).is_file():
+            raise ValueError(f'required_tool_file_missing:{relative}')
+    manifest = {relative:sha256(_filesystem_path(home/relative)) for relative in REQUIRED_TOOL_FILES[:2]}
+    for relative in TOOL_TREES:
+        files = file_manifest(home/relative)
+        if not files:
+            raise ValueError(f'required_tool_tree_missing:{relative}')
+        manifest.update({f'{relative}/{name}':digest for name,digest in files.items()})
+    return manifest
+
+
+def verify_tools(home: Path, manifest: dict) -> bool:
+    try:
+        return isinstance(manifest, dict) and bool(manifest) and manifest == tool_manifest(home)
+    except (OSError, ValueError, TypeError):
+        return False
 
 
 def verify_manifest(directory: Path, manifest: dict, *, exact: bool = False) -> bool:
     if not isinstance(manifest, dict) or not manifest:
         return False
+    directory = _filesystem_path(directory)
     try:
         if exact and set(manifest) != {p.relative_to(directory).as_posix() for p in directory.rglob('*') if p.is_file()}:
             return False
@@ -105,11 +169,13 @@ def context(revision: str) -> dict | None:
             return None
         if receipt.get('core_version') != CORE_VERSION or receipt.get('vendor_sha256') != VENDORS[revision]['sha256']:
             return None
+        if not config_matches(home):
+            return None
         prepared_name = receipt.get('prepared_directory', '')
         if not isinstance(prepared_name, str) or not prepared_name.startswith('prepared-') or Path(prepared_name).name != prepared_name:
             return None
         prepared = revision_root/prepared_name
-        if not verify_manifest(prepared/'libraries', receipt.get('files'), exact=True) or not verify_manifest(home, receipt.get('tools')):
+        if not verify_manifest(prepared/'libraries', receipt.get('files'), exact=True) or not verify_tools(home, receipt.get('tools')):
             return None
         if not verify_manifest(prepared/'recovery', receipt.get('recovery_files'), exact=True):
             return None
@@ -129,6 +195,10 @@ def prepare_environment(revision: str) -> dict:
     ready = context(revision)
     if ready:
         return {'success':True,'ready_for_compile':True,'installation_performed':False,'environment':ready}
+    if os.environ.get('CHATMAKER_DOWNLOAD_POLICY', '').strip().casefold() in {'domestic-only', 'domestic_only'}:
+        return {'success':False,'error':'core_offline_cache_required',
+                'required_core':f'esp32:esp32@{CORE_VERSION}',
+                'teacher_message':'当前仅允许国内下载，但这块板的独立工具尚未完整准备，核心工具还没有配置国内镜像。请先由教师在可访问官方源的电脑上、按课堂电脑相同的绝对安装目录准备并校验完整缓存；已有完整缓存可直接复用。'}
     home = root(); home.mkdir(parents=True, exist_ok=True)
     revision_root = home/'revisions'/revision
     receipt_path = revision_root/'receipt.json'
@@ -137,7 +207,19 @@ def prepare_environment(revision: str) -> dict:
         # receipt around damaged tools would incorrectly declare them healthy.
         if receipt_path.is_file():
             previous = json.loads(receipt_path.read_text(encoding='utf-8'))
-            if isinstance(previous, dict) and previous.get('tools') and not verify_manifest(home, previous['tools']):
+            full_receipt = isinstance(previous, dict) and previous.get('preparation_version') == PREPARATION_VERSION
+            verifier = verify_tools if full_receipt else verify_manifest
+            previous_tools = previous.get('tools', {}) if isinstance(previous, dict) else {}
+            if full_receipt and isinstance(previous_tools, dict) and config_matches(home):
+                # A revision may have rebased the shared, fully known config.
+                # Only that exact local config may refresh this one digest.
+                previous_tools = {**previous_tools,'arduino-cli.yaml':sha256(home/'arduino-cli.yaml')}
+            if not full_receipt and isinstance(previous_tools, dict):
+                # Schema migration rewrites these two files from pinned input;
+                # another revision may already have migrated the shared config.
+                previous_tools = {name:digest for name,digest in previous_tools.items()
+                                  if name not in {'bin/arduino-cli.exe', 'arduino-cli.yaml'}}
+            if previous_tools and not verifier(home, previous_tools):
                 return {'success':False,'error':'toolchain_cache_changed',
                         'teacher_message':'已准备的编译工具发生变化或缺失，已停止。请保留此缓存供检查，在新的 CHATMAKER_RUNTIME_ROOT 重新准备；不需要安装 Mind+。'}
         cli_zip = home/CLI['filename']
@@ -145,8 +227,7 @@ def prepare_environment(revision: str) -> dict:
         with zipfile.ZipFile(cli_zip) as z:
             (home/'bin').mkdir(exist_ok=True)
             (home/'bin'/'arduino-cli.exe').write_bytes(z.read('arduino-cli.exe'))
-        config = {'directories':{key:str(home/value) for key,value in [('data','data'),('downloads','downloads'),('user','user')]},
-                  'board_manager':{'additional_urls':[INDEX_URL]}}
+        config = configuration(home)
         config_path = home/'arduino-cli.yaml'
         config_path.write_text(json.dumps(config,indent=2),encoding='utf-8')
         cli = [str(home/'bin'/'arduino-cli.exe'),'--config-file',str(config_path)]
@@ -178,20 +259,12 @@ def prepare_environment(revision: str) -> dict:
                     recovery.append({'path':str(dst),'sha256':sha256(dst),'address':'0x0'})
         if not recovery:
             return {'success':False,'error':'factory_recovery_missing'}
-        key_files = [home/'bin/arduino-cli.exe',config_path,core/'boards.txt',core/'platform.txt',
-                     core/'cores/esp32/Arduino.h',core/'cores/esp32/main.cpp',
-                     core/'variants/esp32s3/pins_arduino.h']
-        # Do not recursively walk SDKs for other chips: Windows MAX_PATH is
-        # exceeded by unrelated Matter headers even though S3 tools are usable.
-        tools = home/'data/packages/esp32/tools'
-        key_files += list(tools.glob('esp-x32/*/bin/xtensa-esp32s3-elf-g++.exe'))
-        key_files += list(tools.glob('esptool_py/*/esptool.exe'))
-        key_files += [tools/'esp32s3-libs'/CORE_VERSION/'sdkconfig']
-        if not any(p.name.endswith('g++.exe') for p in key_files) or not any(p.name=='esptool.exe' for p in key_files):
-            return {'success':False,'error':'compiler_or_flasher_missing'}
+        # Cover whole S3 dependency trees, including C/C++ front ends, linker,
+        # core sources and SDK headers/libraries, rather than a few sentinels.
+        tools = tool_manifest(home)
         receipt = {'preparation_version':PREPARATION_VERSION, 'prepared_directory':prepared.name,
                    'core_version':CORE_VERSION,'vendor_sha256':VENDORS[revision]['sha256'],
-                   'files':file_manifest(libraries),'tools':{p.relative_to(home).as_posix():sha256(p) for p in key_files},
+                   'files':file_manifest(libraries),'tools':tools,
                    'recovery_files':file_manifest(prepared/'recovery'),
                    'recovery':recovery,'touch_controller':'CST328' if revision=='v1' else 'CST3530'}
         temporary_receipt = prepared/'receipt.json'

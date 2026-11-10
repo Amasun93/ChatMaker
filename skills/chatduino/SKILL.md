@@ -136,7 +136,7 @@ Read [oled-i2c-troubleshooting.md](references/oled-i2c-troubleshooting.md) when 
 ## 掌控板 3.0
 
 - Use canonical board `mpython-v3`. It is an ESP32-S3 board with a 320×172 color LCD and a different GPIO map; never compile it as classic mPython or Starcore.
-- Use `chatmaker-mpython-v3` with its managed `prepare-environment`, `doctor`, `compile`, `compile-upload` and `serial-read` actions. Independent compilation is recorded; physical upload/display remain unverified until actually tested. Never substitute a classic target.
+- Use `chatmaker-mpython-v3` with its managed `prepare-environment`, `doctor`, `ports`, `compile` and `compile-upload` actions. Read serial evidence through `chatmaker-serial` or the workflow's `expected_serial_marker`. Independent compilation is recorded; physical upload/display remain unverified until actually tested. Never substitute a classic target.
 - Its MicroPython display object is `display`, and `light.read()` reports lux. Preserve these semantic differences when generating web or hardware code.
 - A temporary probe remains subject to the same backup, restore, and verification gates; no restored program means no completed identification.
 

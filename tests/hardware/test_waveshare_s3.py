@@ -1,5 +1,6 @@
 import tempfile
 import json
+import os
 import unittest
 from pathlib import Path
 from unittest import mock
@@ -10,6 +11,75 @@ from chatmaker.hardware import waveshare_toolchain as chain
 
 
 class WaveshareTests(unittest.TestCase):
+    def make_receipt(self, home, tools):
+        prepared=home/'revisions/v1/prepared-test'
+        libraries=prepared/'libraries'; libraries.mkdir(parents=True)
+        (libraries/'driver.cpp').write_text('driver')
+        recovery=prepared/'recovery'; recovery.mkdir()
+        (recovery/'factory.bin').write_bytes(b'factory image')
+        receipt={'preparation_version':chain.PREPARATION_VERSION,'prepared_directory':prepared.name,
+                 'core_version':chain.CORE_VERSION,'vendor_sha256':chain.VENDORS['v1']['sha256'],
+                 'files':chain.file_manifest(libraries),'tools':tools,
+                 'recovery_files':chain.file_manifest(recovery)}
+        (prepared.parent/'receipt.json').write_text(json.dumps(receipt))
+
+    def test_small_tools_receipt_cannot_certify_an_incomplete_compiler(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            home=Path(tmp); (home/'bin').mkdir(); (home/'bin/arduino-cli.exe').write_bytes(b'cli')
+            (home/'arduino-cli.yaml').write_text(json.dumps(chain.configuration(home)))
+            self.make_receipt(home,{name:chain.sha256(home/name) for name in ('bin/arduino-cli.exe','arduino-cli.yaml')})
+            with mock.patch.object(chain,'root',return_value=home):
+                self.assertIsNone(chain.context('v1'))
+
+    def test_compiler_core_and_sdk_files_are_all_in_the_integrity_receipt(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            home=Path(tmp)
+            for relative in chain.REQUIRED_TOOL_FILES:
+                path=home/relative; path.parent.mkdir(parents=True,exist_ok=True); path.write_bytes(b'tool')
+            (home/'arduino-cli.yaml').write_text(json.dumps({'directories':{'data':str(home/'data'),'downloads':str(home/'downloads'),'user':str(home/'user')},'build_cache':{'path':str(home/'build-cache')},'board_manager':{'additional_urls':[chain.INDEX_URL]}}))
+            sdk_extra=home/f'data/packages/esp32/tools/esp32s3-libs/{chain.CORE_VERSION}/include/freertos/extra.h'
+            sdk_extra.parent.mkdir(parents=True,exist_ok=True); sdk_extra.write_bytes(b'sdk dependency')
+            manifest=chain.tool_manifest(home)
+            self.assertIn(sdk_extra.relative_to(home).as_posix(),manifest)
+            self.make_receipt(home,manifest)
+            targets=[home/'data/packages/esp32/tools/esp-x32/2601/bin/xtensa-esp32s3-elf-gcc.exe',
+                     home/f'data/packages/esp32/hardware/esp32/{chain.CORE_VERSION}/cores/esp32/HardwareSerial.cpp',sdk_extra]
+            with mock.patch.object(chain,'root',return_value=home):
+                self.assertIsNotNone(chain.context('v1'))
+                for target in targets:
+                    with self.subTest(target=target.name):
+                        original=target.read_bytes(); target.unlink()
+                        self.assertIsNone(chain.context('v1'))
+                        target.write_bytes(original)
+
+    def test_receipt_for_a_config_pointing_elsewhere_is_not_ready(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            home=Path(tmp)
+            for relative in chain.REQUIRED_TOOL_FILES:
+                path=home/relative; path.parent.mkdir(parents=True,exist_ok=True); path.write_bytes(b'tool')
+            (home/'arduino-cli.yaml').write_text(json.dumps({'directories':{'data':'C:/another-computer/data'}}))
+            self.make_receipt(home,chain.tool_manifest(home))
+            with mock.patch.object(chain,'root',return_value=home):
+                self.assertIsNone(chain.context('v1'))
+
+    def test_domestic_only_with_cached_cli_never_starts_core_network_commands(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            home=Path(tmp)
+            with zipfile.ZipFile(home/chain.CLI['filename'],'w') as archive:
+                archive.writestr('arduino-cli.exe',b'previously verified CLI')
+            with mock.patch.object(chain,'root',return_value=home), mock.patch.object(chain.platform,'system',return_value='Windows'), mock.patch.object(chain.platform,'machine',return_value='AMD64'), mock.patch.dict(os.environ,{'CHATMAKER_DOWNLOAD_POLICY':'domestic-only'}), mock.patch.object(chain,'download_locked'), mock.patch.object(chain,'run',return_value={'returncode':1}) as run:
+                result=chain.prepare_environment('v1')
+            self.assertEqual(result['error'],'core_offline_cache_required')
+            run.assert_not_called()
+
+    def test_domestic_only_reuses_a_complete_environment_without_network(self):
+        with mock.patch.object(chain,'context',return_value={'revision':'v1'}), mock.patch.object(chain.platform,'system',return_value='Windows'), mock.patch.object(chain.platform,'machine',return_value='AMD64'), mock.patch.dict(os.environ,{'CHATMAKER_DOWNLOAD_POLICY':'domestic-only'}), mock.patch.object(chain,'run') as run, mock.patch.object(chain,'download_locked') as download:
+            result=chain.prepare_environment('v1')
+        self.assertTrue(result['success'])
+        self.assertFalse(result['installation_performed'])
+        run.assert_not_called()
+        download.assert_not_called()
+
     def test_unknown_revision_does_not_prepare_or_scan_hardware(self):
         with mock.patch.object(chain, 'prepare_environment') as prepare, mock.patch.object(board, 'scan_ports') as scan:
             result = board.execute_request({'action': 'compile-upload', 'code': 'x'})

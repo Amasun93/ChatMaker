@@ -1,5 +1,7 @@
 import unittest
 from unittest import mock
+from pathlib import Path
+import tempfile
 
 from chatmaker.hardware import workflow
 
@@ -101,3 +103,24 @@ class WorkflowTests(unittest.TestCase):
         self.assertEqual(result['state'], 'runtime-observed')
         self.assertFalse(result['physical_effect_verified'])
 
+    def test_mpython_v3_saved_project_preserves_adjacent_files_through_real_adapter(self):
+        from chatmaker.hardware import mpython_v3
+        with tempfile.TemporaryDirectory() as tmp:
+            sketch=Path(tmp)/'saved_project'; sketch.mkdir()
+            (sketch/'saved_project.ino').write_text('#include "helper.h"\nvoid setup(){} void loop(){}')
+            helper=sketch/'helper.h'; helper.write_text('// local project header')
+            context={'cli':'cli.exe','config':'arduino-cli.yaml'}
+
+            def compiler(command,timeout):
+                self.assertEqual(Path(command[-1]),sketch)
+                self.assertEqual(helper.read_text(),'// local project header')
+                output=Path(command[command.index('--build-path')+1]); output.mkdir(parents=True,exist_ok=True)
+                (output/'saved_project.ino.bin').write_bytes(b'compiled')
+                return {'returncode':0}
+
+            with mock.patch.object(mpython_v3,'managed_context',return_value=context), mock.patch.object(mpython_v3.shared,'scan_ports',return_value=[]), mock.patch.object(mpython_v3.shared,'_run',side_effect=compiler) as run:
+                result=workflow.run_project({'board_id':'mpython-v3','sketch':str(sketch)})
+            self.assertTrue(result['code_compiled'],result)
+            self.assertFalse(result['firmware_uploaded'])
+            self.assertEqual(result['state'],'compiled-awaiting-hardware')
+            self.assertEqual(run.call_count,1)
