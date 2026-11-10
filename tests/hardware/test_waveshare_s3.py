@@ -1,0 +1,127 @@
+import tempfile
+import json
+import unittest
+from pathlib import Path
+from unittest import mock
+import zipfile
+
+from chatmaker.hardware import waveshare_s3 as board
+from chatmaker.hardware import waveshare_toolchain as chain
+
+
+class WaveshareTests(unittest.TestCase):
+    def test_unknown_revision_does_not_prepare_or_scan_hardware(self):
+        with mock.patch.object(chain, 'prepare_environment') as prepare, mock.patch.object(board, 'scan_ports') as scan:
+            result = board.execute_request({'action': 'compile-upload', 'code': 'x'})
+        self.assertEqual(result['state'], 'revision-needed')
+        prepare.assert_not_called()
+        scan.assert_not_called()
+
+    def test_multiple_or_unrelated_usb_devices_are_not_auto_selected(self):
+        ports = [{'address': 'COM2', 'vid': 0x303A}, {'address': 'COM3', 'vid': 0x303A}]
+        self.assertIsNone(board.select_port(ports, None))
+        self.assertEqual(board.select_port(ports, 'COM3')['address'], 'COM3')
+        self.assertIsNone(board.select_port([{'address': 'COM4', 'vid': 0x10C4}], None))
+
+    def test_compile_failure_never_uploads_stale_artifacts(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            sketch = Path(tmp)/'demo'; sketch.mkdir(); (sketch/'demo.ino').write_text('bad')
+            context = {'cli': 'cli.exe', 'config': 'config.yaml', 'libraries': tmp, 'root': tmp}
+            with mock.patch.object(chain, 'context', return_value=context), mock.patch.object(board, 'run', return_value={'returncode': 1, 'stdout': '', 'stderr': 'compiler error'}) as run:
+                result = board.execute_request({'action': 'compile-upload', 'revision': 'v1', 'sketch': str(sketch), 'board_confirmed': True})
+            self.assertEqual(result['stage'], 'compile')
+            self.assertFalse(result['success'])
+            self.assertEqual(run.call_count, 1)
+            self.assertIn('esp32:esp32:esp32s3', run.call_args.args[0][run.call_args.args[0].index('--fqbn')+1])
+            self.assertIn('--config-file', run.call_args.args[0])
+
+    def test_upload_requires_boolean_physical_identity_confirmation(self):
+        for confirmed in (None, False, 'true'):
+            with self.subTest(confirmed=confirmed), mock.patch.object(board, 'compile_project', return_value={'success': True, 'build_path': 'out'}), mock.patch.object(chain, 'context', return_value={'root': 'root'}), mock.patch.object(board, 'run') as run:
+                result = board.execute_request({'action': 'compile-upload', 'revision': 'v2', 'code': 'x', 'board_confirmed': confirmed})
+                self.assertFalse(result['success'])
+                self.assertEqual(result['error'], 'board_identity_required')
+                run.assert_not_called()
+
+    def test_v2_driver_selection_updates_real_generated_vendor_sources(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            archive = Path(tmp)/'vendor.zip'
+            with zipfile.ZipFile(archive, 'w') as z:
+                base = 'Arduino/examples/LVGL_Arduino/'
+                z.writestr(base+'Display_ST7789.cpp', 'void LCD_Init(){ Touch_Init(); }')
+                z.writestr(base+'LVGL_Driver.cpp', 'Touch_Read_Data(); Touch_Get_XY(); CST328_LCD_TOUCH_MAX_POINTS;')
+                for n in ('Display_ST7789.h','LVGL_Driver.h','Touch_CST328.h','Touch_CST3530.h','Touch_CST3530.cpp'):
+                    z.writestr(base+n, '// source')
+                z.writestr('Arduino/libraries/lvgl/library.properties', 'name=lvgl\nversion=8.3.10')
+                z.writestr('Arduino/libraries/lvgl/src/lvgl.h', '// header')
+                z.writestr('Arduino/libraries/lvgl/../../escape.txt', 'bad')
+            with self.assertRaises(ValueError):
+                chain.extract_vendor(archive, Path(tmp)/'bad', 'v2')
+            with zipfile.ZipFile(archive, 'a') as z:
+                pass
+            # Rebuild without the malicious member; exercise the real extractor.
+            good = Path(tmp)/'good.zip'
+            with zipfile.ZipFile(archive) as src, zipfile.ZipFile(good,'w') as dst:
+                for n in src.namelist():
+                    if '..' not in n:
+                        dst.writestr(n,src.read(n))
+            root=Path(tmp)/'libraries'; chain.extract_vendor(good,root,'v2')
+            display=(root/'WaveshareBoard/src/Display_ST7789.cpp').read_text()
+            touch=(root/'WaveshareBoard/src/LVGL_Driver.cpp').read_text()
+            self.assertIn('TOUCH2_Init()', display)
+            self.assertIn('Touch2_Read_Data()', touch)
+            self.assertIn('Touch2_Get_XY()', touch)
+            self.assertNotIn('CST328_LCD_TOUCH_MAX_POINTS',touch)
+
+    def test_modified_manifest_file_is_not_accepted_as_ready(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            p=Path(tmp); (p/'driver.cpp').write_text('original')
+            manifest=chain.file_manifest(p)
+            self.assertTrue(chain.verify_manifest(p,manifest))
+            (p/'driver.cpp').write_text('changed')
+            self.assertFalse(chain.verify_manifest(p,manifest))
+            self.assertFalse(chain.verify_manifest(p,{}))
+
+    def test_extra_driver_cannot_silently_change_a_verified_library(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            p=Path(tmp); (p/'driver.cpp').write_text('original')
+            manifest=chain.file_manifest(p)
+            (p/'old_revision.cpp').write_text('unintended compiled source')
+            self.assertFalse(chain.verify_manifest(p,manifest,exact=True))
+
+    def test_zero_exit_without_fresh_program_binary_does_not_upload(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            stale=Path(tmp)/'builds/previous/compiled'; stale.mkdir(parents=True)
+            (stale/'classroom_project.ino.bin').write_bytes(b'old firmware')
+            context={'cli':'cli.exe','config':'config.yaml','libraries':tmp,'root':tmp}
+            with mock.patch.object(chain,'context',return_value=context), mock.patch.object(board,'run',return_value={'returncode':0}) as run:
+                result=board.execute_request({'action':'compile-upload','revision':'v1','code':'x','board_confirmed':True})
+            self.assertFalse(result['success'])
+            self.assertEqual(result['stage'],'compile')
+            self.assertEqual(run.call_count,1)
+
+    def test_a_changed_serial_at_the_same_usb_socket_is_not_the_same_board(self):
+        original={'address':'COM2','serial_number':'unit-a','location':'1-2'}
+        replacement=[{'address':'COM8','vid':0x303A,'serial_number':'unit-b','location':'1-2'}]
+        self.assertIsNone(board.match_application_port(original,replacement))
+
+    def test_core_damage_is_not_blessed_by_making_a_new_receipt(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            home=Path(tmp); revision_root=home/'revisions/v1'; revision_root.mkdir(parents=True)
+            core_file=home/'data/boards.txt'; core_file.parent.mkdir(); core_file.write_text('verified')
+            receipt={'tools':{'data/boards.txt':chain.sha256(core_file)}}
+            (revision_root/'receipt.json').write_text(json.dumps(receipt))
+            core_file.write_text('damaged')
+            with mock.patch.object(chain,'root',return_value=home), mock.patch.object(chain.platform,'system',return_value='Windows'), mock.patch.object(chain.platform,'machine',return_value='AMD64'), mock.patch.object(chain,'download_locked') as download:
+                result=chain.prepare_environment('v1')
+            self.assertEqual(result['error'],'toolchain_cache_changed')
+            self.assertFalse(result['success'])
+            download.assert_not_called()
+            self.assertEqual(json.loads((revision_root/'receipt.json').read_text()),receipt)
+
+    def test_usb_reenumeration_does_not_follow_an_unrelated_board(self):
+        original={'address':'COM2','serial_number':'unit-a','location':'1-2'}
+        ports=[{'address':'COM7','vid':0x303A,'serial_number':'unit-b','location':'1-3'},
+               {'address':'COM8','vid':0x303A,'serial_number':'unit-a','location':'1-2'}]
+        self.assertEqual(board.match_application_port(original,ports),'COM8')
+        self.assertIsNone(board.match_application_port(original,ports[:1]))

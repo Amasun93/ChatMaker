@@ -1,0 +1,65 @@
+schema_version: "1.0"
+kind: board
+id: waveshare-esp32-s3-touch-lcd-2-8
+name: 微雪 ESP32-S3-Touch-LCD-2.8 触屏开发板
+family: esp32-s3
+mcu: ESP32-S3R8
+logic_voltage: 3.3
+chatmaker:
+  runtime_cli: chatmaker-waveshare-s3
+  runtime_module: chatmaker.hardware.waveshare_s3
+  identification: assisted
+mechanics:
+  status: research-required
+  profile_path: null
+  fit_verified: false
+  notes: Official 2D/3D drawings are available; connector envelopes and physical fit have not been registered or verified.
+identity:
+  carrier_board: Waveshare ESP32-S3-Touch-LCD-2.8
+  revisions: {v1: CST328, v2: CST3530}
+  physical_confirmation_required: true
+  forbidden_aliases: [DOIT ESP32 DevKit V1, ESP32-S3-Touch-LCD-2.8B, ESP32-S3-Touch-LCD-2.8C]
+sources:
+  - title: Waveshare exact board and V1/V2 revision documentation
+    url: https://docs.waveshare.net/ESP32-S3-Touch-LCD-2.8/
+  - title: Waveshare official revision-specific examples and schematic
+    url: https://docs.waveshare.net/ESP32-S3-Touch-LCD-2.8/Resources-And-Documents/
+verification:
+  source_reviewed:
+    status: verified
+    checked_at: "2026-11-10"
+    evidence: Checked exact board documentation and hash-pinned V1/V2 Arduino demo archives, display pins and touch driver selection.
+  code_compiled:
+    status: verified
+    checked_at: "2026-11-10"
+    evidence: V1 and V2 screen diagnostic and classroom timer all compiled with Arduino-ESP32 3.3.11; see docs/verification/2026-11-10-waveshare-s3-independent-flow.md.
+  firmware_uploaded: &unverified
+    status: unverified
+    checked_at: null
+    evidence: null
+  physical_effect_verified: *unverified
+pins:
+  - {id: GPIO15, capabilities: [digital-input, digital-output, pwm]}
+  - {id: GPIO18, capabilities: [digital-input, digital-output, pwm]}
+  - {id: GPIO10, capabilities: [i2c-scl, onboard-shared]}
+  - {id: GPIO11, capabilities: [i2c-sda, onboard-shared]}
+  - {id: GPIO43, capabilities: [uart-tx, digital-output]}
+  - {id: GPIO44, capabilities: [uart-rx, digital-input]}
+  - {id: GPIO19, capabilities: [usb-d-minus, reserved-for-usb]}
+  - {id: GPIO20, capabilities: [usb-d-plus, reserved-for-usb]}
+  - {id: 3V3, capabilities: [power, 3.3v]}
+  - {id: GND, capabilities: [ground, shared]}
+constraints:
+  - Confirm V1 or V2 explicitly; recent purchase and ESP32-S3 chip identity do not establish revision.
+  - GPIO signals are 3.3 V; do not feed 5 V into GPIO.
+  - External GPIO10/11 share onboard I2C and cannot be reassigned as ordinary GPIO.
+  - Touch has a separate I2C bus on SDA1/SCL3, reset2 and interrupt4; do not confuse this with external I2C.
+  - ST7789 SPI uses MOSI45, clock40, CS42, DC41, reset39 and backlight5.
+  - Reserve GPIO19/20 for native USB program upload and serial; select the data-capable USB connection.
+  - This adapter does not establish support for the separately named 2.8B or 2.8C boards.
+toolchains:
+  - id: chatmaker-managed-waveshare-s3
+    version: "3.3.11"
+    status: compiled-pending-physical-validation
+    fqbn: esp32:esp32:esp32s3
+    options: {FlashSize: 16M, PartitionScheme: app3M_fat9M_16MB, PSRAM: opi, USBMode: hwcdc, CDCOnBoot: cdc, FlashMode: qio}

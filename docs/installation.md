@@ -70,6 +70,8 @@ powershell -NoProfile -ExecutionPolicy Bypass -File <环境包目录>\install.ps
 
 `chatmaker-install local` 只读检查操作系统、Python、终端、浏览器、串口、Mind+ 和 Arduino CLI。它不读取或写入 AI 宿主配置，返回值包含 `host_scan_performed=false`。
 
+已具备独立工具链的项目使用 `chatmaker-hardware --request-json '<完整项目请求>'`：按准确板型复用环境，缺少时准备一次，再继续编译和下载。请求包含 `board_id`、`sketch` 或完整 `code`，以及该板必要的身份信息；可提供 `expected_serial_marker` 读取运行证据。AI 负责构造这些字段，学生只需描述效果、确认实物并接板。没有 Mind+ 不应阻止这一流程。
+
 常用入口：
 
 ```powershell
@@ -90,9 +92,11 @@ AI 工作区如果具备本地命令执行能力，就直接调用这些 CLI；�
 
 - 星核板：Windows x64 已可由 ChatMaker 自己准备独立环境，不需要安装 Mind+ 桌面应用。
 - 经典掌控板 V2.x：Windows x64 首选 `chatmaker-mpython` 独立链；已有 Mind+ 1.8.x 或 2.x 仍可作为兼容后端。
+- 掌控板 3.0：已有 `chatmaker-mpython-v3` 独立准备和编译路线；实板证据独立报告。
+- 微雪 ESP32-S3-Touch-LCD-2.8：开发分支新增 `chatmaker-waveshare-s3`，V1/V2 两版示例已编译；不依赖 Mind+，不能混用普通 DOIT ESP32 适配器。
 - Nano、Uno：目前仍复用电脑里已有的 Mind+ 1.8.x 或 2.x。
 - 两个 Mind+ 版本都可用时优先 2.x；已有一个可用版本时，不要求学生再下载另一个。
-- 掌控板 3.0 和其他未完成独立工具链验证的板卡，不能套用星核板结论。
+- 其他板卡按各自的验证记录判断，不能直接套用星核板结论。
 
 星核板 Mind+ 2.x 的已验证配置为：
 

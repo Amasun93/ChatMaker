@@ -17,6 +17,11 @@ from chatmaker.installers import capabilities, local  # noqa: E402
 
 
 class LocalInstallerTests(unittest.TestCase):
+    def test_missing_mindplus_does_not_require_installation_for_managed_boards(self):
+        actions = local._next_actions({'mindplus': {'available': False}, 'serial': {'ports': []}})
+        self.assertFalse(any('install the verified Mind+' in action for action in actions))
+        self.assertFalse(any('Starcore compile/upload' in action for action in actions))
+
     def test_local_check_ignores_host_environment_and_writes_nothing(self):
         with tempfile.TemporaryDirectory() as temporary:
             home = Path(temporary)

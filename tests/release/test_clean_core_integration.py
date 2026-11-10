@@ -37,6 +37,8 @@ EXPECTED_COMMANDS = {
     "chatmaker-doctor",
     "chatmaker-catalog",
     "chatmaker-route",
+    "chatmaker-hardware",
+    "chatmaker-waveshare-s3",
     "chatmaker-board-identify",
     "chatmaker-nano",
     "chatmaker-uno",
@@ -157,7 +159,10 @@ class CleanCoreIntegrationTests(unittest.TestCase):
 
     def test_extracted_core_bootstrap_installs_the_versioned_runtime_and_runs_local_check(self):
         """Catches a release whose bundled bootstrap cannot start from a fresh user HOME."""
-        with tempfile.TemporaryDirectory(prefix="chatmaker-bootstrap-clean-") as directory:
+        # Keep extraction below Windows MAX_PATH even when long paths are not
+        # enabled. Default root selection is covered by the bootstrap unit
+        # tests; this integration fixture exercises a fresh explicit root.
+        with tempfile.TemporaryDirectory(prefix="cm-") as directory:
             base = Path(directory)
             build = base / "build"
             extract = base / "extract"
@@ -219,6 +224,8 @@ class CleanCoreIntegrationTests(unittest.TestCase):
                         str(release_signature),
                         "--home",
                         str(home),
+                        "--install-root",
+                        str(base / "r"),
                     ],
                     cwd=base,
                     env=environment,
@@ -228,6 +235,7 @@ class CleanCoreIntegrationTests(unittest.TestCase):
 
             self.assertTrue(result["success"])
             self.assertEqual(result["status"], "installed")
+            self.assertEqual(Path(result["runtime_root"]).resolve(), (base / "r").resolve())
             self.assertIn(result["local_check"]["status"], {"local_ready", "local_ready_with_limits"})
             self.assertTrue(Path(result["venv"]).is_dir())
             self.assertTrue(Path(result["launcher"]).is_file())
@@ -353,7 +361,7 @@ class CleanCoreIntegrationTests(unittest.TestCase):
             )
             self.assertEqual(
                 doctor["packs"]["counts"],
-                {"board": 9, "component": 35, "recipe": 30},
+                {"board": 10, "component": 35, "recipe": 33},
             )
             self.assertEqual(doctor["packs"]["knowledge_indexes"], 8)
             self.assertEqual(

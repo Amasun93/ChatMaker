@@ -148,6 +148,19 @@
       "record_path": "packs/boards/unihiker-m10.yaml",
       "runtime_cli": "chatmaker-unihiker",
       "runtime_module": "chatmaker.hardware.unihiker_m10"
+    },
+    "waveshare-esp32-s3-touch-lcd-2-8": {
+      "identification": "assisted",
+      "knowledge": null,
+      "mechanics": {
+        "fit_verified": false,
+        "notes": "Official 2D/3D drawings are available; connector envelopes and physical fit have not been registered or verified.",
+        "profile_path": null,
+        "status": "research-required"
+      },
+      "record_path": "packs/boards/waveshare-esp32-s3-touch-lcd-2-8.yaml",
+      "runtime_cli": "chatmaker-waveshare-s3",
+      "runtime_module": "chatmaker.hardware.waveshare_s3"
     }
   },
   "components": {

@@ -18,6 +18,8 @@ ChatMaker 是唯一入口；ChatDuino、ChatWeb 和 ChatCAD 是由它在内部�
 
 想快速了解这次变化，请看面向普通用户的 [WHAT'S NEW](WHATS_NEW.md)。
 
+当前开发分支新增微雪 **ESP32-S3-Touch-LCD-2.8 V1/V2** 独立工具链，以及自动准备、编译和下载的连续入口。两版屏幕诊断和触摸计时器均已真实编译；实板烧录、触摸、断电重启与 WorkBuddy 会话验收尚未完成。这部分尚未发布，详见 [验证记录](docs/verification/2026-11-10-waveshare-s3-independent-flow.md)。
+
 ## 想让 ChatMaker 支持新板卡或模块？
 
 板卡和模块适配由 ChatMaker 开发者统一维护。请附上准确型号、正反面照片和想实现的项目，通过下面任一方式联系我们：
@@ -159,7 +161,7 @@ V1.0 采用渐进创作流程：先帮助用户跑通最小硬件作品，再按
 
 ## 板卡知识怎样按需出现
 
-当前源码构建的 Core 只带运行层、ChatMaker / ChatDuino / ChatWeb / ChatCAD 四个 Skill、8 块板卡、21 种元器件、28 个配方、六个紧凑索引、首批机械资料、schema 与当前案例，不带体积较大的扩展正文。M10 和 micro:bit V2 暂未发布签名 Knowledge 包；micro:bit 已有独立软件链，M10 仍是源码检查路线。这样基础安装更小，也不会把测试或构建缓存交给普通用户。
+当前源码构建的 Core 只带运行层、ChatMaker / ChatDuino / ChatWeb / ChatCAD 四个 Skill、10 块板卡、35 种元器件、33 个配方、8 个紧凑索引、首批机械资料、schema 与当前案例，不带体积较大的扩展正文。M10、micro:bit V2 和微雪触屏板暂未发布签名 Knowledge 包；对应源码参考资料可以直接读取。micro:bit 和微雪触屏板已有独立软件链，M10 仍是源码检查路线。这样基础安装更小，也不会把测试或构建缓存交给普通用户。
 
 当 AI 第一次读取某块板卡的详细章节时，`chatmaker-knowledge` 可以按需取得对应知识包并在之后复用。这个动作只安装知识资料，不会安装驱动、Mind+、Arduino Core、Node 或 Chromium。
 
@@ -190,8 +192,9 @@ chatmaker-pack rollback chatmaker-board-arduino-nano-classic-knowledge --version
 | 星核板独立 CLI | Beta P1 实测 | ChatMaker 管理的隔离工具链已完成准备、地震预警站编译、COM4 上传、硬复位和 115200 串口验证，不要求安装 Mind+ 应用。已有 Mind+ 1.8 或 2 仍可作为兼容后端。此前用户确认中文 OLED、防闪、蜂鸣器与 A/B 键均正常；本轮只重新验证了编译、上传和串口数据。 |
 <!-- starcore-evidence-summary:end -->
 | DOIT ESP32 DevKit V1 | 部分验证 | 官方 `esp32:esp32@3.3.11` 已安装；`prepare-environment` 真实 no-op 成功；`esp32:esp32:esp32doit-devkit-v1` 已通过 Blink 和 AP 案例真实编译；烧录、启动、串口、SoftAP、HTTP 和实体效果仍待实板 |
+| 微雪 ESP32-S3-Touch-LCD-2.8 | 开发分支，编译已验证 | V1/CST328 与 V2/CST3530 分开配置；屏幕诊断和触摸计时器共四组真实编译通过；工具缓存复用通过。实板烧录、串口、触摸、断电重启及 WorkBuddy 会话仍待验收。 |
 | UNIHIKER M10 | Alpha 源码检查可用 | 官方页面已核对 M10 为 Debian/Python 路线、K10 为独立 MCU 路线；板卡记录、完整项目示例和本地项目检查 CLI 已接入，尚未同步到实板或验证屏幕/外设效果 |
-| 常用模块、库和示例 | 继续扩充 | 35 种元器件、30 个配方已接入；完整自研硬件交接包的 23 项已进入同一目录，可用初学者中文名称检索并按证据状态生成指导或核对任务；已有编译、烧录和实物效果仍分别报告 |
+| 常用模块、库和示例 | 继续扩充 | 35 种元器件、33 个配方已接入；完整自研硬件交接包的 23 项已进入同一目录，可用初学者中文名称检索并按证据状态生成指导或核对任务；已有编译、烧录和实物效果仍分别报告 |
 | ESP32 AP 手机控制案例 | 部分验证 | `examples/chatweb/esp32-ap-control.html` 是唯一页面源，`chatmaker-web-embed` 生成 `examples/chatduino/esp32/ap-led-sensor/page_html.h`，固件用 `send_P` 和显式长度嵌入页面；浏览器模拟和固件真实编译已通过，硬件仍未验证 |
 | ChatWeb 生成和本地预览 | 部分验证 | 一句话可自动获得空间玻璃课堂页、科幻模拟设备台或舞台闪光挑战；仍支持小游戏、ESP32 HTTP 页面和 Nano/Uno Web Serial 控制台，模拟预览不代表硬件已连接 |
 | ChatWeb 小游戏 | Alpha 可试玩 | 新增 `mini-game` 路由和反应挑战、躲避收集、拖拽解谜三种单文件模板；默认离线、支持触控，复杂平台与节奏玩法保留为进阶方向 |

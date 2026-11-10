@@ -1,0 +1,32 @@
+schema_version: '1.0'
+kind: recipe
+id: waveshare-s3-screen-diagnostic
+name: 微雪触屏板屏幕诊断
+summary: Uses the exact V1/V2 managed board drivers; no Mind+ desktop required.
+sources:
+- title: Waveshare official examples
+  url: https://docs.waveshare.net/ESP32-S3-Touch-LCD-2.8/Resources-And-Documents/
+verification:
+  source_reviewed:
+    status: verified
+    checked_at: '2026-11-10'
+    evidence: Exact V1/V2 official display and touch sources reviewed; revisions stay separate.
+  code_compiled:
+    status: verified
+    checked_at: '2026-11-10'
+    evidence: V1 and V2 compiled with Arduino-ESP32 3.3.11; hashes in docs/verification/2026-11-10-waveshare-s3-independent-flow.md.
+  firmware_uploaded:
+    status: unverified
+    checked_at: null
+    evidence: null
+  physical_effect_verified:
+    status: unverified
+    checked_at: null
+    evidence: null
+boards:
+- waveshare-esp32-s3-touch-lcd-2-8
+components: []
+wiring: []
+source_file: examples/chatduino/waveshare-s3/screen-diagnostic/screen-diagnostic.ino
+expected_effect: After actual upload, screen displays the example and serial repeats
+  CHATMAKER_WAVESHARE_SCREEN_READY; touch and visible effect require physical observation.

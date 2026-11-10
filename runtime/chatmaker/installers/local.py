@@ -19,10 +19,8 @@ class _JsonArgumentParser(argparse.ArgumentParser):
 
 def _next_actions(environment: Mapping[str, Any]) -> list[str]:
     actions: list[str] = []
-    if not bool(environment.get("mindplus", {}).get("available")):
-        actions.append(
-            "For Nano, Uno, or Starcore compile/upload, reuse an existing usable Mind+ 1.8.x or 2.x installation; when neither exists, install the verified Mind+ 1.8.x release."
-        )
+    # A general capability check cannot decide a particular board's dependencies.
+    # Managed boards work without the Mind+ desktop application.
     ports = environment.get("serial", {}).get("ports", [])
     if not any(
         isinstance(port, Mapping) and port.get("eligible_for_upload")

@@ -23,26 +23,22 @@ When a local action needs Python, Node.js, a board toolchain, or another runtime
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/setup_local_runtime.ps1 -CheckOnly
 ```
 
-After the user has requested the local action and accepted the required download, run the same command without `-CheckOnly`. Add `-IncludeNode` only for a route such as micro:bit V2 that actually needs Node.js. The setup must stay under the current project's `.chatmaker-runtime`, must not change global `PATH`, pip/npm configuration, AI-host configuration, or an existing Python/Mind+ installation.
+When the user has requested local execution for a supported board, explain the necessary first-use preparation and run the same command without `-CheckOnly`. Reuse valid prepared tools on later runs. Add `-IncludeNode` only for a route such as micro:bit V2 that actually needs Node.js. The setup must stay under the current project's `.chatmaker-runtime`, must not change global `PATH`, pip/npm configuration, AI-host configuration, or an existing Python/Mind+ installation.
 
 For the all-in-one Windows package, use the versioned `ChatMaker-Environment-*-windows-amd64.zip` from `https://gitee.com/amasun93/ChatMaker/releases` and verify its sibling `.sha256` and `.manifest.json` before extraction. The authoritative component source list is `runtime/chatmaker/installers/runtime_sources.json`. It pins version, size and SHA-256, tries reviewed domestic mirrors first, and uses the named official source only as a fallback. If every pinned route fails, explain which stage failed and diagnose connectivity before searching for alternatives. Only add a new source after the user understands the reason and the bytes can be verified; never silently substitute an unreviewed proxy, blog attachment, cloud-drive file or “latest” URL. `CHATMAKER_DOWNLOAD_MIRROR_BASE` is the supported organization-provided HTTPS mirror override; downloaded bytes must still match the pinned size and SHA-256. For a school network that must stay inside China, set `CHATMAKER_DOWNLOAD_POLICY=domestic-only`: overseas fallbacks are skipped and the student receives a short offline-cache or school-mirror instruction instead of waiting for a timeout.
 
 Pure generation still needs no environment. Do not run environment setup merely because the user invoked ChatMaker; prepare only the optional capability required by the requested compile, upload, serial, browser, HEX packaging or real-render action.
 
-## Use the classroom hardware fast path
+## Use the independent classroom hardware path
 
-For a student classroom request, source delivery is the default first result. Do not let environment discovery, downloads, compilation, or upload block the complete program and the Mind+ board/library/upload instructions.
+For a requested hardware project, save the complete source promptly, then continue with the exact board's local tools. For boards with a ChatMaker-managed toolchain, use `chatmaker-hardware --request-json '<request>'` with `board_id`, `sketch` (or `code`) and the board-specific identity fields. The workflow reuses a ready environment, prepares a missing environment once, compiles, uploads when the exact board and target are confirmed, and observes an optional `expected_serial_marker`.
 
-1. Generate the complete program first, with the exact board choice, any required Mind+ extension/library, and the short manual upload steps.
-2. Ask only whether the student already has Mind+ and whether they want the fastest classroom route or the independent ChatMaker route.
-3. If a usable Mind+ installation is found, present both beginner choices:
-   - **Fast and stable:** copy the complete program into Mind+ and upload manually. This avoids a new toolchain download and is the recommended in-class route.
-   - **Independent compile/upload:** keep the generated program, then configure ChatMaker's isolated environment. Explain that the first setup may take longer or fail on a restricted network.
-4. If Mind+ is not found, distinguish “not installed” from “installed but toolchain/config incomplete”. Offer the official Mind+ domestic download, the isolated ChatMaker route, and—only for a fixed teacher demo—a verified prebuilt firmware route.
-5. Run `prepare-environment` or any download only after the user chooses the independent route. Never repeat preparation while the current dialogue is still producing or revising code.
-6. When environment work could delay the creative task, suggest a separate Codex task for environment/compile/upload. Give that task a short handoff containing the exact board, generated source, selected route, and current evidence; keep the current task available for design and code changes.
-
-Explain every choice in beginner language: why it may be faster, what it can do, what may need to download, and which success gate it does not yet prove. A fixed firmware is a quick experience aid, not the default for student-authored projects.
+- A user's request to run or download the project includes normal local preparation for that supported board. Explain first-use preparation briefly; reuse it on subsequent edits. Do not make the student choose a toolchain on every turn.
+- Missing Mind+ does not block a managed board. Never install Mind+ as a generic repair. Nano, Uno and Stardust retain their documented compatibility routes; micro:bit retains its HEX route.
+- An existing usable Mind+ installation may be a documented compatibility fallback for its exact board, but the managed route is preferred. Do not send the student to another editor by default.
+- Keep the generated source and completed stages if a download, compilation or upload fails. Diagnose that stage with bounded retries; do not start unrelated setup or repeatedly run preparation during code edits.
+- If the board is absent, retain compilation evidence and ask the student to connect it. If several eligible devices remain, ask only which one to use. Report physical effects only when observed.
+- Waveshare ESP32-S3-Touch-LCD-2.8 uses board ID `waveshare-esp32-s3-touch-lcd-2-8` and explicit `revision` (`v1` or `v2`). Read ChatDuino's `waveshare-s3-touch-lcd-2-8.md`; while no signed Knowledge pack exists, use that source reference directly instead of requesting a nonexistent package.
 
 ## Adapt to the user's idea
 
@@ -58,7 +54,7 @@ Explain every choice in beginner language: why it may be faster, what it can do,
 1. Restate the intended effect in everyday language.
 2. Ask only for information that changes safety, architecture, or the acceptance test.
 3. For a connected but unknown MCU board, run `chatmaker-board-identify --request-json '{"action":"identify","allow_temporary_firmware":true}'` through the workspace's local-command capability. It first performs safe reads. When needed, a 临时识别程序 may run only after a 完整备份 is verified, and the original firmware must be restored and verified before identification can complete. If evidence remains ambiguous, tell the beginner where the model/version is normally printed; if they still cannot identify it, request clear 正反面照片 and help visually. Do not expose USB IDs, bus addresses, registers, or raw commands unless diagnosis actually needs them.
-4. After the exact board identity is known, read the matching `start-here` section before choosing the next specialist path. Run `chatmaker-knowledge --request-json '{"action":"section","board_id":"<exact-board-id>","consumer":"chatmaker","section_id":"start-here"}'`. A standalone basic mechanical CAD request skips board knowledge. The current UNIHIKER M10 alpha has a canonical board record but no signed Knowledge pack; route it to ChatDuino's `unihiker-m10.md` reference and project checker instead of inventing a Knowledge result.
+4. After the exact board identity is known, read the matching `start-here` section before choosing the next specialist path. Run `chatmaker-knowledge --request-json '{"action":"section","board_id":"<exact-board-id>","consumer":"chatmaker","section_id":"start-here"}'`. A standalone basic mechanical CAD request skips board knowledge. Boards without a signed Knowledge pack use their local source reference: route UNIHIKER M10 to ChatDuino's `unihiker-m10.md` and project checker; route Waveshare ESP32-S3-Touch-LCD-2.8 to `waveshare-s3-touch-lcd-2-8.md` and its independent board CLI. Do not request or invent a nonexistent Knowledge package.
    When a board CLI protects upload with `board_confirmed`, keep that field internal. After the user has actually confirmed the printed model or equivalent high-confidence identity evidence, pass `board_confirmed:true` in the CLI request; 不要让学生手动填写这个实现参数。If the CLI returns an identity-confirmation error, translate its `teacher_message` into one visible confirmation step and retry only after the answer is known.
 5. Route Arduino, Nano, ESP32, micro:bit, wiring, upload, and serial work to `$chatduino`.
 6. Route classroom tools, browser mini games, native HTML, CSS, JavaScript, device interfaces, local preview, and browser interaction work to `$chatweb`.
@@ -68,7 +64,7 @@ Explain every choice in beginner language: why it may be faster, what it can do,
 
 If an exact board or module is not supported, do not ask a beginner to edit YAML, registries, Knowledge files, or toolchain definitions. Hardware support is maintained by ChatMaker developers. Offer to help the user prepare the exact model, front/back photos, visible markings, and intended project, then direct them to `https://github.com/Amasun93/ChatMaker/issues/new` or the author's WeChat `13621625854` with note `chatmaker`. Never publish an Issue or send a message without the user's explicit confirmation.
 
-Use the phrase "exact board identity" literally: do not read optional ChatMaker Knowledge guidance until the board ID is confirmed. Once confirmed, start with the `start-here` section and then continue with canonical board, component, and recipe facts.
+Use the phrase "exact board identity" literally: do not read optional ChatMaker Knowledge guidance until the board ID is confirmed. Once confirmed, start with the `start-here` section (or the source reference listed above for a board without a published pack) and then continue with canonical board, component, and recipe facts.
 
 Read [project-contract.md](references/project-contract.md) before planning a combined project or reporting completion.
 
