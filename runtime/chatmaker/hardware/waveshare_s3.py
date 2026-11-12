@@ -10,7 +10,8 @@ import tempfile
 import time
 
 from . import waveshare_toolchain as chain
-from .esp32_devkit_v1 import _run as run
+from .arduino_toolchain import run_cli as run
+from .classroom_cli import dry_run_guard
 from chatmaker.installers.downloads import sha256
 from chatmaker.progress import emit
 
@@ -71,6 +72,9 @@ def compile_project(request: dict, context: dict, *, fqbn: str = FQBN) -> dict:
 def execute_request(request: dict) -> dict:
     revision = request.get('revision')
     base = {'board':BOARD_ID,'revision':revision,'action':request.get('action'),'success':False}
+    rejected = dry_run_guard(request)
+    if rejected:
+        return {**base, **rejected}
     if revision not in chain.VENDORS:
         return {**base,'state':'revision-needed','error':'revision_required',
                 'teacher_message':'请确认板背面的 V1/V2 标签，再选择对应触摸驱动；暂时不清楚时可继续其他软件准备。'}

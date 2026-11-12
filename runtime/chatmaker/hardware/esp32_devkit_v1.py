@@ -111,8 +111,10 @@ def _terminate_process_tree(
     return tree_signal_sent and process_exited
 
 
-def _run(command: list[str], timeout: int = 30) -> dict[str, Any]:
+def _run(command: list[str], timeout: int = 30, *, env: dict[str, str] | None = None) -> dict[str, Any]:
     popen_options: dict[str, Any] = {}
+    if env is not None:
+        popen_options['env'] = env
     if os.name == "nt":
         popen_options["creationflags"] = getattr(
             subprocess, "CREATE_NEW_PROCESS_GROUP", 0x00000200

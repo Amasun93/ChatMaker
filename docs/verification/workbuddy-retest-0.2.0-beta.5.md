@@ -66,6 +66,8 @@ Windows PowerShell 5.1 向原生命令传递管道文本时，默认编码可能
 
 没有稳定测速数据时，预计时间可以为空，不要求工具编造剩余分钟数。
 
+`--dry-run` 只支持环境准备、环境检查和端口查询；与 `run`、`compile` 或 `compile-upload` 组合时必须返回 `dry_run_unsupported_action`，不执行这些动作。
+
 ## 4. 测试首次准备与缓存复用
 
 ```powershell

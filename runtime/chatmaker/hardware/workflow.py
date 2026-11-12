@@ -30,9 +30,13 @@ def _observe(port: str, marker: str, baudrate: int, timeout: float) -> dict:
 
 
 def run_project(request: dict, *, adapters: Mapping[str, Any] | None = None) -> dict:
+    from .classroom_cli import dry_run_guard
     board_id = str(request.get('board_id', ''))
     result = {'action': 'hardware-project-run', 'board_id': board_id, 'success': False,
               'code_compiled': False, 'firmware_uploaded': False, 'physical_effect_verified': False}
+    rejected = dry_run_guard(request, default_action='run')
+    if rejected:
+        return {**result, **rejected}
     if adapters is None:
         adapters = {board_id: importlib.import_module(f'.{MODULES[board_id]}', __package__)} if board_id in MODULES else {}
     adapter = adapters.get(board_id)

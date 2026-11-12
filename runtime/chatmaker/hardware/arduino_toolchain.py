@@ -41,6 +41,14 @@ def native(path: Path) -> Path:
     return Path('\\\\?\\UNC\\' + value[2:] if value.startswith('\\\\') else '\\\\?\\' + value)
 
 
+def run_cli(command: list[str], timeout: int = 30) -> dict:
+    """CLI environment overrides take priority over --config-file; exclude them."""
+    from .esp32_devkit_v1 import _run
+    environment = {key: value for key, value in os.environ.items()
+                   if not key.upper().startswith('ARDUINO_')}
+    return _run(command, timeout=timeout, env=environment)
+
+
 def safe_relative(name: str) -> Path:
     value = PurePosixPath(name)
     if not name or value.is_absolute() or '..' in value.parts or '\\' in name or ':' in name:
@@ -133,6 +141,23 @@ def _artifact_ready(home: Path, name: str, item: dict) -> bool:
         return False
 
 
+def search_roots_match(home: Path, data: dict, ids: list[str]) -> bool:
+    """Reject extra selectable libraries, platforms or tool versions; never delete them."""
+    expected = set(generated_files(home, data, ids))
+    for name in ids:
+        receipt = json.loads((home / 'manifests' / (name + '.json')).read_text('utf-8'))
+        destination = data['artifacts'][name]['destination']
+        expected.update((PurePosixPath(destination) / relative).as_posix() for relative in receipt['files'])
+    for relative in ('data/packages', 'libraries', 'user/libraries', 'user/hardware'):
+        directory = native(home / relative)
+        actual = {(PurePosixPath(relative) / path.relative_to(directory).as_posix()).as_posix()
+                  for path in directory.rglob('*') if path.is_file()}
+        required = {name for name in expected if name.startswith(relative + '/')}
+        if actual != required:
+            return False
+    return True
+
+
 def context(profile: str, *, libraries=(), home: Path | None = None) -> dict | None:
     home = (home or home_for(profile)).resolve()
     try:
@@ -147,6 +172,8 @@ def context(profile: str, *, libraries=(), home: Path | None = None) -> dict | N
                for name, value in generated_files(home, data, ids).items()):
             return None
         if not all(_artifact_ready(home, name, data['artifacts'][name]) for name in ids):
+            return None
+        if not search_roots_match(home, data, ids):
             return None
         return {'root': str(home), 'cli': str(home / 'bin/arduino-cli.exe'),
                 'config': str(home / 'arduino-cli.yaml'), 'libraries': str(home / 'libraries'),

@@ -2,7 +2,9 @@
 from pathlib import Path
 
 from . import arduino_toolchain as chain
-from .esp32_devkit_v1 import _run as run, scan_ports
+from .esp32_devkit_v1 import scan_ports
+from .arduino_toolchain import run_cli as run
+from .classroom_cli import dry_run_guard
 from .waveshare_s3 import compile_project
 from chatmaker.progress import emit
 
@@ -28,6 +30,9 @@ def execute_request(request: dict) -> dict:
     board_id = request.get('board_id', 'esp32-devkit-v1')
     action = request.get('action', 'doctor')
     base = {'success': False, 'action': action, 'board': board_id, 'physical_effect_verified': False}
+    rejected = dry_run_guard(request, default_action='doctor')
+    if rejected:
+        return {**base, **rejected}
     if board_id not in PROFILES:
         return {**base, 'error': 'unsupported_board'}
     fqbn = PROFILES[board_id]

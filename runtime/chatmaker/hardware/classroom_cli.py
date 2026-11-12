@@ -9,6 +9,15 @@ from chatmaker.progress import reporting
 from chatmaker.runtime_info import identity
 
 
+def dry_run_guard(request, *, default_action=None):
+    if request.get('dry_run') is True and request.get('action', default_action) not in {
+            'prepare-environment', 'doctor', 'ports'}:
+        return {'success': False, 'state': 'request-failed', 'error': 'dry_run_unsupported_action',
+                'installation_performed': False, 'physical_effect_verified': False,
+                'teacher_message': '试运行仅支持环境准备计划、环境检查或端口查询；此动作没有执行。'}
+    return None
+
+
 def main_entry(handler, argv=None, *, board_id=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     inputs = parser.add_mutually_exclusive_group()
@@ -46,6 +55,9 @@ def main_entry(handler, argv=None, *, board_id=None) -> int:
                     request[name] = value
             if board_id:
                 request['board_id'] = board_id
+            rejected = dry_run_guard(request)
+            if rejected:
+                raise ValueError(rejected['error'])
             if args.download_policy:
                 os.environ['CHATMAKER_DOWNLOAD_POLICY'] = args.download_policy
             # Independent of the caller's working directory or another C: clone.
