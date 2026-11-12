@@ -1,5 +1,7 @@
 # ChatMaker 安装与升级说明
 
+0.2.0-beta.5 的源码复测请先读 [WorkBuddy 固定版本复测说明](verification/workbuddy-retest-0.2.0-beta.5.md)，使用明确的 checkout 和 runtime 路径。本轮源码入口已升级；不要用旧 Release 附件替代该版本。
+
 ## 普通学生：只安装一个 Skill
 
 在 WorkBuddy、Codex、SkillHub 或其他支持 GitHub Skill 的应用中，使用应用自己的 Skill 安装入口安装：
@@ -70,7 +72,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File <环境包目录>\install.ps
 
 `chatmaker-install local` 只读检查操作系统、Python、终端、浏览器、串口、Mind+ 和 Arduino CLI。它不读取或写入 AI 宿主配置，返回值包含 `host_scan_performed=false`。
 
-已具备独立工具链的项目使用 `chatmaker-hardware --request-json '<完整项目请求>'`：按准确板型复用环境，缺少时准备一次，再继续编译和下载。请求包含 `board_id`、`sketch` 或完整 `code`，以及该板必要的身份信息；可提供 `expected_serial_marker` 读取运行证据。AI 负责构造这些字段，学生只需描述效果、确认实物并接板。没有 Mind+ 不应阻止这一流程。
+已具备独立工具链的项目使用 `chatmaker-hardware --request-file project.json`（或通过标准输入使用 `--request-json -`）：按准确板型复用环境，缺少时准备一次，再继续编译和下载。请求包含 `board_id`、`sketch` 或完整 `code`，以及该板必要的身份信息；可提供 `expected_serial_marker` 读取运行证据。AI 负责构造这些字段，学生只需描述效果、确认实物并接板。没有 Mind+ 不应阻止这一流程。
 
 常用入口：
 
@@ -79,7 +81,7 @@ chatmaker-starcore --request-json '{"action":"prepare-environment"}'
 chatmaker-starcore --request-json '{"action":"doctor"}'
 chatmaker-nano --request-json '{"action":"doctor"}'
 chatmaker-uno --request-json '{"action":"doctor"}'
-chatmaker-esp32 --request-json '{"action":"doctor"}'
+chatmaker-esp32 --action doctor
 chatmaker-mpython --request-json '{"action":"doctor"}'
 chatmaker-unihiker --request-json '{"action":"check_project","project":"<project-folder>"}'
 chatmaker-serial

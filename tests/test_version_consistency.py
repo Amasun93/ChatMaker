@@ -20,7 +20,7 @@ def load_checker():
 class VersionConsistencyTests(unittest.TestCase):
     def test_public_version_matches_user_facing_documents(self):
         checker = load_checker()
-        self.assertEqual(checker.public_version(ROOT), "0.2.0-beta.3")
+        self.assertEqual(checker.public_version(ROOT), "0.2.0-beta.5")
         self.assertEqual(checker.check(ROOT), [])
 
     def test_whats_new_is_a_dated_public_history_without_roadmap_copy(self):

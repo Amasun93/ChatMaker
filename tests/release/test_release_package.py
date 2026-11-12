@@ -21,7 +21,7 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 
 ROOT = Path(__file__).resolve().parents[2]
 PROJECT_VERSION = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))["project"]["version"]
-RELEASE_VERSION = "0.2.0-beta.3"
+RELEASE_VERSION = "0.2.0-beta.5"
 TEST_PLATFORM = "windows-amd64"
 
 

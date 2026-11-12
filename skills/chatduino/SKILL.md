@@ -19,7 +19,7 @@ ChatDuino is an internal specialist under the ChatMaker parent entry. Keep this 
 
 ## Workflow
 
-For classroom projects, save complete source and continue through the board's documented local tools. For independently managed Arduino boards use `chatmaker-hardware --request-json '<request>'`: include the exact `board_id`, source, confirmed identity and optional expected serial marker. It prepares missing tools once, reuses valid tools, compiles and uploads. Missing Mind+ is not a prerequisite failure for these boards. Do not default to copy-and-upload in another editor or repeatedly ask the student which development environment to use. Keep AVR and micro:bit on their documented routes.
+For classroom projects, save complete source and continue through the board's documented local tools. For independently managed Arduino boards use `chatmaker-hardware --request-file project.json` (or `--request-json -` via stdin): include the exact `board_id`, source, confirmed identity and optional expected serial marker. It prepares missing tools once, reuses valid tools, compiles and uploads. Missing Mind+ is not a prerequisite failure for these boards. Do not default to copy-and-upload in another editor or repeatedly ask the student which development environment to use. Keep AVR and micro:bit on their documented routes.
 
 For domestic classroom networks, prefer the checked-in Chinese vendor sources and the school's HTTPS mirror. If the teacher sets `CHATMAKER_DOWNLOAD_POLICY=domestic-only`, do not try GitHub fallbacks; report the missing domestic artifact and point to the verified offline cache/mirror path. Never replace a pinned archive with an unreviewed proxy.
 
@@ -96,7 +96,8 @@ Read [esp32-doit-devkit-v1.md](references/esp32-doit-devkit-v1.md) before accept
 
 - `ESP-WROOM-32` is the module label, not proof of the carrier board. Require the DOIT carrier identity before compile or upload.
 - The exact target is `esp32:esp32:esp32doit-devkit-v1` with official Arduino-ESP32 core `3.3.11`.
-- Use `chatmaker-esp32 --request-json '<request>'` with the `prepare-environment`, `doctor`, `ports`, `compile`, or `compile-upload` action.
+- Use `chatmaker-esp32 --action <action>` or `--request-file project.json` with the `prepare-environment`, `doctor`, `ports`, `compile`, or `compile-upload` action.
+- Complex legacy requests can use `chatmaker-esp32 --request-json -` with standard input; never require inline JSON through a Windows .cmd wrapper.
 - Run the `prepare-environment` action before compile when the exact core may be missing. It may install only the ChatMaker-verified official `esp32:esp32@3.3.11`; it must not jump to latest, silently downgrade a newer official core, or substitute FireBeetle, mPython, DevKitC, S2, S3, or C3.
 - A CP210x, CH340, CH9102, or FTDI serial adapter is only a USB-UART clue; it cannot prove which ESP32 carrier board is attached.
 - After generating a complete program, use the `compile-upload` action by default. It may upload only after the exact carrier profile is confirmed and one non-Bluetooth wired port remains. If compilation succeeds without hardware, report `awaiting-hardware`; do not claim upload success.

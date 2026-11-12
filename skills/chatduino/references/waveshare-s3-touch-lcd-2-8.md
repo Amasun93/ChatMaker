@@ -4,13 +4,13 @@ Exact board ID: `waveshare-esp32-s3-touch-lcd-2-8`. This is not DOIT ESP32 DevKi
 
 ## Classroom route
 
-Save the complete program, then use `chatmaker-hardware --request-json '<request>'` with `board_id`, `revision`, `sketch` (or complete `code`), and `expected_serial_marker`. After the physical board and revision have actually been confirmed, pass `board_confirmed:true` internally. Do not ask the student to fill technical JSON fields. With multiple native USB candidates, select the intended `port` explicitly.
+Save the complete program, then use the explicit checkout's `chatmaker-hardware --request-file project.json` (or `--request-json -` via stdin) with `board_id`, `revision`, `sketch` (or complete `code`), and `expected_serial_marker`. After the physical board and revision have actually been confirmed, pass `board_confirmed:true` internally. Do not ask the student to fill technical JSON fields. With multiple native USB candidates, select the intended `port` explicitly.
 
 `revision` must be `v1` (CST328) or `v2` (CST3530), determined by the back label or equivalent reliable evidence. Unknown revision remains unknown; the shared software can be prepared separately but do not upload a guessed touch variant. Reading an ESP32-S3 chip or a COM port does not prove the product model/revision.
 
 The independent board CLI is `chatmaker-waveshare-s3` with `doctor`, `prepare-environment`, `ports`, `compile`, `compile-upload`. Missing Mind+ does not block this route. First preparation installs required tools into the managed runtime; subsequent projects reuse the verified cache. The general local check is not a board-specific readiness decision.
 
-Integrity covers the complete S3 compiler, core, SDK and relevant Arduino tools, plus all prepared drivers and recovery images. A ready receipt also requires configuration for the current local root. With `CHATMAKER_DOWNLOAD_POLICY=domestic-only`, reuse a fully verified environment; otherwise stop before core network operations and request teacher-prepared offline material. A mirror for the CLI ZIP alone does not mirror the Arduino core. A copied offline environment must use the same absolute installation path.
+Integrity covers the complete S3 compiler, core, SDK and relevant Arduino tools, plus all prepared drivers and recovery images. A ready receipt also requires configuration for the current local root. ESP32 core/compiler/SDK/flasher use identical hash-locked archives from the official domestic endpoint first. CLI and Arduino helper artifacts currently use official fallback addresses. With `CHATMAKER_DOWNLOAD_POLICY=domestic-only`, any missing component without a verified domestic source must stop explicitly; cached verified archives or a configured school HTTPS mirror can satisfy it. Rebuild isolated configuration at the destination root instead of treating a copied installation receipt as portable. See `docs/verification/workbuddy-retest-0.2.0-beta.5.md` for preview, provenance and test commands.
 
 ## Available examples
 

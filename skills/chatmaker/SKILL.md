@@ -31,7 +31,7 @@ Pure generation still needs no environment. Do not run environment setup merely 
 
 ## Use the independent classroom hardware path
 
-For a requested hardware project, save the complete source promptly, then continue with the exact board's local tools. For boards with a ChatMaker-managed toolchain, use `chatmaker-hardware --request-json '<request>'` with `board_id`, `sketch` (or `code`) and the board-specific identity fields. The workflow reuses a ready environment, prepares a missing environment once, compiles, uploads when the exact board and target are confirmed, and observes an optional `expected_serial_marker`.
+For a requested hardware project, save the complete source promptly, then continue with the exact board's local tools. For boards with a ChatMaker-managed toolchain, use the explicit checkout's `chatmaker-hardware` entry with `--board-id`, `--action run`, `--sketch` and the board-specific identity fields. Complex requests use `--request-file` (UTF-8 JSON) or `--request-json -` (stdin); do not put inline JSON quotes through Windows .cmd wrappers. The workflow reuses a ready environment, prepares a missing environment once, compiles, uploads when the exact board and target are confirmed, and observes an optional `expected_serial_marker`.
 
 - A user's request to run or download the project includes normal local preparation for that supported board. Explain first-use preparation briefly; reuse it on subsequent edits. Do not make the student choose a toolchain on every turn.
 - Missing Mind+ does not block a managed board. Never install Mind+ as a generic repair. Nano, Uno and Stardust retain their documented compatibility routes; micro:bit retains its HEX route.
