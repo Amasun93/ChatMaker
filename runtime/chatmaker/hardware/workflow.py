@@ -13,6 +13,7 @@ MODULES = {
     'mpython-classic-v2x': 'mpython_classic',
     'mpython-v3': 'mpython_v3',
     'esp32-devkit-v1': 'esp32_devkit_v1',
+    'nova-esp32': 'managed_esp32',
     'waveshare-esp32-s3-touch-lcd-2-8': 'waveshare_s3',
 }
 

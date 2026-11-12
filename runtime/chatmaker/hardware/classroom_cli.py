@@ -17,6 +17,7 @@ def main_entry(handler, argv=None, *, board_id=None) -> int:
     for name in ('action', 'board-id', 'revision', 'sketch', 'port', 'expect-revision', 'expect-source-root'):
         parser.add_argument('--' + name)
     parser.add_argument('--board-confirmed', action='store_true', default=None)
+    parser.add_argument('--library', action='append', dest='libraries')
     parser.add_argument('--dry-run', action='store_true', default=None)
     parser.add_argument('--version', action='store_true')
     parser.add_argument('--progress', choices=('human', 'jsonl', 'none'), default='human')
@@ -39,7 +40,7 @@ def main_entry(handler, argv=None, *, board_id=None) -> int:
                 request = json.loads(sys.stdin.read().lstrip('\ufeff') if args.request_json == '-' else args.request_json)
             if not isinstance(request, dict):
                 raise ValueError('request_must_be_object')
-            for name in ('action', 'board_id', 'revision', 'sketch', 'port', 'board_confirmed', 'dry_run'):
+            for name in ('action', 'board_id', 'revision', 'sketch', 'port', 'board_confirmed', 'dry_run', 'libraries'):
                 value = getattr(args, name)
                 if value is not None:
                     request[name] = value

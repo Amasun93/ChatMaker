@@ -434,7 +434,7 @@ class Esp32DevKitV1Tests(unittest.TestCase):
         }
         self.adapter.scan_ports = lambda: []
         try:
-            result = self.adapter.execute_request({"action": "doctor"})
+            result = self.adapter.execute_request({"action": "doctor"}, candidates=self.adapter.discover_cli_candidates())
         finally:
             self.adapter.discover_cli_candidates = original_discover
             self.adapter.probe_candidate = original_probe

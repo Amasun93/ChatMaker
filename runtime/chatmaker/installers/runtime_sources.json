@@ -76,5 +76,624 @@
       "kind": "official_fallback",
       "url": "https://registry.npmjs.org"
     }
-  ]
+  ],
+  "arduino_cli": {
+    "windows-amd64": {
+      "version": "1.3.1",
+      "filename": "arduino-cli_1.3.1_Windows_64bit.zip",
+      "size": 17736240,
+      "sha256": "cfece6f356fdc9ca003cc3f0a488470030719c8e0e7bfce5e42ac9410d87441f",
+      "destination": "bin",
+      "strip_root": false,
+      "sources": [
+        {
+          "id": "arduino-downloads",
+          "kind": "official_fallback",
+          "url": "https://downloads.arduino.cc/arduino-cli/arduino-cli_1.3.1_Windows_64bit.zip"
+        },
+        {
+          "id": "arduino-github",
+          "kind": "official_fallback",
+          "url": "https://github.com/arduino/arduino-cli/releases/download/v1.3.1/arduino-cli_1.3.1_Windows_64bit.zip"
+        }
+      ]
+    }
+  },
+  "arduino_esp32": {
+    "core_version": "3.3.11",
+    "platform": {
+      "name": "esp32",
+      "architecture": "esp32",
+      "version": "3.3.11",
+      "category": "ESP32",
+      "url": "https://github.com/espressif/arduino-esp32/releases/download/3.3.11/esp32-core-3.3.11.zip",
+      "archiveFileName": "esp32-core-3.3.11.zip",
+      "checksum": "SHA-256:a18203f2429f5551ec929b80e8129e439df7a3a009b536b305f00b4a1f1bbb62",
+      "size": "46900611",
+      "help": {
+        "online": ""
+      },
+      "boards": [
+        {
+          "name": "ESP32 Dev Board"
+        },
+        {
+          "name": "ESP32-C3 Dev Board"
+        },
+        {
+          "name": "ESP32-C5 Dev Board"
+        },
+        {
+          "name": "ESP32-C6 Dev Board"
+        },
+        {
+          "name": "ESP32-H2 Dev Board"
+        },
+        {
+          "name": "ESP32-P4 Dev Board"
+        },
+        {
+          "name": "ESP32-S2 Dev Board"
+        },
+        {
+          "name": "ESP32-S3 Dev Board"
+        },
+        {
+          "name": "Arduino Nano ESP32"
+        }
+      ],
+      "toolsDependencies": [
+        {
+          "packager": "esp32",
+          "name": "esp-x32",
+          "version": "2601"
+        },
+        {
+          "packager": "esp32",
+          "name": "xtensa-esp-elf-gdb",
+          "version": "17.1_20260402"
+        },
+        {
+          "packager": "esp32",
+          "name": "esp-rv32",
+          "version": "2601"
+        },
+        {
+          "packager": "esp32",
+          "name": "riscv32-esp-elf-gdb",
+          "version": "17.1_20260402"
+        },
+        {
+          "packager": "esp32",
+          "name": "openocd-esp32",
+          "version": "v0.12.0-esp32-20260424"
+        },
+        {
+          "packager": "esp32",
+          "name": "esptool_py",
+          "version": "5.3.1"
+        },
+        {
+          "packager": "esp32",
+          "name": "mkspiffs",
+          "version": "0.2.3"
+        },
+        {
+          "packager": "esp32",
+          "name": "mklittlefs",
+          "version": "4.0.2-db0513a"
+        },
+        {
+          "packager": "arduino",
+          "name": "dfu-util",
+          "version": "0.11.0-arduino5"
+        },
+        {
+          "packager": "esp32",
+          "name": "esp32-libs",
+          "version": "3.3.11"
+        },
+        {
+          "packager": "esp32",
+          "name": "esp32c3-libs",
+          "version": "3.3.11"
+        },
+        {
+          "packager": "esp32",
+          "name": "esp32c5-libs",
+          "version": "3.3.11"
+        },
+        {
+          "packager": "esp32",
+          "name": "esp32c6-libs",
+          "version": "3.3.11"
+        },
+        {
+          "packager": "esp32",
+          "name": "esp32h2-libs",
+          "version": "3.3.11"
+        },
+        {
+          "packager": "esp32",
+          "name": "esp32p4-libs",
+          "version": "3.3.11"
+        },
+        {
+          "packager": "esp32",
+          "name": "esp32p4_es-libs",
+          "version": "3.3.11"
+        },
+        {
+          "packager": "esp32",
+          "name": "esp32s2-libs",
+          "version": "3.3.11"
+        },
+        {
+          "packager": "esp32",
+          "name": "esp32s3-libs",
+          "version": "3.3.11"
+        }
+      ]
+    },
+    "artifacts": {
+      "core": {
+        "filename": "esp32-core-3.3.11.zip",
+        "size": 46900611,
+        "sha256": "a18203f2429f5551ec929b80e8129e439df7a3a009b536b305f00b4a1f1bbb62",
+        "destination": "data/packages/esp32/hardware/esp32/3.3.11",
+        "strip_root": true,
+        "packager": "esp32",
+        "name": "core",
+        "version": "3.3.11",
+        "system": {
+          "name": "esp32",
+          "architecture": "esp32",
+          "version": "3.3.11",
+          "category": "ESP32",
+          "url": "https://github.com/espressif/arduino-esp32/releases/download/3.3.11/esp32-core-3.3.11.zip",
+          "archiveFileName": "esp32-core-3.3.11.zip",
+          "checksum": "SHA-256:a18203f2429f5551ec929b80e8129e439df7a3a009b536b305f00b4a1f1bbb62",
+          "size": "46900611",
+          "help": {
+            "online": ""
+          },
+          "boards": [
+            {
+              "name": "ESP32 Dev Board"
+            },
+            {
+              "name": "ESP32-C3 Dev Board"
+            },
+            {
+              "name": "ESP32-C5 Dev Board"
+            },
+            {
+              "name": "ESP32-C6 Dev Board"
+            },
+            {
+              "name": "ESP32-H2 Dev Board"
+            },
+            {
+              "name": "ESP32-P4 Dev Board"
+            },
+            {
+              "name": "ESP32-S2 Dev Board"
+            },
+            {
+              "name": "ESP32-S3 Dev Board"
+            },
+            {
+              "name": "Arduino Nano ESP32"
+            }
+          ],
+          "toolsDependencies": [
+            {
+              "packager": "esp32",
+              "name": "esp-x32",
+              "version": "2601"
+            },
+            {
+              "packager": "esp32",
+              "name": "xtensa-esp-elf-gdb",
+              "version": "17.1_20260402"
+            },
+            {
+              "packager": "esp32",
+              "name": "esp-rv32",
+              "version": "2601"
+            },
+            {
+              "packager": "esp32",
+              "name": "riscv32-esp-elf-gdb",
+              "version": "17.1_20260402"
+            },
+            {
+              "packager": "esp32",
+              "name": "openocd-esp32",
+              "version": "v0.12.0-esp32-20260424"
+            },
+            {
+              "packager": "esp32",
+              "name": "esptool_py",
+              "version": "5.3.1"
+            },
+            {
+              "packager": "esp32",
+              "name": "mkspiffs",
+              "version": "0.2.3"
+            },
+            {
+              "packager": "esp32",
+              "name": "mklittlefs",
+              "version": "4.0.2-db0513a"
+            },
+            {
+              "packager": "arduino",
+              "name": "dfu-util",
+              "version": "0.11.0-arduino5"
+            },
+            {
+              "packager": "esp32",
+              "name": "esp32-libs",
+              "version": "3.3.11"
+            },
+            {
+              "packager": "esp32",
+              "name": "esp32c3-libs",
+              "version": "3.3.11"
+            },
+            {
+              "packager": "esp32",
+              "name": "esp32c5-libs",
+              "version": "3.3.11"
+            },
+            {
+              "packager": "esp32",
+              "name": "esp32c6-libs",
+              "version": "3.3.11"
+            },
+            {
+              "packager": "esp32",
+              "name": "esp32h2-libs",
+              "version": "3.3.11"
+            },
+            {
+              "packager": "esp32",
+              "name": "esp32p4-libs",
+              "version": "3.3.11"
+            },
+            {
+              "packager": "esp32",
+              "name": "esp32p4_es-libs",
+              "version": "3.3.11"
+            },
+            {
+              "packager": "esp32",
+              "name": "esp32s2-libs",
+              "version": "3.3.11"
+            },
+            {
+              "packager": "esp32",
+              "name": "esp32s3-libs",
+              "version": "3.3.11"
+            }
+          ]
+        },
+        "sources": [
+          {
+            "id": "espressif-cn",
+            "kind": "domestic_official",
+            "url": "https://dl.espressif.cn/github_assets/espressif/arduino-esp32/releases/download/3.3.11/esp32-core-3.3.11.zip"
+          },
+          {
+            "id": "official",
+            "kind": "official_fallback",
+            "url": "https://github.com/espressif/arduino-esp32/releases/download/3.3.11/esp32-core-3.3.11.zip"
+          }
+        ]
+      },
+      "esp-x32": {
+        "filename": "xtensa-esp-elf-14.2.0_20260121-x86_64-w64-mingw32.zip",
+        "size": 413859845,
+        "sha256": "82cbe0353c2e7c96acc8755c854aaa2d93d346c6a378fc692e60b3912c560108",
+        "destination": "data/packages/esp32/tools/esp-x32/2601",
+        "strip_root": true,
+        "packager": "esp32",
+        "name": "esp-x32",
+        "version": "2601",
+        "system": {
+          "host": "x86_64-mingw32",
+          "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-14.2.0_20260121/xtensa-esp-elf-14.2.0_20260121-x86_64-w64-mingw32.zip",
+          "archiveFileName": "xtensa-esp-elf-14.2.0_20260121-x86_64-w64-mingw32.zip",
+          "checksum": "SHA-256:82cbe0353c2e7c96acc8755c854aaa2d93d346c6a378fc692e60b3912c560108",
+          "size": "413859845"
+        },
+        "sources": [
+          {
+            "id": "espressif-cn",
+            "kind": "domestic_official",
+            "url": "https://dl.espressif.cn/github_assets/espressif/crosstool-NG/releases/download/esp-14.2.0_20260121/xtensa-esp-elf-14.2.0_20260121-x86_64-w64-mingw32.zip"
+          },
+          {
+            "id": "official",
+            "kind": "official_fallback",
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-14.2.0_20260121/xtensa-esp-elf-14.2.0_20260121-x86_64-w64-mingw32.zip"
+          }
+        ]
+      },
+      "esptool_py": {
+        "filename": "esptool-v5.3.1-windows-amd64.zip",
+        "size": 63962426,
+        "sha256": "2b4a73c45db27426685896f64ce3e557f63a64f43cc100cb65c0cc3486af96d3",
+        "destination": "data/packages/esp32/tools/esptool_py/5.3.1",
+        "strip_root": true,
+        "packager": "esp32",
+        "name": "esptool_py",
+        "version": "5.3.1",
+        "system": {
+          "host": "x86_64-mingw32",
+          "url": "https://github.com/espressif/esptool/releases/download/v5.3.1/esptool-v5.3.1-windows-amd64.zip",
+          "archiveFileName": "esptool-v5.3.1-windows-amd64.zip",
+          "checksum": "SHA-256:2b4a73c45db27426685896f64ce3e557f63a64f43cc100cb65c0cc3486af96d3",
+          "size": "63962426"
+        },
+        "sources": [
+          {
+            "id": "espressif-cn",
+            "kind": "domestic_official",
+            "url": "https://dl.espressif.cn/github_assets/espressif/esptool/releases/download/v5.3.1/esptool-v5.3.1-windows-amd64.zip"
+          },
+          {
+            "id": "official",
+            "kind": "official_fallback",
+            "url": "https://github.com/espressif/esptool/releases/download/v5.3.1/esptool-v5.3.1-windows-amd64.zip"
+          }
+        ]
+      },
+      "esp32-libs": {
+        "filename": "esp32-libs-3.3.11.zip",
+        "size": 47525987,
+        "sha256": "f7d70b98d83482ef9065f13e9dbe21f8c1292f0dc6e6ee9f1970b3b2e5ea894f",
+        "destination": "data/packages/esp32/tools/esp32-libs/3.3.11",
+        "strip_root": true,
+        "packager": "esp32",
+        "name": "esp32-libs",
+        "version": "3.3.11",
+        "system": {
+          "host": "x86_64-mingw32",
+          "url": "https://github.com/espressif/arduino-esp32/releases/download/3.3.11/esp32-libs-3.3.11.zip",
+          "archiveFileName": "esp32-libs-3.3.11.zip",
+          "checksum": "SHA-256:f7d70b98d83482ef9065f13e9dbe21f8c1292f0dc6e6ee9f1970b3b2e5ea894f",
+          "size": 47525987
+        },
+        "sources": [
+          {
+            "id": "espressif-cn",
+            "kind": "domestic_official",
+            "url": "https://dl.espressif.cn/github_assets/espressif/arduino-esp32/releases/download/3.3.11/esp32-libs-3.3.11.zip"
+          },
+          {
+            "id": "official",
+            "kind": "official_fallback",
+            "url": "https://github.com/espressif/arduino-esp32/releases/download/3.3.11/esp32-libs-3.3.11.zip"
+          }
+        ]
+      },
+      "esp32s3-libs": {
+        "filename": "esp32s3-libs-3.3.11.zip",
+        "size": 70074478,
+        "sha256": "fec76794708694120c6ec803cdbfc7dcd36286ea22b7d38097b7909bbd19f7b5",
+        "destination": "data/packages/esp32/tools/esp32s3-libs/3.3.11",
+        "strip_root": true,
+        "packager": "esp32",
+        "name": "esp32s3-libs",
+        "version": "3.3.11",
+        "system": {
+          "host": "x86_64-mingw32",
+          "url": "https://github.com/espressif/arduino-esp32/releases/download/3.3.11/esp32s3-libs-3.3.11.zip",
+          "archiveFileName": "esp32s3-libs-3.3.11.zip",
+          "checksum": "SHA-256:fec76794708694120c6ec803cdbfc7dcd36286ea22b7d38097b7909bbd19f7b5",
+          "size": 70074478
+        },
+        "sources": [
+          {
+            "id": "espressif-cn",
+            "kind": "domestic_official",
+            "url": "https://dl.espressif.cn/github_assets/espressif/arduino-esp32/releases/download/3.3.11/esp32s3-libs-3.3.11.zip"
+          },
+          {
+            "id": "official",
+            "kind": "official_fallback",
+            "url": "https://github.com/espressif/arduino-esp32/releases/download/3.3.11/esp32s3-libs-3.3.11.zip"
+          }
+        ]
+      },
+      "ctags": {
+        "filename": "ctags-5.8-arduino11-pm-i686-mingw32.zip",
+        "size": 116455,
+        "sha256": "106c9f074a3e2ec55bd8a461c1522bb4c90488275f061c3d51942862c99b8ba7",
+        "destination": "data/packages/builtin/tools/ctags/5.8-arduino11",
+        "strip_root": true,
+        "packager": "builtin",
+        "name": "ctags",
+        "version": "5.8-arduino11",
+        "system": {
+          "host": "i686-mingw32",
+          "url": "https://downloads.arduino.cc/tools/ctags-5.8-arduino11-pm-i686-mingw32.zip",
+          "archiveFileName": "ctags-5.8-arduino11-pm-i686-mingw32.zip",
+          "checksum": "SHA-256:106c9f074a3e2ec55bd8a461c1522bb4c90488275f061c3d51942862c99b8ba7",
+          "size": 116455
+        },
+        "sources": [
+          {
+            "id": "official",
+            "kind": "official_fallback",
+            "url": "https://downloads.arduino.cc/tools/ctags-5.8-arduino11-pm-i686-mingw32.zip"
+          }
+        ]
+      },
+      "serial-discovery": {
+        "filename": "serial-discovery_v1.5.2_Windows_64bit.zip",
+        "size": 2302288,
+        "sha256": "53173e898c3bb1b548e1dd6fae663771c9d0b68c91eee9ea8b75f395048c0511",
+        "destination": "data/packages/builtin/tools/serial-discovery/1.5.2",
+        "strip_root": true,
+        "packager": "builtin",
+        "name": "serial-discovery",
+        "version": "1.5.2",
+        "system": {
+          "host": "x86_64-mingw32",
+          "url": "https://downloads.arduino.cc/discovery/serial-discovery/serial-discovery_v1.5.2_Windows_64bit.zip",
+          "archiveFileName": "serial-discovery_v1.5.2_Windows_64bit.zip",
+          "checksum": "SHA-256:53173e898c3bb1b548e1dd6fae663771c9d0b68c91eee9ea8b75f395048c0511",
+          "size": 2302288
+        },
+        "sources": [
+          {
+            "id": "official",
+            "kind": "official_fallback",
+            "url": "https://downloads.arduino.cc/discovery/serial-discovery/serial-discovery_v1.5.2_Windows_64bit.zip"
+          }
+        ]
+      },
+      "mdns-discovery": {
+        "filename": "mdns-discovery_v1.1.0_Windows_64bit.zip",
+        "size": 3322320,
+        "sha256": "20a96d21dbc711710a23bc36ec86f906df172f66b0f8d23d9e4f72ebea44a24d",
+        "destination": "data/packages/builtin/tools/mdns-discovery/1.1.0",
+        "strip_root": true,
+        "packager": "builtin",
+        "name": "mdns-discovery",
+        "version": "1.1.0",
+        "system": {
+          "host": "x86_64-mingw32",
+          "url": "https://downloads.arduino.cc/discovery/mdns-discovery/mdns-discovery_v1.1.0_Windows_64bit.zip",
+          "archiveFileName": "mdns-discovery_v1.1.0_Windows_64bit.zip",
+          "checksum": "SHA-256:20a96d21dbc711710a23bc36ec86f906df172f66b0f8d23d9e4f72ebea44a24d",
+          "size": 3322320
+        },
+        "sources": [
+          {
+            "id": "official",
+            "kind": "official_fallback",
+            "url": "https://downloads.arduino.cc/discovery/mdns-discovery/mdns-discovery_v1.1.0_Windows_64bit.zip"
+          }
+        ]
+      },
+      "serial-monitor": {
+        "filename": "serial-monitor_v0.15.0_Windows_64bit.zip",
+        "size": 2564561,
+        "sha256": "005202ade1bcc5fd4b3c721a4b865f8608eef4d58518a82d43c67abfc52cdf4f",
+        "destination": "data/packages/builtin/tools/serial-monitor/0.15.0",
+        "strip_root": true,
+        "packager": "builtin",
+        "name": "serial-monitor",
+        "version": "0.15.0",
+        "system": {
+          "host": "x86_64-mingw32",
+          "url": "https://downloads.arduino.cc/monitor/serial-monitor/serial-monitor_v0.15.0_Windows_64bit.zip",
+          "archiveFileName": "serial-monitor_v0.15.0_Windows_64bit.zip",
+          "checksum": "SHA-256:005202ade1bcc5fd4b3c721a4b865f8608eef4d58518a82d43c67abfc52cdf4f",
+          "size": 2564561
+        },
+        "sources": [
+          {
+            "id": "official",
+            "kind": "official_fallback",
+            "url": "https://downloads.arduino.cc/monitor/serial-monitor/serial-monitor_v0.15.0_Windows_64bit.zip"
+          }
+        ]
+      },
+      "dfu-discovery": {
+        "filename": "dfu-discovery_v0.1.2_Windows_64bit.zip",
+        "size": 2282491,
+        "sha256": "5ef334c4d566b0033c229c28b2b401bc98bad70d5c25e3027c038aa3cde0d10f",
+        "destination": "data/packages/builtin/tools/dfu-discovery/0.1.2",
+        "strip_root": true,
+        "packager": "builtin",
+        "name": "dfu-discovery",
+        "version": "0.1.2",
+        "system": {
+          "host": "x86_64-mingw32",
+          "url": "https://downloads.arduino.cc/discovery/dfu-discovery/dfu-discovery_v0.1.2_Windows_64bit.zip",
+          "archiveFileName": "dfu-discovery_v0.1.2_Windows_64bit.zip",
+          "checksum": "SHA-256:5ef334c4d566b0033c229c28b2b401bc98bad70d5c25e3027c038aa3cde0d10f",
+          "size": 2282491
+        },
+        "sources": [
+          {
+            "id": "official",
+            "kind": "official_fallback",
+            "url": "https://downloads.arduino.cc/discovery/dfu-discovery/dfu-discovery_v0.1.2_Windows_64bit.zip"
+          }
+        ]
+      },
+      "U8g2": {
+        "filename": "U8g2-2.36.19.zip",
+        "size": 14101913,
+        "sha256": "c9de6e5a5aa2e2884d3296c6a86be4bc2770e27b11d4302ab5134273ccb6a670",
+        "destination": "libraries/U8g2",
+        "strip_root": true,
+        "packager": "library",
+        "name": "U8g2",
+        "version": "2.36.19",
+        "system": {
+          "name": "U8g2",
+          "version": "2.36.19",
+          "author": "oliver <olikraus@gmail.com>",
+          "maintainer": "oliver <olikraus@gmail.com>",
+          "license": "BSD-2-Clause",
+          "sentence": "Monochrome LCD, OLED and eInk Library. Display controller: SSD1305, SSD1306, SSD1309, SSD1312, SSD1316, SSD1318, SSD1320, SSD1322, SSD1325, SSD1327, SSD1329, SSD1362, SSD1363, SSD1606, SSD1607, SH1106, SH1107, SH1108, SH1122, T6963, RA8835, LC7981, PCD8544, PCF8812, HX1230, UC1601, UC1604, UC1608, UC1610, UC1611, UC1617, UC1628, UC1638, UC1701, ST7302, ST7511, ST7528, ST7539, ST7565, ST7567, ST7571, ST7586, ST7588, ST75160, ST75161, ST75256, ST75320, NT7534, ST7920, IST3020, IST3088, IST7920, LD7032, KS0108, KS0713, HD44102, T7932, SSD1312, SED1330, SED1520, SBN1661, IL3820, MAX7219, GP1287, GP1247, GP1294, GU800. Interfaces: I2C, SPI, Parallel.",
+          "paragraph": "Monochrome LCD, OLED and eInk Library. Display controller: SSD1305, SSD1306, SSD1309, SSD1312, SSD1316, SSD1318, SSD1320, SSD1322, SSD1325, SSD1327, SSD1329, SSD1362, SSD1363, SSD1606, SSD1607, SH1106, SH1107, SH1108, SH1122, T6963, RA8835, LC7981, PCD8544, PCF8812, HX1230, UC1601, UC1604, UC1608, UC1610, UC1611, UC1617, UC1628, UC1638, UC1701, ST7302, ST7511, ST7528, ST7539, ST7565, ST7567, ST7571, ST7586, ST7588, ST75160, ST75161, ST75256, ST75320, NT7534, ST7920, IST3020, IST3088, IST7920, LD7032, KS0108, KS0713, HD44102, T7932, SSD1312, SED1330, SED1520, SBN1661, IL3820, MAX7219, GP1287, GP1247, GP1294, GU800. Interfaces: I2C, SPI, Parallel. Features: UTF8, >700 fonts, U8x8 char output.",
+          "website": "https://github.com/olikraus/u8g2",
+          "category": "Display",
+          "architectures": [
+            "*"
+          ],
+          "types": [
+            "Contributed"
+          ],
+          "repository": "https://github.com/olikraus/U8g2_Arduino.git",
+          "url": "https://downloads.arduino.cc/libraries/github.com/olikraus/U8g2-2.36.19.zip",
+          "archiveFileName": "U8g2-2.36.19.zip",
+          "size": 14101913,
+          "checksum": "SHA-256:c9de6e5a5aa2e2884d3296c6a86be4bc2770e27b11d4302ab5134273ccb6a670"
+        },
+        "sources": [
+          {
+            "id": "official",
+            "kind": "official_fallback",
+            "url": "https://downloads.arduino.cc/libraries/github.com/olikraus/U8g2-2.36.19.zip"
+          }
+        ]
+      }
+    },
+    "metadata_sources": [
+      "https://espressif.github.io/arduino-esp32/package_esp32_index.json",
+      "https://espressif.github.io/arduino-esp32/package_esp32_index_cn.json",
+      "https://downloads.arduino.cc/packages/package_index.json",
+      "https://downloads.arduino.cc/libraries/library_index.json"
+    ],
+    "profiles": {
+      "esp32": [
+        "esp32-libs"
+      ],
+      "esp32s3": [
+        "esp32s3-libs"
+      ]
+    },
+    "common": [
+      "core",
+      "esp-x32",
+      "esptool_py",
+      "ctags",
+      "serial-discovery",
+      "mdns-discovery",
+      "serial-monitor",
+      "dfu-discovery"
+    ],
+    "optional_libraries": [
+      "U8g2"
+    ]
+  }
 }

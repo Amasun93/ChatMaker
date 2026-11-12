@@ -12,6 +12,22 @@ from chatmaker.hardware import waveshare_toolchain as chain
 
 class WaveshareTests(unittest.TestCase):
     def make_receipt(self, home, tools):
+        if len(tools) > 2:
+            data, ids = chain.managed.selected('esp32s3')
+            for name in ids:
+                item = data['artifacts'][name]
+                target = home/item['destination']; target.mkdir(parents=True,exist_ok=True)
+                if not any(target.rglob('*')):
+                    (target/'fixture').write_bytes(b'tool')
+                receipt_path = home/'manifests'/(name+'.json'); receipt_path.parent.mkdir(exist_ok=True)
+                receipt_path.write_text(json.dumps({'sha256':item['sha256'],'destination':item['destination'],
+                    'files':chain.managed.file_manifest(target,exclude=('installed.json',) if name=='core' else ())}))
+            for name,value in chain.managed.generated_files(home,data,ids).items():
+                target=home/name; target.parent.mkdir(parents=True,exist_ok=True)
+                if name!='arduino-cli.yaml':
+                    target.write_text(json.dumps(value))
+            (home/'receipt.json').write_text(json.dumps({'schema':1,'profile':'esp32s3','artifacts':ids,'libraries':[]}))
+            tools=chain.tool_manifest(home)
         prepared=home/'revisions/v1/prepared-test'
         libraries=prepared/'libraries'; libraries.mkdir(parents=True)
         (libraries/'driver.cpp').write_text('driver')
@@ -36,7 +52,7 @@ class WaveshareTests(unittest.TestCase):
             home=Path(tmp)
             for relative in chain.REQUIRED_TOOL_FILES:
                 path=home/relative; path.parent.mkdir(parents=True,exist_ok=True); path.write_bytes(b'tool')
-            (home/'arduino-cli.yaml').write_text(json.dumps({'directories':{'data':str(home/'data'),'downloads':str(home/'downloads'),'user':str(home/'user')},'build_cache':{'path':str(home/'build-cache')},'board_manager':{'additional_urls':[chain.INDEX_URL]}}))
+            (home/'arduino-cli.yaml').write_text(json.dumps(chain.configuration(home)))
             sdk_extra=home/f'data/packages/esp32/tools/esp32s3-libs/{chain.CORE_VERSION}/include/freertos/extra.h'
             sdk_extra.parent.mkdir(parents=True,exist_ok=True); sdk_extra.write_bytes(b'sdk dependency')
             manifest=chain.tool_manifest(home)
@@ -67,9 +83,10 @@ class WaveshareTests(unittest.TestCase):
             home=Path(tmp)
             with zipfile.ZipFile(home/chain.CLI['filename'],'w') as archive:
                 archive.writestr('arduino-cli.exe',b'previously verified CLI')
-            with mock.patch.object(chain,'root',return_value=home), mock.patch.object(chain.platform,'system',return_value='Windows'), mock.patch.object(chain.platform,'machine',return_value='AMD64'), mock.patch.dict(os.environ,{'CHATMAKER_DOWNLOAD_POLICY':'domestic-only'}), mock.patch.object(chain,'download_locked'), mock.patch.object(chain,'run',return_value={'returncode':1}) as run:
+            with mock.patch.object(chain,'root',return_value=home), mock.patch.object(chain.platform,'system',return_value='Windows'), mock.patch.object(chain.platform,'machine',return_value='AMD64'), mock.patch.dict(os.environ,{'CHATMAKER_DOWNLOAD_POLICY':'domestic-only','CHATMAKER_RUNTIME_ROOT':str(home/'runtime')}), mock.patch.object(chain,'download_locked'), mock.patch.object(chain,'run',return_value={'returncode':1}) as run:
                 result=chain.prepare_environment('v1')
-            self.assertEqual(result['error'],'core_offline_cache_required')
+            self.assertEqual(result['error'],'environment_preparation_failed')
+            self.assertIn('domestic_source_not_configured',result['detail'])
             run.assert_not_called()
 
     def test_domestic_only_reuses_a_complete_environment_without_network(self):

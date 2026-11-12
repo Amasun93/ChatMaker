@@ -12,6 +12,7 @@ import time
 from . import waveshare_toolchain as chain
 from .esp32_devkit_v1 import _run as run
 from chatmaker.installers.downloads import sha256
+from chatmaker.progress import emit
 
 BOARD_ID = 'waveshare-esp32-s3-touch-lcd-2-8'
 FQBN = 'esp32:esp32:esp32s3:FlashSize=16M,PartitionScheme=app3M_fat9M_16MB,PSRAM=opi,USBMode=hwcdc,CDCOnBoot=cdc,FlashMode=qio'
@@ -40,7 +41,7 @@ def match_application_port(original: dict, ports: list[dict]) -> str | None:
     return matches[0]['address'] if len(matches)==1 else None
 
 
-def compile_project(request: dict, context: dict) -> dict:
+def compile_project(request: dict, context: dict, *, fqbn: str = FQBN) -> dict:
     build_root = Path(context['root'])/'builds'; build_root.mkdir(parents=True,exist_ok=True)
     build = Path(tempfile.mkdtemp(prefix='project-',dir=build_root))
     if request.get('sketch'):
@@ -57,12 +58,13 @@ def compile_project(request: dict, context: dict) -> dict:
     else:
         return {'success':False,'error':'sketch_or_code_required'}
     output = build/'compiled'
-    command = [context['cli'],'--config-file',context['config'],'compile','--fqbn',FQBN,
+    emit('stage', stage='compile', message='正在编译程序')
+    command = [context['cli'],'--config-file',context['config'],'compile','--fqbn',fqbn,
                '--libraries',context['libraries'],'--build-path',str(output),str(sketch)]
     execution = run(command,timeout=int(request.get('timeout',900)))
     binaries = sorted(output.glob('*.bin')) if execution.get('returncode')==0 else []
     success = bool(binaries) and (output/(sketch.name+'.ino.bin')).is_file()
-    return {'success':success,'execution':execution,'fqbn':FQBN,'revision':request['revision'],
+    return {'success':success,'execution':execution,'fqbn':fqbn,'revision':request['revision'],
             'build_path':str(output),'sketch':str(sketch),'artifacts':[{'path':str(p),'size':p.stat().st_size,'sha256':sha256(p)} for p in binaries]}
 
 
@@ -74,7 +76,7 @@ def execute_request(request: dict) -> dict:
                 'teacher_message':'请确认板背面的 V1/V2 标签，再选择对应触摸驱动；暂时不清楚时可继续其他软件准备。'}
     action = request.get('action')
     if action=='prepare-environment':
-        return {**base,**chain.prepare_environment(revision)}
+        return {**base,**chain.prepare_environment(revision, dry_run=request.get('dry_run') is True)}
     if action=='ports':
         return {**base,'success':True,'ports':scan_ports()}
     ctx = chain.context(revision)
@@ -97,6 +99,7 @@ def execute_request(request: dict) -> dict:
         return {**result,'success':False,'stage':'awaiting-hardware','ports':ports,
                 'teacher_message':'请接入这块板的数据 USB 接口；有多块候选设备时选择本次使用的一块。'}
     # A successfully compiled fresh build is the sole upload source.
+    emit('stage', stage='upload', message='正在下载程序到已确认的微雪板')
     command = [ctx['cli'],'--config-file',ctx['config'],'upload','--fqbn',FQBN,
                '--port',selected['address'],'--input-dir',compiled['build_path'],compiled['sketch']]
     execution = run(command,timeout=int(request.get('upload_timeout',180)))
@@ -116,17 +119,8 @@ def execute_request(request: dict) -> dict:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description=__doc__); parser.add_argument('--request-json',required=True)
-    args = parser.parse_args(argv)
-    try:
-        request = json.loads(sys.stdin.read() if args.request_json=='-' else args.request_json)
-        if not isinstance(request,dict):
-            raise ValueError('request_must_be_object')
-        result = execute_request(request)
-    except Exception as exc:
-        result = {'success':False,'error':str(exc)}
-    print(json.dumps(result,ensure_ascii=False))
-    return 0 if result.get('success') else 1
+    from .classroom_cli import main_entry
+    return main_entry(execute_request, argv, board_id=BOARD_ID)
 
 
 if __name__=='__main__':

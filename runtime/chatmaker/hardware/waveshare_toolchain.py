@@ -10,9 +10,11 @@ import zipfile
 
 from chatmaker.installers.downloads import download_locked, sha256
 from .esp32_devkit_v1 import _run as run
+from . import arduino_toolchain as managed
+from chatmaker.progress import emit
 
 CORE_VERSION = '3.3.11'
-PREPARATION_VERSION = 2
+PREPARATION_VERSION = 3
 CORE_TREE = f'data/packages/esp32/hardware/esp32/{CORE_VERSION}'
 COMPILER_TREE = 'data/packages/esp32/tools/esp-x32/2601'
 SDK_TREE = f'data/packages/esp32/tools/esp32s3-libs/{CORE_VERSION}'
@@ -49,13 +51,11 @@ VENDORS = {
 
 
 def root() -> Path:
-    return Path(os.environ.get('CHATMAKER_RUNTIME_ROOT', Path.cwd()/'.chatmaker-runtime')).resolve()/'toolchains'/'waveshare'
+    return managed.home_for('esp32s3')
 
 
 def configuration(home: Path) -> dict:
-    return {'directories':{key:str(home/value) for key,value in [('data','data'),('downloads','downloads'),('user','user')]},
-            'build_cache':{'path':str(home/'build-cache')},
-            'board_manager':{'additional_urls':[INDEX_URL]}}
+    return managed.configuration(home)
 
 
 def config_matches(home: Path) -> bool:
@@ -171,11 +171,15 @@ def context(revision: str) -> dict | None:
             return None
         if not config_matches(home):
             return None
+        if managed.context('esp32s3', home=home) is None:
+            return None
         prepared_name = receipt.get('prepared_directory', '')
         if not isinstance(prepared_name, str) or not prepared_name.startswith('prepared-') or Path(prepared_name).name != prepared_name:
             return None
         prepared = revision_root/prepared_name
-        if not verify_manifest(prepared/'libraries', receipt.get('files'), exact=True) or not verify_tools(home, receipt.get('tools')):
+        # The shared context above already verifies every installed component,
+        # including offline indexes. Do not hash the same 1.7 GB tree twice.
+        if not verify_manifest(prepared/'libraries', receipt.get('files'), exact=True):
             return None
         if not verify_manifest(prepared/'recovery', receipt.get('recovery_files'), exact=True):
             return None
@@ -187,18 +191,25 @@ def context(revision: str) -> dict | None:
         return None
 
 
-def prepare_environment(revision: str) -> dict:
+def prepare_environment(revision: str, *, dry_run=False) -> dict:
     if revision not in VENDORS:
         return {'success':False,'state':'revision-needed','error':'revision_required'}
+    if dry_run:
+        plan = managed.preview('esp32s3', home=root())
+        vendor = VENDORS[revision]
+        cache = managed.archive_path(vendor)
+        cached = cache.is_file() and cache.stat().st_size == vendor['size'] and sha256(cache) == vendor['sha256']
+        plan['components'].append({'id':'waveshare-'+revision,'version':revision,'archive_bytes':vendor['size'],
+                                   'cached':cached,'sources':vendor['sources']})
+        plan['archive_bytes'] += vendor['size']
+        if not cached:
+            plan['remaining_download_bytes'] += vendor['size']
+        return plan
     if platform.system() != 'Windows' or platform.machine().lower() not in {'amd64','x86_64'}:
         return {'success':False,'error':'windows_x64_required'}
     ready = context(revision)
     if ready:
         return {'success':True,'ready_for_compile':True,'installation_performed':False,'environment':ready}
-    if os.environ.get('CHATMAKER_DOWNLOAD_POLICY', '').strip().casefold() in {'domestic-only', 'domestic_only'}:
-        return {'success':False,'error':'core_offline_cache_required',
-                'required_core':f'esp32:esp32@{CORE_VERSION}',
-                'teacher_message':'当前仅允许国内下载，但这块板的独立工具尚未完整准备，核心工具还没有配置国内镜像。请先由教师在可访问官方源的电脑上、按课堂电脑相同的绝对安装目录准备并校验完整缓存；已有完整缓存可直接复用。'}
     home = root(); home.mkdir(parents=True, exist_ok=True)
     revision_root = home/'revisions'/revision
     receipt_path = revision_root/'receipt.json'
@@ -222,27 +233,20 @@ def prepare_environment(revision: str) -> dict:
             if previous_tools and not verifier(home, previous_tools):
                 return {'success':False,'error':'toolchain_cache_changed',
                         'teacher_message':'已准备的编译工具发生变化或缺失，已停止。请保留此缓存供检查，在新的 CHATMAKER_RUNTIME_ROOT 重新准备；不需要安装 Mind+。'}
-        cli_zip = home/CLI['filename']
-        download_locked(CLI,cli_zip,timeout=180)
-        with zipfile.ZipFile(cli_zip) as z:
-            (home/'bin').mkdir(exist_ok=True)
-            (home/'bin'/'arduino-cli.exe').write_bytes(z.read('arduino-cli.exe'))
-        config = configuration(home)
-        config_path = home/'arduino-cli.yaml'
-        config_path.write_text(json.dumps(config,indent=2),encoding='utf-8')
-        cli = [str(home/'bin'/'arduino-cli.exe'),'--config-file',str(config_path)]
-        core = home/'data/packages/esp32/hardware/esp32'/CORE_VERSION
-        if not (core/'boards.txt').is_file():
-            for args in [('core','update-index'),('core','install',f'esp32:esp32@{CORE_VERSION}')]:
-                step = run(cli+list(args),timeout=1200)
-                if step.get('returncode') != 0:
-                    return {'success':False,'error':'core_preparation_failed','execution':step,
-                            'teacher_message':'乐鑫工具下载尚未完成；保留缓存，检查网络后重试这一步。'}
-        details = run(cli+['board','details','--fqbn','esp32:esp32:esp32s3','--format','json'],timeout=60)
-        if details.get('returncode') != 0:
-            return {'success':False,'error':'exact_board_toolchain_unavailable','execution':details}
-        vendor_zip = home/VENDORS[revision]['filename']
+        preparation = managed.prepare('esp32s3', home=home)
+        if not preparation.get('success'):
+            return preparation
+        vendor_zip = managed.archive_path(VENDORS[revision])
+        previous_vendor = managed.runtime_root()/'toolchains/waveshare'/VENDORS[revision]['filename']
+        if (not vendor_zip.exists() and previous_vendor.is_file()
+                and previous_vendor.stat().st_size == VENDORS[revision]['size']
+                and sha256(previous_vendor) == VENDORS[revision]['sha256']):
+            from chatmaker.installers.locks import exclusive_file
+            import shutil
+            with exclusive_file(vendor_zip.with_name(vendor_zip.name+'.lock')):
+                shutil.copyfile(previous_vendor, vendor_zip)
         download_locked(VENDORS[revision],vendor_zip,timeout=180)
+        emit('stage', stage='vendor', message='准备微雪显示、触摸和恢复固件')
         # Prepare into a fresh directory so stale sources cannot enter a new
         # manifest. Keep the previous files until a complete receipt is ready.
         revision_root.mkdir(parents=True, exist_ok=True)
@@ -259,12 +263,10 @@ def prepare_environment(revision: str) -> dict:
                     recovery.append({'path':str(dst),'sha256':sha256(dst),'address':'0x0'})
         if not recovery:
             return {'success':False,'error':'factory_recovery_missing'}
-        # Cover whole S3 dependency trees, including C/C++ front ends, linker,
-        # core sources and SDK headers/libraries, rather than a few sentinels.
-        tools = tool_manifest(home)
+        # Core/compiler/SDK integrity is owned by the shared component receipts.
         receipt = {'preparation_version':PREPARATION_VERSION, 'prepared_directory':prepared.name,
                    'core_version':CORE_VERSION,'vendor_sha256':VENDORS[revision]['sha256'],
-                   'files':file_manifest(libraries),'tools':tools,
+                   'files':file_manifest(libraries),'managed_profile':'esp32s3',
                    'recovery_files':file_manifest(prepared/'recovery'),
                    'recovery':recovery,'touch_controller':'CST328' if revision=='v1' else 'CST3530'}
         temporary_receipt = prepared/'receipt.json'

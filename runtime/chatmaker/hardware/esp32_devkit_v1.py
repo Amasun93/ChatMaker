@@ -1012,6 +1012,9 @@ def execute_request(
     runner=_run,
 ) -> dict[str, Any]:
     action = request.get("action")
+    if candidates is None and runner is _run:
+        from chatmaker.hardware.managed_esp32 import execute_request as managed_request
+        return managed_request(request)
     source_candidates = candidates if candidates is not None else discover_cli_candidates()
     official_candidates = [
         candidate for candidate in source_candidates if not _is_mindplus_candidate(candidate)
@@ -1059,21 +1062,8 @@ def execute_request(
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Strict DOIT ESP32 DevKit V1 bridge")
-    parser.add_argument("--request-json", required=True, help="JSON object or '-' for stdin")
-    args = parser.parse_args()
-    try:
-        raw = sys.stdin.read() if args.request_json == "-" else args.request_json
-        result = execute_request(json.loads(raw))
-    except Exception as exc:
-        result = {
-            "success": False,
-            "error": "unexpected_bridge_error",
-            "detail": f"{type(exc).__name__}: {exc}",
-            "board": BOARD_ID,
-        }
-    print(json.dumps(result, ensure_ascii=True))
-    return 0 if result.get("success") else 1
+    from chatmaker.hardware.classroom_cli import main_entry
+    return main_entry(execute_request, board_id=BOARD_ID)
 
 
 if __name__ == "__main__":
