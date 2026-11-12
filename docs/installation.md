@@ -1,6 +1,6 @@
 # ChatMaker 安装与升级说明
 
-0.2.0-beta.5 的源码复测请先读 [WorkBuddy 固定版本复测说明](verification/workbuddy-retest-0.2.0-beta.5.md)，使用明确的 checkout 和 runtime 路径。本轮源码入口已升级；不要用旧 Release 附件替代该版本。
+0.2.0-beta.6 的源码复测请先读 [WorkBuddy 固定版本复测说明](verification/workbuddy-retest-0.2.0-beta.6.md)，使用明确的 checkout 和 runtime 路径。本轮源码入口已升级；不要用旧 Release 附件替代该版本。
 
 ## 普通学生：只安装一个 Skill
 

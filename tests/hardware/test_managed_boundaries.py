@@ -94,7 +94,7 @@ class ManagedSearchRootTests(unittest.TestCase):
         )
         for relative in additions:
             with self.subTest(path=relative), tempfile.TemporaryDirectory() as temp:
-                home = Path(temp)
+                home = Path(temp).resolve()
                 self.make_environment(home)
                 self.assertIsNotNone(chain.context('esp32', home=home))
                 added = home / relative

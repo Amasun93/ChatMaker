@@ -2,7 +2,7 @@ param(
     [string]$SourceRoot = (Split-Path -Parent $PSScriptRoot),
     [string]$RuntimeRoot = "",
     [string]$ExpectedRevision = "",
-    [string]$ExpectedTag = "v0.2.0-beta.5"
+    [string]$ExpectedTag = "v0.2.0-beta.6"
 )
 
 $ErrorActionPreference = "Stop"
@@ -25,7 +25,7 @@ try {
     $result = $raw | ConvertFrom-Json
     if ($commandExit -ne 0 -or -not $result.success) { throw "runtime_guard_failed:$($result.error)" }
     if ($result.runtime.source_dirty -ne $false) { throw "source_not_clean: preserve changes and report before testing" }
-    if ($result.runtime.version -ne "0.2.0b5" -or $result.runtime.installed_version -ne "0.2.0b5") {
+    if ($result.runtime.version -ne "0.2.0b6" -or $result.runtime.installed_version -ne "0.2.0b6") {
         throw "installed_version_mismatch: rerun setup_local_runtime.ps1 for this checkout"
     }
     if ([System.IO.Path]::GetFullPath($result.runtime.python) -ne $python) { throw "python_path_mismatch" }

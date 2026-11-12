@@ -14,9 +14,9 @@ ChatMaker 是唯一入口；ChatDuino、ChatWeb 和 ChatCAD 是由它在内部�
 
 对话窗口就是创作环境。编译器、串口和浏览器在后台完成专业工作；部分旧板卡仍可复用 Mind+，用户不需要先学习一套 IDE。
 
-> 当前版本：**0.2.0-beta.5**。维护者已邀请 20 多位体验者参与测试；GitHub `main` 是唯一主仓库，Gitee 是自动更新的国内只读镜像。各板卡的真实证据按下方状态表分别报告。
+> 当前版本：**0.2.0-beta.6**。维护者已邀请 20 多位体验者参与测试；GitHub `main` 是唯一主仓库，Gitee 是自动更新的国内只读镜像。各板卡的真实证据按下方状态表分别报告。
 
-本轮增加 ESP32 按板准备、国内优先下载与续传，并提供 [WorkBuddy 固定版本复测说明](docs/verification/workbuddy-retest-0.2.0-beta.5.md)。下载进度与编译、实板结果分开记录；复测先核对实际加载的提交号和路径。
+本轮增加 ESP32 按板准备、国内优先下载与续传，并提供 [WorkBuddy 固定版本复测说明](docs/verification/workbuddy-retest-0.2.0-beta.6.md)。下载进度与编译、实板结果分开记录；复测先核对实际加载的提交号和路径。
 
 想快速了解这次变化，请看面向普通用户的 [WHAT'S NEW](WHATS_NEW.md)。
 

@@ -106,7 +106,7 @@ class WorkflowTests(unittest.TestCase):
     def test_mpython_v3_saved_project_preserves_adjacent_files_through_real_adapter(self):
         from chatmaker.hardware import mpython_v3
         with tempfile.TemporaryDirectory() as tmp:
-            sketch=Path(tmp)/'saved_project'; sketch.mkdir()
+            sketch=Path(tmp).resolve()/'saved_project'; sketch.mkdir()
             (sketch/'saved_project.ino').write_text('#include "helper.h"\nvoid setup(){} void loop(){}')
             helper=sketch/'helper.h'; helper.write_text('// local project header')
             context={'cli':'cli.exe','config':'arduino-cli.yaml'}

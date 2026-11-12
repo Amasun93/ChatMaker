@@ -41,7 +41,7 @@ class WaveshareTests(unittest.TestCase):
 
     def test_small_tools_receipt_cannot_certify_an_incomplete_compiler(self):
         with tempfile.TemporaryDirectory() as tmp:
-            home=Path(tmp); (home/'bin').mkdir(); (home/'bin/arduino-cli.exe').write_bytes(b'cli')
+            home=Path(tmp).resolve(); (home/'bin').mkdir(); (home/'bin/arduino-cli.exe').write_bytes(b'cli')
             (home/'arduino-cli.yaml').write_text(json.dumps(chain.configuration(home)))
             self.make_receipt(home,{name:chain.sha256(home/name) for name in ('bin/arduino-cli.exe','arduino-cli.yaml')})
             with mock.patch.object(chain,'root',return_value=home):
@@ -49,7 +49,7 @@ class WaveshareTests(unittest.TestCase):
 
     def test_compiler_core_and_sdk_files_are_all_in_the_integrity_receipt(self):
         with tempfile.TemporaryDirectory() as tmp:
-            home=Path(tmp)
+            home=Path(tmp).resolve()
             for relative in chain.REQUIRED_TOOL_FILES:
                 path=home/relative; path.parent.mkdir(parents=True,exist_ok=True); path.write_bytes(b'tool')
             (home/'arduino-cli.yaml').write_text(json.dumps(chain.configuration(home)))
@@ -70,7 +70,7 @@ class WaveshareTests(unittest.TestCase):
 
     def test_receipt_for_a_config_pointing_elsewhere_is_not_ready(self):
         with tempfile.TemporaryDirectory() as tmp:
-            home=Path(tmp)
+            home=Path(tmp).resolve()
             for relative in chain.REQUIRED_TOOL_FILES:
                 path=home/relative; path.parent.mkdir(parents=True,exist_ok=True); path.write_bytes(b'tool')
             (home/'arduino-cli.yaml').write_text(json.dumps({'directories':{'data':'C:/another-computer/data'}}))
@@ -80,7 +80,7 @@ class WaveshareTests(unittest.TestCase):
 
     def test_domestic_only_with_cached_cli_never_starts_core_network_commands(self):
         with tempfile.TemporaryDirectory() as tmp:
-            home=Path(tmp)
+            home=Path(tmp).resolve()
             with zipfile.ZipFile(home/chain.CLI['filename'],'w') as archive:
                 archive.writestr('arduino-cli.exe',b'previously verified CLI')
             with mock.patch.object(chain,'root',return_value=home), mock.patch.object(chain.platform,'system',return_value='Windows'), mock.patch.object(chain.platform,'machine',return_value='AMD64'), mock.patch.dict(os.environ,{'CHATMAKER_DOWNLOAD_POLICY':'domestic-only','CHATMAKER_RUNTIME_ROOT':str(home/'runtime')}), mock.patch.object(chain,'download_locked'), mock.patch.object(chain,'run',return_value={'returncode':1}) as run:
@@ -194,7 +194,7 @@ class WaveshareTests(unittest.TestCase):
 
     def test_core_damage_is_not_blessed_by_making_a_new_receipt(self):
         with tempfile.TemporaryDirectory() as tmp:
-            home=Path(tmp); revision_root=home/'revisions/v1'; revision_root.mkdir(parents=True)
+            home=Path(tmp).resolve(); revision_root=home/'revisions/v1'; revision_root.mkdir(parents=True)
             core_file=home/'data/boards.txt'; core_file.parent.mkdir(); core_file.write_text('verified')
             receipt={'tools':{'data/boards.txt':chain.sha256(core_file)}}
             (revision_root/'receipt.json').write_text(json.dumps(receipt))
