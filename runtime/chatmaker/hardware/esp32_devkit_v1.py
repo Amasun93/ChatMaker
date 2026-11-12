@@ -284,6 +284,13 @@ def probe_candidate(
         raw_inventory = json.loads(core_execution.get("stdout", ""))
     except (json.JSONDecodeError, TypeError):
         raw_inventory = None
+    # CLI 1.x wraps installed platforms and renamed the installed version.
+    # Never substitute latest_version: an indexed release is not installed.
+    if isinstance(raw_inventory, dict) and isinstance(raw_inventory.get("platforms"), list):
+        raw_inventory = [
+            {**item, "installed": item.get("installed_version", "")}
+            for item in raw_inventory["platforms"] if isinstance(item, dict)
+        ]
     inventory_valid = (
         core_execution.get("returncode") == 0 and isinstance(raw_inventory, list)
     )

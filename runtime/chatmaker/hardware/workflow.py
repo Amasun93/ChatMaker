@@ -38,6 +38,11 @@ def run_project(request: dict, *, adapters: Mapping[str, Any] | None = None) -> 
     if adapter is None:
         return {**result, 'state': 'unsupported-board', 'supported_boards': sorted(MODULES),
                 'teacher_message': '这块板尚未接入此独立运行入口，请使用它自己的已验证路线。'}
+    action = request.get('action', 'run')
+    if action != 'run':
+        if action not in {'doctor', 'prepare-environment', 'compile', 'compile-upload', 'ports'}:
+            return {**result, 'state': 'unsupported-action', 'error': 'unsupported_action'}
+        return {**adapter.execute_request(request), 'board_id': board_id}
     if not request.get('code') and not request.get('sketch'):
         return {**result, 'state': 'source-needed', 'teacher_message': '先保存这个作品的完整程序。'}
     doctor = adapter.execute_request({**request, 'action': 'doctor'})
@@ -79,18 +84,8 @@ def run_project(request: dict, *, adapters: Mapping[str, Any] | None = None) -> 
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--request-json', required=True)
-    args = parser.parse_args(argv)
-    try:
-        request = json.loads(sys.stdin.read() if args.request_json == '-' else args.request_json)
-        if not isinstance(request, dict):
-            raise ValueError('request_must_be_object')
-        result = run_project(request)
-    except Exception as exc:
-        result = {'success': False, 'state': 'request-failed', 'error': str(exc)}
-    print(json.dumps(result, ensure_ascii=False))
-    return 0 if result.get('success') else 1
+    from .classroom_cli import main_entry
+    return main_entry(run_project, argv)
 
 
 if __name__ == '__main__':
