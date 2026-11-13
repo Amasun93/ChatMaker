@@ -25,6 +25,8 @@ def main_entry(handler, argv=None, *, board_id=None) -> int:
     inputs.add_argument('--request-file', help='UTF-8 JSON file (Windows BOM supported)')
     for name in ('action', 'board-id', 'revision', 'sketch', 'port', 'expect-revision', 'expect-source-root'):
         parser.add_argument('--' + name)
+    parser.add_argument('--bootloader', choices=('old', 'new'), help='Classic Nano bootloader')
+    parser.add_argument('--usb-mode', choices=('uart', 'native'), help='USB connector on ESP32 S3/C6 DevKit')
     parser.add_argument('--board-confirmed', action='store_true', default=None)
     parser.add_argument('--library', action='append', dest='libraries')
     parser.add_argument('--dry-run', action='store_true', default=None)
@@ -49,7 +51,8 @@ def main_entry(handler, argv=None, *, board_id=None) -> int:
                 request = json.loads(sys.stdin.read().lstrip('\ufeff') if args.request_json == '-' else args.request_json)
             if not isinstance(request, dict):
                 raise ValueError('request_must_be_object')
-            for name in ('action', 'board_id', 'revision', 'sketch', 'port', 'board_confirmed', 'dry_run', 'libraries'):
+            for name in ('action', 'board_id', 'revision', 'sketch', 'port', 'board_confirmed',
+                         'dry_run', 'libraries', 'bootloader', 'usb_mode'):
                 value = getattr(args, name)
                 if value is not None:
                     request[name] = value

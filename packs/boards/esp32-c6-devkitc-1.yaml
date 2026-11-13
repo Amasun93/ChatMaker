@@ -1,0 +1,29 @@
+schema_version: "1.0"
+kind: board
+id: esp32-c6-devkitc-1
+name: Espressif ESP32-C6-DevKitC-1 (8 MB)
+family: esp32-c6
+mcu: ESP32-C6
+logic_voltage: 3.3
+chatmaker:
+  runtime_cli: chatmaker-hardware
+  runtime_module: chatmaker.hardware.workflow
+  identification: manual
+mechanics: {status: research-required, profile_path: null, fit_verified: false, notes: Physical fit requires board measurements.}
+sources:
+  - title: Espressif ESP32-C6-DevKitC-1 user guide
+    url: https://docs.espressif.com/projects/esp-dev-kits/en/latest/esp32c6/esp32-c6-devkitc-1/user_guide.html
+verification:
+  source_reviewed: {status: verified, checked_at: "2026-11-13", evidence: Official guide specifies the 8 MB WROOM-1 or WROOM-1U module and two USB routes.}
+  code_compiled: &unverified {status: unverified, checked_at: null, evidence: null}
+  firmware_uploaded: *unverified
+  physical_effect_verified: *unverified
+pins:
+  - {id: GPIO8, capabilities: [digital, output, boot-sensitive, addressable-rgb]}
+  - {id: GPIO9, capabilities: [digital, boot-sensitive]}
+  - {id: GND, capabilities: [ground, shared]}
+constraints:
+  - Confirm the 8 MB DevKitC-1 module and the USB connector in use before upload.
+  - The onboard RGB LED is addressable. GPIO logic is 3.3 V.
+toolchains:
+  - {id: arduino-cli-esp32, version: "3.3.11", fqbn: "esp32:esp32:esp32c6:FlashSize=8M,PartitionScheme=default_8MB", status: managed}

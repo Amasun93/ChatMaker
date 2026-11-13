@@ -1,0 +1,31 @@
+schema_version: "1.0"
+kind: board
+id: arduino-mega-2560
+name: Arduino Mega 2560 Rev3
+family: avr
+mcu: ATmega2560
+logic_voltage: 5.0
+chatmaker:
+  runtime_cli: chatmaker-hardware
+  runtime_module: chatmaker.hardware.workflow
+  identification: manual
+mechanics: {status: research-required, profile_path: null, fit_verified: false, notes: Physical fit requires board measurements.}
+sources:
+  - title: Arduino Mega 2560 Rev3
+    url: https://docs.arduino.cc/hardware/mega-2560/
+  - title: Arduino AVR Boards 1.8.8 board definitions
+    url: https://github.com/arduino/ArduinoCore-avr/blob/1.8.8/boards.txt
+verification:
+  source_reviewed: {status: verified, checked_at: "2026-11-13", evidence: Reviewed the Arduino AVR Boards 1.8.8 Mega 2560 definition.}
+  code_compiled: &unverified {status: unverified, checked_at: null, evidence: null}
+  firmware_uploaded: *unverified
+  physical_effect_verified: *unverified
+pins:
+  - {id: D13, capabilities: [digital, output, builtin-led]}
+  - {id: D20, capabilities: [digital, i2c-sda]}
+  - {id: D21, capabilities: [digital, i2c-scl]}
+  - {id: GND, capabilities: [ground, shared]}
+constraints:
+  - Confirm the ATmega2560 model and select its actual USB port before upload.
+toolchains:
+  - {id: arduino-cli-avr, version: "1.8.8", fqbn: "arduino:avr:mega:cpu=atmega2560", status: managed}

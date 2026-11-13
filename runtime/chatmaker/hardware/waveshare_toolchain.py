@@ -171,7 +171,8 @@ def context(revision: str) -> dict | None:
             return None
         if not config_matches(home):
             return None
-        if managed.context('esp32s3', home=home) is None:
+        environment = managed.context('esp32s3', home=home)
+        if environment is None:
             return None
         prepared_name = receipt.get('prepared_directory', '')
         if not isinstance(prepared_name, str) or not prepared_name.startswith('prepared-') or Path(prepared_name).name != prepared_name:
@@ -183,8 +184,7 @@ def context(revision: str) -> dict | None:
             return None
         if not verify_manifest(prepared/'recovery', receipt.get('recovery_files'), exact=True):
             return None
-        return {'root':str(home),'cli':str(home/'bin'/'arduino-cli.exe'),
-                'config':str(home/'arduino-cli.yaml'),'libraries':str(prepared/'libraries'),
+        return {**environment,'libraries':str(prepared/'libraries'),
                 'factory_recovery':receipt.get('recovery', []),
                 'revision':revision,'backend':'chatmaker-managed-waveshare-s3'}
     except (OSError, ValueError, TypeError):
@@ -194,6 +194,9 @@ def context(revision: str) -> dict | None:
 def prepare_environment(revision: str, *, dry_run=False) -> dict:
     if revision not in VENDORS:
         return {'success':False,'state':'revision-needed','error':'revision_required'}
+    problem = managed.host_problem(dry_run=dry_run)
+    if problem:
+        return problem
     if dry_run:
         plan = managed.preview('esp32s3', home=root())
         vendor = VENDORS[revision]
@@ -205,8 +208,6 @@ def prepare_environment(revision: str, *, dry_run=False) -> dict:
         if not cached:
             plan['remaining_download_bytes'] += vendor['size']
         return plan
-    if platform.system() != 'Windows' or platform.machine().lower() not in {'amd64','x86_64'}:
-        return {'success':False,'error':'windows_x64_required'}
     ready = context(revision)
     if ready:
         return {'success':True,'ready_for_compile':True,'installation_performed':False,'environment':ready}

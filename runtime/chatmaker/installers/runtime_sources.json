@@ -97,6 +97,46 @@
           "url": "https://github.com/arduino/arduino-cli/releases/download/v1.3.1/arduino-cli_1.3.1_Windows_64bit.zip"
         }
       ]
+    },
+    "macos-arm64": {
+      "version": "1.3.1",
+      "filename": "arduino-cli_1.3.1_macOS_ARM64.tar.gz",
+      "size": 16682136,
+      "sha256": "723f8ddaf4875e87a20380c88c15ff9d55916c3c80cb432f1f980ea32cec2341",
+      "destination": "bin",
+      "strip_root": false,
+      "sources": [
+        {
+          "id": "arduino-downloads",
+          "kind": "official_fallback",
+          "url": "https://downloads.arduino.cc/arduino-cli/arduino-cli_1.3.1_macOS_ARM64.tar.gz"
+        },
+        {
+          "id": "arduino-github",
+          "kind": "official_fallback",
+          "url": "https://github.com/arduino/arduino-cli/releases/download/v1.3.1/arduino-cli_1.3.1_macOS_ARM64.tar.gz"
+        }
+      ]
+    },
+    "macos-x86_64": {
+      "version": "1.3.1",
+      "filename": "arduino-cli_1.3.1_macOS_64bit.tar.gz",
+      "size": 18835194,
+      "sha256": "a0ca73f7e599d33a532fb2b1f8af9260541d990a684988bf8208abb42be83ced",
+      "destination": "bin",
+      "strip_root": false,
+      "sources": [
+        {
+          "id": "arduino-downloads",
+          "kind": "official_fallback",
+          "url": "https://downloads.arduino.cc/arduino-cli/arduino-cli_1.3.1_macOS_64bit.tar.gz"
+        },
+        {
+          "id": "arduino-github",
+          "kind": "official_fallback",
+          "url": "https://github.com/arduino/arduino-cli/releases/download/v1.3.1/arduino-cli_1.3.1_macOS_64bit.tar.gz"
+        }
+      ]
     }
   },
   "arduino_esp32": {
@@ -666,6 +706,93 @@
             "url": "https://downloads.arduino.cc/libraries/github.com/olikraus/U8g2-2.36.19.zip"
           }
         ]
+      },
+      "esp-rv32": {
+        "packager": "esp32",
+        "name": "esp-rv32",
+        "version": "2601",
+        "destination": "data/packages/esp32/tools/esp-rv32/2601",
+        "strip_root": true,
+        "system": {
+          "host": "x86_64-mingw32",
+          "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-14.2.0_20260121/riscv32-esp-elf-14.2.0_20260121-x86_64-w64-mingw32.zip",
+          "archiveFileName": "riscv32-esp-elf-14.2.0_20260121-x86_64-w64-mingw32.zip",
+          "checksum": "SHA-256:c2734714e59f684b74d1cb278f75b4ae9ec546aa1e55d73786ef039410e4a8f7",
+          "size": "705866147"
+        },
+        "filename": "riscv32-esp-elf-14.2.0_20260121-x86_64-w64-mingw32.zip",
+        "size": 705866147,
+        "sha256": "c2734714e59f684b74d1cb278f75b4ae9ec546aa1e55d73786ef039410e4a8f7",
+        "sources": [
+          {
+            "id": "espressif-cn",
+            "kind": "domestic_official",
+            "url": "https://dl.espressif.cn/github_assets/espressif/crosstool-NG/releases/download/esp-14.2.0_20260121/riscv32-esp-elf-14.2.0_20260121-x86_64-w64-mingw32.zip"
+          },
+          {
+            "id": "official",
+            "kind": "official_fallback",
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-14.2.0_20260121/riscv32-esp-elf-14.2.0_20260121-x86_64-w64-mingw32.zip"
+          }
+        ]
+      },
+      "esp32c3-libs": {
+        "packager": "esp32",
+        "name": "esp32c3-libs",
+        "version": "3.3.11",
+        "destination": "data/packages/esp32/tools/esp32c3-libs/3.3.11",
+        "strip_root": true,
+        "system": {
+          "host": "x86_64-mingw32",
+          "url": "https://github.com/espressif/arduino-esp32/releases/download/3.3.11/esp32c3-libs-3.3.11.zip",
+          "archiveFileName": "esp32c3-libs-3.3.11.zip",
+          "checksum": "SHA-256:887067748467a002d9354dc2a14cfd233528e6d89a0b5178db90ba4224e17e5d",
+          "size": 59969586
+        },
+        "filename": "esp32c3-libs-3.3.11.zip",
+        "size": 59969586,
+        "sha256": "887067748467a002d9354dc2a14cfd233528e6d89a0b5178db90ba4224e17e5d",
+        "sources": [
+          {
+            "id": "espressif-cn",
+            "kind": "domestic_official",
+            "url": "https://dl.espressif.cn/github_assets/espressif/arduino-esp32/releases/download/3.3.11/esp32c3-libs-3.3.11.zip"
+          },
+          {
+            "id": "official",
+            "kind": "official_fallback",
+            "url": "https://github.com/espressif/arduino-esp32/releases/download/3.3.11/esp32c3-libs-3.3.11.zip"
+          }
+        ]
+      },
+      "esp32c6-libs": {
+        "packager": "esp32",
+        "name": "esp32c6-libs",
+        "version": "3.3.11",
+        "destination": "data/packages/esp32/tools/esp32c6-libs/3.3.11",
+        "strip_root": true,
+        "system": {
+          "host": "x86_64-mingw32",
+          "url": "https://github.com/espressif/arduino-esp32/releases/download/3.3.11/esp32c6-libs-3.3.11.zip",
+          "archiveFileName": "esp32c6-libs-3.3.11.zip",
+          "checksum": "SHA-256:dd7374dabadeced8259ea67c331faa7588afbbed92c2727e7b8c5201f6762ee0",
+          "size": 68692102
+        },
+        "filename": "esp32c6-libs-3.3.11.zip",
+        "size": 68692102,
+        "sha256": "dd7374dabadeced8259ea67c331faa7588afbbed92c2727e7b8c5201f6762ee0",
+        "sources": [
+          {
+            "id": "espressif-cn",
+            "kind": "domestic_official",
+            "url": "https://dl.espressif.cn/github_assets/espressif/arduino-esp32/releases/download/3.3.11/esp32c6-libs-3.3.11.zip"
+          },
+          {
+            "id": "official",
+            "kind": "official_fallback",
+            "url": "https://github.com/espressif/arduino-esp32/releases/download/3.3.11/esp32c6-libs-3.3.11.zip"
+          }
+        ]
       }
     },
     "metadata_sources": [
@@ -680,6 +807,12 @@
       ],
       "esp32s3": [
         "esp32s3-libs"
+      ],
+      "esp32c3": [
+        "esp32c3-libs"
+      ],
+      "esp32c6": [
+        "esp32c6-libs"
       ]
     },
     "common": [
@@ -695,5 +828,463 @@
     "optional_libraries": [
       "U8g2"
     ]
+  },
+  "arduino_avr": {
+    "core_version": "1.8.8",
+    "platform": {
+      "name": "Arduino AVR Boards",
+      "architecture": "avr",
+      "version": "1.8.8",
+      "category": "Arduino",
+      "url": "https://downloads.arduino.cc/cores/staging/avr-1.8.8.tar.bz2",
+      "archiveFileName": "avr-1.8.8.tar.bz2",
+      "checksum": "SHA-256:a234c2a43dcd01ce54be665806f183b8e6ec4e966d2e3e0c3358b63023d6390c",
+      "size": "7162150",
+      "help": {
+        "online": "https://www.arduino.cc/en/Reference/HomePage"
+      },
+      "boards": [
+        {
+          "name": "Arduino Yún"
+        },
+        {
+          "name": "Arduino UNO"
+        },
+        {
+          "name": "Arduino UNO Mini"
+        },
+        {
+          "name": "Arduino UNO WiFi"
+        },
+        {
+          "name": "Arduino Diecimila"
+        },
+        {
+          "name": "Arduino Nano"
+        },
+        {
+          "name": "Arduino Mega"
+        },
+        {
+          "name": "Arduino Mega ADK"
+        },
+        {
+          "name": "Arduino Leonardo"
+        },
+        {
+          "name": "Arduino Leonardo Ethernet"
+        },
+        {
+          "name": "Arduino Micro"
+        },
+        {
+          "name": "Arduino Esplora"
+        },
+        {
+          "name": "Arduino Mini"
+        },
+        {
+          "name": "Arduino Ethernet"
+        },
+        {
+          "name": "Arduino Fio"
+        },
+        {
+          "name": "Arduino BT"
+        },
+        {
+          "name": "Arduino LilyPad USB"
+        },
+        {
+          "name": "Arduino LilyPad"
+        },
+        {
+          "name": "Arduino Pro"
+        },
+        {
+          "name": "Arduino ATMegaNG"
+        },
+        {
+          "name": "Arduino Robot Control"
+        },
+        {
+          "name": "Arduino Robot Motor"
+        },
+        {
+          "name": "Arduino Gemma"
+        },
+        {
+          "name": "Adafruit Circuit Playground"
+        },
+        {
+          "name": "Arduino Yún Mini"
+        },
+        {
+          "name": "Arduino Industrial 101"
+        },
+        {
+          "name": "Linino One"
+        }
+      ],
+      "toolsDependencies": [
+        {
+          "packager": "arduino",
+          "name": "arduinoOTA",
+          "version": "1.3.0"
+        },
+        {
+          "packager": "arduino",
+          "name": "avr-gcc",
+          "version": "7.3.0-atmel3.6.1-arduino7"
+        },
+        {
+          "packager": "arduino",
+          "name": "avrdude",
+          "version": "8.0.0-arduino1"
+        }
+      ]
+    },
+    "common": [
+      "core",
+      "avr-gcc",
+      "avrdude",
+      "ctags",
+      "serial-discovery",
+      "mdns-discovery",
+      "serial-monitor",
+      "dfu-discovery"
+    ],
+    "profiles": {
+      "avr": []
+    },
+    "optional_libraries": [
+      "U8g2"
+    ],
+    "artifacts": {
+      "core": {
+        "packager": "arduino",
+        "name": "avr",
+        "version": "1.8.8",
+        "destination": "data/packages/arduino/hardware/avr/1.8.8",
+        "strip_root": true,
+        "filename": "avr-1.8.8.tar.bz2",
+        "size": 7162150,
+        "sha256": "a234c2a43dcd01ce54be665806f183b8e6ec4e966d2e3e0c3358b63023d6390c",
+        "sources": [
+          {
+            "id": "official",
+            "kind": "official_fallback",
+            "url": "https://downloads.arduino.cc/cores/staging/avr-1.8.8.tar.bz2"
+          }
+        ]
+      },
+      "avr-gcc": {
+        "packager": "arduino",
+        "name": "avr-gcc",
+        "version": "7.3.0-atmel3.6.1-arduino7",
+        "destination": "data/packages/arduino/tools/avr-gcc/7.3.0-atmel3.6.1-arduino7",
+        "strip_root": true,
+        "system": {
+          "host": "i686-mingw32",
+          "url": "https://downloads.arduino.cc/tools/avr-gcc-7.3.0-atmel3.6.1-arduino7-i686-w64-mingw32.zip",
+          "archiveFileName": "avr-gcc-7.3.0-atmel3.6.1-arduino7-i686-w64-mingw32.zip",
+          "checksum": "SHA-256:a54f64755fff4cb792a1495e5defdd789902a2a3503982e81b898299cf39800e",
+          "size": "52519412"
+        },
+        "filename": "avr-gcc-7.3.0-atmel3.6.1-arduino7-i686-w64-mingw32.zip",
+        "size": 52519412,
+        "sha256": "a54f64755fff4cb792a1495e5defdd789902a2a3503982e81b898299cf39800e",
+        "sources": [
+          {
+            "id": "official",
+            "kind": "official_fallback",
+            "url": "https://downloads.arduino.cc/tools/avr-gcc-7.3.0-atmel3.6.1-arduino7-i686-w64-mingw32.zip"
+          }
+        ]
+      },
+      "avrdude": {
+        "packager": "arduino",
+        "name": "avrdude",
+        "version": "8.0.0-arduino1",
+        "destination": "data/packages/arduino/tools/avrdude/8.0.0-arduino1",
+        "strip_root": true,
+        "system": {
+          "host": "i686-mingw32",
+          "url": "https://downloads.arduino.cc/tools/avrdude_8.0-arduino.1_Windows_32bit.tar.gz",
+          "archiveFileName": "avrdude_8.0-arduino.1_Windows_32bit.tar.gz",
+          "checksum": "SHA-256:833aa1a66a8e70cd597fcfdbd7e559a91a00eca1d7aa3be2ce9bcadf7ccb987c",
+          "size": "1890359"
+        },
+        "filename": "avrdude_8.0-arduino.1_Windows_32bit.tar.gz",
+        "size": 1890359,
+        "sha256": "833aa1a66a8e70cd597fcfdbd7e559a91a00eca1d7aa3be2ce9bcadf7ccb987c",
+        "sources": [
+          {
+            "id": "official",
+            "kind": "official_fallback",
+            "url": "https://downloads.arduino.cc/tools/avrdude_8.0-arduino.1_Windows_32bit.tar.gz"
+          }
+        ]
+      }
+    }
+  },
+  "arduino_macos": {
+    "common": {
+      "ctags": {
+        "host": "x86_64-apple-darwin",
+        "filename": "ctags-5.8-arduino11-pm-x86_64-apple-darwin.zip",
+        "size": 118296,
+        "sha256": "bf74807260ddf0e1fc94d67e9cd8a41b7c0a2f0bee03e254e6975139b37ef250",
+        "sources": [
+          {
+            "id": "official",
+            "kind": "official_fallback",
+            "url": "https://downloads.arduino.cc/tools/ctags-5.8-arduino11-pm-x86_64-apple-darwin.zip"
+          }
+        ]
+      },
+      "avr-gcc": {
+        "host": "x86_64-apple-darwin14",
+        "filename": "avr-gcc-7.3.0-atmel3.6.1-arduino7-x86_64-apple-darwin14.tar.bz2",
+        "size": 36684546,
+        "sha256": "f6ed2346953fcf88df223469088633eb86de997fa27ece117fd1ef170d69c1f8",
+        "sources": [
+          {
+            "id": "official",
+            "kind": "official_fallback",
+            "url": "https://downloads.arduino.cc/tools/avr-gcc-7.3.0-atmel3.6.1-arduino7-x86_64-apple-darwin14.tar.bz2"
+          }
+        ]
+      },
+      "avrdude": {
+        "host": "x86_64-apple-darwin12",
+        "filename": "avrdude_8.0-arduino.1_macOS_64bit.tar.gz",
+        "size": 1173108,
+        "sha256": "8a36cf441a3ce21622eb30b40f0b71d27864b30ea851cb795ae654ee10e2c132",
+        "sources": [
+          {
+            "id": "official",
+            "kind": "official_fallback",
+            "url": "https://downloads.arduino.cc/tools/avrdude_8.0-arduino.1_macOS_64bit.tar.gz"
+          }
+        ]
+      }
+    },
+    "macos-arm64": {
+      "esp-x32": {
+        "host": "arm64-apple-darwin",
+        "filename": "xtensa-esp-elf-14.2.0_20260121-aarch64-apple-darwin.tar.gz",
+        "size": 326793686,
+        "sha256": "763755178c15299f8d6f3c88b121f9f43d06be499f11be4a5de51bf3e75b3022",
+        "sources": [
+          {
+            "id": "espressif-cn",
+            "kind": "domestic_official",
+            "url": "https://dl.espressif.cn/github_assets/espressif/crosstool-NG/releases/download/esp-14.2.0_20260121/xtensa-esp-elf-14.2.0_20260121-aarch64-apple-darwin.tar.gz"
+          },
+          {
+            "id": "official",
+            "kind": "official_fallback",
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-14.2.0_20260121/xtensa-esp-elf-14.2.0_20260121-aarch64-apple-darwin.tar.gz"
+          }
+        ]
+      },
+      "esp-rv32": {
+        "host": "arm64-apple-darwin",
+        "filename": "riscv32-esp-elf-14.2.0_20260121-aarch64-apple-darwin.tar.gz",
+        "size": 590046059,
+        "sha256": "cb32336452a4c8996b38814761a945fe7856fada1f4d57950cbabe9b0ecbfc52",
+        "sources": [
+          {
+            "id": "espressif-cn",
+            "kind": "domestic_official",
+            "url": "https://dl.espressif.cn/github_assets/espressif/crosstool-NG/releases/download/esp-14.2.0_20260121/riscv32-esp-elf-14.2.0_20260121-aarch64-apple-darwin.tar.gz"
+          },
+          {
+            "id": "official",
+            "kind": "official_fallback",
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-14.2.0_20260121/riscv32-esp-elf-14.2.0_20260121-aarch64-apple-darwin.tar.gz"
+          }
+        ]
+      },
+      "esptool_py": {
+        "host": "arm64-apple-darwin",
+        "filename": "esptool-v5.3.1-macos-arm64.tar.gz",
+        "size": 61218014,
+        "sha256": "f63f7203d88cfe4c17aea34d6cf82769458ce204e49a05816c6384c2d299e6ca",
+        "sources": [
+          {
+            "id": "espressif-cn",
+            "kind": "domestic_official",
+            "url": "https://dl.espressif.cn/github_assets/espressif/esptool/releases/download/v5.3.1/esptool-v5.3.1-macos-arm64.tar.gz"
+          },
+          {
+            "id": "official",
+            "kind": "official_fallback",
+            "url": "https://github.com/espressif/esptool/releases/download/v5.3.1/esptool-v5.3.1-macos-arm64.tar.gz"
+          }
+        ]
+      },
+      "serial-discovery": {
+        "host": "arm64-apple-darwin",
+        "filename": "serial-discovery_v1.5.2_macOS_ARM64.tar.gz",
+        "size": 2086245,
+        "sha256": "ab85fcd0f14207d97e9095831ce2ddc45718952b125a617695dd190a6a94272f",
+        "sources": [
+          {
+            "id": "official",
+            "kind": "official_fallback",
+            "url": "https://github.com/arduino/serial-discovery/releases/download/v1.5.2/serial-discovery_v1.5.2_macOS_ARM64.tar.gz"
+          }
+        ]
+      },
+      "mdns-discovery": {
+        "host": "arm64-apple-darwin",
+        "filename": "mdns-discovery_v1.1.0_macOS_ARM64.tar.gz",
+        "size": 3088630,
+        "sha256": "f6a221b01024f15de3370a6f3a7efe75f3ac745aef4d8cbb623ddbd57b13526c",
+        "sources": [
+          {
+            "id": "official",
+            "kind": "official_fallback",
+            "url": "https://github.com/arduino/mdns-discovery/releases/download/v1.1.0/mdns-discovery_v1.1.0_macOS_ARM64.tar.gz"
+          }
+        ]
+      },
+      "serial-monitor": {
+        "host": "arm64-apple-darwin",
+        "filename": "serial-monitor_v0.15.0_macOS_ARM64.tar.gz",
+        "size": 2276641,
+        "sha256": "2b9c5e93f36b07d3a89f7f9a62fa5fe95242042733f39f72eb29b46eea2a4a53",
+        "sources": [
+          {
+            "id": "official",
+            "kind": "official_fallback",
+            "url": "https://github.com/arduino/serial-monitor/releases/download/v0.15.0/serial-monitor_v0.15.0_macOS_ARM64.tar.gz"
+          }
+        ]
+      },
+      "dfu-discovery": {
+        "host": "arm64-apple-darwin",
+        "filename": "dfu-discovery_v0.1.2_macOS_ARM64.tar.gz",
+        "size": 1816821,
+        "sha256": "50e04bf5d5aa2257a8029f9f4b52893e90272cd747c1059277708cb5eb0e5524",
+        "sources": [
+          {
+            "id": "official",
+            "kind": "official_fallback",
+            "url": "https://github.com/arduino/dfu-discovery/releases/download/v0.1.2/dfu-discovery_v0.1.2_macOS_ARM64.tar.gz"
+          }
+        ]
+      }
+    },
+    "macos-x86_64": {
+      "esp-x32": {
+        "host": "x86_64-apple-darwin",
+        "filename": "xtensa-esp-elf-14.2.0_20260121-x86_64-apple-darwin.tar.gz",
+        "size": 334552380,
+        "sha256": "fc72efcb10f7b1ada2d1437d70968694ad06556e597a199339af1df0413aea7d",
+        "sources": [
+          {
+            "id": "espressif-cn",
+            "kind": "domestic_official",
+            "url": "https://dl.espressif.cn/github_assets/espressif/crosstool-NG/releases/download/esp-14.2.0_20260121/xtensa-esp-elf-14.2.0_20260121-x86_64-apple-darwin.tar.gz"
+          },
+          {
+            "id": "official",
+            "kind": "official_fallback",
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-14.2.0_20260121/xtensa-esp-elf-14.2.0_20260121-x86_64-apple-darwin.tar.gz"
+          }
+        ]
+      },
+      "esp-rv32": {
+        "host": "x86_64-apple-darwin",
+        "filename": "riscv32-esp-elf-14.2.0_20260121-x86_64-apple-darwin.tar.gz",
+        "size": 598859143,
+        "sha256": "bf649fd1c986baeb08865a4663637676b9f0159c034c54d0c61961f5c2847ba6",
+        "sources": [
+          {
+            "id": "espressif-cn",
+            "kind": "domestic_official",
+            "url": "https://dl.espressif.cn/github_assets/espressif/crosstool-NG/releases/download/esp-14.2.0_20260121/riscv32-esp-elf-14.2.0_20260121-x86_64-apple-darwin.tar.gz"
+          },
+          {
+            "id": "official",
+            "kind": "official_fallback",
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-14.2.0_20260121/riscv32-esp-elf-14.2.0_20260121-x86_64-apple-darwin.tar.gz"
+          }
+        ]
+      },
+      "esptool_py": {
+        "host": "x86_64-apple-darwin",
+        "filename": "esptool-v5.3.1-macos-amd64.tar.gz",
+        "size": 64293599,
+        "sha256": "f8ec4fcaf7d79845a0e8ad60b24be9f584d8fe03f341b5ad4ec0df0ec855e670",
+        "sources": [
+          {
+            "id": "espressif-cn",
+            "kind": "domestic_official",
+            "url": "https://dl.espressif.cn/github_assets/espressif/esptool/releases/download/v5.3.1/esptool-v5.3.1-macos-amd64.tar.gz"
+          },
+          {
+            "id": "official",
+            "kind": "official_fallback",
+            "url": "https://github.com/espressif/esptool/releases/download/v5.3.1/esptool-v5.3.1-macos-amd64.tar.gz"
+          }
+        ]
+      },
+      "serial-discovery": {
+        "host": "x86_64-apple-darwin",
+        "filename": "serial-discovery_v1.5.2_macOS_64bit.tar.gz",
+        "size": 2328318,
+        "sha256": "6950b82bdaf27ef43f65fc6a5039693807f49a5777deecfd434b66d8d57bef97",
+        "sources": [
+          {
+            "id": "official",
+            "kind": "official_fallback",
+            "url": "https://github.com/arduino/serial-discovery/releases/download/v1.5.2/serial-discovery_v1.5.2_macOS_64bit.tar.gz"
+          }
+        ]
+      },
+      "mdns-discovery": {
+        "host": "x86_64-apple-darwin",
+        "filename": "mdns-discovery_v1.1.0_macOS_64bit.tar.gz",
+        "size": 3327624,
+        "sha256": "6815f6d1fdee1472d2a5cbc52692ee899fcc6a5b340fb07005de390c9578ad20",
+        "sources": [
+          {
+            "id": "official",
+            "kind": "official_fallback",
+            "url": "https://github.com/arduino/mdns-discovery/releases/download/v1.1.0/mdns-discovery_v1.1.0_macOS_64bit.tar.gz"
+          }
+        ]
+      },
+      "serial-monitor": {
+        "host": "x86_64-apple-darwin",
+        "filename": "serial-monitor_v0.15.0_macOS_64bit.tar.gz",
+        "size": 2381498,
+        "sha256": "862d642d5a7de4528b588b2aff7f958477e9a39161a80d30f7241356838f988c",
+        "sources": [
+          {
+            "id": "official",
+            "kind": "official_fallback",
+            "url": "https://github.com/arduino/serial-monitor/releases/download/v0.15.0/serial-monitor_v0.15.0_macOS_64bit.tar.gz"
+          }
+        ]
+      },
+      "dfu-discovery": {
+        "host": "x86_64-apple-darwin",
+        "filename": "dfu-discovery_v0.1.2_macOS_64bit.tar.gz",
+        "size": 1895874,
+        "sha256": "7f22774d925a014d51b6e997e25dc78a721db91b67225263fbcb3de265209f25",
+        "sources": [
+          {
+            "id": "official",
+            "kind": "official_fallback",
+            "url": "https://github.com/arduino/dfu-discovery/releases/download/v0.1.2/dfu-discovery_v0.1.2_macOS_64bit.tar.gz"
+          }
+        ]
+      }
+    }
   }
 }

@@ -215,21 +215,30 @@ def scan_ports() -> list[dict[str, Any]]:
             for value in (port.device, port.description, port.hwid, port.manufacturer)
         ).casefold()
         bluetooth = "bluetooth" in combined or "bth" in combined
-        usb_uart = any(
+        usb_uart = getattr(port, 'vid', None) in {0x10C4, 0x1A86, 0x0403, 0x067B} or any(
             marker in combined
             for marker in ("cp210", "ch340", "ch341", "ch910", "ftdi", "usb serial")
         )
         ports.append(
             {
-                "address": str(port.device).upper(),
+                "address": str(port.device) if str(port.device).startswith('/dev/') else str(port.device).upper(),
                 "label": str(port.description or port.device),
                 "pnp_device_id": str(port.hwid or ""),
+                "vid": getattr(port, 'vid', None),
+                "pid": getattr(port, 'pid', None),
+                "serial_number": getattr(port, 'serial_number', None),
+                "location": getattr(port, 'location', None),
                 "is_bluetooth": bluetooth,
                 "usb_uart_likely": usb_uart,
                 "eligible_for_upload": bool(port.device) and not bluetooth,
             }
         )
     return sorted(ports, key=lambda item: item["address"])
+
+
+def port_matches(address: str, requested: str) -> bool:
+    requested = str(requested).strip()
+    return address == requested if address.startswith('/dev/') else address.casefold() == requested.casefold()
 
 
 def select_exact_core(inventory: list[dict[str, Any]]) -> Optional[dict[str, Any]]:

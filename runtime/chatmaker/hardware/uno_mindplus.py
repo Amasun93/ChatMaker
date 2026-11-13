@@ -444,6 +444,10 @@ def execute_request(request: dict[str, Any]) -> dict[str, Any]:
 
 
 def main() -> int:
+    if sys.platform == 'darwin':
+        from .classroom_cli import main_entry
+        from .managed_avr import execute_request as execute_managed
+        return main_entry(execute_managed, board_id=BOARD_ID)
     parser = argparse.ArgumentParser(description="Arduino Uno Mind+ bridge")
     parser.add_argument("--request-json", required=True, help="JSON object or '-' for stdin")
     args = parser.parse_args()

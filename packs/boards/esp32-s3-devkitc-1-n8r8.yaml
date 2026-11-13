@@ -1,0 +1,29 @@
+schema_version: "1.0"
+kind: board
+id: esp32-s3-devkitc-1-n8r8
+name: Espressif ESP32-S3-DevKitC-1-N8R8
+family: esp32-s3
+mcu: ESP32-S3
+logic_voltage: 3.3
+chatmaker:
+  runtime_cli: chatmaker-hardware
+  runtime_module: chatmaker.hardware.workflow
+  identification: manual
+mechanics: {status: research-required, profile_path: null, fit_verified: false, notes: Physical fit requires board measurements.}
+sources:
+  - title: Espressif ESP32-S3-DevKitC-1 ordering table
+    url: https://docs.espressif.com/projects/esp-idf/en/v5.0.3/esp32s3/hw-reference/esp32s3/user-guide-devkitc-1-v1.0.html
+verification:
+  source_reviewed: {status: verified, checked_at: "2026-11-13", evidence: Official N8R8 ordering entry specifies 8 MB quad flash and 8 MB octal PSRAM.}
+  code_compiled: &unverified {status: unverified, checked_at: null, evidence: null}
+  firmware_uploaded: *unverified
+  physical_effect_verified: *unverified
+pins:
+  - {id: GPIO19, capabilities: [native-usb, reserved]}
+  - {id: GPIO20, capabilities: [native-usb, reserved]}
+  - {id: GND, capabilities: [ground, shared]}
+constraints:
+  - Confirm the N8R8 module marking and the USB connector in use before upload.
+  - Check the board revision before using the onboard RGB LED. GPIO logic is 3.3 V.
+toolchains:
+  - {id: arduino-cli-esp32, version: "3.3.11", fqbn: "esp32:esp32:esp32s3:FlashSize=8M,PSRAM=opi,PartitionScheme=default_8MB,USBMode=hwcdc", status: managed}

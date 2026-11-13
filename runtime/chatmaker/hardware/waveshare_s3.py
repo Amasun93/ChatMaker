@@ -12,6 +12,7 @@ import time
 from . import waveshare_toolchain as chain
 from .arduino_toolchain import run_cli as run
 from .classroom_cli import dry_run_guard
+from .esp32_devkit_v1 import port_matches
 from chatmaker.installers.downloads import sha256
 from chatmaker.progress import emit
 
@@ -28,7 +29,7 @@ def scan_ports() -> list[dict]:
 def select_port(ports: list[dict], requested: str | None) -> dict | None:
     eligible = [p for p in ports if p.get('vid') == 0x303A]
     if requested:
-        eligible = [p for p in eligible if p['address'].casefold()==str(requested).casefold()]
+        eligible = [p for p in eligible if port_matches(p['address'], requested)]
     return eligible[0] if len(eligible)==1 else None
 
 
@@ -42,11 +43,11 @@ def match_application_port(original: dict, ports: list[dict]) -> str | None:
     return matches[0]['address'] if len(matches)==1 else None
 
 
-def compile_project(request: dict, context: dict, *, fqbn: str = FQBN) -> dict:
+def compile_project(request: dict, context: dict, *, fqbn: str = FQBN, output_suffix: str = 'bin') -> dict:
     build_root = Path(context['root'])/'builds'; build_root.mkdir(parents=True,exist_ok=True)
     build = Path(tempfile.mkdtemp(prefix='project-',dir=build_root))
     if request.get('sketch'):
-        sketch = Path(request['sketch']).resolve()
+        sketch = Path(request['sketch']).expanduser().resolve()
         if sketch.is_file():
             sketch = sketch.parent
         if not sketch.is_dir() or not (sketch/(sketch.name+'.ino')).is_file():
@@ -63,9 +64,9 @@ def compile_project(request: dict, context: dict, *, fqbn: str = FQBN) -> dict:
     command = [context['cli'],'--config-file',context['config'],'compile','--fqbn',fqbn,
                '--libraries',context['libraries'],'--build-path',str(output),str(sketch)]
     execution = run(command,timeout=int(request.get('timeout',900)))
-    binaries = sorted(output.glob('*.bin')) if execution.get('returncode')==0 else []
-    success = bool(binaries) and (output/(sketch.name+'.ino.bin')).is_file()
-    return {'success':success,'execution':execution,'fqbn':fqbn,'revision':request['revision'],
+    binaries = sorted(output.glob(f'*.{output_suffix}')) if execution.get('returncode')==0 else []
+    success = bool(binaries) and (output/f'{sketch.name}.ino.{output_suffix}').is_file()
+    return {'success':success,'execution':execution,'fqbn':fqbn,'revision':request.get('revision'),
             'build_path':str(output),'sketch':str(sketch),'artifacts':[{'path':str(p),'size':p.stat().st_size,'sha256':sha256(p)} for p in binaries]}
 
 

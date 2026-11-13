@@ -1,0 +1,29 @@
+schema_version: "1.0"
+kind: board
+id: esp32-c3-devkitm-1
+name: Espressif ESP32-C3-DevKitM-1
+family: esp32-c3
+mcu: ESP32-C3
+logic_voltage: 3.3
+chatmaker:
+  runtime_cli: chatmaker-hardware
+  runtime_module: chatmaker.hardware.workflow
+  identification: manual
+mechanics: {status: research-required, profile_path: null, fit_verified: false, notes: Physical fit requires board measurements.}
+sources:
+  - title: Espressif ESP32-C3-DevKitM-1 user guide
+    url: https://docs.espressif.com/projects/esp-dev-kits/en/latest/esp32c3/esp32-c3-devkitm-1/user_guide.html
+verification:
+  source_reviewed: {status: verified, checked_at: "2026-11-13", evidence: Official guide specifies the 4 MB MINI-1 or MINI-1U module and USB-UART bridge.}
+  code_compiled: &unverified {status: unverified, checked_at: null, evidence: null}
+  firmware_uploaded: *unverified
+  physical_effect_verified: *unverified
+pins:
+  - {id: GPIO8, capabilities: [digital, output, boot-sensitive, addressable-rgb]}
+  - {id: GPIO9, capabilities: [digital, boot-sensitive]}
+  - {id: GND, capabilities: [ground, shared]}
+constraints:
+  - Confirm the DevKitM-1 carrier and its 4 MB module before upload. Use the on-board USB-UART connection.
+  - The onboard RGB LED is addressable. GPIO logic is 3.3 V.
+toolchains:
+  - {id: arduino-cli-esp32, version: "3.3.11", fqbn: "esp32:esp32:esp32c3:FlashSize=4M", status: managed}

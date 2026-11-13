@@ -179,6 +179,10 @@ def run_project(
 
 
 def main(argv: list[str] | None = None) -> int:
+    if sys.platform == 'darwin':
+        from .classroom_cli import main_entry
+        from .workflow import run_project as run_managed
+        return main_entry(run_managed, argv)
     parser = argparse.ArgumentParser(description="Run one Nano or Uno project flow.")
     parser.add_argument("--request-json", required=True)
     args = parser.parse_args(argv)

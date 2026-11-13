@@ -1,0 +1,95 @@
+name: macOS hardware compile
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  compile:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-15
+            architecture: arm64
+          - runner: macos-15-intel
+            architecture: x86_64
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 40
+    env:
+      CHATMAKER_PYTHON: python3
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+      - name: Set project runtime directory
+        run: printf 'CHATMAKER_RUNTIME_ROOT=%s\n' "$RUNNER_TEMP/ChatMaker Runtime" >> "$GITHUB_ENV"
+      - name: Prepare project runtime and verify source
+        run: |
+          test "$(uname -m)" = '${{ matrix.architecture }}'
+          bash scripts/setup_local_runtime.sh --check-only
+          bash scripts/setup_local_runtime.sh
+          python3 scripts/workbuddy_preflight.py --expected-revision "$GITHUB_SHA"
+      - name: Run hardware regression tests
+        run: |
+          "$CHATMAKER_RUNTIME_ROOT/venv/bin/python3" -m unittest \
+            tests.hardware.test_macos_arduino tests.hardware.test_managed_arduino \
+            tests.hardware.test_managed_boundaries tests.hardware.test_workflow \
+            tests.hardware.test_serial_monitor tests.hardware.test_waveshare_s3 -q
+      - name: Prepare tools and compile the classroom examples
+        run: |
+          set -euo pipefail
+          cli="$CHATMAKER_RUNTIME_ROOT/bin/chatmaker-hardware"
+          work="$RUNNER_TEMP/chatmaker-mac-results"
+          mkdir -p "$work"
+          export CHATMAKER_PYTHON_FOR_TEST="$CHATMAKER_RUNTIME_ROOT/venv/bin/python3"
+
+          prepare() {
+            local key=$1
+            shift
+            "$cli" --action prepare-environment --progress human "$@" > "$work/$key-prepare.json" || {
+              cat "$work/$key-prepare.json"
+              return 1
+            }
+          }
+          compile() {
+            local key=$1
+            shift
+            "$cli" --action compile --progress human "$@" > "$work/$key.json" || {
+              cat "$work/$key.json"
+              return 1
+            }
+            "$CHATMAKER_PYTHON_FOR_TEST" -c 'import json,sys; r=json.load(open(sys.argv[1])); assert r["success"] and r["compile"]["artifacts"]; print(r["compile"]["fqbn"], [(a["size"],a["sha256"]) for a in r["compile"]["artifacts"]])' "$work/$key.json"
+          }
+
+          prepare avr --board-id arduino-uno-r3
+          compile uno --board-id arduino-uno-r3 --sketch examples/chatduino/uno/blink
+          compile nano-new --board-id arduino-nano-classic --bootloader new --sketch examples/chatduino/nano/blink
+          compile nano-old --board-id arduino-nano-classic --bootloader old --sketch examples/chatduino/nano/blink
+          compile mega --board-id arduino-mega-2560 --sketch examples/chatduino/uno/blink
+
+          prepare classic --board-id nova-esp32 --library U8g2
+          compile nova --board-id nova-esp32 --sketch examples/chatduino/nova-oled-hello
+          compile doit --board-id esp32-devkit-v1 --sketch examples/chatduino/esp32/blink-external-led
+
+          for revision in v1 v2; do
+            prepare "waveshare-$revision" --board-id waveshare-esp32-s3-touch-lcd-2-8 --revision "$revision"
+            compile "screen-$revision" --board-id waveshare-esp32-s3-touch-lcd-2-8 --revision "$revision" --sketch examples/chatduino/waveshare-s3/screen-diagnostic
+            compile "timer-$revision" --board-id waveshare-esp32-s3-touch-lcd-2-8 --revision "$revision" --sketch examples/chatduino/waveshare-s3/classroom-timer
+          done
+          compile s3-devkit --board-id esp32-s3-devkitc-1-n8r8 --usb-mode native --sketch examples/chatduino/uno/blink
+
+          prepare c3 --board-id esp32-c3-devkitm-1
+          compile c3 --board-id esp32-c3-devkitm-1 --sketch examples/chatduino/uno/blink
+          prepare c6 --board-id esp32-c6-devkitc-1
+          compile c6 --board-id esp32-c6-devkitc-1 --usb-mode native --sketch examples/chatduino/uno/blink
+
+          "$cli" --action prepare-environment --board-id nova-esp32 --library U8g2 --download-policy domestic-only > "$work/cache-reuse.json"
+          "$CHATMAKER_PYTHON_FOR_TEST" -c 'import json,sys; r=json.load(open(sys.argv[1])); assert r["success"] and not r["installation_performed"]' "$work/cache-reuse.json"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: macos-${{ matrix.architecture }}-compile-results
+          path: ${{ runner.temp }}/chatmaker-mac-results/*.json
+          if-no-files-found: ignore

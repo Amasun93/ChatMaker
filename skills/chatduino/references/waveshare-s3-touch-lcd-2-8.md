@@ -10,6 +10,8 @@ Save the complete program, then use the explicit checkout's `chatmaker-hardware 
 
 The independent board CLI is `chatmaker-waveshare-s3` with `doctor`, `prepare-environment`, `ports`, `compile`, `compile-upload`. Missing Mind+ does not block this route. First preparation installs required tools into the managed runtime; subsequent projects reuse the verified cache. The general local check is not a board-specific readiness decision.
 
+On macOS use the source checkout's launcher prepared by `bash scripts/setup_local_runtime.sh`. The native USB serial address is a `/dev/cu.*` path. See `docs/verification/workbuddy-retest-macos.md` for setup and the USB retest.
+
 Integrity covers the complete S3 compiler, core, SDK and relevant Arduino tools, plus all prepared drivers and recovery images. A ready receipt also requires configuration for the current local root. ESP32 core/compiler/SDK/flasher use identical hash-locked archives from the official domestic endpoint first. CLI and Arduino helper artifacts currently use official fallback addresses. With `CHATMAKER_DOWNLOAD_POLICY=domestic-only`, any missing component without a verified domestic source must stop explicitly; cached verified archives or a configured school HTTPS mirror can satisfy it. Rebuild isolated configuration at the destination root instead of treating a copied installation receipt as portable. See `docs/verification/workbuddy-retest-0.2.0-beta.5.md` for preview, provenance and test commands.
 
 ## Available examples

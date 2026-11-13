@@ -9,11 +9,17 @@ from typing import Any, Mapping
 
 
 MODULES = {
+    'arduino-mega-2560': 'managed_avr',
+    'arduino-nano-classic': 'managed_avr',
+    'arduino-uno-r3': 'managed_avr',
     'idmc-0001-starcore-v4-2-2': 'starcore',
     'mpython-classic-v2x': 'mpython_classic',
     'mpython-v3': 'mpython_v3',
     'esp32-devkit-v1': 'esp32_devkit_v1',
     'nova-esp32': 'managed_esp32',
+    'esp32-s3-devkitc-1-n8r8': 'managed_esp32',
+    'esp32-c3-devkitm-1': 'managed_esp32',
+    'esp32-c6-devkitc-1': 'managed_esp32',
     'waveshare-esp32-s3-touch-lcd-2-8': 'waveshare_s3',
 }
 

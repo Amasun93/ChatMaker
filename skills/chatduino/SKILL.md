@@ -19,7 +19,7 @@ ChatDuino is an internal specialist under the ChatMaker parent entry. Keep this 
 
 ## Workflow
 
-For classroom projects, save complete source and continue through the board's documented local tools. For independently managed Arduino boards use `chatmaker-hardware --request-file project.json` (or `--request-json -` via stdin): include the exact `board_id`, source, confirmed identity and optional expected serial marker. It prepares missing tools once, reuses valid tools, compiles and uploads. Missing Mind+ is not a prerequisite failure for these boards. Do not default to copy-and-upload in another editor or repeatedly ask the student which development environment to use. Keep AVR and micro:bit on their documented routes.
+For classroom projects, save complete source and continue through the board's documented local tools. For independently managed Arduino boards use `chatmaker-hardware --request-file project.json` (or `--request-json -` via stdin) with the exact `board_id`, source, confirmed identity and optional serial marker. On macOS this includes Uno R3, classic Nano, Mega 2560, DOIT/Nova, Espressif C3/C6/S3 DevKits and Waveshare S3 V1/V2. Use standard Arduino libraries in new managed projects. See `docs/verification/workbuddy-retest-macos.md` for the supported profiles. micro:bit uses its documented HEX route.
 
 For domestic classroom networks, prefer the checked-in Chinese vendor sources and the school's HTTPS mirror. If the teacher sets `CHATMAKER_DOWNLOAD_POLICY=domestic-only`, do not try GitHub fallbacks; report the missing domestic artifact and point to the verified offline cache/mirror path. Never replace a pinned archive with an unreviewed proxy.
 
@@ -58,7 +58,9 @@ Read [unihiker-m10.md](references/unihiker-m10.md) before generating or checking
 - The source checker does not prove synchronization, imports on the board, process start, screen output, camera/audio behavior, network access, GPIO behavior, or physical effect.
 - Do not install packages, change Python versions, configure auto-start, or use stored SSH credentials without an explicit user choice.
 
-## Classic Nano with Mind+
+## Classic Nano
+
+On macOS use `chatmaker-hardware --board-id arduino-nano-classic` and the managed Arduino AVR environment. If the confirmed ATmega328P Nano's bootloader is known, pass `--bootloader new` or `--bootloader old`. With no explicit setting, the managed route tries the other setting only after a bootloader synchronization failure. Use the Mind+ guidance below for Windows compatibility projects that rely on those libraries.
 
 For a classic Arduino Nano ATmega328P, read [nano-beginner-guidance.md](references/nano-beginner-guidance.md) and [nano-teacher-output-contract.md](references/nano-teacher-output-contract.md). Use the shared ChatMaker Nano runtime for environment discovery, compilation, port selection, and upload.
 
@@ -73,7 +75,9 @@ Read [nano-board-and-pins.md](references/nano-board-and-pins.md) and [nano-wirin
 - Nano 的 `compile-upload` 动作会先暂停已打开的串口会话，烧录流程结束后再尝试恢复，避免端口占用。
 - 串口没有输出、只出现启动文字或模拟数据，都不能升级为实物效果已验证。
 
-## Arduino Uno Rev3 with Mind+
+## Arduino Uno Rev3
+
+On macOS use `chatmaker-hardware --board-id arduino-uno-r3` with the managed Arduino AVR environment. Arduino Mega 2560 uses `arduino-mega-2560`. Existing Mind+ projects on Windows use their documented libraries and entry points.
 
 For a confirmed Arduino Uno Rev3 / Genuino Uno with ATmega328P, use the shared ChatMaker Uno runtime rather than the Nano runtime.
 

@@ -6,8 +6,13 @@ import json
 import os
 from pathlib import Path, PurePosixPath
 import platform
+import posixpath
+import re
 import shutil
 import stat
+import subprocess
+import sys
+import tarfile
 import tempfile
 import uuid
 import zipfile
@@ -16,22 +21,85 @@ from chatmaker.installers.downloads import download_locked, load_runtime_sources
 from chatmaker.installers.locks import exclusive_file
 from chatmaker.progress import emit
 
+PROFILES = {'avr', 'esp32', 'esp32s3', 'esp32c3', 'esp32c6'}
+
 
 def runtime_root() -> Path:
     return Path(os.environ.get('CHATMAKER_RUNTIME_ROOT', Path(__file__).resolve().parents[3] / '.chatmaker-runtime')).resolve()
 
 
-def bundle() -> dict:
+def platform_tag() -> str | None:
+    system, machine = platform.system(), platform.machine().lower()
+    if system == 'Windows' and machine in {'amd64', 'x86_64'}:
+        return 'windows-amd64'
+    if system == 'Darwin' and machine in {'arm64', 'aarch64'}:
+        return 'macos-arm64'
+    if system == 'Darwin' and machine == 'x86_64':
+        return 'macos-x86_64'
+    return None
+
+
+def rosetta_available() -> bool:
+    try:
+        probe = subprocess.run(['/usr/bin/arch', '-x86_64', '/usr/bin/true'],
+                               capture_output=True, timeout=5)
+        return probe.returncode == 0
+    except (OSError, subprocess.TimeoutExpired):
+        return False
+
+
+def host_problem(*, dry_run=False) -> dict | None:
+    tag = platform_tag()
+    if tag is None:
+        return {'success': False, 'error': 'unsupported_arduino_host',
+                'teacher_message': '此 Arduino 工具链支持 Windows x64、Apple 芯片 Mac 和 Intel Mac。'}
+    if not dry_run and tag == 'macos-arm64' and not rosetta_available():
+        return {'success': False, 'error': 'rosetta_required',
+                'teacher_message': 'Apple 芯片的 Mac 需要 Rosetta 运行 Arduino 的 Intel 版辅助工具。按 Apple 的安装说明准备后重试。'}
+    return None
+
+
+def bundle(profile: str = 'esp32') -> dict:
     registry = load_runtime_sources()
-    result = copy.deepcopy(registry['arduino_esp32'])
-    result['artifacts']['cli'] = registry['arduino_cli']['windows-amd64']
+    tag = platform_tag()
+    if tag is None:
+        raise ValueError('unsupported_arduino_host')
+    esp = registry['arduino_esp32']
+    result = copy.deepcopy(registry['arduino_avr'] if profile == 'avr' else esp)
+    artifacts = result['artifacts']
+    if profile == 'avr':
+        for name in result['common'] + result['optional_libraries']:
+            if name not in artifacts:
+                artifacts[name] = copy.deepcopy(esp['artifacts'][name])
+    elif profile in {'esp32c3', 'esp32c6'}:
+        result['common'] = ['esp-rv32' if name == 'esp-x32' else name for name in result['common']]
+    artifacts['cli'] = registry['arduino_cli'][tag]
+    result['platform_tag'] = tag
+    if tag.startswith('macos-'):
+        macos = registry['arduino_macos']
+        variants = {**macos['common'], **macos[tag]}
+        for name, item in artifacts.items():
+            if name in {'cli', 'core'} or item['packager'] == 'library':
+                continue
+            if name.endswith('-libs') and item['packager'] == 'esp32':
+                item['system']['host'] = tag.removeprefix('macos-') + '-apple-darwin'
+                continue
+            variant = variants[name]
+            item.update({key: variant[key] for key in ('filename', 'size', 'sha256', 'sources')})
+            item['system'] = {'host': variant['host'], 'url': item['sources'][-1]['url'],
+                              'archiveFileName': item['filename'], 'size': str(item['size']),
+                              'checksum': 'SHA-256:' + item['sha256']}
     return result
 
 
 def home_for(profile: str) -> Path:
-    if profile not in {'esp32', 'esp32s3'}:
+    if profile not in PROFILES:
         raise ValueError('unsupported_toolchain_profile')
-    return runtime_root() / 'toolchains' / 'arduino' / profile
+    parent = runtime_root() / 'toolchains' / 'arduino'
+    tag = platform_tag()
+    if tag and tag.startswith('macos-'):
+        parent /= tag
+    return parent / profile
 
 
 def native(path: Path) -> Path:
@@ -46,20 +114,33 @@ def run_cli(command: list[str], timeout: int = 30) -> dict:
     from .esp32_devkit_v1 import _run
     environment = {key: value for key, value in os.environ.items()
                    if not key.upper().startswith('ARDUINO_')}
+    if platform.system() == 'Darwin':
+        # The ESP32 core calls python3 for its partition and upload recipes.
+        environment['PATH'] = os.pathsep.join((str(Path(sys.executable).parent),
+                                               environment.get('PATH') or os.defpath))
     return _run(command, timeout=timeout, env=environment)
 
 
 def safe_relative(name: str) -> Path:
     value = PurePosixPath(name)
-    if not name or value.is_absolute() or '..' in value.parts or '\\' in name or ':' in name:
+    if not value.parts or value.is_absolute() or '..' in value.parts or '\\' in name or ':' in name:
         raise ValueError('unsafe_archive_path')
     return Path(*value.parts)
 
 
 def file_manifest(directory: Path, *, exclude=()) -> dict:
     directory = native(directory)
-    return {p.relative_to(directory).as_posix(): sha256(p) for p in sorted(directory.rglob('*'))
-            if p.is_file() and p.relative_to(directory).as_posix() not in exclude}
+    result = {}
+    for path in sorted(directory.rglob('*')):
+        if path.is_symlink():
+            raise ValueError('component_symlink_not_allowed')
+        relative = path.relative_to(directory).as_posix()
+        if path.is_file() and relative not in exclude:
+            digest = sha256(path)
+            result[relative] = digest if os.name == 'nt' else {
+                'sha256': digest, 'executable': bool(path.stat().st_mode & stat.S_IXUSR),
+            }
+    return result
 
 
 def verify_manifest(directory: Path, manifest: dict, *, exclude=()) -> bool:
@@ -69,7 +150,67 @@ def verify_manifest(directory: Path, manifest: dict, *, exclude=()) -> bool:
         return False
 
 
+def _write_archive_member(source, target: Path, mode: int) -> None:
+    target = native(target)
+    target.parent.mkdir(parents=True, exist_ok=True)
+    with source, target.open('xb') as output:
+        shutil.copyfileobj(source, output, 1024 * 1024)
+    if os.name != 'nt':
+        target.chmod(0o755 if mode & 0o111 else 0o644)
+
+
+def _extract_tar(archive: Path, destination: Path, strip_root: bool) -> None:
+    with tarfile.open(archive, 'r:*') as source:
+        members = {}
+        roots = set()
+        for member in source.getmembers():
+            if member.isdir() and PurePosixPath(member.name) == PurePosixPath('.'):
+                continue
+            relative = safe_relative(member.name)
+            roots.add(relative.parts[0])
+            if member.isdir():
+                continue
+            if not (member.isfile() or member.islnk() or member.issym()):
+                raise ValueError('unsupported_tar_member')
+            path = relative.as_posix()
+            if path in members or (strip_root and len(relative.parts) == 1):
+                raise ValueError('archive_root_mismatch')
+            members[path] = member
+        if not members or (strip_root and len(roots) != 1):
+            raise ValueError('archive_root_mismatch')
+
+        links = {}
+        for path, member in members.items():
+            if member.isfile():
+                continue
+            link = member.linkname
+            if not link or PurePosixPath(link).is_absolute() or '\\' in link or ':' in link:
+                raise ValueError('unsafe_archive_link')
+            if member.issym():
+                link = posixpath.join(posixpath.dirname(path), link)
+            target = safe_relative(posixpath.normpath(link)).as_posix()
+            if target not in members or not members[target].isfile():
+                raise ValueError('unsafe_archive_link')
+            links[path] = target
+
+        def installed_path(path):
+            parts = PurePosixPath(path).parts
+            return destination.joinpath(*(parts[1:] if strip_root else parts))
+
+        for path, member in members.items():
+            if member.isfile():
+                _write_archive_member(source.extractfile(member), installed_path(path), member.mode)
+        # Official compiler archives contain file aliases. Store their bytes in
+        # the component so its manifest covers every input without live links.
+        for path, target in links.items():
+            with native(installed_path(target)).open('rb') as content:
+                _write_archive_member(content, installed_path(path), members[target].mode)
+
+
 def extract_archive(archive: Path, destination: Path, *, strip_root: bool) -> None:
+    if archive.name.endswith(('.tar.gz', '.tar.bz2', '.tar.xz')):
+        _extract_tar(archive, destination, strip_root)
+        return
     with zipfile.ZipFile(archive) as source:
         members = []
         roots = set()
@@ -86,14 +227,11 @@ def extract_archive(archive: Path, destination: Path, *, strip_root: bool) -> No
         if not members or (strip_root and len(roots) != 1):
             raise ValueError('archive_root_mismatch')
         for info, relative in members:
-            target = native(destination / relative)
-            target.parent.mkdir(parents=True, exist_ok=True)
-            with source.open(info) as src, target.open('wb') as dst:
-                shutil.copyfileobj(src, dst, 1024 * 1024)
+            _write_archive_member(source.open(info), destination / relative, info.external_attr >> 16)
 
 
 def selected(profile: str, libraries=()) -> tuple[dict, list[str]]:
-    data = bundle()
+    data = bundle(profile)
     if profile not in data['profiles']:
         raise ValueError('unsupported_toolchain_profile')
     if not isinstance(libraries, (list, tuple)) or any(name not in data['optional_libraries'] for name in libraries):
@@ -114,11 +252,12 @@ def offline_index(data: dict, ids: list[str]) -> dict:
              and data['artifacts'][name]['packager'] != 'library']
     platform_info['toolsDependencies'] = [d for d in platform_info['toolsDependencies']
         if any(t['packager'] == d['packager'] and t['name'] == d['name'] and t['version'] == d['version'] for t in tools)]
+    platform_vendor = data['artifacts']['core']['packager']
     packages = []
-    for vendor in ('esp32', 'builtin'):
+    for vendor in (platform_vendor, 'builtin'):
         packages.append({'name': vendor, 'maintainer': 'Espressif Systems' if vendor == 'esp32' else 'Arduino',
             'websiteURL': 'https://www.espressif.com' if vendor == 'esp32' else 'https://www.arduino.cc',
-            'platforms': [platform_info] if vendor == 'esp32' else [],
+            'platforms': [platform_info] if vendor == platform_vendor else [],
             'tools': [{'name': t['name'], 'version': t['version'], 'systems': [t['system']]}
                       for t in tools if t['packager'] == vendor]})
     return {'packages': packages}
@@ -150,8 +289,10 @@ def search_roots_match(home: Path, data: dict, ids: list[str]) -> bool:
         expected.update((PurePosixPath(destination) / relative).as_posix() for relative in receipt['files'])
     for relative in ('data/packages', 'libraries', 'user/libraries', 'user/hardware'):
         directory = native(home / relative)
+        if directory.is_symlink():
+            return False
         actual = {(PurePosixPath(relative) / path.relative_to(directory).as_posix()).as_posix()
-                  for path in directory.rglob('*') if path.is_file()}
+                  for path in directory.rglob('*') if path.is_file() or path.is_symlink()}
         required = {name for name in expected if name.startswith(relative + '/')}
         if actual != required:
             return False
@@ -175,9 +316,10 @@ def context(profile: str, *, libraries=(), home: Path | None = None) -> dict | N
             return None
         if not search_roots_match(home, data, ids):
             return None
-        return {'root': str(home), 'cli': str(home / 'bin/arduino-cli.exe'),
+        cli_name = 'arduino-cli.exe' if data['platform_tag'] == 'windows-amd64' else 'arduino-cli'
+        return {'root': str(home), 'cli': str(home / 'bin' / cli_name),
                 'config': str(home / 'arduino-cli.yaml'), 'libraries': str(home / 'libraries'),
-                'profile': profile, 'core_version': data['core_version'],
+                'profile': profile, 'platform': data['platform_tag'], 'core_version': data['core_version'],
                 'cli_version': data['artifacts']['cli']['version'], 'backend': 'chatmaker-managed-arduino',
                 'installed_libraries': installed}
     except (OSError, ValueError, KeyError, TypeError):
@@ -203,8 +345,9 @@ def preview(profile: str, *, libraries=(), home: Path | None = None) -> dict:
             if not cached:
                 blocked.append({'component': name, 'error': str(exc)})
         components.append({'id': name, 'version': item['version'], 'archive_bytes': item['size'],
-                           'cached': cached, 'sources': sources})
+                           'filename': item['filename'], 'cached': cached, 'sources': sources})
     return {'success': True, 'action': 'prepare-environment', 'status': 'plan', 'profile': profile,
+            'platform': data['platform_tag'], 'requires_rosetta': data['platform_tag'] == 'macos-arm64',
             'installation_performed': False, 'runtime_root': str(runtime_root()),
             'environment_root': str(home or home_for(profile)), 'components': components,
             'archive_bytes': sum(c['archive_bytes'] for c in components),
@@ -253,11 +396,12 @@ def _install(home: Path, name: str, item: dict, archive: Path) -> None:
 
 
 def prepare(profile: str, *, libraries=(), dry_run=False, home: Path | None = None) -> dict:
+    problem = host_problem(dry_run=dry_run)
+    if problem:
+        return problem
     home = (home or home_for(profile)).resolve()
     if dry_run:
         return preview(profile, libraries=libraries, home=home)
-    if platform.system() != 'Windows' or platform.machine().lower() not in {'amd64', 'x86_64'}:
-        return {'success': False, 'error': 'windows_x64_required'}
     emit('stage', stage='inspect', message='检查所需组件和已有缓存')
     ready = context(profile, libraries=libraries, home=home)
     if ready:

@@ -17,7 +17,9 @@ Local execution is an optional second layer. When the AI workspace can run local
 
 ## Prepare local environments progressively
 
-When a local action needs Python, Node.js, a board toolchain, or another runtime, follow the cheapest trusted route first: reuse a valid project-local environment, then a compatible environment already on the computer, then the pinned ChatMaker environment bundle or reviewed domestic mirrors, and finally the named official fallback. First run `chatmaker-install local` when that command exists. If the local CLI is not installed and the ChatMaker source/Core bundle is available, inspect the fixed plan without changing the computer:
+When a local action needs Python, Node.js, a board toolchain, or another runtime, reuse a valid project-local environment first. On macOS, use `bash scripts/setup_local_runtime.sh` from the ChatMaker source checkout with Python 3.11 or newer. Use `--check-only` for a plan and run the checkout's `.chatmaker-runtime/bin/chatmaker-hardware` after setup. Apple silicon needs Rosetta for Arduino's Intel helper tools. See `docs/verification/workbuddy-retest-macos.md` for supported boards and the retest.
+
+On Windows, reuse a compatible local environment or the pinned ChatMaker environment bundle. First run `chatmaker-install local` when that command exists. If the local CLI is missing and the ChatMaker source/Core bundle is available, inspect the setup plan:
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/setup_local_runtime.ps1 -CheckOnly
@@ -34,7 +36,7 @@ Pure generation still needs no environment. Do not run environment setup merely 
 For a requested hardware project, save the complete source promptly, then continue with the exact board's local tools. For boards with a ChatMaker-managed toolchain, use the explicit checkout's `chatmaker-hardware` entry with `--board-id`, `--action run`, `--sketch` and the board-specific identity fields. Complex requests use `--request-file` (UTF-8 JSON) or `--request-json -` (stdin); do not put inline JSON quotes through Windows .cmd wrappers. The workflow reuses a ready environment, prepares a missing environment once, compiles, uploads when the exact board and target are confirmed, and observes an optional `expected_serial_marker`.
 
 - A user's request to run or download the project includes normal local preparation for that supported board. Explain first-use preparation briefly; reuse it on subsequent edits. Do not make the student choose a toolchain on every turn.
-- Missing Mind+ does not block a managed board. Never install Mind+ as a generic repair. Nano, Uno and Stardust retain their documented compatibility routes; micro:bit retains its HEX route.
+- Use the managed Arduino route for Uno R3, classic Nano, Mega 2560 and the documented ESP32 profiles on macOS. Use the board's documented compatibility route when an existing project depends on Mind+ libraries. Stardust and micro:bit have their own routes.
 - An existing usable Mind+ installation may be a documented compatibility fallback for its exact board, but the managed route is preferred. Do not send the student to another editor by default.
 - Keep the generated source and completed stages if a download, compilation or upload fails. Diagnose that stage with bounded retries; do not start unrelated setup or repeatedly run preparation during code edits.
 - If the board is absent, retain compilation evidence and ask the student to connect it. If several eligible devices remain, ask only which one to use. Report physical effects only when observed.

@@ -45,6 +45,8 @@ python scripts/cleanup_legacy_mcp.py --config "$env:USERPROFILE\.workbuddy\.mcp.
 
 ## 需要编译、烧录、串口或真实渲染时
 
+macOS 的 Arduino AVR 和 ESP32 项目可从源码目录运行 `bash scripts/setup_local_runtime.sh`，再使用 `.chatmaker-runtime/bin/chatmaker-hardware`。先准备 Python 3.11 或更高版本。Apple 芯片的 Mac 还需要 Rosetta。板型、版本预检和烧录步骤见 [WorkBuddy 的 Mac 复测说明](verification/workbuddy-retest-macos.md)。
+
 本地执行统一使用 `chatmaker-*` CLI。源码目录已经提供小白环境脚本；它先复用电脑里可用的 Python 3.11，没有时才把固定的便携 Python 下载到当前项目，不改全局 PATH：
 
 ```powershell
@@ -96,7 +98,7 @@ AI 工作区如果具备本地命令执行能力，就直接调用这些 CLI；�
 - 经典掌控板 V2.x：Windows x64 首选 `chatmaker-mpython` 独立链；已有 Mind+ 1.8.x 或 2.x 仍可作为兼容后端。
 - 掌控板 3.0：已有 `chatmaker-mpython-v3` 独立准备和编译路线；实板证据独立报告。
 - 微雪 ESP32-S3-Touch-LCD-2.8：开发分支新增 `chatmaker-waveshare-s3`，V1/V2 两版示例已编译；不依赖 Mind+，不能混用普通 DOIT ESP32 适配器。
-- Nano、Uno：目前仍复用电脑里已有的 Mind+ 1.8.x 或 2.x。
+- 经典 Nano、Uno R3、Mega 2560 可用 ChatMaker 管理的 Arduino AVR 工具链。Windows 上依赖 Mind+ 库的旧项目可继续使用对应的兼容入口。
 - 两个 Mind+ 版本都可用时优先 2.x；已有一个可用版本时，不要求学生再下载另一个。
 - 其他板卡按各自的验证记录判断，不能直接套用星核板结论。
 

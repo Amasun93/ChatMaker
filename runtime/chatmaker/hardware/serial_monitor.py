@@ -9,6 +9,11 @@ from typing import Any, Callable
 import uuid
 
 from . import nano_mindplus
+from .esp32_devkit_v1 import port_matches, scan_ports
+
+
+def _local_ports() -> list[dict[str, Any]]:
+    return scan_ports() if sys.platform == 'darwin' else nano_mindplus.scan_ports()
 
 
 def _pyserial_factory(**kwargs: Any):
@@ -45,7 +50,7 @@ class SerialManager:
         self,
         *,
         serial_factory: Callable[..., Any] = _pyserial_factory,
-        port_provider: Callable[[], list[dict[str, Any]]] = nano_mindplus.scan_ports,
+        port_provider: Callable[[], list[dict[str, Any]]] = _local_ports,
     ) -> None:
         self.serial_factory = serial_factory
         self.port_provider = port_provider
@@ -59,14 +64,14 @@ class SerialManager:
         normalized = port.strip().upper() if port.strip().upper().startswith("COM") else port.strip()
         ports = self.port_provider()
         selected = next(
-            (item for item in ports if str(item.get("address", "")).casefold() == normalized.casefold()),
+            (item for item in ports if port_matches(str(item.get("address", "")), normalized)),
             None,
         )
         if selected is None:
             return {"success": False, "error": "serial_port_not_currently_enumerated", "port": normalized}
         if selected.get("is_bluetooth"):
             return {"success": False, "error": "bluetooth_port_rejected", "port": normalized}
-        if any(session.port.casefold() == normalized.casefold() for session in self.sessions.values()):
+        if any(port_matches(session.port, normalized) for session in self.sessions.values()):
             return {"success": False, "error": "serial_session_already_open", "port": normalized}
         try:
             handle = self.serial_factory(port=normalized, baudrate=int(baudrate), timeout=float(timeout))

@@ -18,9 +18,11 @@ ChatMaker 是唯一入口；ChatDuino、ChatWeb 和 ChatCAD 是由它在内部�
 
 本轮增加 ESP32 按板准备、国内优先下载与续传，并提供 [WorkBuddy 固定版本复测说明](docs/verification/workbuddy-retest-0.2.0-beta.6.md)。下载进度与编译、实板结果分开记录；复测先核对实际加载的提交号和路径。
 
+Apple 芯片和 Intel Mac 可从源码准备 Uno R3、经典 Nano、Mega 2560 和指定的 ESP32、C3、C6、S3 开发板，使用同一个 `chatmaker-hardware` 入口。安装与接板验证步骤见 [Mac 复测说明](docs/verification/workbuddy-retest-macos.md)。
+
 想快速了解这次变化，请看面向普通用户的 [WHAT'S NEW](WHATS_NEW.md)。
 
-当前开发分支新增微雪 **ESP32-S3-Touch-LCD-2.8 V1/V2** 独立工具链，以及自动准备、编译和下载的连续入口。两版屏幕诊断和触摸计时器均已真实编译；实板烧录、触摸、断电重启与 WorkBuddy 会话验收尚未完成。这部分尚未发布，详见 [验证记录](docs/verification/2026-11-10-waveshare-s3-independent-flow.md)。
+微雪 **ESP32-S3-Touch-LCD-2.8 V1/V2** 可以独立准备工具、编译和下载。两版屏幕诊断和触摸计时器均已真实编译。实板烧录、触摸和断电重启待接板验收。[微雪验证记录](docs/verification/2026-11-10-waveshare-s3-independent-flow.md)
 
 ## 想让 ChatMaker 支持新板卡或模块？
 
