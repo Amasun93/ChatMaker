@@ -64,6 +64,10 @@ def execute_request(request: dict) -> dict:
         return {**base, 'error': 'managed_toolchain_missing', 'next_action': 'prepare-environment'}
     compiled = compile_project({**request, 'revision': None}, ctx, fqbn=fqbn)
     result = {**base, 'success': compiled['success'], 'stage': 'compile', 'compile': compiled}
+    diagnostic = compiled.get('execution', {}).get('stderr', '')
+    if not compiled['success'] and profile in {'esp32c3', 'esp32c6'} and ctx.get('platform') == 'windows-amd64' and any(
+            f'bits/{header}: No such file or directory' in diagnostic for header in ('c++config.h', 'error_constants.h')):
+        result.update(error='compiler_path_too_long', teacher_message='这个 Windows 编译器在较长的目录中找不到头文件。请把 CHATMAKER_RUNTIME_ROOT 指到较短的本地路径，再准备当前板型。')
     if not compiled['success'] or action == 'compile':
         return result
     if request.get('board_confirmed') is not True:

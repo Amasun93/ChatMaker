@@ -99,6 +99,9 @@ def home_for(profile: str) -> Path:
     tag = platform_tag()
     if tag and tag.startswith('macos-'):
         parent /= tag
+    elif tag == 'windows-amd64' and profile in {'esp32c3', 'esp32c6'}:
+        # This GCC build can exceed MAX_PATH with its relative include paths.
+        parent = runtime_root() / 'rv'
     return parent / profile
 
 
@@ -109,16 +112,32 @@ def native(path: Path) -> Path:
     return Path('\\\\?\\UNC\\' + value[2:] if value.startswith('\\\\') else '\\\\?\\' + value)
 
 
-def run_cli(command: list[str], timeout: int = 30) -> dict:
+def run_cli(command: list[str], timeout: int = 30, *, cpp_include: Path | None = None) -> dict:
     """CLI environment overrides take priority over --config-file; exclude them."""
     from .esp32_devkit_v1 import _run
+    compiler_paths = {'CPATH', 'C_INCLUDE_PATH', 'CPLUS_INCLUDE_PATH', 'OBJC_INCLUDE_PATH',
+                      'GCC_EXEC_PREFIX', 'COMPILER_PATH', 'LIBRARY_PATH'}
     environment = {key: value for key, value in os.environ.items()
-                   if not key.upper().startswith('ARDUINO_')}
+                   if not key.upper().startswith('ARDUINO_') and key.upper() not in compiler_paths}
+    if cpp_include is not None:
+        environment['CPLUS_INCLUDE_PATH'] = str(cpp_include)
     if platform.system() == 'Darwin':
         # The ESP32 core calls python3 for its partition and upload recipes.
         environment['PATH'] = os.pathsep.join((str(Path(sys.executable).parent),
                                                environment.get('PATH') or os.defpath))
     return _run(command, timeout=timeout, env=environment)
+
+
+def riscv_cpp_include(context: dict) -> Path | None:
+    if context.get('platform') != 'windows-amd64':
+        return None
+    march = {'esp32c3': 'rv32imc_zicsr_zifencei', 'esp32c6': 'rv32imac_zicsr_zifencei'}.get(context.get('profile'))
+    if march is None:
+        return None
+    # Give GCC the canonical directory. Its built-in search expands several
+    # relative segments and can run out of Win32 path space on these targets.
+    tool = Path(context['root']) / 'data/packages/esp32/tools/esp-rv32/2601'
+    return tool / 'riscv32-esp-elf/include/c++/14.2.0/riscv32-esp-elf' / march / 'ilp32/no-rtti'
 
 
 def safe_relative(name: str) -> Path:

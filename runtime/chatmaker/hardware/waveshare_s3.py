@@ -10,7 +10,7 @@ import tempfile
 import time
 
 from . import waveshare_toolchain as chain
-from .arduino_toolchain import run_cli as run
+from .arduino_toolchain import riscv_cpp_include, run_cli as run
 from .classroom_cli import dry_run_guard
 from .esp32_devkit_v1 import port_matches
 from chatmaker.installers.downloads import sha256
@@ -63,7 +63,9 @@ def compile_project(request: dict, context: dict, *, fqbn: str = FQBN, output_su
     emit('stage', stage='compile', message='正在编译程序')
     command = [context['cli'],'--config-file',context['config'],'compile','--fqbn',fqbn,
                '--libraries',context['libraries'],'--build-path',str(output),str(sketch)]
-    execution = run(command,timeout=int(request.get('timeout',900)))
+    include = riscv_cpp_include(context)
+    options = {'cpp_include': include} if include is not None else {}
+    execution = run(command, timeout=int(request.get('timeout', 900)), **options)
     binaries = sorted(output.glob(f'*.{output_suffix}')) if execution.get('returncode')==0 else []
     success = bool(binaries) and (output/f'{sketch.name}.ino.{output_suffix}').is_file()
     return {'success':success,'execution':execution,'fqbn':fqbn,'revision':request.get('revision'),
