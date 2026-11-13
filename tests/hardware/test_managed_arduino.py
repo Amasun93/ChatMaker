@@ -17,7 +17,10 @@ class PreparationPreviewTests(unittest.TestCase):
             self.assertTrue(result['success'], result)
             self.assertFalse(Path(tmp, 'runtime').exists())
         names = [c['id'] for c in result['components']]
+        versions = {c['id']: c['version'] for c in result['components']}
         self.assertIn('esp32-libs', names)
+        self.assertEqual(versions['core'], '3.3.12')
+        self.assertEqual(versions['esp32-libs'], versions['core'])
         self.assertNotIn('esp32s3-libs', names)
         self.assertNotIn('esp-rv32', names)
         self.assertLess(result['archive_bytes'], 800_000_000)
@@ -29,6 +32,27 @@ class ManagedArchiveTests(unittest.TestCase):
         self.assertIsNotNone(spec, 'shared isolated Arduino preparation is missing')
         from chatmaker.hardware import arduino_toolchain
         self.chain = arduino_toolchain
+
+    def test_component_install_retries_transient_windows_rename_failure(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder).resolve()
+            archive = root / 'component.zip'
+            with zipfile.ZipFile(archive, 'w') as bundle:
+                bundle.writestr('tool.exe', b'fixture')
+            item = {'destination': 'tools/fixture', 'strip_root': False, 'sha256': self.chain.sha256(archive)}
+            original_rename = Path.rename
+            attempts = []
+
+            def rename(source, destination):
+                attempts.append(source)
+                if len(attempts) == 1:
+                    raise PermissionError('transient access denied')
+                return original_rename(source, destination)
+
+            with mock.patch.object(Path, 'rename', rename):
+                self.chain._install(root, 'tool', item, archive)
+            self.assertEqual(len(attempts), 2)
+            self.assertTrue(self.chain._artifact_ready(root, 'tool', item))
 
     def test_zip_cannot_write_outside_destination(self):
         with tempfile.TemporaryDirectory() as tmp:

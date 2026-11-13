@@ -26,4 +26,4 @@ constraints:
   - Confirm the DevKitM-1 carrier and its 4 MB module before upload. Use the on-board USB-UART connection.
   - The onboard RGB LED is addressable. GPIO logic is 3.3 V.
 toolchains:
-  - {id: arduino-cli-esp32, version: "3.3.11", fqbn: "esp32:esp32:esp32c3:FlashSize=4M", status: managed}
+  - {id: arduino-cli-esp32, version: "3.3.12", fqbn: "esp32:esp32:esp32c3:FlashSize=4M", status: managed}

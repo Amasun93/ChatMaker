@@ -76,7 +76,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File <环境包目录>\install.ps
 
 已具备独立工具链的项目使用 `chatmaker-hardware --request-file project.json`（或通过标准输入使用 `--request-json -`）：按准确板型复用环境，缺少时准备一次，再继续编译和下载。请求包含 `board_id`、`sketch` 或完整 `code`，以及该板必要的身份信息；可提供 `expected_serial_marker` 读取运行证据。AI 负责构造这些字段，学生只需描述效果、确认实物并接板。没有 Mind+ 不应阻止这一流程。
 
-首次准备 Arduino、星核板或 ESP32 时，让 AI 先核对板上型号，再执行对应的环境准备。Uno R3 和 ESP32 可用 `--dry-run` 查看所需组件和待下载量。`--progress human` 显示下载进度，能够读取事件的宿主可用 `--progress jsonl`。星核板会显示索引、编译器和烧录工具的准备阶段。后续修改程序继续使用同一个环境目录。
+首次准备 Arduino、星核板或 ESP32 时，让 AI 先核对板上型号，再执行对应的环境准备。Uno R3 和 ESP32 可用 `--dry-run` 查看所需组件和待下载量。`--progress human` 显示下载进度，能够读取事件的宿主可用 `--progress jsonl`。星核板会显示编译器、烧录工具、库和字库的准备阶段。后续修改程序继续使用已核验的环境。
 
 常用入口如下。
 
@@ -92,9 +92,36 @@ chatmaker-cad --request-json '{"action":"openscad-status"}'
 
 AI 工作区如果具备本地命令执行能力，就直接调用这些 CLI；不再维护第二套 MCP 调用名称。
 
+## 自动选择板卡工具下载源
+
+ChatMaker 先检查已有环境，再按组件尝试已配置的学校镜像、厂商国内源和官方直连。下载不通、文件不存在，或按实际速度估计还要等很久时，自动试下一个来源。同一次准备中，连不上的域名会暂时排到后面。同一个文件可从已收到的位置继续下载，使用前核对文件大小和 SHA-256。备用地址也不可用时，可继续已经在传输的来源。
+
+首次准备普通 Arduino 环境优先使用已验证的 Arduino CLI 1.6.0。普通 ESP32、S3、C3、C6 优先使用 Espressif 3.3.12 核心和配套 SDK。已有可用环境直接复用，缺少新版或新版下载缓慢时可选清单内的兼容版。官方发布新版本后，由 ChatMaker 维护者验证编译和下载兼容性，再更新清单。
+
+维护者可以将清单中的原始工具归档作为 GitHub Release、Gitee Release 或学校 HTTPS 镜像的附件，文件名与清单一致。用 `CHATMAKER_DOWNLOAD_MIRROR_BASE` 配置附件所在的目录后，ChatMaker 会逐个下载缺少的组件。配置 Gitee Release 下载目录后，严格国内模式也允许其附件服务器 `foruda.gitee.com`。发布者应保留上游许可和对应源码信息，厂商板卡包通过登记的官方地址取得。
+
+### 维护者导入或导出本地缓存
+
+在已准备好工具的 Windows x64 电脑上，可用下列命令导出 Uno R3、经典 Nano 和 Mega 2560 共用的工具缓存。`--bundle` 指定 ZIP 文件路径。
+
+```powershell
+$python = '.\.chatmaker-runtime\venv\Scripts\python.exe'
+& $python -m chatmaker.hardware.arduino_cache_bundle export --profile avr --bundle .\ChatMaker-AVR-Cache.zip
+```
+
+将 ZIP 拷到需要配置的电脑，再从同版本源码准备好的 ChatMaker 运行环境中执行。导入会逐个核对压缩包中的工具并写入项目缓存，然后用原来的命令安装。
+
+```powershell
+$python = '.\.chatmaker-runtime\venv\Scripts\python.exe'
+& $python -m chatmaker.hardware.arduino_cache_bundle import --profile avr --bundle .\ChatMaker-AVR-Cache.zip
+& .\.chatmaker-runtime\bin\chatmaker-hardware.cmd --board-id arduino-uno-r3 --action prepare-environment --download-policy domestic-only
+```
+
+缓存 ZIP 包含固定工具的原始归档，适用于同一系统架构以及清单中的对应版本。导入前先准备 ChatMaker 的 Python 环境。
+
 ## Mind+ 版本策略
 
-- 星核板 v4.2.2 在 Windows x64 上可由 ChatMaker 自己准备环境。厂商公开的板卡包、库和字库仍是编译所需的组件。严格国内模式可复用已准备的星核板环境，首次安装还需要 Arduino 官方索引和辅助工具。Mac 独立环境待适配。
+- 星核板 v4.2.2 在 Windows x64 上可由 ChatMaker 自己准备环境。板卡核心、编译器、库和字库从厂商公开地址取得，Arduino 辅助工具通过学校镜像或 Arduino 官方源取得。严格国内模式使用已校验的本地工具和配置的国内来源。Mac 独立环境待适配。
 - 经典掌控板 V2.x：Windows x64 首选 `chatmaker-mpython` 独立链；已有 Mind+ 1.8.x 或 2.x 仍可作为兼容后端。
 - 掌控板 3.0：已有 `chatmaker-mpython-v3` 独立准备和编译路线；实板证据独立报告。
 - 微雪 ESP32-S3-Touch-LCD-2.8 的 V1 和 V2 用同一专用板型入口，按背面标识传入版本。两版示例均已真实编译。

@@ -23,7 +23,7 @@ Both repeat their startup/status markers every two seconds so a serial observer 
 
 ## Fixed technical configuration
 
-Arduino CLI 1.3.1, official Arduino-ESP32 3.3.11, target `esp32:esp32:esp32s3`, 16 MB flash, 8 MB OPI PSRAM, QIO flash, `app3M_fat9M_16MB` partition, hardware CDC/JTAG with CDC enabled at boot. Verify compilation evidence before describing this as tested on hardware.
+Managed Arduino CLI 1.6.0 or 1.3.1, official Arduino-ESP32 3.3.11, target `esp32:esp32:esp32s3`, 16 MB flash, 8 MB OPI PSRAM, QIO flash, `app3M_fat9M_16MB` partition, hardware CDC/JTAG with CDC enabled at boot. Verify compilation evidence before describing this as tested on hardware.
 
 Vendor LVGL 8.3.10 and display/touch sources are downloaded from the official revision-specific ZIP and checked by size/SHA-256. The V2 archive supplies CST3530 but its display/LVGL callbacks still invoke CST328. The managed preparation explicitly selects `TOUCH2_Init`, `Touch2_Read_Data`, `Touch2_Get_XY` and the CST3530 point-count definition. Changes are made to locally prepared files; the official archive is retained unchanged.
 

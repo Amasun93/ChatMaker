@@ -19,8 +19,9 @@ from typing import Any, Callable
 import zipfile
 
 from chatmaker.installers import downloads
-from chatmaker.installers.locks import exclusive_file
+from chatmaker.installers.locks import exclusive_file, rename_directory
 from chatmaker.progress import emit
+from . import arduino_toolchain as arduino
 
 
 BACKEND = "chatmaker-managed-starcore"
@@ -55,6 +56,9 @@ CORE_ARCHIVE = {
     "sha256": "00b08da1ee9e42a08480868ec2f8ec5c5159f7f54c6dec3fe4ba05eaa41ef0db",
     "source_id": "mindplus-cn",
     "source_kind": "domestic_official",
+    "destination": f"data/packages/mindplus/hardware/esp32/{CORE_VERSION}",
+    "packager": "mindplus",
+    "strip_root": True,
     "sources": [
         {
             "id": "mindplus-cn",
@@ -63,6 +67,16 @@ CORE_ARCHIVE = {
         }
     ],
 }
+# The three tools in Mind+'s official 0.0.1 package index for Windows x64.
+CORE_TOOLS = {
+    "xtensa-esp32-elf-gcc": ("5.2.0", "xtensa-esp32-elf-gcc-5.2.0-win64.zip", 73478484,
+                            "b857c524946a55116fe5c009d47f0c19d624b4c10f5b066b6a78c703afdab40b"),
+    "esptool_py": ("2.8", "esptool-2.8-windows.zip", 6037164,
+                   "d32d52676d8fb010e4b6cc5dbf1a9124e783392c3d94845f430bf6394d4ae645"),
+    "gen_esp32part_py": ("0.0.1", "gen_esp32part-0.0.1-windows.zip", 5458028,
+                         "a1291f3eec8fb25f4016db3eb0e74ff5163a0328c962fcc437b7fcf3bc35ceef"),
+}
+BUILTIN_TOOLS = ('ctags', 'serial-discovery', 'mdns-discovery', 'serial-monitor', 'dfu-discovery')
 FONT_DEVICE_ARTIFACT = {
     "filename": "dev-DFRobot-handpyEsp32@0.0.2.zip",
     "url": "https://resource.mindplus.top/mindplus/upload/devices/dev-DFRobot-handpyEsp32@0.0.2.zip",
@@ -160,9 +174,23 @@ def toolchain_lock() -> dict[str, Any]:
         "arduino_cli": {"version": ARDUINO_CLI_VERSION, **ARDUINO_CLI_ARTIFACT},
         "package_index": MINDPLUS_PACKAGE_INDEX_URL,
         "core": {"id": CORE_ID, "version": CORE_VERSION, **CORE_ARCHIVE},
+        "tools": list(_core_tools().values()),
         "font_device_package": dict(FONT_DEVICE_ARTIFACT),
         "libraries": [dict(item) for item in LIBRARIES],
     }
+
+
+def _core_tools() -> dict[str, dict]:
+    artifacts = downloads.load_runtime_sources()['arduino_esp32']['artifacts']
+    tools = {name: artifacts[name] for name in BUILTIN_TOOLS}
+    for name, (version, filename, size, digest) in CORE_TOOLS.items():
+        url = f'https://resource.mindplus.top/mindplus/package/esp32/{filename}'
+        tools[name] = {'name': name, 'version': version, 'filename': filename, 'size': size, 'sha256': digest,
+                       'destination': f'data/packages/mindplus/tools/{name}/{version}', 'packager': 'mindplus',
+                       'strip_root': True, 'sources': [{'id': 'mindplus-cn', 'kind': 'domestic_official', 'url': url}],
+                       'system': {'host': 'x86_64-mingw32', 'url': url, 'archiveFileName': filename,
+                                  'checksum': 'SHA-256:' + digest, 'size': str(size)}}
+    return tools
 
 
 def _ready_files(paths: dict[str, Path]) -> bool:
@@ -256,7 +284,7 @@ def _install_library_archive(archive: Path, library: dict[str, Any], user: Path)
         target = libraries / expected_root
         if target.exists():
             shutil.rmtree(target)
-        extracted.replace(target)
+        rename_directory(extracted, target)
     except zipfile.BadZipFile as exc:
         raise ValueError(f"library_archive_invalid:{library['name']}") from exc
     finally:
@@ -292,7 +320,7 @@ def _write_config(paths: dict[str, Path]) -> None:
     for key in ("data", "downloads", "user"):
         paths[key].mkdir(parents=True, exist_ok=True)
     config = {
-        "board_manager": {"additional_urls": [MINDPLUS_PACKAGE_INDEX_URL]},
+        "board_manager": {"additional_urls": []},
         "directories": {
             "data": paths["data"].as_posix(),
             "downloads": paths["downloads"].as_posix(),
@@ -304,10 +332,6 @@ def _write_config(paths: dict[str, Path]) -> None:
     }
     paths["config"].parent.mkdir(parents=True, exist_ok=True)
     paths["config"].write_text(json.dumps(config, ensure_ascii=True, indent=2) + "\n", encoding="ascii")
-
-
-def _command(paths: dict[str, Path], *parts: str) -> list[str]:
-    return [str(paths["cli"]), *parts, "--config-file", str(paths["config"]), "--no-color"]
 
 
 def _supported_host() -> bool:
@@ -325,15 +349,15 @@ def preview_environment() -> dict[str, Any]:
         "installation_performed": False,
         "ready_for_compile": managed_context(root) is not None,
         "toolchain_lock": toolchain_lock(),
-        "stages": ["arduino-cli", "index", "core", "libraries", "chinese-font"],
+        "stages": ["arduino-cli", "core", "libraries", "chinese-font"],
         "teacher_message": "星核板的独立工具链目前支持 Windows x64。",
     }
 
 
+@downloads.download_session()
 def prepare_environment_result(
     *,
     root: Path | None = None,
-    runner: Callable[..., dict[str, Any]],
     downloader: Callable[..., None] = _download_locked,
 ) -> dict[str, Any]:
     paths = _paths(root)
@@ -351,18 +375,12 @@ def prepare_environment_result(
     if not _supported_host():
         return {**base, "success": False, "error": "managed_starcore_platform_not_yet_supported",
                 "teacher_message": "星核板的独立工具链目前支持 Windows x64。"}
-    if os.environ.get("CHATMAKER_DOWNLOAD_POLICY", "").strip().casefold() in {"domestic-only", "domestic_only"}:
-        # This legacy core uses Arduino CLI's own online index and helper tools.
-        # The shared downloader cannot constrain those subprocess requests.
-        return {**base, "success": False, "error": "starcore_strict_download_requires_prepared_environment",
-                "teacher_message": "严格国内模式下，请使用课前已准备好的星核板环境。首次安装仍需 Arduino 官方索引和辅助工具。"}
-
     try:
         with exclusive_file(paths["root"] / "prepare.lock"):
             ready = managed_context(paths["root"])
             if ready:
                 return {**base, "success": True, "ready_for_compile": True, "environment": ready}
-            return _install_environment(paths, base, runner, downloader)
+            return _install_environment(paths, base, downloader)
     except RuntimeError as exc:
         return {**base, "success": False, "error": str(exc),
                 "teacher_message": "请等当前星核板工具准备任务结束，再复用同一个环境。"}
@@ -371,7 +389,7 @@ def prepare_environment_result(
                 "teacher_message": "无法写入星核板工具目录，请检查目录权限和磁盘空间。"}
 
 
-def _install_environment(paths: dict[str, Path], base: dict[str, Any], runner, downloader) -> dict[str, Any]:
+def _install_environment(paths: dict[str, Path], base: dict[str, Any], downloader) -> dict[str, Any]:
 
     try:
         cli_archive = paths["downloads"] / str(ARDUINO_CLI_ARTIFACT["filename"])
@@ -392,20 +410,34 @@ def _install_environment(paths: dict[str, Path], base: dict[str, Any], runner, d
             ),
         }
 
-    executions: list[dict[str, Any]] = []
-    commands = [
-        ("index", _command(paths, "core", "update-index"), 90, "读取星核板的板卡索引"),
-        ("core", _command(paths, "core", "install", f"{CORE_ID}@{CORE_VERSION}", "--skip-post-install"), 300,
-         "准备星核板编译器和烧录工具"),
-    ]
-    for stage, command, timeout, step in commands:
-        emit("stage", stage=stage, component="starcore", message=f"正在{step}")
-        execution = runner(command, timeout=timeout)
-        executions.append({"stage": stage, **execution})
-        if execution.get("returncode") != 0:
-            return {**base, "success": False, "error": f"managed_starcore_{stage}_failed", "stage": stage,
-                    "executions": executions, "next_action": "prepare-environment",
-                    "teacher_message": f"{step}这一步未完成。已保留工具目录，请检查下载连接后在同一目录重试。"}
+    tools = _core_tools()
+    artifacts = {'core': CORE_ARCHIVE, **tools}
+    for name, item in artifacts.items():
+        archive = paths['downloads'] / 'packages' / item['filename']
+        emit('stage', stage='core', component=name, message='正在准备星核板编译与下载组件')
+        try:
+            if not arduino._artifact_ready(paths['root'], name, item):
+                # Reuse the same Arduino helper archives across the board families.
+                if item['packager'] == 'builtin' and not archive.is_file():
+                    archive = arduino.archive_path(item)
+                downloader(item, archive)
+                arduino._install(paths['root'], name, item, archive)
+        except (OSError, ValueError, downloads.DownloadError, zipfile.BadZipFile) as exc:
+            return {**base, 'success': False, 'error': str(exc), 'stage': f'core:{name}',
+                    'required_archive': str(archive), 'next_action': 'prepare-environment',
+                    'teacher_message': '这个组件暂未取到。已保留缓存和进度，可用已校验的本地文件或学校镜像继续。'}
+
+    platform_info = {'name': 'esp32', 'architecture': 'esp32', 'version': CORE_VERSION, 'category': 'ESP32',
+                     'url': CORE_ARCHIVE['url'], 'archiveFileName': CORE_ARCHIVE['filename'],
+                     'checksum': 'SHA-256:' + CORE_ARCHIVE['sha256'], 'size': str(CORE_ARCHIVE['size']),
+                     'toolsDependencies': [{'packager': 'mindplus', 'name': name, 'version': tool['version']}
+                                           for name, tool in tools.items() if tool['packager'] == 'mindplus']}
+    index = arduino.offline_index({'platform': platform_info, 'artifacts': artifacts,
+                                   'package_metadata': {'maintainer': 'mindplus', 'websiteURL': 'https://mindplus.cc/'}},
+                                  list(artifacts))
+    downloads._write_json(paths['data'] / 'package_index.json', index)
+    downloads._write_json(paths['data'] / 'library_index.json', {'libraries': []})
+    downloads._write_json(paths['root'] / CORE_ARCHIVE['destination'] / 'installed.json', index)
 
     for library in LIBRARIES:
         try:
@@ -413,7 +445,7 @@ def _install_environment(paths: dict[str, Path], base: dict[str, Any], runner, d
             downloader(library, archive)
             _install_library_archive(archive, library, paths["user"])
         except (OSError, ValueError, downloads.DownloadError) as exc:
-            return {**base, "success": False, "error": str(exc), "stage": f"library:{library['name']}", "executions": executions}
+            return {**base, "success": False, "error": str(exc), "stage": f"library:{library['name']}"}
 
     try:
         font_archive = paths["downloads"] / str(FONT_DEVICE_ARTIFACT["filename"])
@@ -425,13 +457,12 @@ def _install_environment(paths: dict[str, Path], base: dict[str, Any], runner, d
             "success": False,
             "error": str(exc),
             "stage": "chinese-font",
-            "executions": executions,
             "next_action": "place_verified_archive_in_managed_downloads_or_configure_mirror",
             "required_archive": str(font_archive),
         }
 
     if not _ready_files(paths):
-        return {**base, "success": False, "error": "managed_starcore_files_incomplete", "stage": "verify", "executions": executions}
+        return {**base, "success": False, "error": "managed_starcore_files_incomplete", "stage": "verify"}
     manifest = {
         "schema_version": 1,
         "backend": BACKEND,
@@ -444,12 +475,12 @@ def _install_environment(paths: dict[str, Path], base: dict[str, Any], runner, d
     downloads._write_json(paths["manifest"], manifest)
     environment = managed_context(paths["root"])
     if not environment:
-        return {**base, "success": False, "error": "managed_starcore_verification_failed", "stage": "verify", "executions": executions}
+        return {**base, "success": False, "error": "managed_starcore_verification_failed", "stage": "verify"}
     return {
         **base,
         "success": True,
         "installation_performed": True,
         "ready_for_compile": True,
         "environment": environment,
-        "executions": executions,
+        "executions": [],
     }

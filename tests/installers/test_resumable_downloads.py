@@ -7,6 +7,7 @@ import tempfile
 import threading
 import unittest
 from unittest import mock
+from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
 from chatmaker.installers import downloads
@@ -76,6 +77,97 @@ class ResumableDownloadTests(unittest.TestCase):
         self.assertEqual(self.ranges[:2], [None, 'bytes=4096-'])
         self.assertTrue(any(e['event'] == 'download_progress' for e in events))
 
+    def test_unavailable_artifact_immediately_tries_next_source(self):
+        self.mode = 'normal'
+        local_open = downloads._open_url.side_effect
+        requested = []
+
+        def open_from_source(request, **options):
+            requested.append(request.host)
+            if request.host == 'cn.example':
+                raise HTTPError(request.full_url, 404, 'Not Found', {}, None)
+            return local_open(request, **options)
+
+        events = []
+        with mock.patch.object(downloads, '_open_url', side_effect=open_from_source), listening(events.append):
+            receipt = downloads.download_locked(self.item, self.destination)
+        self.assertEqual(requested, ['cn.example', 'official.example'])
+        self.assertEqual(receipt.source_id, 'fallback')
+        self.assertEqual(self.destination.read_bytes(), self.payload)
+        self.assertTrue(any(event['event'] == 'download_switch_source' for event in events))
+        self.assertFalse(any(event['event'] == 'download_retry' for event in events))
+
+    def test_connection_failure_reorders_later_components_in_the_same_session(self):
+        self.mode = 'normal'
+        local_open = downloads._open_url.side_effect
+        requested = []
+
+        def open_from_source(request, **options):
+            requested.append(request.host)
+            if request.host == 'cn.example':
+                raise URLError(ConnectionRefusedError())
+            return local_open(request, **options)
+
+        with mock.patch.object(downloads, '_open_url', side_effect=open_from_source):
+            with downloads.download_session():
+                downloads.download_locked(self.item, self.destination)
+                downloads.download_locked(self.item, self.destination.with_name('second.zip'))
+            with downloads.download_session():
+                downloads.download_locked(self.item, self.destination.with_name('third.zip'))
+        self.assertEqual(requested, ['cn.example', 'official.example', 'official.example',
+                                     'cn.example', 'official.example'])
+
+    def test_slow_source_switches_and_backup_resumes_the_same_file(self):
+        self.mode = 'normal'
+        local_open = downloads._open_url.side_effect
+        requested = []
+
+        def open_from_source(request, **options):
+            requested.append(request.host)
+            return local_open(request, **options)
+
+        events = []
+        # The first source delivers 128 KiB in 30 seconds. Its remaining bytes
+        # would take more than the threshold in this test. The backup is fast.
+        with mock.patch.object(downloads, '_open_url', side_effect=open_from_source), \
+             mock.patch.object(downloads, 'monotonic', side_effect=[0, 30, 31, 32], create=True), \
+             mock.patch.object(downloads, 'SLOW_DOWNLOAD_ETA', 5, create=True), listening(events.append):
+            receipt = downloads.download_locked(self.item, self.destination)
+        self.assertEqual(requested, ['cn.example', 'official.example'])
+        self.assertEqual(len(self.ranges), 2)
+        progress = next(event for event in events if event['event'] == 'download_progress')
+        self.assertGreater(progress['downloaded'], 0)
+        self.assertEqual(self.ranges[1], f"bytes={progress['downloaded']}-")
+        self.assertEqual(receipt.source_id, 'fallback')
+        self.assertEqual(self.destination.read_bytes(), self.payload)
+        self.assertEqual(next(e for e in events if e['event'] == 'download_switch_source')['reason'],
+                         'download_too_slow')
+
+    def test_single_source_remains_available_when_progress_is_slow(self):
+        self.mode = 'normal'
+        self.item['sources'].pop()
+        with mock.patch.object(downloads, 'monotonic', side_effect=[0, 30, 60], create=True), \
+             mock.patch.object(downloads, 'SLOW_DOWNLOAD_ETA', 5, create=True):
+            receipt = downloads.download_locked(self.item, self.destination)
+        self.assertEqual(receipt.source_id, 'cn')
+        self.assertEqual(self.ranges, [None])
+
+    def test_slow_source_is_resumed_when_the_backup_is_unavailable(self):
+        self.mode = 'normal'
+        local_open = downloads._open_url.side_effect
+
+        def open_from_source(request, **options):
+            if request.host == 'official.example':
+                raise HTTPError(request.full_url, 404, 'Not Found', {}, None)
+            return local_open(request, **options)
+
+        with mock.patch.object(downloads, '_open_url', side_effect=open_from_source), \
+             mock.patch.object(downloads, 'monotonic', side_effect=[0, 30, 31, 100]), \
+             mock.patch.object(downloads, 'SLOW_DOWNLOAD_ETA', 5):
+            receipt = downloads.download_locked(self.item, self.destination)
+        self.assertEqual(receipt.attempted_source_ids, ('cn', 'fallback', 'cn'))
+        self.assertEqual(self.destination.read_bytes(), self.payload)
+
     def test_failed_invocation_keeps_partial_for_next_invocation(self):
         self.mode = 'always-interrupt'
         with self.assertRaises(downloads.DownloadError):
@@ -128,3 +220,16 @@ class ResumableDownloadTests(unittest.TestCase):
         with self.assertRaisesRegex(downloads.DownloadError, 'blocked_by_policy'):
             guard.redirect_request(Request('https://cn.example/tool.zip'), None, 302, 'Found', {},
                                    'https://github.com/tool.zip')
+
+    def test_strict_gitee_release_mirror_allows_its_attachment_host(self):
+        self.mode = 'normal'
+        with mock.patch.dict(os.environ, {
+            'CHATMAKER_DOWNLOAD_POLICY': 'domestic-only',
+            'CHATMAKER_DOWNLOAD_MIRROR_BASE': 'https://gitee.com/example/repo/releases/download/tools',
+        }):
+            receipt = downloads.download_locked(self.item, self.destination)
+        request = downloads._open_url.call_args
+        self.assertEqual(request.args[0].host, 'gitee.com')
+        self.assertIn('foruda.gitee.com', request.kwargs['allowed_hosts'])
+        self.assertNotIn('github.com', request.kwargs['allowed_hosts'])
+        self.assertEqual(receipt.source_id, 'configured-domestic-mirror')

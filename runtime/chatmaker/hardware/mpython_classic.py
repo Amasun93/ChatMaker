@@ -383,7 +383,7 @@ def serial_read_result(
 
 
 def _prepare_environment_result() -> dict[str, Any]:
-    result = managed_mpython.prepare_environment_result(runner=shared._run)
+    result = managed_mpython.prepare_environment_result()
     environment = _normalize_managed_context(result.get("environment"))
     return {
         **result,

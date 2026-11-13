@@ -2,15 +2,17 @@
 
 from __future__ import annotations
 
+from contextlib import contextmanager
+from contextvars import ContextVar
 from dataclasses import dataclass
 import hashlib
 import json
 import os
 from pathlib import Path
-import shutil
 import re
-import time
+from time import monotonic
 from typing import Any, Callable, Mapping
+from urllib.error import HTTPError, URLError
 from urllib.parse import urlsplit
 from urllib.request import Request, urlopen, HTTPRedirectHandler, build_opener
 
@@ -19,10 +21,32 @@ from .locks import exclusive_file
 
 
 SOURCE_REGISTRY = Path(__file__).with_name("runtime_sources.json")
+DOWNLOAD_TIMEOUT = 25
+SLOW_DOWNLOAD_WINDOW = 20
+SLOW_DOWNLOAD_ETA = 300
+FALLBACK_DOWNLOAD_TIMEOUT = 12
+_unreachable_hosts: ContextVar[set[str] | None] = ContextVar('chatmaker_unreachable_download_hosts', default=None)
 
 
 class DownloadError(RuntimeError):
-    """Raised only after every pinned source has failed."""
+    """A pinned download or its source policy could not be satisfied."""
+
+
+class DownloadTooSlow(DownloadError):
+    """A transfer is making progress, but another source is worth trying."""
+
+
+@contextmanager
+def download_session():
+    """Remember connection failures while one request prepares its components."""
+    if _unreachable_hosts.get() is not None:
+        yield
+        return
+    token = _unreachable_hosts.set(set())
+    try:
+        yield
+    finally:
+        _unreachable_hosts.reset(token)
 
 
 @dataclass(frozen=True)
@@ -150,6 +174,9 @@ def _candidate_sources(item: Mapping[str, Any]) -> list[dict[str, str]]:
         if not result and not sources:
             raise DownloadError("domestic_source_not_configured")
     result.extend(sources)
+    unreachable = _unreachable_hosts.get()
+    if unreachable:
+        result.sort(key=lambda source: urlsplit(source['url']).netloc in unreachable)
     return result
 
 
@@ -190,7 +217,7 @@ def _write_json(path: Path, value) -> None:
     temporary.replace(path)
 
 
-def _fetch_resumable(item, source, temporary, *, timeout, allowed_hosts):
+def _fetch_resumable(item, source, temporary, *, timeout, allowed_hosts, allow_slow_switch=False):
     metadata_path = temporary.with_name(temporary.name + '.json')
     try:
         metadata = json.loads(metadata_path.read_text('utf-8'))
@@ -210,7 +237,6 @@ def _fetch_resumable(item, source, temporary, *, timeout, allowed_hosts):
         headers['Range'] = f'bytes={offset}-'
         if metadata.get('source_url') == source['url'] and metadata.get('etag'):
             headers['If-Range'] = metadata['etag']
-    started = time.monotonic()
     received = 0
     with _open_url(Request(source['url'], headers=headers), timeout=timeout, allowed_hosts=allowed_hosts) as response:
         status = response.status
@@ -229,24 +255,34 @@ def _fetch_resumable(item, source, temporary, *, timeout, allowed_hosts):
                     'source_url': source['url'], 'etag': response.headers.get('ETag')})
         emit('download_start', component=item['filename'], source=source['id'],
              total_bytes=item['size'], resume_from=offset)
-        last_event = 0.0
+        started = monotonic()
+        sampled_at = started
+        sampled_bytes = 0
+        last_event = started
         with temporary.open('ab' if offset else 'wb') as output:
             while True:
-                block = response.read(128 * 1024)
+                block = response.read1(128 * 1024)
                 if not block:
                     break
                 received += len(block)
                 if offset + received > item['size']:
                     raise DownloadError('download_exceeds_pinned_size')
                 output.write(block)
-                elapsed = time.monotonic() - started
-                if elapsed - last_event >= 0.5 or offset + received == item['size']:
-                    speed = received / elapsed if elapsed > 0 else 0
+                now = monotonic()
+                remaining = item['size'] - offset - received
+                if now - last_event >= 0.5 or not remaining:
+                    speed = received / (now - started) if now > started else 0
                     emit('download_progress', component=item['filename'], source=source['id'],
                          downloaded=offset + received, total_bytes=item['size'], received_bytes=received,
                          percent=100 * (offset + received) / item['size'], speed_bps=speed,
-                         eta_seconds=(item['size'] - offset - received) / speed if speed else None)
-                    last_event = elapsed
+                         eta_seconds=remaining / speed if speed else None)
+                    last_event = now
+                window = now - sampled_at
+                if allow_slow_switch and window >= SLOW_DOWNLOAD_WINDOW:
+                    rate = (received - sampled_bytes) / window
+                    if remaining > rate * SLOW_DOWNLOAD_ETA:
+                        raise DownloadTooSlow('download_too_slow')
+                    sampled_at, sampled_bytes = now, received
         if offset + received != item['size']:
             raise DownloadError('download_interrupted')
 
@@ -255,17 +291,19 @@ def download_locked(
     item: Mapping[str, Any],
     destination: Path,
     *,
-    timeout: int = 300,
+    timeout: int = DOWNLOAD_TIMEOUT,
     fetcher: Callable[..., None] | None = None,
+    retry_slow_sources: bool = True,
 ) -> DownloadReceipt:
     """Resume one exact artifact; final bytes require size and SHA-256 verification."""
     _validate_artifact(item)
     destination = Path(destination)
     with exclusive_file(destination.with_name(destination.name + '.lock')):
-        return _download_locked(item, destination, timeout=timeout, fetcher=fetcher)
+        return _download_locked(item, destination, timeout=timeout, fetcher=fetcher,
+                                retry_slow_sources=retry_slow_sources)
 
 
-def _download_locked(item, destination, *, timeout, fetcher):
+def _download_locked(item, destination, *, timeout, fetcher, retry_slow_sources):
     if (
         destination.is_file()
         and destination.stat().st_size == item["size"]
@@ -277,28 +315,47 @@ def _download_locked(item, destination, *, timeout, fetcher):
     temporary = destination.with_name(destination.name + ".part")
     attempted: list[str] = []
     errors: list[str] = []
+    deferred = False
     sources = _candidate_sources(item)
+    unreachable = _unreachable_hosts.get()
     strict = os.environ.get('CHATMAKER_DOWNLOAD_POLICY', '').strip().casefold() in {'domestic-only', 'domestic_only'}
     allowed = {urlsplit(s['url']).hostname for s in sources} if strict else None
     if strict and 'registry.npmmirror.com' in allowed:
         allowed.update({'cdn.npmmirror.com', 'npmmirror.com'})
-    for source in sources:
+    if strict and any(urlsplit(s['url']).hostname == 'gitee.com' and '/releases/download/' in urlsplit(s['url']).path
+                      for s in sources):
+        allowed.add('foruda.gitee.com')
+    # Try another endpoint before settling for a slow but functioning transfer.
+    # Revisit a deferred source only after the other listed sources fail.
+    pending = [(source, True) for source in sources]
+    previous_reason = None
+    for source, may_defer in pending:
+        has_alternative = len(attempted) + 1 < len(pending)
         attempted.append(source["id"])
         if len(attempted) > 1:
-            emit('download_switch_source', component=item['filename'], source=source['id'], previous=attempted[-2])
-        for attempt in range(1 if fetcher is not None else 3):
+            emit('download_switch_source', component=item['filename'], source=source['id'], previous=attempted[-2],
+                 reason=previous_reason,
+                 message=f"正在尝试备用下载源 {source['id']}")
+        attempts = 1 if fetcher is not None else 3
+        for attempt in range(attempts):
             try:
                 if fetcher is not None:
                     temporary.unlink(missing_ok=True)
                     fetcher(source['url'], temporary, timeout=timeout, max_bytes=int(item['size']))
                 else:
-                    _fetch_resumable(item, source, temporary, timeout=timeout, allowed_hosts=allowed)
+                    can_switch = has_alternative or not retry_slow_sources
+                    _fetch_resumable(item, source, temporary,
+                                     timeout=min(timeout, FALLBACK_DOWNLOAD_TIMEOUT) if can_switch else timeout,
+                                     allowed_hosts=allowed,
+                                     allow_slow_switch=may_defer and can_switch)
                 emit('stage', component=item['filename'], stage='verify', message='校验下载文件')
                 if (not temporary.is_file() or temporary.stat().st_size != item['size']
                         or sha256(temporary) != item['sha256']):
                     temporary.unlink(missing_ok=True)
                     raise DownloadError('download_identity_mismatch')
                 os.replace(temporary, destination)
+                if unreachable is not None:
+                    unreachable.discard(urlsplit(source['url']).netloc)
                 temporary.with_name(temporary.name + '.json').unlink(missing_ok=True)
                 receipt = DownloadReceipt(True, source['id'], source['kind'], urlsplit(source['url']).netloc, tuple(attempted))
                 _write_json(destination.with_name(destination.name + '.receipt.json'),
@@ -306,12 +363,30 @@ def _download_locked(item, destination, *, timeout, fetcher):
                 emit('download_done', component=item['filename'], source=source['id'], verified=True)
                 return receipt
             except Exception as exc:
+                previous_reason = str(exc) if isinstance(exc, DownloadError) else type(exc).__name__
                 errors.append(f"{source['id']}:{type(exc).__name__}:{exc}")
-                emit('download_retry', component=item['filename'], source=source['id'], attempt=attempt + 1,
-                     error=type(exc).__name__)
                 if fetcher is not None:
                     temporary.unlink(missing_ok=True)
-    raise DownloadError("all_pinned_sources_failed:" + ",".join(errors))
+                if isinstance(exc, DownloadTooSlow):
+                    deferred = True
+                    if retry_slow_sources:
+                        pending.append((source, False))
+                    break
+                connection_failed = isinstance(exc, (URLError, TimeoutError)) and not isinstance(exc, HTTPError)
+                if connection_failed and unreachable is not None:
+                    unreachable.add(urlsplit(source['url']).netloc)
+                if isinstance(exc, HTTPError) and exc.code in {401, 403, 404, 410}:
+                    break
+                if connection_failed and (has_alternative or not retry_slow_sources):
+                    break
+                if has_alternative and (previous_reason in {'download_identity_mismatch', 'download_content_length_mismatch'}
+                                        or isinstance(exc, HTTPError) and exc.code in {429, 500, 502, 503, 504}):
+                    break
+                if attempt + 1 < attempts:
+                    emit('download_retry', component=item['filename'], source=source['id'], attempt=attempt + 1,
+                         error=type(exc).__name__)
+    error = DownloadTooSlow if deferred and not retry_slow_sources else DownloadError
+    raise error("all_pinned_sources_failed:" + ",".join(errors))
 
 
 def legacy_artifact(item: Mapping[str, Any]) -> dict[str, Any]:

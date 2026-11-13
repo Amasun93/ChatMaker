@@ -5,6 +5,8 @@ from pathlib import Path
 
 import yaml
 
+from chatmaker.installers.downloads import load_runtime_sources
+
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -32,7 +34,8 @@ class Esp32ApCatalogTests(unittest.TestCase):
             identity["allowed_fqbn"],
             ["esp32:esp32:esp32doit-devkit-v1"],
         )
-        self.assertEqual(self.board["toolchains"][0]["version"], "3.3.11")
+        preferred = load_runtime_sources()["arduino_esp32_preferred"]["core_version"]
+        self.assertEqual(self.board["toolchains"][0]["version"], preferred)
 
     def test_board_record_documents_safe_ap_demo_pins_and_power(self):
         pins = {pin["id"]: pin["capabilities"] for pin in self.board["pins"]}

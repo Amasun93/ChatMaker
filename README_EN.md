@@ -14,6 +14,8 @@ Install the current Beta from GitHub `main` through the host's native GitHub Ski
 
 > The latest tagged release is **0.2.0-beta.6**. This page describes the source on GitHub `main`. Physical evidence is tracked for each board.
 
+On `main`, ChatMaker switches download sources when a board tool is slow or unavailable and checks existing student wiring against the selected board. See the [WorkBuddy retest guide](docs/verification/workbuddy-retest-download-sources.md) for the current classroom workflow.
+
 See the beginner-facing [WHAT'S NEW](WHATS_NEW.md) for a short summary of this update.
 
 Current source includes a Windows x64 ChatMaker-managed Starcore CLI path. It prepares a locked Arduino CLI, Mind+ public ESP32 core, and exact mPython/OLED/font libraries without requiring the Mind+ desktop application. Existing Mind+ 1.8.x and 2.x installations remain compatible fallbacks.

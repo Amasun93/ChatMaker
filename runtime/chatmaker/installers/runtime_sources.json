@@ -79,6 +79,47 @@
   ],
   "arduino_cli": {
     "windows-amd64": {
+      "version": "1.6.0",
+      "installed_index_version": 2,
+      "filename": "arduino-cli_1.6.0_Windows_64bit.zip",
+      "size": 20404890,
+      "sha256": "2769b9b282ce597db9679d8ec14d726d57004ca4205ef4d7a795bf36b6cdc9d8",
+      "destination": "bin",
+      "strip_root": false,
+      "sources": [
+        {"id": "arduino-downloads", "kind": "official_fallback", "url": "https://downloads.arduino.cc/arduino-cli/arduino-cli_1.6.0_Windows_64bit.zip"},
+        {"id": "arduino-github", "kind": "official_fallback", "url": "https://github.com/arduino/arduino-cli/releases/download/v1.6.0/arduino-cli_1.6.0_Windows_64bit.zip"}
+      ]
+    },
+    "macos-arm64": {
+      "version": "1.6.0",
+      "installed_index_version": 2,
+      "filename": "arduino-cli_1.6.0_macOS_ARM64.tar.gz",
+      "size": 19333181,
+      "sha256": "dc70f037fcbc8e7add892282bed5bab5eac317ff00bf0dd2f21e4a8e1d338a1c",
+      "destination": "bin",
+      "strip_root": false,
+      "sources": [
+        {"id": "arduino-downloads", "kind": "official_fallback", "url": "https://downloads.arduino.cc/arduino-cli/arduino-cli_1.6.0_macOS_ARM64.tar.gz"},
+        {"id": "arduino-github", "kind": "official_fallback", "url": "https://github.com/arduino/arduino-cli/releases/download/v1.6.0/arduino-cli_1.6.0_macOS_ARM64.tar.gz"}
+      ]
+    },
+    "macos-x86_64": {
+      "version": "1.6.0",
+      "installed_index_version": 2,
+      "filename": "arduino-cli_1.6.0_macOS_64bit.tar.gz",
+      "size": 21777120,
+      "sha256": "af6a30cf5f57cc076b45fe55c6fd389440156f70706e7f8d3302a11a9fe32913",
+      "destination": "bin",
+      "strip_root": false,
+      "sources": [
+        {"id": "arduino-downloads", "kind": "official_fallback", "url": "https://downloads.arduino.cc/arduino-cli/arduino-cli_1.6.0_macOS_64bit.tar.gz"},
+        {"id": "arduino-github", "kind": "official_fallback", "url": "https://github.com/arduino/arduino-cli/releases/download/v1.6.0/arduino-cli_1.6.0_macOS_64bit.tar.gz"}
+      ]
+    }
+  },
+  "arduino_cli_fallback": {
+    "windows-amd64": {
       "version": "1.3.1",
       "filename": "arduino-cli_1.3.1_Windows_64bit.zip",
       "size": 17736240,
@@ -828,6 +869,16 @@
     "optional_libraries": [
       "U8g2"
     ]
+  },
+  "arduino_esp32_preferred": {
+    "core_version": "3.3.12",
+    "artifacts": {
+      "core": {"size": 51102895, "sha256": "87401004f279a206781e368b66098a8383b7cf87cce7811a6afd0163503fa78f"},
+      "esp32-libs": {"size": 48020175, "sha256": "4efd0f654c860b018e0ca2f858042ea6a78d8c2d57eef790b0d480d63bb56edc"},
+      "esp32s3-libs": {"size": 91711095, "sha256": "08f4e7292fee97dc011dc64e3c670a9a4e83a6b52a604c4b9b18ab2885cdd092"},
+      "esp32c3-libs": {"size": 60831692, "sha256": "4f14e59ca2adc7b917126638287a7115a7a2c0b6aed98df6138f56c3491b3a29"},
+      "esp32c6-libs": {"size": 69563845, "sha256": "20d5f7704dd436a41f0d1e4c68c9e1dcefb25bed12b1706d72c289dd981cffae"}
+    }
   },
   "arduino_avr": {
     "core_version": "1.8.8",

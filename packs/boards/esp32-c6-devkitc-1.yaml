@@ -26,4 +26,4 @@ constraints:
   - Confirm the 8 MB DevKitC-1 module and the USB connector in use before upload.
   - The onboard RGB LED is addressable. GPIO logic is 3.3 V.
 toolchains:
-  - {id: arduino-cli-esp32, version: "3.3.11", fqbn: "esp32:esp32:esp32c6:FlashSize=8M,PartitionScheme=default_8MB", status: managed}
+  - {id: arduino-cli-esp32, version: "3.3.12", fqbn: "esp32:esp32:esp32c6:FlashSize=8M,PartitionScheme=default_8MB", status: managed}

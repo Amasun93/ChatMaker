@@ -9,4 +9,4 @@ source_refs:
 ---
 # Resolve every pin at use time
 
-Read pin capabilities, electrical facts, startup constraints, and reserved resources from canonical board `esp32-devkit-v1`. Combine those facts with the canonical component record and selected recipe ID. Do not recreate a pin table from this prose. If the learner's board label or wiring differs, stop and request confirmation; never substitute a nearby pin or another ESP32 carrier profile.
+Read pin capabilities, electrical facts, startup constraints, and reserved resources from canonical board `esp32-devkit-v1`. Combine those facts with the canonical component record and selected recipe ID. Confirm any unclear board label before applying the profile. If the learner used a different pin from the recipe, check that pin for the actual project and keep it when it is safe and compatible.

@@ -8,7 +8,7 @@ import platform
 import tempfile
 import zipfile
 
-from chatmaker.installers.downloads import download_locked, sha256
+from chatmaker.installers.downloads import download_locked, download_session, sha256
 from .esp32_devkit_v1 import _run as run
 from . import arduino_toolchain as managed
 from chatmaker.progress import emit
@@ -191,6 +191,7 @@ def context(revision: str) -> dict | None:
         return None
 
 
+@download_session()
 def prepare_environment(revision: str, *, dry_run=False) -> dict:
     if revision not in VENDORS:
         return {'success':False,'state':'revision-needed','error':'revision_required'}

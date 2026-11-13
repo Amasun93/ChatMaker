@@ -26,4 +26,4 @@ constraints:
   - Confirm the N8R8 module marking and the USB connector in use before upload.
   - Check the board revision before using the onboard RGB LED. GPIO logic is 3.3 V.
 toolchains:
-  - {id: arduino-cli-esp32, version: "3.3.11", fqbn: "esp32:esp32:esp32s3:FlashSize=8M,PSRAM=opi,PartitionScheme=default_8MB,USBMode=hwcdc", status: managed}
+  - {id: arduino-cli-esp32, version: "3.3.12", fqbn: "esp32:esp32:esp32s3:FlashSize=8M,PSRAM=opi,PartitionScheme=default_8MB,USBMode=hwcdc", status: managed}

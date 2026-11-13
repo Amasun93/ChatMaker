@@ -16,7 +16,7 @@ ChatMaker 是唯一入口；ChatDuino、ChatWeb 和 ChatCAD 是由它在内部�
 
 > 最近的发行版为 **0.2.0-beta.6**。下文描述 GitHub `main` 上的源码，Gitee 自动同步主分支。各板卡的验证进度见下方状态表。
 
-本轮增加 ESP32 按板准备、国内优先下载与续传，并提供 [WorkBuddy 固定版本复测说明](docs/verification/workbuddy-retest-0.2.0-beta.6.md)。下载进度与编译、实板结果分开记录；复测先核对实际加载的提交号和路径。
+GitHub 主分支已支持按板准备工具、慢速自动换源和断点续传。学生描述接线后，ChatMaker 可以按板型检查已有引脚，保留安全可用的接法。首次联网准备、实板烧录与接线判断的步骤见 [WorkBuddy 复测说明](docs/verification/workbuddy-retest-download-sources.md)。
 
 Apple 芯片和 Intel Mac 可从源码准备 Uno R3、经典 Nano、Mega 2560 和指定的 ESP32、C3、C6、S3 开发板，使用同一个 `chatmaker-hardware` 入口。安装与接板验证步骤见 [Mac 复测说明](docs/verification/workbuddy-retest-macos.md)。
 

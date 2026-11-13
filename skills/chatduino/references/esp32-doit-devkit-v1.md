@@ -9,14 +9,14 @@ Do not treat these as aliases: `ESP32 Dev Module`, Espressif `ESP32-DevKitC`, Fi
 ## Exact toolchain
 
 ```text
-Core: esp32:esp32 3.3.11
+Managed core: esp32:esp32 3.3.12, with 3.3.11 available for reuse or fallback
 Board ID: esp32doit-devkit-v1
 FQBN: esp32:esp32:esp32doit-devkit-v1
 ```
 
 The installed Mind+ `mindplus:esp32 0.0.1` package exposes only board-specific DFRobot and teaching variants. It is not a compatible fallback.
 
-The `prepare-environment` action of `chatmaker-esp32` may install only the ChatMaker-verified official `esp32:esp32@3.3.11`. It must not chase latest releases, silently downgrade a newer official core, or treat Mind+, FireBeetle, DevKitC, mPython, S2, S3, or C3 as substitutes.
+The `prepare-environment` action of `chatmaker-esp32` chooses the verified core and its matching SDK from the managed manifest. It tries the compatible release when the preferred one is unavailable and reuses any ready managed environment.
 
 ## Pin and voltage boundaries
 

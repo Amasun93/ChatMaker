@@ -287,7 +287,7 @@ def execute_request(request: dict[str, Any]) -> dict[str, Any]:
         if request.get("dry_run") is True:
             result = managed.preview_environment()
         else:
-            result = managed.prepare_environment_result(runner=shared._run)
+            result = managed.prepare_environment_result()
     elif action == "doctor":
         result = doctor_result(managed_only=managed_only)
     elif action == "ports":

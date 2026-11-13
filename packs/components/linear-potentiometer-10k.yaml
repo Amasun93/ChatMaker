@@ -56,4 +56,4 @@ common_failures:
   - Powering the potentiometer from 5V can feed an unsafe voltage into an ESP32 GPIO.
 board_notes:
   arduino-nano-classic: Connect the wiper to A0 and the two outer terminals to 5V and GND; the example drives an external LED from PWM pin D6 through a resistor.
-  esp32-devkit-v1: Connect the wiper to GPIO34 and the two outer terminals to 3V3 and GND; share GND with the GPIO23 current-limited LED and never use 5V for this input divider.
+  esp32-devkit-v1: Power the potentiometer from 3V3 and GND, and never use 5V for this input divider. For the Wi-Fi AP demo, use a free ADC1 input such as GPIO34 for the wiper and share GND with the GPIO23 current-limited LED.

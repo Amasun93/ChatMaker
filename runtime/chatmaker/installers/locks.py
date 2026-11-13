@@ -2,6 +2,18 @@
 from contextlib import contextmanager
 import os
 from pathlib import Path
+from time import sleep
+
+
+def rename_directory(source: Path, destination: Path) -> None:
+    """Give a just-extracted directory a moment to clear transient file locks."""
+    for delay in (0.25, 0.5, 1.0):
+        try:
+            source.rename(destination)
+            return
+        except PermissionError:
+            sleep(delay)
+    source.rename(destination)
 
 
 @contextmanager

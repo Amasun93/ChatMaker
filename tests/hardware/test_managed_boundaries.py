@@ -67,9 +67,13 @@ class ManagedProcessEnvironmentTests(unittest.TestCase):
 
 
 class ManagedSearchRootTests(unittest.TestCase):
-    def make_environment(self, home):
+    def make_environment(self, home, *, cli_version=None, omit=()):
         data, ids = chain.selected('esp32')
+        if cli_version == '1.3.1':
+            data['artifacts']['cli'] = chain.load_runtime_sources()['arduino_cli_fallback'][data['platform_tag']]
         for name in ids:
+            if name in omit:
+                continue
             item = data['artifacts'][name]
             target = home / item['destination']
             target.mkdir(parents=True, exist_ok=True)
@@ -83,6 +87,73 @@ class ManagedSearchRootTests(unittest.TestCase):
             target.parent.mkdir(parents=True, exist_ok=True)
             chain._write_json(target, value)
         chain._write_json(home / 'receipt.json', {'schema': 1, 'profile': 'esp32', 'artifacts': ids, 'libraries': []})
+        return data
+
+    def test_installed_index_uses_the_selected_cli_format(self):
+        with tempfile.TemporaryDirectory() as temp:
+            home = Path(temp).resolve()
+            data, ids = chain.selected('avr')
+            core_index = data['artifacts']['core']['destination'] + '/installed.json'
+            latest = chain.generated_files(home, data, ids)
+            self.assertEqual(latest[core_index]['version'], 2)
+            self.assertNotIn('version', latest['data/package_index.json'])
+            data['artifacts']['cli'] = data['fallback_cli']
+            compatible = chain.generated_files(home, data, ids)
+            self.assertNotIn('version', compatible[core_index])
+            self.assertEqual(latest[core_index]['packages'], compatible[core_index]['packages'])
+
+    def test_verified_previous_cli_is_reused_without_network_or_installation(self):
+        with tempfile.TemporaryDirectory() as temp:
+            home = Path(temp).resolve()
+            self.make_environment(home, cli_version='1.3.1')
+            with mock.patch.object(chain, 'host_problem', return_value=None), \
+                 mock.patch.object(chain, 'download_locked') as download:
+                result = chain.prepare('esp32', home=home)
+            self.assertTrue(result['success'], result)
+            self.assertEqual(result['environment']['cli_version'], '1.3.1')
+            self.assertFalse(result['installation_performed'])
+            download.assert_not_called()
+
+    def test_cached_previous_cli_is_used_when_only_the_cli_is_missing(self):
+        with tempfile.TemporaryDirectory() as temp:
+            home = Path(temp, 'profile').resolve()
+            self.make_environment(home, omit=('cli',))
+            backup = chain.load_runtime_sources()['arduino_cli_fallback'][chain.platform_tag()]
+            with mock.patch.dict(os.environ, {'CHATMAKER_RUNTIME_ROOT': temp}), \
+                 mock.patch.object(chain, 'host_problem', return_value=None), \
+                 mock.patch.object(chain, 'archive_matches', side_effect=lambda path, item: item == backup), \
+                 mock.patch.object(chain, '_seed_previous_cache'), \
+                 mock.patch.object(chain, 'download_locked') as download, \
+                 mock.patch.object(chain, '_install') as install:
+                chain.prepare('esp32', home=home)
+            self.assertEqual(install.call_args.args[2], backup)
+            self.assertEqual(download.call_args.args[0], backup)
+
+    def test_missing_new_esp32_sdk_falls_back_with_matching_core(self):
+        with tempfile.TemporaryDirectory() as temp, mock.patch.dict(os.environ, {'CHATMAKER_RUNTIME_ROOT': temp}):
+            def download(item, archive, **kwargs):
+                if item['filename'] == 'esp32-libs-3.3.12.zip':
+                    raise chain.DownloadError('all_pinned_sources_failed')
+
+            def install(home, name, item, archive):
+                target = home / item['destination']
+                target.mkdir(parents=True, exist_ok=True)
+                (target / 'fixture.dat').write_bytes(name.encode('ascii'))
+                receipt = home / 'manifests' / (name + '.json')
+                receipt.parent.mkdir(exist_ok=True)
+                chain._write_json(receipt, {'sha256': item['sha256'], 'destination': item['destination'],
+                                            'files': chain.file_manifest(target)})
+
+            with mock.patch.object(chain, 'host_problem', return_value=None), \
+                 mock.patch.object(chain, 'download_locked', side_effect=download) as downloads, \
+                 mock.patch.object(chain, '_install', side_effect=install):
+                result = chain.prepare('esp32')
+            self.assertTrue(result['success'], result)
+            names = [call.args[0]['filename'] for call in downloads.call_args_list]
+            self.assertIn('esp32-libs-3.3.12.zip', names)
+            self.assertIn('esp32-libs-3.3.11.zip', names)
+            self.assertEqual(result['environment']['core_version'], '3.3.11')
+            self.assertEqual(chain.context('esp32'), result['environment'])
 
     def test_unregistered_search_inputs_invalidate_ready_without_deleting_files(self):
         additions = (

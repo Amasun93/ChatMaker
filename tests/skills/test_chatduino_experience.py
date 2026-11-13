@@ -17,6 +17,19 @@ class TeacherExperienceContractTests(unittest.TestCase):
         self.assertIn("`cpp`", contract)
         self.assertIn("Do not create SVG", contract)
 
+    def test_wiring_review_routes_the_reported_connections_and_keeps_usable_pins(self):
+        router = (ROOT / "skills" / "chatmaker" / "SKILL.md").read_text(encoding="utf-8")
+        skill = (SKILL / "SKILL.md").read_text(encoding="utf-8")
+        contract = (SKILL / "references" / "beginner-hardware-contract.md").read_text(encoding="utf-8")
+        nano_contract = (SKILL / "references" / "nano-teacher-output-contract.md").read_text(encoding="utf-8")
+
+        self.assertIn("Pass the learner's reported connections", router)
+        self.assertIn("recommend pins for unwired signals and review the learner's existing connections", skill)
+        for verdict in ("可以保留", "有条件保留", "需要改线", "待确认"):
+            self.assertIn(verdict, contract)
+        self.assertIn("Use the accepted wiring in the code", contract)
+        self.assertIn("核对学生的现有接线", nano_contract)
+
     def test_beginner_guidance_translates_jargon_with_analogies(self):
         guide = (SKILL / "references" / "nano-beginner-guidance.md").read_text(
             encoding="utf-8"

@@ -276,31 +276,38 @@ class StarcoreTests(unittest.TestCase):
         prepare.assert_not_called()
         self.assertFalse(result["installation_performed"])
 
-    def test_starcore_strict_download_policy_stops_before_online_index(self):
+    def test_starcore_strict_download_policy_uses_locked_archives(self):
         with tempfile.TemporaryDirectory() as folder:
             root = Path(folder) / "starcore"
             with (
                 mock.patch.object(managed, "managed_context", return_value=None),
-                mock.patch.dict(os.environ, {"CHATMAKER_DOWNLOAD_POLICY": "domestic-only"}),
+                mock.patch.dict(os.environ, {"CHATMAKER_DOWNLOAD_POLICY": "domestic-only", "CHATMAKER_DOWNLOAD_MIRROR_BASE": ""}),
                 mock.patch.object(managed.platform, "machine", return_value="AMD64"),
                 mock.patch.object(managed.os, "name", "nt"),
             ):
-                runner, downloader = mock.Mock(), mock.Mock()
-                result = managed.prepare_environment_result(root=root, runner=runner, downloader=downloader)
-            self.assertEqual(result["error"], "starcore_strict_download_requires_prepared_environment")
-            self.assertFalse(root.exists())
-            runner.assert_not_called()
-            downloader.assert_not_called()
+                result = managed.prepare_environment_result(root=root)
+            self.assertEqual(result["error"], "domestic_source_not_configured")
+            self.assertEqual(result["stage"], "arduino-cli")
+            self.assertTrue(result["required_archive"].endswith(managed.ARDUINO_CLI_ARTIFACT["filename"]))
 
     def test_prepare_environment_builds_isolated_managed_toolchain(self):
         with tempfile.TemporaryDirectory() as folder:
             root = Path(folder) / "managed"
+            downloaded = []
+            toolchain = managed.toolchain_lock()
+            components = [toolchain["core"], *toolchain["tools"]]
+            destinations = {item['filename']: item['destination'] for item in components}
 
             def downloader(item, destination):
+                downloaded.append(item["filename"])
                 destination.parent.mkdir(parents=True, exist_ok=True)
                 if item["filename"].startswith("arduino-cli_"):
                     with zipfile.ZipFile(destination, "w") as archive:
                         archive.writestr("arduino-cli.exe", b"managed-cli")
+                elif item["filename"] in destinations:
+                    with zipfile.ZipFile(destination, "w") as archive:
+                        archive.writestr("root/boards.txt" if item['filename'] == toolchain['core']['filename']
+                                         else "root/tool.exe", b"fixture")
                 elif item["filename"] == managed.FONT_DEVICE_ARTIFACT["filename"]:
                     with zipfile.ZipFile(destination, "w") as archive:
                         archive.writestr(
@@ -314,13 +321,6 @@ class StarcoreTests(unittest.TestCase):
                             b"// managed",
                         )
 
-            def runner(command, timeout):
-                if command[1:3] == ["core", "install"]:
-                    board = root / "data" / "packages" / "mindplus" / "hardware" / "esp32" / "0.0.1" / "boards.txt"
-                    board.parent.mkdir(parents=True, exist_ok=True)
-                    board.write_text("mpython.name=mPython", encoding="utf-8")
-                return {"command": command, "returncode": 0, "stdout": "", "stderr": ""}
-
             def install_font(_archive, destination):
                 destination.parent.mkdir(parents=True, exist_ok=True)
                 destination.write_bytes(b"0" * managed.FONT_DEVICE_ARTIFACT["font_size"])
@@ -329,6 +329,7 @@ class StarcoreTests(unittest.TestCase):
             with (
                 mock.patch.object(managed.os, "name", "nt"),
                 mock.patch.object(managed.platform, "machine", return_value="AMD64"),
+                mock.patch.dict(os.environ, {"CHATMAKER_DOWNLOAD_POLICY": "domestic-only", "CHATMAKER_RUNTIME_ROOT": folder}),
                 mock.patch.object(managed, "_install_font_device_archive", side_effect=install_font),
                 mock.patch.object(managed, "_sha256", side_effect=lambda path: (
                     managed.FONT_DEVICE_ARTIFACT["font_sha256"]
@@ -339,7 +340,6 @@ class StarcoreTests(unittest.TestCase):
             ):
                 result = managed.prepare_environment_result(
                     root=root,
-                    runner=runner,
                     downloader=downloader,
                 )
 
@@ -347,8 +347,9 @@ class StarcoreTests(unittest.TestCase):
             self.assertTrue(result["installation_performed"])
             self.assertEqual(result["environment"]["backend"], managed.BACKEND)
             stages = [event.get("stage") for event in events if event["event"] == "stage"]
-            self.assertIn("index", stages)
             self.assertIn("core", stages)
+            self.assertTrue(set(destinations).issubset(downloaded))
+            self.assertEqual(result["executions"], [])
             config = json.loads((root / "arduino-cli.yaml").read_text(encoding="ascii"))
             self.assertTrue(
                 os.path.samefile(
@@ -358,8 +359,10 @@ class StarcoreTests(unittest.TestCase):
             )
             self.assertEqual(
                 config["board_manager"]["additional_urls"],
-                [managed.MINDPLUS_PACKAGE_INDEX_URL],
+                [],
             )
+            self.assertTrue((root / 'data/package_index.json').is_file())
+            self.assertTrue((root / destinations[toolchain['core']['filename']] / 'installed.json').is_file())
             manifest = json.loads((root / "manifest.json").read_text(encoding="ascii"))
             self.assertEqual(manifest["backend"], managed.BACKEND)
             self.assertEqual(
@@ -368,6 +371,28 @@ class StarcoreTests(unittest.TestCase):
             )
             self.assertEqual(manifest["font_sha256"], managed.FONT_DEVICE_ARTIFACT["font_sha256"])
             self.assertTrue((root / "firmware" / managed.FONT_DEVICE_ARTIFACT["font_filename"]).is_file())
+
+    def test_library_install_retries_transient_windows_rename_failure(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            archive = root / 'library.zip'
+            library = managed.LIBRARIES[0]
+            relative = Path(library['archive_root'], library['required_file'])
+            with zipfile.ZipFile(archive, 'w') as bundle:
+                bundle.writestr(relative.as_posix(), b'fixture')
+            original_rename = Path.rename
+            attempts = []
+
+            def rename(source, target):
+                attempts.append(source)
+                if len(attempts) == 1:
+                    raise PermissionError('transient access denied')
+                return original_rename(source, target)
+
+            with mock.patch.object(Path, 'rename', rename):
+                managed._install_library_archive(archive, library, root / 'user')
+            self.assertEqual(len(attempts), 2)
+            self.assertEqual((root / 'user/libraries' / relative).read_bytes(), b'fixture')
 
 
 if __name__ == "__main__":

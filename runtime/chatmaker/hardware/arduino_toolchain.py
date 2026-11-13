@@ -17,8 +17,11 @@ import tempfile
 import uuid
 import zipfile
 
-from chatmaker.installers.downloads import download_locked, load_runtime_sources, sha256, _candidate_sources, _write_json
-from chatmaker.installers.locks import exclusive_file
+from chatmaker.installers.downloads import (
+    DownloadError, DownloadTooSlow, download_locked, download_session, load_runtime_sources, sha256,
+    _candidate_sources, _write_json,
+)
+from chatmaker.installers.locks import exclusive_file, rename_directory
 from chatmaker.progress import emit
 
 PROFILES = {'avr', 'esp32', 'esp32s3', 'esp32c3', 'esp32c6'}
@@ -59,13 +62,41 @@ def host_problem(*, dry_run=False) -> dict | None:
     return None
 
 
-def bundle(profile: str = 'esp32') -> dict:
+def _apply_esp32_release(data: dict, release: dict) -> None:
+    # The approved release changes the core and its matching SDK archives.
+    # The other dependencies and their host-specific archives stay identical.
+    previous = data['core_version']
+    version = release['core_version']
+    data['core_version'] = version
+    for name, metadata in release['artifacts'].items():
+        item = data['artifacts'][name]
+        item.update(metadata, version=version, filename=item['filename'].replace(previous, version),
+                    destination=item['destination'].removesuffix(previous) + version)
+        for source in item['sources']:
+            source['url'] = source['url'].replace(previous, version)
+        system = item['system']
+        system.update(url=system['url'].replace(previous, version), archiveFileName=item['filename'],
+                      checksum='SHA-256:' + item['sha256'], size=type(system['size'])(item['size']))
+        if name == 'core':
+            system['version'] = version
+            for dependency in system['toolsDependencies']:
+                if dependency['version'] == previous:
+                    dependency['version'] = version
+            data['platform'] = copy.deepcopy(system)
+
+
+def bundle(profile: str = 'esp32', *, core_version: str | None = None) -> dict:
     registry = load_runtime_sources()
     tag = platform_tag()
     if tag is None:
         raise ValueError('unsupported_arduino_host')
     esp = registry['arduino_esp32']
     result = copy.deepcopy(registry['arduino_avr'] if profile == 'avr' else esp)
+    if core_version is not None and core_version != result['core_version']:
+        release = registry['arduino_esp32_preferred']
+        if profile == 'avr' or core_version != release['core_version']:
+            raise ValueError('unsupported_core_version')
+        _apply_esp32_release(result, release)
     artifacts = result['artifacts']
     if profile == 'avr':
         for name in result['common'] + result['optional_libraries']:
@@ -74,6 +105,7 @@ def bundle(profile: str = 'esp32') -> dict:
     elif profile in {'esp32c3', 'esp32c6'}:
         result['common'] = ['esp-rv32' if name == 'esp-x32' else name for name in result['common']]
     artifacts['cli'] = registry['arduino_cli'][tag]
+    result['fallback_cli'] = registry['arduino_cli_fallback'][tag]
     result['platform_tag'] = tag
     if tag.startswith('macos-'):
         macos = registry['arduino_macos']
@@ -92,7 +124,7 @@ def bundle(profile: str = 'esp32') -> dict:
     return result
 
 
-def home_for(profile: str) -> Path:
+def home_for(profile: str, *, core_version: str | None = None) -> Path:
     if profile not in PROFILES:
         raise ValueError('unsupported_toolchain_profile')
     parent = runtime_root() / 'toolchains' / 'arduino'
@@ -102,7 +134,17 @@ def home_for(profile: str) -> Path:
     elif tag == 'windows-amd64' and profile in {'esp32c3', 'esp32c6'}:
         # This GCC build can exceed MAX_PATH with its relative include paths.
         parent = runtime_root() / 'rv'
-    return parent / profile
+    if core_version is None:
+        return parent / profile
+    name = profile.removeprefix('esp32') if parent.name == 'rv' else profile
+    return parent / f'{name}-{core_version}'
+
+
+def _environment_choices(profile: str, home: Path | None) -> list[tuple[Path, str | None]]:
+    if home is not None or profile == 'avr':
+        return [((home or home_for(profile)).resolve(), None)]
+    version = load_runtime_sources()['arduino_esp32_preferred']['core_version']
+    return [(home_for(profile, core_version=version).resolve(), version), (home_for(profile).resolve(), None)]
 
 
 def native(path: Path) -> Path:
@@ -249,8 +291,8 @@ def extract_archive(archive: Path, destination: Path, *, strip_root: bool) -> No
             _write_archive_member(source.open(info), destination / relative, info.external_attr >> 16)
 
 
-def selected(profile: str, libraries=()) -> tuple[dict, list[str]]:
-    data = bundle(profile)
+def selected(profile: str, libraries=(), *, core_version: str | None = None) -> tuple[dict, list[str]]:
+    data = bundle(profile, core_version=core_version)
     if profile not in data['profiles']:
         raise ValueError('unsupported_toolchain_profile')
     if not isinstance(libraries, (list, tuple)) or any(name not in data['optional_libraries'] for name in libraries):
@@ -272,10 +314,13 @@ def offline_index(data: dict, ids: list[str]) -> dict:
     platform_info['toolsDependencies'] = [d for d in platform_info['toolsDependencies']
         if any(t['packager'] == d['packager'] and t['name'] == d['name'] and t['version'] == d['version'] for t in tools)]
     platform_vendor = data['artifacts']['core']['packager']
+    website = 'https://www.espressif.com' if platform_vendor == 'esp32' else 'https://www.arduino.cc'
+    platform_metadata = data.get('package_metadata', {'websiteURL': website,
+        'maintainer': 'Espressif Systems' if platform_vendor == 'esp32' else 'Arduino'})
     packages = []
     for vendor in (platform_vendor, 'builtin'):
-        packages.append({'name': vendor, 'maintainer': 'Espressif Systems' if vendor == 'esp32' else 'Arduino',
-            'websiteURL': 'https://www.espressif.com' if vendor == 'esp32' else 'https://www.arduino.cc',
+        vendor_metadata = platform_metadata if vendor == platform_vendor else {'maintainer': 'Arduino', 'websiteURL': website}
+        packages.append({'name': vendor, **vendor_metadata,
             'platforms': [platform_info] if vendor == platform_vendor else [],
             'tools': [{'name': t['name'], 'version': t['version'], 'systems': [t['system']]}
                       for t in tools if t['packager'] == vendor]})
@@ -285,8 +330,14 @@ def offline_index(data: dict, ids: list[str]) -> dict:
 def generated_files(home: Path, data: dict, ids: list[str]) -> dict:
     index = offline_index(data, ids)
     core = data['artifacts']['core']['destination']
+    installed = index
+    version = data['artifacts']['cli'].get('installed_index_version')
+    if version is not None:
+        # Write the format the CLI expects so it does not migrate the file
+        # during compilation and invalidate the verified environment.
+        installed = {**index, 'IsTrusted': False, 'version': version}
     return {'arduino-cli.yaml': configuration(home), 'data/package_index.json': index,
-            'data/library_index.json': {'libraries': []}, f'{core}/installed.json': index}
+            'data/library_index.json': {'libraries': []}, f'{core}/installed.json': installed}
 
 
 def _artifact_ready(home: Path, name: str, item: dict) -> bool:
@@ -297,6 +348,13 @@ def _artifact_ready(home: Path, name: str, item: dict) -> bool:
                                     exclude=('installed.json',) if name == 'core' else ()))
     except (OSError, ValueError, KeyError, TypeError):
         return False
+
+
+def _installed_cli(data: dict, home: Path) -> dict | None:
+    for item in (data['artifacts']['cli'], data['fallback_cli']):
+        if _artifact_ready(home, 'cli', item):
+            return item
+    return None
 
 
 def search_roots_match(home: Path, data: dict, ids: list[str]) -> bool:
@@ -319,19 +377,30 @@ def search_roots_match(home: Path, data: dict, ids: list[str]) -> bool:
 
 
 def context(profile: str, *, libraries=(), home: Path | None = None) -> dict | None:
-    home = (home or home_for(profile)).resolve()
+    for target, _ in _environment_choices(profile, home):
+        ready = _verified_context(profile, libraries, target)
+        if ready is not None:
+            return ready
+    return None
+
+
+def _verified_context(profile: str, libraries, home: Path) -> dict | None:
     try:
         receipt = json.loads((home / 'receipt.json').read_text('utf-8'))
         installed = receipt['libraries']
         if receipt.get('schema') != 1 or receipt.get('profile') != profile or not set(libraries).issubset(installed):
             return None
-        data, ids = selected(profile, installed)
+        data, ids = selected(profile, installed, core_version=receipt.get('core_version'))
         if receipt['artifacts'] != ids:
             return None
+        cli = _installed_cli(data, home)
+        if cli is None:
+            return None
+        data['artifacts']['cli'] = cli
         if any(json.loads((home / name).read_text('utf-8')) != value
                for name, value in generated_files(home, data, ids).items()):
             return None
-        if not all(_artifact_ready(home, name, data['artifacts'][name]) for name in ids):
+        if not all(_artifact_ready(home, name, data['artifacts'][name]) for name in ids if name != 'cli'):
             return None
         if not search_roots_match(home, data, ids):
             return None
@@ -339,7 +408,7 @@ def context(profile: str, *, libraries=(), home: Path | None = None) -> dict | N
         return {'root': str(home), 'cli': str(home / 'bin' / cli_name),
                 'config': str(home / 'arduino-cli.yaml'), 'libraries': str(home / 'libraries'),
                 'profile': profile, 'platform': data['platform_tag'], 'core_version': data['core_version'],
-                'cli_version': data['artifacts']['cli']['version'], 'backend': 'chatmaker-managed-arduino',
+                'cli_version': cli['version'], 'backend': 'chatmaker-managed-arduino',
                 'installed_libraries': installed}
     except (OSError, ValueError, KeyError, TypeError):
         return None
@@ -349,26 +418,56 @@ def archive_path(item: dict) -> Path:
     return runtime_root() / 'downloads' / 'arduino' / item['filename']
 
 
+def archive_matches(path: Path, item: dict) -> bool:
+    return path.is_file() and path.stat().st_size == item['size'] and sha256(path) == item['sha256']
+
+
+def _choose_cli(data: dict, home: Path) -> dict:
+    installed = _installed_cli(data, home)
+    if installed is not None:
+        return installed
+    preferred = data['artifacts']['cli']
+    backup = data['fallback_cli']
+    if not archive_matches(archive_path(preferred), preferred) and archive_matches(archive_path(backup), backup):
+        return backup
+    return preferred
+
+
 def preview(profile: str, *, libraries=(), home: Path | None = None) -> dict:
-    data, ids = selected(profile, libraries)
+    choices = _environment_choices(profile, home)
+    ready = context(profile, libraries=libraries, home=home)
+    if ready:
+        home, core_version = Path(ready['root']), ready['core_version']
+    else:
+        home, core_version = choices[0]
+    data, ids = selected(profile, libraries, core_version=core_version)
+    preferred_cli = data['artifacts']['cli']
+    data['artifacts']['cli'] = _choose_cli(data, home)
     components = []
     blocked = []
     for name in ids:
         item = data['artifacts'][name]
         cache = archive_path(item)
-        cached = cache.is_file() and cache.stat().st_size == item['size'] and sha256(cache) == item['sha256']
+        cached = archive_matches(cache, item) or _artifact_ready(home, name, item)
         try:
             sources = _candidate_sources(item)
         except RuntimeError as exc:
             sources = []
-            if not cached:
+            backup_sources = []
+            if name == 'cli' and item is preferred_cli and not cached:
+                try:
+                    backup_sources = _candidate_sources(data['fallback_cli'])
+                except DownloadError:
+                    pass
+            if not cached and not backup_sources:
                 blocked.append({'component': name, 'error': str(exc)})
         components.append({'id': name, 'version': item['version'], 'archive_bytes': item['size'],
                            'filename': item['filename'], 'cached': cached, 'sources': sources})
     return {'success': True, 'action': 'prepare-environment', 'status': 'plan', 'profile': profile,
             'platform': data['platform_tag'], 'requires_rosetta': data['platform_tag'] == 'macos-arm64',
             'installation_performed': False, 'runtime_root': str(runtime_root()),
-            'environment_root': str(home or home_for(profile)), 'components': components,
+            'environment_root': str(home), 'components': components,
+            'preferred_cli_version': preferred_cli['version'], 'fallback_cli_version': data['fallback_cli']['version'],
             'archive_bytes': sum(c['archive_bytes'] for c in components),
             'remaining_download_bytes': sum(c['archive_bytes'] for c in components if not c['cached']),
             'policy_blockers': blocked, 'estimated_seconds': None}
@@ -383,12 +482,76 @@ def _seed_previous_cache(item: dict, destination: Path) -> None:
     if destination.exists():
         return
     for candidate in candidates:
-        if candidate.is_file() and candidate.stat().st_size == item['size'] and sha256(candidate) == item['sha256']:
+        if archive_matches(candidate, item):
             with exclusive_file(destination.with_name(destination.name + '.lock')):
+                if destination.exists():
+                    return
                 temporary = destination.with_name(destination.name + '.seed')
                 shutil.copyfile(candidate, temporary)
                 temporary.replace(destination)
             return
+
+
+def _download_cli(item: dict, backup: dict) -> tuple[dict, Path]:
+    archive = archive_path(item)
+    if item == backup:
+        download_locked(item, archive)
+        return item, archive
+    try:
+        download_locked(item, archive, retry_slow_sources=False)
+    except DownloadError as preferred_error:
+        emit('stage', stage='prepare', component='cli',
+             message=f"新版 Arduino CLI 暂未取到，尝试兼容版 {backup['version']}")
+        backup_archive = archive_path(backup)
+        _seed_previous_cache(backup, backup_archive)
+        try:
+            download_locked(backup, backup_archive)
+        except DownloadError as backup_error:
+            if not isinstance(preferred_error, DownloadTooSlow):
+                raise DownloadError(f'{preferred_error}; compatible_cli:{backup_error}') from backup_error
+            # Both versions have been tried. Finish a working transfer if it
+            # was deferred only to see whether the older copy would be faster.
+            download_locked(item, archive)
+        else:
+            return backup, backup_archive
+    return item, archive
+
+
+def _choose_esp32_release(profile: str, libraries, choices: list[tuple[Path, str | None]]) -> tuple[Path, str | None]:
+    preferred, compatible = choices
+    artifacts = {}
+    for home, version in choices:
+        data, _ = selected(profile, libraries, core_version=version)
+        artifacts[home] = [(name, data['artifacts'][name]) for name in ('core', *data['profiles'][profile])]
+
+    def local(home, name, item):
+        return archive_matches(archive_path(item), item) or _artifact_ready(home, name, item)
+
+    # A fully cached compatible core can get the lesson running immediately.
+    if not all(local(preferred[0], name, item) for name, item in artifacts[preferred[0]]) and all(
+            local(compatible[0], name, item) for name, item in artifacts[compatible[0]]):
+        return compatible
+
+    def fetch(home, *, try_compatible):
+        for name, item in artifacts[home]:
+            if not _artifact_ready(home, name, item):
+                archive = archive_path(item)
+                _seed_previous_cache(item, archive)
+                download_locked(item, archive, retry_slow_sources=not try_compatible)
+
+    try:
+        fetch(preferred[0], try_compatible=True)
+    except DownloadError as preferred_error:
+        emit('stage', stage='prepare', component='esp32', message='新版 ESP32 核心暂未取到，尝试上一兼容版')
+        try:
+            fetch(compatible[0], try_compatible=False)
+        except DownloadError as backup_error:
+            if not isinstance(preferred_error, DownloadTooSlow):
+                raise DownloadError(f'{preferred_error}; compatible_esp32:{backup_error}') from backup_error
+            fetch(preferred[0], try_compatible=False)
+        else:
+            return compatible
+    return preferred
 
 
 def _install(home: Path, name: str, item: dict, archive: Path) -> None:
@@ -407,18 +570,18 @@ def _install(home: Path, name: str, item: dict, archive: Path) -> None:
         if not quarantine.is_relative_to(home):
             raise ValueError('quarantine_path_outside_environment')
         quarantine.parent.mkdir(parents=True, exist_ok=True)
-        destination.rename(quarantine)
-    stage.rename(destination)
+        rename_directory(destination, quarantine)
+    rename_directory(stage, destination)
     receipt_path = home / 'manifests' / (name + '.json')
     receipt_path.parent.mkdir(parents=True, exist_ok=True)
     _write_json(receipt_path, {'sha256': item['sha256'], 'destination': item['destination'], 'files': manifest})
 
 
+@download_session()
 def prepare(profile: str, *, libraries=(), dry_run=False, home: Path | None = None) -> dict:
     problem = host_problem(dry_run=dry_run)
     if problem:
         return problem
-    home = (home or home_for(profile)).resolve()
     if dry_run:
         return preview(profile, libraries=libraries, home=home)
     emit('stage', stage='inspect', message='检查所需组件和已有缓存')
@@ -426,14 +589,22 @@ def prepare(profile: str, *, libraries=(), dry_run=False, home: Path | None = No
     if ready:
         return {'success': True, 'ready_for_compile': True, 'installation_performed': False, 'environment': ready}
     try:
+        choices = _environment_choices(profile, home)
+        home, core_version = (_choose_esp32_release(profile, libraries, choices) if len(choices) > 1 else choices[0])
         with exclusive_file(home / 'prepare.lock'):
+            # If another prepare finished between source selection and lock acquisition, reuse it.
+            ready = _verified_context(profile, libraries, home)
+            if ready:
+                return {'success': True, 'ready_for_compile': True, 'installation_performed': False, 'environment': ready}
             old_libraries = []
             try:
                 old_libraries = json.loads((home / 'receipt.json').read_text('utf-8'))['libraries']
-                selected(profile, old_libraries)
+                selected(profile, old_libraries, core_version=core_version)
             except (OSError, ValueError, KeyError, TypeError):
                 old_libraries = []
-            data, ids = selected(profile, list(dict.fromkeys(list(old_libraries) + list(libraries))))
+            data, ids = selected(profile, list(dict.fromkeys(list(old_libraries) + list(libraries))),
+                                 core_version=core_version)
+            data['artifacts']['cli'] = _choose_cli(data, home)
             for number, name in enumerate(ids, 1):
                 item = data['artifacts'][name]
                 emit('stage', stage='prepare', component=name, step=number, total_steps=len(ids),
@@ -442,7 +613,11 @@ def prepare(profile: str, *, libraries=(), dry_run=False, home: Path | None = No
                     continue
                 archive = archive_path(item)
                 _seed_previous_cache(item, archive)
-                download_locked(item, archive)
+                if name == 'cli':
+                    item, archive = _download_cli(item, data['fallback_cli'])
+                    data['artifacts']['cli'] = item
+                else:
+                    download_locked(item, archive)
                 _install(home, name, item, archive)
             for name, value in generated_files(home, data, ids).items():
                 path = home / name
@@ -451,6 +626,7 @@ def prepare(profile: str, *, libraries=(), dry_run=False, home: Path | None = No
             for name in ('downloads', 'user', 'libraries', 'build-cache'):
                 (home / name).mkdir(exist_ok=True)
             _write_json(home / 'receipt.json', {'schema': 1, 'profile': profile, 'artifacts': ids,
+                        'core_version': data['core_version'],
                         'libraries': [name for name in ids if name in data['optional_libraries']]})
             ready = context(profile, libraries=libraries, home=home)
             if not ready:
