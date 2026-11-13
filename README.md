@@ -14,7 +14,7 @@ ChatMaker 是唯一入口；ChatDuino、ChatWeb 和 ChatCAD 是由它在内部�
 
 对话窗口就是创作环境。编译器、串口和浏览器在后台完成专业工作，学生可以直接让 ChatMaker 把程序下载到支持的板子上。
 
-> 最近的发行版为 **0.2.0-beta.6**。下文描述 GitHub `main` 上的源码，Gitee 自动同步主分支。各板卡的验证进度见下方状态表。
+> 最新版本标签为 **v0.2.0-beta.6**。下文描述 GitHub `main` 上的源码，Gitee 自动同步主分支。各板卡的验证进度见下方状态表。
 
 GitHub 主分支已支持按板准备工具、慢速自动换源和断点续传。学生描述接线后，ChatMaker 可以按板型检查已有引脚，保留安全可用的接法。首次联网准备、实板烧录与接线判断的步骤见 [WorkBuddy 复测说明](docs/verification/workbuddy-retest-download-sources.md)。
 

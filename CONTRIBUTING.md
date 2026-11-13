@@ -2,6 +2,10 @@
 
 ChatMaker accepts focused changes that make beginner hardware or native-web creation safer, clearer, or more reliable.
 
+## Record substantial updates
+
+Include a dated entry at the top of [WHATS_NEW.md](WHATS_NEW.md) whenever a substantial user-facing update lands. Identify the version tag or the main branch update, describe what users can do differently, and record any compatibility or verification limits that affect their use. Add the relevant install or retest link when users need it. For shared update and demo prompts, include a version self-check for both the loaded ChatMaker Skill and the local tool.
+
 ## Before changing a record
 
 - Confirm the exact board, module controller, interface, voltage, and visible pin labels.

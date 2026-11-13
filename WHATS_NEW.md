@@ -1,6 +1,16 @@
 # ChatMaker 有什么新变化？
 
-这是面向老师、学生和体验者的公开更新记录。最新更新放在最上面，每次都标明日期和版本；已经发布的旧记录继续保留。
+这是面向老师、学生和体验者的公开更新记录。最新更新放在最上面，标明日期和对应的版本标签或主分支提交。
+
+## 2026-11-13 · 0.2.0-beta.6 之后的主分支更新
+
+这次更新对应 [提交 `fc44ec5`](https://github.com/Amasun93/ChatMaker/commit/fc44ec5b5d582daa3c427990c9b4b968d1e5f65b)。
+
+- 首次用板时，ChatMaker 只准备这块板需要的工具。下载地址太慢或连不上时会尝试备用来源。支持续传的文件可以接着下载，已经验证过的工具下次直接复用。
+- Uno R3、经典 Nano、Mega 2560 和已适配的 ESP32 板型可用独立工具完成编译和烧录。星核板 v4.2.2 在 Windows x64 上也由 ChatMaker 自己准备编译器、烧录工具和字库，无需安装 Mind+。
+- Apple 芯片和 Intel Mac 都已通过 Arduino 和 ESP32 的课堂示例编译。微雪 ESP32-S3-Touch-LCD-2.8 的 V1 和 V2 屏幕、触摸计时器示例也已编译通过，实板烧录、触摸和断电重启待复测。[Mac 编译记录](https://github.com/Amasun93/ChatMaker/actions/runs/43394333622)
+- 还没接线时可以请 ChatMaker 推荐引脚。已经接好时，把板型和接法告诉它。安全可用的线可以保留，有冲突时会指出具体要改哪根线。
+- 用 WorkBuddy 试用时，先核对实际加载的 Skill 和本地工具对应的提交，再试一次写入程序和一次修改。[固定到本次提交的复测说明](https://github.com/Amasun93/ChatMaker/blob/fc44ec5b5d582daa3c427990c9b4b968d1e5f65b/docs/verification/workbuddy-retest-download-sources.md)
 
 ## 2026-11-12 · 0.2.0-beta.6
 
