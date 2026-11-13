@@ -1,12 +1,14 @@
 # ChatMaker 在 macOS 上的 WorkBuddy 复测
 
-从 ChatMaker 源码目录运行。Apple 芯片和 Intel Mac 各有对应的工具包。需要 Git、Python 3.11 或更高版本，以及能运行本地命令的 WorkBuddy。Apple 芯片的 Mac 需要 Rosetta 来运行当前固定版本的 Arduino 辅助工具和 AVR 编译器。[Apple 的 Rosetta 安装说明](https://support.apple.com/102527)
+从 GitHub `main` 取源码，再切到本次复测指定的提交。Apple 芯片和 Intel Mac 各有对应的工具包。需要 Git、Python 3.11 或更高版本，以及能运行本地命令的 WorkBuddy。Apple 芯片的 Mac 需要 Rosetta 来运行当前固定版本的 Arduino 辅助工具和 AVR 编译器。[Apple 的 Rosetta 安装说明](https://support.apple.com/102527)
 
 ## 确认复测版本并准备环境
 
-在 Mac 的 ChatMaker 目录执行以下命令。将最后一行的 `FULL_COMMIT_SHA` 替换为本次交付的完整提交号。
+在 Mac 的 ChatMaker 目录执行以下命令。`FULL_COMMIT_SHA` 使用交付说明里指定的完整提交号。
 
 ```bash
+git fetch origin main
+git switch --detach FULL_COMMIT_SHA
 git status --short
 git rev-parse HEAD
 bash scripts/setup_local_runtime.sh --check-only
@@ -76,3 +78,5 @@ SKETCH="$PWD/examples/chatduino/waveshare-s3/classroom-timer"
 - 保存预检 JSON、Mac 芯片架构、macOS 版本和板上印字。
 - 记录首次准备耗时、来源、是否使用已有缓存，以及第二次是否再次下载。ESP32 大组件优先走乐鑫国内地址。Arduino 的部分小工具使用官方直连地址。
 - 记录具体 USB 口、端口地址、编译结果、烧录结果和实际效果。Mac 编译任务可验证固件产物。烧录、串口、触摸和重启由接板实测确认。
+
+星核板 v4.2.2 的独立路线在 Windows x64 上复测，步骤见 [安装说明](../installation.md) 和 [星核板实测记录](2026-08-26-starcore-independent-cli.md)。

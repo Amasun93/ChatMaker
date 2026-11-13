@@ -19,6 +19,8 @@ from typing import Any, Callable
 import zipfile
 
 from chatmaker.installers import downloads
+from chatmaker.installers.locks import exclusive_file
+from chatmaker.progress import emit
 
 
 BACKEND = "chatmaker-managed-starcore"
@@ -31,6 +33,11 @@ ARDUINO_CLI_ARTIFACT = {
     "source_id": "arduino-github",
     "source_kind": "official_fallback",
     "sources": [
+        {
+            "id": "arduino-downloads",
+            "kind": "official_fallback",
+            "url": "https://downloads.arduino.cc/arduino-cli/arduino-cli_0.33.1_Windows_64bit.zip",
+        },
         {
             "id": "arduino-github",
             "kind": "official_fallback",
@@ -204,7 +211,7 @@ def managed_context(root: Path | None = None) -> dict[str, Any] | None:
     }
 
 
-def _download_locked(item: dict[str, Any], destination: Path, *, timeout: int = 300) -> dict[str, Any]:
+def _download_locked(item: dict[str, Any], destination: Path, *, timeout: int = 25) -> dict[str, Any]:
     return downloads.download_locked(
         downloads.legacy_artifact(item), destination, timeout=timeout
     ).to_dict()
@@ -303,6 +310,26 @@ def _command(paths: dict[str, Path], *parts: str) -> list[str]:
     return [str(paths["cli"]), *parts, "--config-file", str(paths["config"]), "--no-color"]
 
 
+def _supported_host() -> bool:
+    return os.name == "nt" and platform.machine().casefold() in {"amd64", "x86_64", "x64"}
+
+
+def preview_environment() -> dict[str, Any]:
+    root = default_root()
+    return {
+        "action": "prepare-environment",
+        "status": "plan",
+        "success": _supported_host(),
+        "backend": BACKEND,
+        "managed_root": str(root),
+        "installation_performed": False,
+        "ready_for_compile": managed_context(root) is not None,
+        "toolchain_lock": toolchain_lock(),
+        "stages": ["arduino-cli", "index", "core", "libraries", "chinese-font"],
+        "teacher_message": "星核板的独立工具链目前支持 Windows x64。",
+    }
+
+
 def prepare_environment_result(
     *,
     root: Path | None = None,
@@ -321,8 +348,30 @@ def prepare_environment_result(
     ready = managed_context(paths["root"])
     if ready:
         return {**base, "success": True, "ready_for_compile": True, "environment": ready}
-    if os.name != "nt" or platform.machine().casefold() not in {"amd64", "x86_64", "x64"}:
-        return {**base, "success": False, "error": "managed_starcore_platform_not_yet_supported"}
+    if not _supported_host():
+        return {**base, "success": False, "error": "managed_starcore_platform_not_yet_supported",
+                "teacher_message": "星核板的独立工具链目前支持 Windows x64。"}
+    if os.environ.get("CHATMAKER_DOWNLOAD_POLICY", "").strip().casefold() in {"domestic-only", "domestic_only"}:
+        # This legacy core uses Arduino CLI's own online index and helper tools.
+        # The shared downloader cannot constrain those subprocess requests.
+        return {**base, "success": False, "error": "starcore_strict_download_requires_prepared_environment",
+                "teacher_message": "严格国内模式下，请使用课前已准备好的星核板环境。首次安装仍需 Arduino 官方索引和辅助工具。"}
+
+    try:
+        with exclusive_file(paths["root"] / "prepare.lock"):
+            ready = managed_context(paths["root"])
+            if ready:
+                return {**base, "success": True, "ready_for_compile": True, "environment": ready}
+            return _install_environment(paths, base, runner, downloader)
+    except RuntimeError as exc:
+        return {**base, "success": False, "error": str(exc),
+                "teacher_message": "请等当前星核板工具准备任务结束，再复用同一个环境。"}
+    except OSError as exc:
+        return {**base, "success": False, "error": str(exc),
+                "teacher_message": "无法写入星核板工具目录，请检查目录权限和磁盘空间。"}
+
+
+def _install_environment(paths: dict[str, Path], base: dict[str, Any], runner, downloader) -> dict[str, Any]:
 
     try:
         cli_archive = paths["downloads"] / str(ARDUINO_CLI_ARTIFACT["filename"])
@@ -345,14 +394,18 @@ def prepare_environment_result(
 
     executions: list[dict[str, Any]] = []
     commands = [
-        ("index", _command(paths, "core", "update-index"), 180),
-        ("core", _command(paths, "core", "install", f"{CORE_ID}@{CORE_VERSION}", "--skip-post-install"), 900),
+        ("index", _command(paths, "core", "update-index"), 90, "读取星核板的板卡索引"),
+        ("core", _command(paths, "core", "install", f"{CORE_ID}@{CORE_VERSION}", "--skip-post-install"), 300,
+         "准备星核板编译器和烧录工具"),
     ]
-    for stage, command, timeout in commands:
+    for stage, command, timeout, step in commands:
+        emit("stage", stage=stage, component="starcore", message=f"正在{step}")
         execution = runner(command, timeout=timeout)
         executions.append({"stage": stage, **execution})
         if execution.get("returncode") != 0:
-            return {**base, "success": False, "error": f"managed_starcore_{stage}_failed", "stage": stage, "executions": executions}
+            return {**base, "success": False, "error": f"managed_starcore_{stage}_failed", "stage": stage,
+                    "executions": executions, "next_action": "prepare-environment",
+                    "teacher_message": f"{step}这一步未完成。已保留工具目录，请检查下载连接后在同一目录重试。"}
 
     for library in LIBRARIES:
         try:
@@ -388,7 +441,7 @@ def prepare_environment_result(
         "font_sha256": FONT_DEVICE_ARTIFACT["font_sha256"],
         "libraries": [f"{item['name']}@{item['version']}" for item in LIBRARIES],
     }
-    paths["manifest"].write_text(json.dumps(manifest, sort_keys=True, indent=2) + "\n", encoding="ascii")
+    downloads._write_json(paths["manifest"], manifest)
     environment = managed_context(paths["root"])
     if not environment:
         return {**base, "success": False, "error": "managed_starcore_verification_failed", "stage": "verify", "executions": executions}

@@ -47,7 +47,7 @@ python scripts/cleanup_legacy_mcp.py --config "$env:USERPROFILE\.workbuddy\.mcp.
 
 macOS 的 Arduino AVR 和 ESP32 项目可从源码目录运行 `bash scripts/setup_local_runtime.sh`，再使用 `.chatmaker-runtime/bin/chatmaker-hardware`。先准备 Python 3.11 或更高版本。Apple 芯片的 Mac 还需要 Rosetta。板型、版本预检和烧录步骤见 [WorkBuddy 的 Mac 复测说明](verification/workbuddy-retest-macos.md)。
 
-本地执行统一使用 `chatmaker-*` CLI。源码目录已经提供小白环境脚本；它先复用电脑里可用的 Python 3.11，没有时才把固定的便携 Python 下载到当前项目，不改全局 PATH：
+Windows 本地执行统一使用 `chatmaker-*` CLI。源码目录的脚本先复用电脑里可用的 Python 3.11，没有时把固定的便携 Python 下载到当前项目：
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/setup_local_runtime.ps1 -CheckOnly
@@ -76,14 +76,14 @@ powershell -NoProfile -ExecutionPolicy Bypass -File <环境包目录>\install.ps
 
 已具备独立工具链的项目使用 `chatmaker-hardware --request-file project.json`（或通过标准输入使用 `--request-json -`）：按准确板型复用环境，缺少时准备一次，再继续编译和下载。请求包含 `board_id`、`sketch` 或完整 `code`，以及该板必要的身份信息；可提供 `expected_serial_marker` 读取运行证据。AI 负责构造这些字段，学生只需描述效果、确认实物并接板。没有 Mind+ 不应阻止这一流程。
 
-常用入口：
+首次准备 Arduino、星核板或 ESP32 时，让 AI 先核对板上型号，再执行对应的环境准备。Uno R3 和 ESP32 可用 `--dry-run` 查看所需组件和待下载量。`--progress human` 显示下载进度，能够读取事件的宿主可用 `--progress jsonl`。星核板会显示索引、编译器和烧录工具的准备阶段。后续修改程序继续使用同一个环境目录。
+
+常用入口如下。
 
 ```powershell
-chatmaker-starcore --request-json '{"action":"prepare-environment"}'
-chatmaker-starcore --request-json '{"action":"doctor"}'
-chatmaker-nano --request-json '{"action":"doctor"}'
-chatmaker-uno --request-json '{"action":"doctor"}'
-chatmaker-esp32 --action doctor
+chatmaker-hardware --board-id arduino-uno-r3 --action prepare-environment --dry-run
+chatmaker-hardware --board-id idmc-0001-starcore-v4-2-2 --action prepare-environment
+chatmaker-hardware --board-id esp32-devkit-v1 --action doctor
 chatmaker-mpython --request-json '{"action":"doctor"}'
 chatmaker-unihiker --request-json '{"action":"check_project","project":"<project-folder>"}'
 chatmaker-serial
@@ -94,10 +94,10 @@ AI 工作区如果具备本地命令执行能力，就直接调用这些 CLI；�
 
 ## Mind+ 版本策略
 
-- 星核板：Windows x64 已可由 ChatMaker 自己准备独立环境，不需要安装 Mind+ 桌面应用。
+- 星核板 v4.2.2 在 Windows x64 上可由 ChatMaker 自己准备环境。厂商公开的板卡包、库和字库仍是编译所需的组件。严格国内模式可复用已准备的星核板环境，首次安装还需要 Arduino 官方索引和辅助工具。Mac 独立环境待适配。
 - 经典掌控板 V2.x：Windows x64 首选 `chatmaker-mpython` 独立链；已有 Mind+ 1.8.x 或 2.x 仍可作为兼容后端。
 - 掌控板 3.0：已有 `chatmaker-mpython-v3` 独立准备和编译路线；实板证据独立报告。
-- 微雪 ESP32-S3-Touch-LCD-2.8：开发分支新增 `chatmaker-waveshare-s3`，V1/V2 两版示例已编译；不依赖 Mind+，不能混用普通 DOIT ESP32 适配器。
+- 微雪 ESP32-S3-Touch-LCD-2.8 的 V1 和 V2 用同一专用板型入口，按背面标识传入版本。两版示例均已真实编译。
 - 经典 Nano、Uno R3、Mega 2560 可用 ChatMaker 管理的 Arduino AVR 工具链。Windows 上依赖 Mind+ 库的旧项目可继续使用对应的兼容入口。
 - 两个 Mind+ 版本都可用时优先 2.x；已有一个可用版本时，不要求学生再下载另一个。
 - 其他板卡按各自的验证记录判断，不能直接套用星核板结论。

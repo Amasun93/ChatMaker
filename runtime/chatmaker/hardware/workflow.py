@@ -49,6 +49,8 @@ def run_project(request: dict, *, adapters: Mapping[str, Any] | None = None) -> 
     if adapter is None:
         return {**result, 'state': 'unsupported-board', 'supported_boards': sorted(MODULES),
                 'teacher_message': '这块板尚未接入此独立运行入口，请使用它自己的已验证路线。'}
+    if board_id == 'idmc-0001-starcore-v4-2-2':
+        request = {**request, 'managed_only': True}
     action = request.get('action', 'run')
     if action != 'run':
         if action not in {'doctor', 'prepare-environment', 'compile', 'compile-upload', 'ports'}:

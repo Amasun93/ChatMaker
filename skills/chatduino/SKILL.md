@@ -19,7 +19,7 @@ ChatDuino is an internal specialist under the ChatMaker parent entry. Keep this 
 
 ## Workflow
 
-For classroom projects, save complete source and continue through the board's documented local tools. For independently managed Arduino boards use `chatmaker-hardware --request-file project.json` (or `--request-json -` via stdin) with the exact `board_id`, source, confirmed identity and optional serial marker. On macOS this includes Uno R3, classic Nano, Mega 2560, DOIT/Nova, Espressif C3/C6/S3 DevKits and Waveshare S3 V1/V2. Use standard Arduino libraries in new managed projects. See `docs/verification/workbuddy-retest-macos.md` for the supported profiles. micro:bit uses its documented HEX route.
+For classroom projects, save complete source and continue through the board's documented local tools. Use `chatmaker-hardware --request-file project.json` (or `--request-json -` via stdin) with the exact `board_id`, source, confirmed identity and optional serial marker. On Windows x64 and supported Macs this covers Uno R3, classic Nano, Mega 2560, DOIT/Nova, the documented Espressif C3/C6/S3 DevKits and Waveshare S3 V1/V2. On Windows x64 it also covers Starcore v4.2.2. Use standard Arduino libraries for new AVR and ESP32 projects and the board's pinned libraries for Starcore. See `docs/verification/workbuddy-retest-macos.md` for the supported Mac profiles. micro:bit uses its documented HEX route.
 
 For domestic classroom networks, prefer the checked-in Chinese vendor sources and the school's HTTPS mirror. If the teacher sets `CHATMAKER_DOWNLOAD_POLICY=domestic-only`, do not try GitHub fallbacks; report the missing domestic artifact and point to the verified offline cache/mirror path. Never replace a pinned archive with an unreviewed proxy.
 
@@ -29,13 +29,13 @@ For domestic classroom networks, prefer the checked-in Chinese vendor sources an
 3. After the exact board identity is confirmed, read `identify-and-safety`, `pins-and-electrical`, and `toolchains-and-upload` for a board with a ChatMaker Knowledge index. Run `chatmaker-knowledge --request-json '{"action":"section","board_id":"<exact-board-id>","consumer":"chatduino","section_id":"identify-and-safety"}'` and substitute the requested section. Keep those pages paired with canonical facts rather than replacing them. The current M10 alpha instead uses [unihiker-m10.md](references/unihiker-m10.md) plus canonical board `unihiker-m10`; Waveshare ESP32-S3-Touch-LCD-2.8 uses [waveshare-s3-touch-lcd-2-8.md](references/waveshare-s3-touch-lcd-2-8.md) plus its exact board record. Do not invent an unavailable Knowledge pack.
 4. Resolve pin, voltage, current, boot, serial, and shared-ground constraints before writing code.
 5. Present one visible disconnected-power `text` wiring block, then a complete `cpp` block. Do not generate SVG or another wiring graphic unless the user explicitly asks for an image.
-6. Prefer a board's documented ChatMaker-managed toolchain when it exists. On Windows x64 this covers Starcore v4.2.2, classic mPython V2.x, mPython V3 and Waveshare ESP32-S3-Touch-LCD-2.8; Mind+ 1.x/2.x remains a compatibility fallback only where the exact board documents one. Never substitute one physical board identity merely because the compiler target overlaps.
+6. Use the managed toolchain for the selected board. Run `prepare-environment` if the user asks to prepare it, or use `run` to prepare a missing environment and continue into compilation and upload. Keep the download progress visible on first use. On Windows x64, classic mPython V2.x and mPython V3 also have managed routes. Use an existing Mind+ setup only for the documented compatibility cases. Keep the exact board identity throughout.
 7. For MCU boards, compile with the selected board identity and record the command, exit code, and artifact path. For M10, run the Python 3.7 source preflight, then synchronize the complete project and observe a board-side run as separate gates.
 8. Upload MCU firmware only when one high-confidence wired port remains. Close serial handles before upload. Do not describe M10 file synchronization as firmware upload.
    For CLIs that require `board_confirmed`, pass `board_confirmed=true` internally only after the user has confirmed the exact printed model or equivalent high-confidence evidence. Never ask a student to type this field or show the raw error code as the whole explanation.
 9. Reopen serial after an MCU board returns, or read the M10 process log after launch. Use the `read` or `expect` action in a `chatmaker-serial` JSONL session only for a defined serial workflow; use `write` only when the project defines an input command. Ask for physical confirmation separately.
 
-For a complete Nano or Uno program, prefer `chatmaker-avr-project --request-json '<request>'`. It checks the existing Mind+ environment, compiles, uploads only when the wired port is unambiguous, and optionally looks for an expected serial marker. Use the individual board CLIs only when diagnosing one stage.
+For existing Windows AVR projects that depend on Mind+ libraries, `chatmaker-avr-project --request-json '<request>'` and the individual board CLIs provide the compatibility route.
 
 ChatMaker Knowledge is shared board guidance, not a second catalog. Use it to read safety, pin, toolchain, and troubleshooting context while preserving canonical facts, IDs, wiring, and verification objects from the checked-in packs.
 
@@ -60,29 +60,26 @@ Read [unihiker-m10.md](references/unihiker-m10.md) before generating or checking
 
 ## Classic Nano
 
-On macOS use `chatmaker-hardware --board-id arduino-nano-classic` and the managed Arduino AVR environment. If the confirmed ATmega328P Nano's bootloader is known, pass `--bootloader new` or `--bootloader old`. With no explicit setting, the managed route tries the other setting only after a bootloader synchronization failure. Use the Mind+ guidance below for Windows compatibility projects that rely on those libraries.
+Use `chatmaker-hardware --board-id arduino-nano-classic --action run --sketch <sketch>` and the managed Arduino AVR environment. If the confirmed ATmega328P Nano's bootloader is known, pass `--bootloader new` or `--bootloader old`. With no explicit setting, the managed route tries the new setting first and checks the same device before retrying after a bootloader synchronization failure.
 
 For a classic Arduino Nano ATmega328P, read [nano-beginner-guidance.md](references/nano-beginner-guidance.md) and [nano-teacher-output-contract.md](references/nano-teacher-output-contract.md). Use the shared ChatMaker Nano runtime for environment discovery, compilation, port selection, and upload.
 
-Read [nano-board-and-pins.md](references/nano-board-and-pins.md) and [nano-wiring-and-safety.md](references/nano-wiring-and-safety.md) before assigning pins or power. When the selected project uses a supported module, read [nano-common-module-cards.md](references/nano-common-module-cards.md) and [nano-mindplus-libraries.md](references/nano-mindplus-libraries.md). Read [nano-mindplus-installation.md](references/nano-mindplus-installation.md) only when no usable Mind+ toolchain is found.
+Read [nano-board-and-pins.md](references/nano-board-and-pins.md) and [nano-wiring-and-safety.md](references/nano-wiring-and-safety.md) before assigning pins or power. For a supported module, read [nano-common-module-cards.md](references/nano-common-module-cards.md). Check each include against the managed environment. [nano-mindplus-libraries.md](references/nano-mindplus-libraries.md) and [nano-mindplus-installation.md](references/nano-mindplus-installation.md) apply to existing Mind+ compatibility projects.
 
-- 完成程序后默认运行 `chatmaker-nano --request-json '{"action":"compile-upload",...}'`，把真实编译和安全自动烧录作为同一条连续流程。
 - 只有一个高置信度有线 Nano 时才自动选择端口；蓝牙端口必须排除，多个候选必须让用户选择。
 - 编译通过且没有检测到硬件时，提示接入 Nano 后自动上传，不等待老师额外确认，也不能报告烧录成功。
 - 编译失败时只修改完整程序，最多自动修改并重试 2 次。
-- 先尝试 57600；只有典型 Bootloader 同步失败时才尝试 115200。
 - 串口统一使用 `chatmaker-serial` JSONL 会话的 `list/open/read/expect/write/close` 动作。
-- Nano 的 `compile-upload` 动作会先暂停已打开的串口会话，烧录流程结束后再尝试恢复，避免端口占用。
+- 烧录前关闭占用目标串口的会话。旧项目使用 `chatmaker-nano` 兼容入口时，`compile-upload` 会尝试暂停并恢复该入口管理的串口会话。
 - 串口没有输出、只出现启动文字或模拟数据，都不能升级为实物效果已验证。
 
 ## Arduino Uno Rev3
 
-On macOS use `chatmaker-hardware --board-id arduino-uno-r3` with the managed Arduino AVR environment. Arduino Mega 2560 uses `arduino-mega-2560`. Existing Mind+ projects on Windows use their documented libraries and entry points.
+Use `chatmaker-hardware --board-id arduino-uno-r3` with the managed Arduino AVR environment. Arduino Mega 2560 uses `arduino-mega-2560`. Existing Mind+ projects on Windows use their documented libraries and entry points.
 
 For a confirmed Arduino Uno Rev3 / Genuino Uno with ATmega328P, use the shared ChatMaker Uno runtime rather than the Nano runtime.
 
-- Use `chatmaker-uno --request-json '<request>'` with the `prepare-environment`, `doctor`, `ports`, `compile`, or `compile-upload` action.
-- Mind+ 1.x compiles with `arduino:avr:uno`; Mind+ 2.x compiles with `mindplus:avr:uno`.
+- The Windows compatibility entry is `chatmaker-uno --request-json '<request>'`. Mind+ 1.x compiles with `arduino:avr:uno`; Mind+ 2.x compiles with `mindplus:avr:uno`.
 - Uno upload uses the board definition's fixed 115200 baud. Never apply the Nano 57600/115200 Bootloader fallback to Uno.
 - Reject Bluetooth ports. Auto-select only one confirmed Uno or one remaining wired candidate; require a choice when multiple wired ports remain.
 - Keep compile, upload, serial marker, reboot, and visible LED effect as separate evidence gates.
@@ -118,7 +115,7 @@ Read [esp32-doit-devkit-v1.md](references/esp32-doit-devkit-v1.md) before accept
 - Use `buttonA/buttonB/buttonAB` for the real active-low onboard buttons and `buzz` for the real passive buzzer. Treat P5/P11 as boot-related, P6 as occupied, P7 as affected by `mPython.begin()`'s software WS2812 initialization, P13/P14 as shared with CAN, and P19/P20 as the shared I2C bus.
 - Starcore has eight physical I2C sockets on the shared P19/SCL-P20/SDA bus. For a true I2C module, choose a socket marked for the module voltage and insert the complete four-wire cable; keep the adjacent SCL/C and SDA/D pair together and never split it across distant sockets. IDMS-0009 ultrasonic is not I2C: its 2+2 harness is VCC/GND plus TRIG/ECHO, with the reviewed classroom route H/P26 and O/P27.
 - The onboard SIT3051TK is a CAN physical layer, not a complete application protocol. Use a CAN API only after the actual bit rate, termination, cable and protocol are known; unknown buses start listen-only and never receive exploratory control frames. Keep backend-specific headers paired with the selected Mind+ environment.
-- Prefer the ChatMaker-managed Starcore environment. If it is absent, run `prepare-environment`; on Windows x64 this creates an isolated, hash-locked Arduino CLI, `mindplus:esp32@0.0.1` core, the exact mPython/OLED libraries, and the verified Mind+ device font without requiring the Mind+ desktop application.
+- For Starcore v4.2.2 on Windows x64, use `chatmaker-hardware --board-id idmc-0001-starcore-v4-2-2`. If the environment is absent, `prepare-environment` installs the pinned Arduino CLI, `mindplus:esp32@0.0.1` core, mPython/OLED libraries and the verified device font. Strict domestic mode can reuse an already prepared Starcore environment. Its initial setup still needs the Arduino index and helper tools.
 - Existing usable Mind+ 1.8.x or 2.x installations remain compatibility backends. When both Mind+ versions are usable, prefer 2.x with `mindplus:esp32:mpython:FlashMode=dio,FlashFreq=80,UploadSpeed=1500000,DebugLevel=none`; 1.8 uses `dfrobot:mpython:mpython:FlashMode=dio,FlashFreq=80,UploadSpeed=1500000,DebugLevel=none`. Do not ask a student to switch between usable Mind+ versions.
 - Upload only after the user has confirmed the physical board is Starcore v4.2.2 and one unambiguous non-Bluetooth wired port remains.
 - After that confirmation, pass `board_confirmed=true` internally. Before application upload, read the 4-byte marker at Flash `0x400000`; write the verified font only when the marker is not `GUIX`, and report `font_checked` separately from `font_asset_written`. If 1500000 baud returns `PermissionError`, retry once at 115200. If it reports `Invalid head of packet`, give the visible action “按住 A 键，短按 RST，松开 RST 后再松开 A 键”，then retry with manual download mode; do not reduce this to “检查数据线”.

@@ -52,8 +52,8 @@ class TeacherExperienceContractTests(unittest.TestCase):
             encoding="utf-8"
         )
 
-        self.assertIn("`chatmaker-nano --request-json", skill)
-        self.assertIn('"action":"compile-upload"', skill)
+        self.assertIn("`chatmaker-hardware --board-id arduino-nano-classic --action run --sketch", skill)
+        self.assertIn("旧项目使用 `chatmaker-nano` 兼容入口", skill)
         self.assertIn("不等待老师额外确认", skill)
         self.assertIn("最多自动修改并重试 2 次", skill)
         self.assertIn("未检测到硬件", contract)

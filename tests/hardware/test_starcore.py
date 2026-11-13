@@ -9,6 +9,8 @@ import zipfile
 
 from chatmaker.hardware import starcore
 from chatmaker.hardware import starcore_toolchain as managed
+from chatmaker.hardware.workflow import run_project
+from chatmaker.progress import listening
 
 
 def flash_assets():
@@ -199,7 +201,7 @@ class StarcoreTests(unittest.TestCase):
 
     def test_missing_toolchain_is_reported(self):
         original = starcore._current_context
-        starcore._current_context = lambda: None
+        starcore._current_context = lambda **_: None
         try:
             result = starcore.execute_request({"action": "compile", "code": "x"})
         finally:
@@ -253,6 +255,43 @@ class StarcoreTests(unittest.TestCase):
         self.assertEqual(selected["backend"], managed.BACKEND)
         self.assertEqual(selected["fqbn"], starcore.CURRENT_FQBN)
 
+    def test_unified_run_prepares_starcore_without_discovering_mindplus(self):
+        request = {"board_id": starcore.BOARD_ID, "sketch": "onboard-self-test"}
+        failure = {"success": False, "error": "download_interrupted"}
+        with (
+            mock.patch.object(managed, "managed_context", return_value=None),
+            mock.patch.object(managed, "prepare_environment_result", return_value=failure) as prepare,
+            mock.patch.object(starcore, "scan_ports", return_value=[]),
+            mock.patch.object(starcore.shared, "discover_installations", return_value=[]) as discover,
+        ):
+            result = run_project(request)
+        discover.assert_not_called()
+        prepare.assert_called_once()
+        self.assertEqual(result["state"], "awaiting-environment")
+        self.assertEqual(result["environment"]["error"], "download_interrupted")
+
+    def test_starcore_dry_run_leaves_the_environment_untouched(self):
+        with mock.patch.object(managed, "prepare_environment_result") as prepare:
+            result = run_project({"board_id": starcore.BOARD_ID, "action": "prepare-environment", "dry_run": True})
+        prepare.assert_not_called()
+        self.assertFalse(result["installation_performed"])
+
+    def test_starcore_strict_download_policy_stops_before_online_index(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder) / "starcore"
+            with (
+                mock.patch.object(managed, "managed_context", return_value=None),
+                mock.patch.dict(os.environ, {"CHATMAKER_DOWNLOAD_POLICY": "domestic-only"}),
+                mock.patch.object(managed.platform, "machine", return_value="AMD64"),
+                mock.patch.object(managed.os, "name", "nt"),
+            ):
+                runner, downloader = mock.Mock(), mock.Mock()
+                result = managed.prepare_environment_result(root=root, runner=runner, downloader=downloader)
+            self.assertEqual(result["error"], "starcore_strict_download_requires_prepared_environment")
+            self.assertFalse(root.exists())
+            runner.assert_not_called()
+            downloader.assert_not_called()
+
     def test_prepare_environment_builds_isolated_managed_toolchain(self):
         with tempfile.TemporaryDirectory() as folder:
             root = Path(folder) / "managed"
@@ -286,6 +325,7 @@ class StarcoreTests(unittest.TestCase):
                 destination.parent.mkdir(parents=True, exist_ok=True)
                 destination.write_bytes(b"0" * managed.FONT_DEVICE_ARTIFACT["font_size"])
 
+            events = []
             with (
                 mock.patch.object(managed.os, "name", "nt"),
                 mock.patch.object(managed.platform, "machine", return_value="AMD64"),
@@ -295,6 +335,7 @@ class StarcoreTests(unittest.TestCase):
                     if Path(path).name == managed.FONT_DEVICE_ARTIFACT["font_filename"]
                     else hashlib.sha256(Path(path).read_bytes()).hexdigest()
                 )),
+                listening(events.append),
             ):
                 result = managed.prepare_environment_result(
                     root=root,
@@ -305,6 +346,9 @@ class StarcoreTests(unittest.TestCase):
             self.assertTrue(result["success"])
             self.assertTrue(result["installation_performed"])
             self.assertEqual(result["environment"]["backend"], managed.BACKEND)
+            stages = [event.get("stage") for event in events if event["event"] == "stage"]
+            self.assertIn("index", stages)
+            self.assertIn("core", stages)
             config = json.loads((root / "arduino-cli.yaml").read_text(encoding="ascii"))
             self.assertTrue(
                 os.path.samefile(

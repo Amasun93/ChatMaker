@@ -12,9 +12,9 @@ ChatMaker 是面向老师、学生和黑客松参与者的 AI 创作伙伴。用
 
 ChatMaker 是唯一入口；ChatDuino、ChatWeb 和 ChatCAD 是由它在内部调用、分别维护的专业模块。
 
-对话窗口就是创作环境。编译器、串口和浏览器在后台完成专业工作；部分旧板卡仍可复用 Mind+，用户不需要先学习一套 IDE。
+对话窗口就是创作环境。编译器、串口和浏览器在后台完成专业工作，学生可以直接让 ChatMaker 把程序下载到支持的板子上。
 
-> 当前版本：**0.2.0-beta.6**。维护者已邀请 20 多位体验者参与测试；GitHub `main` 是唯一主仓库，Gitee 是自动更新的国内只读镜像。各板卡的真实证据按下方状态表分别报告。
+> 最近的发行版为 **0.2.0-beta.6**。下文描述 GitHub `main` 上的源码，Gitee 自动同步主分支。各板卡的验证进度见下方状态表。
 
 本轮增加 ESP32 按板准备、国内优先下载与续传，并提供 [WorkBuddy 固定版本复测说明](docs/verification/workbuddy-retest-0.2.0-beta.6.md)。下载进度与编译、实板结果分开记录；复测先核对实际加载的提交号和路径。
 
@@ -57,14 +57,14 @@ https://gitee.com/amasun93/ChatMaker
 
 SkillHub、WorkBuddy、Codex 或其他支持 GitHub Skill 的宿主，均使用宿主自己的 Skill 安装入口。纯生成能力只读取 Skill 文件，不要求 Python、Mind+ 或 OpenSCAD。
 
-需要本地 CLI 时，不要求小白先学会安装 Python。源码目录里的脚本会优先复用已有 Python 3.11；缺少时把固定便携 Python 安装在当前项目的 `.chatmaker-runtime`，国内镜像优先且不改全局 PATH：
+在 Windows 上需要本地 CLI 时，源码目录里的脚本优先复用已有 Python 3.11。缺少时把固定便携 Python 安装在当前项目的 `.chatmaker-runtime`，国内镜像优先：
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/setup_local_runtime.ps1 -CheckOnly
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/setup_local_runtime.ps1
 ```
 
-Python/Node/PyPI/npm 的版本、国内首选源、官方回退源、大小和 SHA-256 都在固定清单中。AI 会依次检查项目环境、电脑已有环境、国内固定包和官方回退；这些路线都失败后才进入联网诊断。没有 Python 的 Windows x64 用户也可以从 [Gitee 发行版](https://gitee.com/amasun93/ChatMaker/releases) 下载独立环境包。micro:bit V2 需要 Node.js 时才增加 `-IncludeNode`。完整边界见 [安装说明](docs/installation.md)。
+第一次准备开发板时，只补齐所选型号需要的组件。ESP32 大组件优先使用乐鑫国内源，下载有进度，断线可续传，后续修改程序时复用已校验的工具。没有 Python 的 Windows x64 用户也可以从 [Gitee 发行版](https://gitee.com/amasun93/ChatMaker/releases) 下载独立环境包。micro:bit V2 需要 Node.js 时才增加 `-IncludeNode`。完整步骤见 [安装说明](docs/installation.md)。
 
 ## 它补上的能力
 
@@ -94,7 +94,7 @@ ChatMaker
 
 ### ChatDuino
 
-帮助用户识别板卡和模块，给出简单直白的文字接线、完整程序和真实编译结果。星核板、经典掌控板 V2.x 与 micro:bit V2 在 Windows x64 上已有 ChatMaker 独立软件链；已有 Mind+ 仍可作为兼容后端。Nano、Uno 暂时继续复用已有 Mind+。
+帮助用户识别板卡和模块，给出文字接线、完整程序和真实编译结果。Uno R3、经典 Nano、Mega 2560 和已适配的 ESP32 型号在 Windows x64 和 Mac 上可走独立工具链。星核板 v4.2.2、经典掌控板 V2.x 和 micro:bit V2 已有 Windows x64 独立路线。依赖 Mind+ 库的旧项目可继续使用对应的兼容入口。
 
 默认接线长这样。
 
@@ -159,7 +159,7 @@ Skill 负责告诉 AI 应该怎样判断、哪些技术事实不能猜、什么�
 
 这套结构让 AI 保留判断能力，同时在接线安全、端口选择、编译烧录和完成状态上受到明确约束。
 
-V1.0 采用渐进创作流程：先帮助用户跑通最小硬件作品，再按需推荐显示屏、传感器、网页交互、激光切割盒子或 3D 打印外壳。网页和 CAD 不是每个项目的必经步骤。当前主线已覆盖 Nano、Uno、星核板 v4.2.2、经典掌控板 V2.x、掌控板 3.0 和 micro:bit V2；经典掌控板已有独立编译链，micro:bit 已验证独立 HEX 软件链，Nano、Uno 继续把现有 Mind+ 当作后台工具链。当前源码另加入 UNIHIKER M10 Alpha：可识别 M10/K10 分流、生成完整 Python 项目并做 Python 3.7 源码检查，但尚未提供签名知识包或实板运行证据。完整边界见 [V1.0 创作流程合同](https://github.com/Amasun93/ChatMaker/blob/main/docs/contracts/v1-creative-flow.md)。
+先帮助用户跑通最小硬件作品，再按需加入显示屏、传感器、网页交互、激光切割盒子或 3D 打印外壳。UNIHIKER M10 Alpha 已能识别 M10/K10、生成完整 Python 项目并做 Python 3.7 源码检查，实板运行待验收。[V1.0 创作流程合同](https://github.com/Amasun93/ChatMaker/blob/main/docs/contracts/v1-creative-flow.md)
 
 完整设计见 [ChatMaker 创作伙伴设计](https://github.com/Amasun93/ChatMaker/blob/main/docs/plans/2026-08-14-chatmaker-creative-partner-design.md)。
 
@@ -189,14 +189,14 @@ chatmaker-pack rollback chatmaker-board-arduino-nano-classic-knowledge --version
 | ChatMaker Knowledge 渐进知识包 | 六板卡已接入 | Nano、Uno、ESP32、星核板、经典掌控板 V2.x、掌控板 3.0 均有独立板卡索引和详细知识包；机械资料仍只对已有机械档案的板卡开放 |
 | 主控板自动识别 | 软件流程已实现，待实板 | 本地 CLI 可读取芯片和固件标记；允许时先完整备份，再刷入临时探针并恢复。仍不确定时引导查看丝印或拍正反面照片；三种实体板尚待验收 |
 | Nano Mind+ 编译和烧录迁移 | 部分验证 | 原 33 项行为测试已迁移；当前共有 12 个示例从 ChatMaker 路径真实编译；烧录等待有线 Nano |
-| Nano/Uno Mind+ 项目流程 | 部分验证 | 独立板型规则、Blink 和 OLED 仪表盘已真实编译；新增连续入口自动检查环境、编译并在有唯一有线端口时烧录，实体板效果等待用户测试 |
+| Uno R3、经典 Nano、Mega 2560 独立工具链 | 编译已验证 | `chatmaker-hardware` 可按板准备、编译和烧录；Mac 两种架构均已真实编译闪灯示例。板卡确认和实物效果由接板复测验证 |
 | 经典掌控板 V2.x 独立 CLI | Beta P2.1 编译已验证 | Windows x64 可独立准备环境、doctor、编译、端口筛选、安全上传、复位和串口读取；中文静态状态页已真实编译。当前没有已确认实板，因此上传、串口、断电重启和 OLED 肉眼效果仍未验证。 |
 | micro:bit V2 独立软件链 | Beta P2.2 软件门已验证 | 固定 MicroPython 2.1.1 与 `microbit-fs 0.10.0` 已真实生成代表案例 HEX；虚拟测试覆盖目标盘识别、安全写入和 `FAIL.TXT`。当前无实板，真实写盘、重新枚举、串口、断电和实体效果仍未验证。 |
 <!-- starcore-evidence-summary:start -->
 | 星核板独立 CLI | Beta P1 实测 | ChatMaker 管理的隔离工具链已完成准备、地震预警站编译、COM4 上传、硬复位和 115200 串口验证，不要求安装 Mind+ 应用。已有 Mind+ 1.8 或 2 仍可作为兼容后端。此前用户确认中文 OLED、防闪、蜂鸣器与 A/B 键均正常；本轮只重新验证了编译、上传和串口数据。 |
 <!-- starcore-evidence-summary:end -->
 | DOIT ESP32 DevKit V1 | 部分验证 | 官方 `esp32:esp32@3.3.11` 已安装；`prepare-environment` 真实 no-op 成功；`esp32:esp32:esp32doit-devkit-v1` 已通过 Blink 和 AP 案例真实编译；烧录、启动、串口、SoftAP、HTTP 和实体效果仍待实板 |
-| 微雪 ESP32-S3-Touch-LCD-2.8 | 开发分支，编译已验证 | V1/CST328 与 V2/CST3530 分开配置；屏幕诊断和触摸计时器共四组真实编译通过；工具缓存复用通过。实板烧录、串口、触摸、断电重启及 WorkBuddy 会话仍待验收。 |
+| 微雪 ESP32-S3-Touch-LCD-2.8 | 编译已验证 | V1/CST328 与 V2/CST3530 分开配置；屏幕诊断和触摸计时器共四组真实编译通过；工具缓存复用通过。实板烧录、串口、触摸、断电重启及 WorkBuddy 会话待验收。 |
 | UNIHIKER M10 | Alpha 源码检查可用 | 官方页面已核对 M10 为 Debian/Python 路线、K10 为独立 MCU 路线；板卡记录、完整项目示例和本地项目检查 CLI 已接入，尚未同步到实板或验证屏幕/外设效果 |
 | 常用模块、库和示例 | 继续扩充 | 35 种元器件、33 个配方已接入；完整自研硬件交接包的 23 项已进入同一目录，可用初学者中文名称检索并按证据状态生成指导或核对任务；已有编译、烧录和实物效果仍分别报告 |
 | ESP32 AP 手机控制案例 | 部分验证 | `examples/chatweb/esp32-ap-control.html` 是唯一页面源，`chatmaker-web-embed` 生成 `examples/chatduino/esp32/ap-led-sensor/page_html.h`，固件用 `send_P` 和显式长度嵌入页面；浏览器模拟和固件真实编译已通过，硬件仍未验证 |

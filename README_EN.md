@@ -12,11 +12,13 @@ ChatMaker is the only user entry. ChatDuino, ChatWeb, and ChatCAD remain separat
 
 Install the current Beta from GitHub `main` through the host's native GitHub Skill flow, then: "Use $chatmaker as the only user entry." Ordinary installation does not scan Codex/WorkBuddy or install a separate tool service. Source developers who need local CLIs may run `python -m pip install -e .` followed by `chatmaker-install local`.
 
-> Current version: **0.2.0-beta.6**. The maintainer reports more than 20 invited testers, and GitHub `main` is the recommended source. Physical evidence remains board-specific rather than inferred from software checks.
+> The latest tagged release is **0.2.0-beta.6**. This page describes the source on GitHub `main`. Physical evidence is tracked for each board.
 
 See the beginner-facing [WHAT'S NEW](WHATS_NEW.md) for a short summary of this update.
 
 Current source includes a Windows x64 ChatMaker-managed Starcore CLI path. It prepares a locked Arduino CLI, Mind+ public ESP32 core, and exact mPython/OLED/font libraries without requiring the Mind+ desktop application. Existing Mind+ 1.8.x and 2.x installations remain compatible fallbacks.
+
+On Windows x64 and supported Macs, `chatmaker-hardware` prepares, builds and uploads for Uno R3, classic Nano, Mega 2560 and selected ESP32, C3, C6 and S3 boards. First use prepares the selected board's tools and shows download progress. Follow the [Mac retest guide](docs/verification/workbuddy-retest-macos.md) for the exact board profiles and commands.
 
 ## Architecture
 
@@ -44,7 +46,7 @@ Compilation, firmware upload, browser interaction, serial evidence, and physical
 
 ## Progressive board knowledge
 
-The current source Core contains the Python runtime, four Skill directories, 10 boards, 35 components, 33 recipes, eight compact Knowledge indexes, schemas, and current runnable examples. micro:bit V2 has a pinned MicroPython HEX packaging and virtual DAPLink safety route. The development branch also supports an independent Waveshare ESP32-S3-Touch-LCD-2.8 V1/V2 toolchain: both screen and touch-timer examples compile, while real flashing, serial, touch, reboot and WorkBuddy validation remain pending. UNIHIKER M10 remains an alpha source-level route. These three boards do not have signed Knowledge packs yet; use their source references. The Core deliberately excludes detailed Knowledge bodies, the knowledge workspace, tests, optional `.cmpack` artifacts, and development caches.
+The source Core contains the Python runtime, four Skill directories, compact board and component records, recipes, Knowledge indexes, schemas, and runnable examples. micro:bit V2 has a pinned MicroPython HEX packaging and virtual DAPLink safety route. The independent Waveshare ESP32-S3-Touch-LCD-2.8 V1/V2 toolchain builds the screen and touch-timer examples. Flashing, serial, touch, reboot and WorkBuddy still need a physical-board retest. UNIHIKER M10 remains an alpha source-level route. For boards without a signed Knowledge pack, use the checked-in board record and applicable reference. The Core omits detailed Knowledge bodies, the knowledge workspace, tests, optional `.cmpack` artifacts, and development caches.
 
 When an AI first requests a detailed board section, `chatmaker-knowledge` defaults to automatic installation. It accepts a pack only after checking the official registry signature, immutable URL, length, SHA-256, manifest, and every payload file. Later reads reuse the verified installation. An installed version remains readable after offline revalidation; an exact cache can authorize a new offline install only while its signed receipt is unexpired.
 

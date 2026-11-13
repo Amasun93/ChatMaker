@@ -32,10 +32,12 @@ FAST_UPLOAD_BAUD = 1500000
 SAFE_UPLOAD_BAUD = 115200
 
 
-def _current_context() -> dict[str, Any] | None:
+def _current_context(*, managed_only: bool = False) -> dict[str, Any] | None:
     managed_environment = managed.managed_context()
     if managed_environment:
         return {**managed_environment, "fqbn": V2_FQBN}
+    if managed_only:
+        return None
     installations = shared.discover_installations()
     for installation in sorted(
         installations,
@@ -263,8 +265,8 @@ def compile_upload_result(context: dict[str, Any], request: dict[str, Any]) -> d
     }
 
 
-def doctor_result() -> dict[str, Any]:
-    context = _current_context()
+def doctor_result(*, managed_only: bool = False) -> dict[str, Any]:
+    context = _current_context(managed_only=managed_only)
     ports = scan_ports()
     return {
         "action": "doctor", "success": context is not None, "ready_for_compile": context is not None,
@@ -280,14 +282,18 @@ def doctor_result() -> dict[str, Any]:
 
 def execute_request(request: dict[str, Any]) -> dict[str, Any]:
     action = request.get("action")
+    managed_only = request.get("managed_only") is True
     if action == "prepare-environment":
-        result = managed.prepare_environment_result(runner=shared._run)
+        if request.get("dry_run") is True:
+            result = managed.preview_environment()
+        else:
+            result = managed.prepare_environment_result(runner=shared._run)
     elif action == "doctor":
-        result = doctor_result()
+        result = doctor_result(managed_only=managed_only)
     elif action == "ports":
         result = {"action": "ports", "success": True, "board": BOARD_ID, "ports": scan_ports()}
     elif action in {"compile", "compile-upload"}:
-        context = _current_context()
+        context = _current_context(managed_only=managed_only)
         if not context:
             result = {
                 "action": action,
