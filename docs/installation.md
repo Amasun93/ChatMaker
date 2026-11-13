@@ -189,16 +189,11 @@ chatmaker-cad --request-json '{"action":"openscad-prepare","allow_install":true}
 
 当前 OpenSCAD 仍使用官方 WinGet 包 `OpenSCAD.OpenSCAD`；最小 Python 运行包已经改为项目内、国内镜像优先。便携 OpenSCAD 仍是后续独立任务；安装 OpenSCAD 只能解决“缺少渲染器”，不能修复几何代码本身的错误。
 
-## 版本检查接口边界
+## 检查和更新 ChatMaker
 
-版本检查是只读动作，只能返回：
+在会话中对 `$chatmaker` 说「检查更新」，就可以核对实际加载的 Skill 和本地工具。ChatMaker 先查询 GitHub 主分支，访问失败时查 Gitee 镜像，并给出实际来源、版本、提交和更新日志。即使版本号相同，也会比较提交和实际文件。只想看本地版本时，可以说「离线自检」。
 
-- `current_version`
-- `latest_version`
-- `update_available`
-- 来源、下载页和变更摘要
-
-当 `update_available=true` 时，必须先询问用户：“发现新版本，是否更新？”只有用户明确回答同意，更新动作才可以下载或覆盖文件。启动 ChatMaker 不等于授权更新；不得静默强制覆盖。
+说「更新 ChatMaker」即可执行更新。从 Git 主分支使用的源码可以直接更新，已有改动会受到保护。通过 WorkBuddy 或 Codex 安装的 Skill 副本由对应应用的更新入口处理。完成后重新加载 ChatMaker，再做一次自检，确认 Demo 会使用这次更新的文件。
 
 GitHub Actions 到 SkillHub 的自动发布、ChatMaker 自有 Gitee/OSS 制品仓库仍是后续发布任务；当前环境清单已经支持通过 `CHATMAKER_DOWNLOAD_MIRROR_BASE` 接入该自有镜像。
 

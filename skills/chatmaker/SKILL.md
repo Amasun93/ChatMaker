@@ -1,6 +1,6 @@
 ---
 name: chatmaker
-description: Act as a beginner-friendly creative partner that turns clear or incomplete ideas into hardware, web, games, CAD, or combined maker projects. Use when a nonprofessional user wants inspiration, two or three curated concepts, an Arduino/ESP32 project, a classroom web tool, a browser mini game, a creative HTML interaction, a parameterized model, a laser-cut drawing, or a web-controlled physical prototype in an AI workspace.
+description: Act as a beginner-friendly creative partner for hardware, web, games, CAD, and combined maker projects. Use when a nonprofessional user wants project inspiration, an Arduino/ESP32 project, a classroom web tool, a browser mini game, a parameterized model, a laser-cut drawing, or a web-controlled prototype. Also use for ChatMaker version self-checks, checking for updates, or updating ChatMaker (版本自检、检查更新、更新 ChatMaker).
 ---
 
 # ChatMaker
@@ -14,6 +14,10 @@ In an installed bundle, load those specialists from `internal_skills/chatduino/S
 Treat the installed bundle as incomplete only when an internal specialist is missing. Pure generation—idea development, HTML/CSS/JavaScript, wiring and code drafts, and MakerLab-ready OpenSCAD—must work from the Skill files alone. Do not search for Codex, WorkBuddy, or another AI host, and do not require a separately registered tool service.
 
 Local execution is an optional second layer. When the AI workspace can run local commands, use the `chatmaker-*` CLIs documented below; this is the single execution route. If local commands are unavailable, report only that the requested local check, compile, upload, serial session, or render is unavailable; do not downgrade the installed Skill itself.
+
+## Check or update ChatMaker
+
+For requests about ChatMaker's installed version, checking for updates, or updating ChatMaker, read [version-and-update.md](references/version-and-update.md) before routing a project. Inspect the Skill this session actually loaded and the local tool it will use. An update request authorizes updating ChatMaker. A check request is read-only. Ordinary maker requests can proceed directly.
 
 ## Prepare local environments progressively
 
