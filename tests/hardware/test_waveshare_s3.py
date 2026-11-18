@@ -30,11 +30,11 @@ class WaveshareTests(unittest.TestCase):
                 include = cpp_include.split(os.pathsep)
                 self.assertTrue(include[0].endswith(str(Path('xtensa-esp-elf/include/c++/14.2.0'))))
                 self.assertTrue(include[1].endswith(str(Path('xtensa-esp-elf/esp32s3/no-rtti'))))
-                (build / 'demo.ino.bin').write_bytes(b'cached')
-                output = Path(command[command.index('--output-dir') + 1])
-                output.mkdir()
+                self.assertNotIn('--output-dir', command)
+                self.assertFalse((build / 'demo.ino.bin').exists())
                 if not compiled:
-                    (output / 'demo.ino.bin').write_bytes(b'first')
+                    (build / 'demo.ino.bin').write_bytes(b'first')
+                    (build / 'keep.o').write_bytes(b'cached object')
                 return {'returncode': 0}
 
             compiled = None
@@ -45,6 +45,7 @@ class WaveshareTests(unittest.TestCase):
             self.assertFalse(missing['success'])
             self.assertEqual(missing['error'], 'compile_artifact_missing')
             self.assertEqual(Path(compiled['artifacts'][0]['path']).read_bytes(), b'first')
+            self.assertEqual((build / 'keep.o').read_bytes(), b'cached object')
 
     def test_fixed_build_path_leaves_unrelated_nonempty_directory_untouched(self):
         with tempfile.TemporaryDirectory() as tmp:

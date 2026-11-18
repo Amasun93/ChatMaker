@@ -34,3 +34,4 @@ chatmaker-hardware --action compile --board-id $board --revision v2 `
 - [最近的 Windows CI](https://github.com/Amasun93/ChatMaker/actions/runs/44354493925) 通过。[macOS 最近一次运行](https://github.com/Amasun93/ChatMaker/actions/runs/44354493733) 的 Apple 芯片任务通过。Intel 任务在 40 分钟上限附近取消，下载的结果显示直到 C3 仍成功，已完成 C6 准备，C6 编译结果文件为空。
 - [另一轮 macOS 失败](https://github.com/Amasun93/ChatMaker/actions/runs/44334841906) 在 K10 下载时重试多次，并出现 GitHub 产物上传 DNS 错误。
 - 新流程给 Intel 和 Apple 芯片分别运行微雪及其他板型测试。原有样例继续编译。微雪组新增 V2 小球；其他板组保存校验过的 K10 官方压缩包。网络类下载错误会重试，结果上传失败会再尝试一次。
+- Windows 发布测试还复现了另一条路径问题。CLI 1.3.1 的导出参数会在草图旁写出 `build` 副本，打包把这些文件带入后，暂存解包路径达到 260 字符。固定目录现在只从专用构建目录复制本次生成的固件，发布脚本也会排除示例目录下的 `build`。已复测两次打包一致及干净环境安装。

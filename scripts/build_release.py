@@ -117,6 +117,9 @@ def _walk_source(directory: Path, root: Path) -> list[Path]:
             raise ReleaseError(f"core_source_symlink_rejected:{path.relative_to(root).as_posix()}")
         portable.add(key)
         if entry.is_dir(follow_symlinks=False):
+            if relative[0] == "examples" and entry.name.casefold() == "build":
+                # Arduino CLI and the IDE can export generated binaries beside the sketch.
+                continue
             files.extend(_walk_source(path, root))
         elif entry.is_file(follow_symlinks=False):
             files.append(path)

@@ -5,6 +5,7 @@ from contextlib import nullcontext
 import json
 from pathlib import Path
 import re
+import shutil
 import tempfile
 import time
 
@@ -81,10 +82,10 @@ def compile_project(request: dict, context: dict, *, fqbn: str = FQBN, output_su
     if fixed and not output.name:
         return {'success': False, 'error': 'invalid_build_path'}
     artifact_dir = build / 'exported' if fixed else output
+    binary_name = f'{sketch.name}.ino.{output_suffix}'
+    binary_pattern = f'{sketch.name}.ino.*.{output_suffix}'
     command = [context['cli'], '--config-file', context['config'], 'compile', '--fqbn', fqbn,
                '--libraries', context['libraries'], '--build-path', str(output)]
-    if fixed:
-        command.extend(['--output-dir', str(artifact_dir)])
     if jobs is not None:
         command.extend(['--jobs', str(jobs)])
     command.extend([*compile_properties(context), str(sketch)])
@@ -103,11 +104,20 @@ def compile_project(request: dict, context: dict, *, fqbn: str = FQBN, output_su
                 elif any(output.iterdir()):
                     return {'success': False, 'error': 'build_path_not_owned'}
                 marker.write_text(json.dumps(identity), encoding='utf-8')
+                # Arduino CLI's --output-dir can also export into the sketch.
+                # Keep reused objects and reset only the firmware output files.
+                (output / binary_name).unlink(missing_ok=True)
+                for stale in output.glob(binary_pattern):
+                    stale.unlink()
             emit('stage', stage='compile', message='正在编译程序')
             started = time.monotonic()
             execution = run(command, timeout=timeout, **options)
             if fixed and not marker.exists():
                 marker.write_text(json.dumps(identity), encoding='utf-8')
+            if fixed and execution.get('returncode') == 0 and (output / binary_name).is_file():
+                artifact_dir.mkdir()
+                for binary in [output / binary_name, *output.glob(binary_pattern)]:
+                    shutil.copyfile(binary, artifact_dir / binary.name)
     except RuntimeError as exc:
         if not str(exc).startswith('operation_in_progress:'):
             raise
@@ -116,7 +126,7 @@ def compile_project(request: dict, context: dict, *, fqbn: str = FQBN, output_su
         return {'success': False, 'error': 'build_path_unavailable', 'detail': str(exc)}
 
     binaries = sorted(artifact_dir.glob(f'*.{output_suffix}')) if execution.get('returncode') == 0 else []
-    success = (artifact_dir / f'{sketch.name}.ino.{output_suffix}').is_file() and bool(binaries)
+    success = (artifact_dir / binary_name).is_file() and bool(binaries)
     result = {'success': success, 'execution': execution, 'fqbn': fqbn, 'revision': request.get('revision'),
               'timeout_seconds': timeout, 'jobs': jobs, 'elapsed_seconds': round(time.monotonic() - started, 2),
               'build_path': str(output), 'artifact_dir': str(artifact_dir), 'sketch': str(sketch),

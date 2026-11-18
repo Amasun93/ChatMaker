@@ -317,6 +317,18 @@ class ReleasePackageTests(unittest.TestCase):
                     prepared_root=prepared,
                 )
 
+    def test_core_release_walk_excludes_local_arduino_build_output(self):
+        builder = load_builder()
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            sketch = root / "examples/chatduino/demo"
+            generated = sketch / "build/esp32.esp32.esp32s3"
+            generated.mkdir(parents=True)
+            (generated / "demo.ino.bin").write_bytes(b"locally generated")
+            source = sketch / "demo.ino"
+            source.write_text("void setup() {} void loop() {}")
+            self.assertEqual(builder._walk_source(root / "examples", root), [source])
+
     def test_core_zip_is_deterministic_and_matches_the_frozen_content_classes(self):
         builder = load_builder()
         with tempfile.TemporaryDirectory() as directory:
