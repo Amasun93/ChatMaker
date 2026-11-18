@@ -47,7 +47,7 @@ class ChatMakerEntryAndIndependenceTests(unittest.TestCase):
         forbidden = (
             re.compile(r"starcore-project-maker", re.IGNORECASE),
             re.compile(r"(?:\.codex|\.agents)[/\\\\]skills[/\\\\](?:arduino-nano-mindplus|starcore|unihiker)", re.IGNORECASE),
-            re.compile(r"[A-Za-z]:[/\\\\].*[/\\\\](?:arduino-nano-mindplus|starcore-project-maker|unihiker)[/\\\\]", re.IGNORECASE),
+            re.compile(r"[A-Za-z]:(?!//)[/\\\\].*[/\\\\](?:arduino-nano-mindplus|starcore-project-maker|unihiker)[/\\\\]", re.IGNORECASE),
         )
         for root in (ROOT / "runtime", ROOT / "skills"):
             for path in root.rglob("*"):

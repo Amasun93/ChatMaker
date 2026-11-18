@@ -10,7 +10,7 @@ import tempfile
 import time
 
 from . import waveshare_toolchain as chain
-from .arduino_toolchain import riscv_cpp_include, run_cli as run
+from .arduino_toolchain import compile_properties, run_cli as run, windows_cpp_include
 from .classroom_cli import dry_run_guard
 from .esp32_devkit_v1 import port_matches
 from chatmaker.installers.downloads import sha256
@@ -33,13 +33,15 @@ def select_port(ports: list[dict], requested: str | None) -> dict | None:
     return eligible[0] if len(eligible)==1 else None
 
 
-def match_application_port(original: dict, ports: list[dict]) -> str | None:
+def match_application_port(original: dict, ports: list[dict], *, eligible=None) -> str | None:
     def same_device(port: dict) -> bool:
         if original.get('serial_number') and port.get('serial_number'):
             return port['serial_number'] == original['serial_number']
         return bool(original.get('location') and port.get('location') == original['location'])
 
-    matches = [p for p in ports if p.get('vid') == 0x303A and same_device(p)]
+    if eligible is None:
+        eligible = lambda port: port.get('vid') == 0x303A
+    matches = [p for p in ports if eligible(p) and same_device(p)]
     return matches[0]['address'] if len(matches)==1 else None
 
 
@@ -62,8 +64,9 @@ def compile_project(request: dict, context: dict, *, fqbn: str = FQBN, output_su
     output = build/'compiled'
     emit('stage', stage='compile', message='正在编译程序')
     command = [context['cli'],'--config-file',context['config'],'compile','--fqbn',fqbn,
-               '--libraries',context['libraries'],'--build-path',str(output),str(sketch)]
-    include = riscv_cpp_include(context)
+               '--libraries',context['libraries'],'--build-path',str(output),
+               *compile_properties(context),str(sketch)]
+    include = windows_cpp_include(context)
     options = {'cpp_include': include} if include is not None else {}
     execution = run(command, timeout=int(request.get('timeout', 900)), **options)
     binaries = sorted(output.glob(f'*.{output_suffix}')) if execution.get('returncode')==0 else []

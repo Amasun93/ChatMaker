@@ -1,0 +1,100 @@
+schema_version: '1.0'
+kind: knowledge-index
+board_id: seeed-xiao-esp32s3
+max_section_bytes: 65536
+sections:
+- section_id: start-here
+  title: 从这里开始
+  summary: 先让小板的用户灯一闪一闪，再把串口输出显示到电脑上。确认你用的是普通 XIAO ESP32S3，选择 `seeed-xiao-esp32s3`。
+  consumers:
+  - chatmaker
+  - chatduino
+  - chatweb
+  - chatcad
+  topics:
+  - classroom
+  - start
+  pack_id: chatmaker-board-seeed-xiao-esp32s3-knowledge
+- section_id: identify-and-safety
+  title: 识别板型和用电安全
+  summary: 包装或订单写着 XIAO ESP32S3 普通版时走这里。带原装摄像头与扩展板的套件走 Sense 的独立 Wiki。看不清时，拍下主板正反面和扩展板。装排针或接线前先断电。
+  consumers:
+  - chatmaker
+  - chatduino
+  - chatweb
+  - chatcad
+  topics:
+  - identity
+  - safety
+  pack_id: chatmaker-board-seeed-xiao-esp32s3-knowledge
+- section_id: pins-and-electrical
+  title: 引脚和电气规则
+  summary: 排针信号用 3.3 V。I²C 是 D4/SDA 对 GPIO5、D5/SCL 对 GPIO6。D2 对 GPIO3，启动时可能受外部电路影响。代码优先用 `D4` 这样的板卡符号；芯片编号 `4` 指 GPIO4。
+  consumers:
+  - chatmaker
+  - chatduino
+  - chatweb
+  topics:
+  - pins
+  - electrical
+  pack_id: chatmaker-board-seeed-xiao-esp32s3-knowledge
+- section_id: toolchains-and-upload
+  title: 编译工具和上传
+  summary: 两款 XIAO 共用正式的 `XIAO_ESP32S3` 编译定义。ChatMaker 从 ESP32-S3 已校验环境编译，启用 OPI PSRAM 和 USB 串口。USB 串口编号会随拔插或进入下载模式改变。
+  consumers:
+  - chatmaker
+  - chatduino
+  - chatweb
+  topics:
+  - toolchain
+  - compile
+  - upload
+  pack_id: chatmaker-board-seeed-xiao-esp32s3-knowledge
+- section_id: components-and-wiring
+  title: 板载器件和接线
+  summary: 第一次只插 USB。加 3.3 V I²C 传感器时接 VCC → 3V3、GND → GND、SDA → D4、SCL → D5。外接小灯可选 D1 串 1 kΩ 电阻。已经接过的普通 GPIO 可以保留，先确认程序使用了正确的
+    D 编号、电压和启动状态。
+  consumers:
+  - chatmaker
+  - chatduino
+  - chatweb
+  - chatcad
+  topics:
+  - wiring
+  - sensor
+  pack_id: chatmaker-board-seeed-xiao-esp32s3-knowledge
+- section_id: libraries-and-examples
+  title: 库和第一个示例
+  summary: 先试随库编译的 USB 小灯例子。用户 LED 低电平亮，通过 `LED_BUILTIN` 访问。需要联网时用核心自带的 `WiFi.h`。
+  consumers:
+  - chatmaker
+  - chatduino
+  - chatweb
+  topics:
+  - libraries
+  - examples
+  pack_id: chatmaker-board-seeed-xiao-esp32s3-knowledge
+- section_id: web-and-protocol
+  title: 串口、网页和通信
+  summary: USB 串口 115200 先看到周期打印。做网页时再接入 2.4 GHz Wi-Fi，按 Seeed 指引在断电状态连接配套天线。网页通信与传感器实测分别确认。
+  consumers:
+  - chatmaker
+  - chatduino
+  - chatweb
+  topics:
+  - serial
+  - wifi
+  - protocol
+  pack_id: chatmaker-board-seeed-xiao-esp32s3-knowledge
+- section_id: troubleshooting
+  title: 课堂常见问题和排错
+  summary: 没看到端口 → 换数据线。必要时按住 BOOT 插上 USB，再松开，选新出现的端口。
+  consumers:
+  - chatmaker
+  - chatduino
+  - chatweb
+  - chatcad
+  topics:
+  - faq
+  - troubleshooting
+  pack_id: chatmaker-board-seeed-xiao-esp32s3-knowledge

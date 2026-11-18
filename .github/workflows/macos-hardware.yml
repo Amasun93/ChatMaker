@@ -96,6 +96,8 @@ jobs:
           compile nano-new --board-id arduino-nano-classic --bootloader new --sketch examples/chatduino/nano/blink
           compile nano-old --board-id arduino-nano-classic --bootloader old --sketch examples/chatduino/nano/blink
           compile mega --board-id arduino-mega-2560 --sketch examples/chatduino/uno/blink
+          prepare uno-r4 --board-id arduino-uno-r4-wifi
+          compile uno-r4 --board-id arduino-uno-r4-wifi --sketch examples/chatduino/uno-r4-wifi/matrix-heart
 
           prepare classic --board-id nova-esp32 --library U8g2
           compile nova --board-id nova-esp32 --sketch examples/chatduino/nova-oled-hello
@@ -107,6 +109,11 @@ jobs:
             compile "timer-$revision" --board-id waveshare-esp32-s3-touch-lcd-2-8 --revision "$revision" --sketch examples/chatduino/waveshare-s3/classroom-timer
           done
           compile s3-devkit --board-id esp32-s3-devkitc-1-n8r8 --usb-mode native --sketch examples/chatduino/uno/blink
+          compile xiao --board-id seeed-xiao-esp32s3 --sketch examples/chatduino/xiao-esp32s3/usb-blink
+          compile xiao-sense --board-id seeed-xiao-esp32s3-sense --sketch examples/chatduino/xiao-esp32s3-sense/camera-check
+
+          prepare k10 --board-id unihiker-k10
+          compile k10 --board-id unihiker-k10 --sketch examples/chatduino/unihiker-k10/board-rgb
 
           prepare c3 --board-id esp32-c3-devkitm-1
           compile c3 --board-id esp32-c3-devkitm-1 --sketch examples/chatduino/uno/blink

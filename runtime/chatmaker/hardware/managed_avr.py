@@ -1,4 +1,4 @@
-"""Arduino AVR Boards for Uno R3, classic Nano and Mega 2560."""
+"""Managed Arduino Uno, classic Nano and Mega boards."""
 
 from . import arduino_toolchain as chain
 from .classroom_cli import dry_run_guard
@@ -12,6 +12,7 @@ FQBNS = {
     'arduino-uno-r3': 'arduino:avr:uno',
     'arduino-nano-classic': 'arduino:avr:nano:cpu=atmega328',
     'arduino-mega-2560': 'arduino:avr:mega:cpu=atmega2560',
+    'arduino-uno-r4-wifi': 'arduino:renesas_uno:unor4wifi',
 }
 ARDUINO_USB_IDS = {
     'arduino-uno-r3': {(0x2341, 0x0043), (0x2341, 0x0001), (0x2A03, 0x0043),
@@ -19,6 +20,7 @@ ARDUINO_USB_IDS = {
     'arduino-nano-classic': {(0x2341, 0x0058)},
     'arduino-mega-2560': {(0x2341, 0x0010), (0x2341, 0x0042), (0x2A03, 0x0010),
                          (0x2A03, 0x0042), (0x2341, 0x0210), (0x2341, 0x0242)},
+    'arduino-uno-r4-wifi': {(0x2341, 0x1002), (0x2341, 0x006D)},
 }
 
 
@@ -38,12 +40,14 @@ def execute_request(request: dict) -> dict:
     fqbn = FQBNS[board]
     if board == 'arduino-nano-classic' and bootloader == 'old':
         fqbn = 'arduino:avr:nano:cpu=atmega328old'
+    renesas = board == 'arduino-uno-r4-wifi'
+    profile = 'renesas_uno' if renesas else 'avr'
     libraries = requested_libraries(request)
     if action == 'prepare-environment':
-        return {**result, **chain.prepare('avr', libraries=libraries, dry_run=request.get('dry_run') is True)}
+        return {**result, **chain.prepare(profile, libraries=libraries, dry_run=request.get('dry_run') is True)}
     if action == 'ports':
         return {**result, 'success': True, 'ports': scan_ports()}
-    context = chain.context('avr', libraries=libraries)
+    context = chain.context(profile, libraries=libraries)
     if action == 'doctor':
         return {**result, 'success': context is not None, 'ready_for_compile': context is not None,
                 'installation_performed': False, 'required_fqbn': fqbn, 'environment': context,
@@ -53,7 +57,7 @@ def execute_request(request: dict) -> dict:
     if context is None:
         return {**result, 'error': 'managed_toolchain_missing', 'next_action': 'prepare-environment'}
 
-    compiled = compile_project(request, context, fqbn=fqbn, output_suffix='hex')
+    compiled = compile_project(request, context, fqbn=fqbn, output_suffix='bin' if renesas else 'hex')
     result.update(success=compiled['success'], stage='compile', compile=compiled)
     if not compiled['success'] or action == 'compile':
         return result
@@ -61,7 +65,8 @@ def execute_request(request: dict) -> dict:
         return {**result, 'success': False, 'stage': 'identity', 'error': 'board_identity_required',
                 'teacher_message': '请确认本次连接的 Arduino 板型，再下载程序。'}
     ports = [port for port in scan_ports() if not port['is_bluetooth'] and
-             (port['usb_uart_likely'] or (port.get('vid'), port.get('pid')) in ARDUINO_USB_IDS[board])]
+             ((port.get('vid'), port.get('pid')) in ARDUINO_USB_IDS[board]
+              or (not renesas and port['usb_uart_likely']))]
     if request.get('port'):
         ports = [port for port in ports if port_matches(port['address'], request['port'])]
     if len(ports) != 1:

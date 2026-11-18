@@ -7,7 +7,7 @@ import unittest
 from unittest import mock
 import zipfile
 
-from chatmaker.hardware import workflow
+from chatmaker.hardware import arduino_toolchain, managed_avr, managed_esp32, workflow
 
 
 class PreparationPreviewTests(unittest.TestCase):
@@ -24,6 +24,22 @@ class PreparationPreviewTests(unittest.TestCase):
         self.assertNotIn('esp32s3-libs', names)
         self.assertNotIn('esp-rv32', names)
         self.assertLess(result['archive_bytes'], 800_000_000)
+
+    def test_new_vendor_profiles_use_the_exact_core_and_host_tools(self):
+        for host in ('windows-amd64', 'macos-arm64', 'macos-x86_64'):
+            for profile, vendor, tool in (
+                ('renesas_uno', 'arduino', 'bossac'),
+                ('unihiker_k10', 'UNIHIKER', 'esptool_py'),
+            ):
+                with self.subTest(host=host, profile=profile), \
+                     mock.patch.object(arduino_toolchain, 'platform_tag', return_value=host):
+                    bundle, ids = arduino_toolchain.selected(profile)
+                    package = arduino_toolchain.offline_index(bundle, ids)['packages'][0]
+                    self.assertEqual(package['name'], vendor)
+                    self.assertIn(tool, [entry['name'] for entry in package['tools']])
+                    self.assertNotIn('esp-x32', ids)
+                    if host.startswith('macos'):
+                        self.assertIn('-apple-darwin', bundle['artifacts'][tool]['system']['host'])
 
 
 class ManagedArchiveTests(unittest.TestCase):
@@ -64,6 +80,18 @@ class ManagedArchiveTests(unittest.TestCase):
                 self.chain.extract_archive(archive, root / 'out', strip_root=True)
             self.assertFalse((root / 'escaped').exists())
 
+    def test_core_receipt_excludes_replaced_vendor_installed_index(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            folder = Path(tmp).resolve()
+            archive = folder / 'core.zip'
+            with zipfile.ZipFile(archive, 'w') as source:
+                source.writestr('boards.txt', 'test board')
+                source.writestr('installed.json', '{}')
+            item = {'destination': 'core', 'strip_root': False, 'sha256': self.chain.sha256(archive)}
+            self.chain._install(folder, 'core', item, archive)
+            (folder / 'core/installed.json').write_text('{"managed":true}', encoding='utf-8')
+            self.assertTrue(self.chain._artifact_ready(folder, 'core', item))
+
     def test_full_tree_manifest_detects_removed_sdk_header_and_extra_code(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -88,3 +116,40 @@ class ManagedUploadTests(unittest.TestCase):
             result = managed_esp32.execute_request({'action': 'compile-upload', 'code': 'x'})
         self.assertEqual(result['error'], 'board_identity_required')
         run.assert_not_called()
+
+    def test_uno_r4_rejects_an_unrelated_usb_serial_port(self):
+        request = {'action': 'compile-upload', 'board_id': 'arduino-uno-r4-wifi',
+                   'code': 'x', 'board_confirmed': True, 'port': 'COM5'}
+        context = {'cli': 'cli', 'config': 'config'}
+        compiled = {'success': True, 'build_path': 'build', 'sketch': 'sketch'}
+        generic = {'address': 'COM5', 'vid': 0x303A, 'pid': 0x1001,
+                   'is_bluetooth': False, 'usb_uart_likely': True}
+        with mock.patch.object(managed_avr.chain, 'context', return_value=context) as ready, \
+             mock.patch.object(managed_avr, 'compile_project', return_value=compiled) as compile_, \
+             mock.patch.object(managed_avr, 'scan_ports', return_value=[generic]), \
+             mock.patch.object(managed_avr.chain, 'run_cli') as run:
+            result = workflow.run_project(request)
+        self.assertEqual(result['stage'], 'awaiting-hardware')
+        self.assertEqual(ready.call_args.args, ('renesas_uno',))
+        self.assertEqual(compile_.call_args.kwargs['output_suffix'], 'bin')
+        run.assert_not_called()
+
+    def test_native_board_requires_explicit_selection_for_generic_usb(self):
+        context = {'cli': 'cli', 'config': 'config'}
+        compiled = {'success': True, 'build_path': 'build', 'sketch': 'sketch'}
+        generic = {'address': 'COM5', 'vid': 0x303A, 'pid': 0x1001, 'serial_number': 'device'}
+        for board in ('unihiker-k10', 'seeed-xiao-esp32s3', 'seeed-xiao-esp32s3-sense'):
+            with self.subTest(board=board), \
+                 mock.patch.object(managed_esp32.chain, 'context', return_value=context), \
+                 mock.patch.object(managed_esp32, 'compile_project', return_value=compiled), \
+                 mock.patch.object(managed_esp32, 'scan_ports', return_value=[generic]), \
+                 mock.patch.object(managed_esp32, 'run', return_value={'returncode': 0}) as run:
+                request = {'action': 'compile-upload', 'board_id': board, 'code': 'x', 'board_confirmed': True}
+                preview = workflow.run_project(request)
+                self.assertEqual(preview['stage'], 'awaiting-hardware')
+                run.assert_not_called()
+                upload = workflow.run_project({**request, 'port': 'COM5'})
+                self.assertTrue(upload['success'], upload)
+                command = run.call_args.args[0]
+                self.assertEqual(command[command.index('--port') + 1], 'COM5')
+                self.assertEqual(upload['upload']['application_port'], 'COM5')

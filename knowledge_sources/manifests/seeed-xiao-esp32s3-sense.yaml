@@ -1,0 +1,40 @@
+schema_version: '1.0'
+id: source-seeed-xiao-esp32s3-sense-official
+title: Seeed Studio XIAO ESP32S3 Sense 官方资料
+board_id: seeed-xiao-esp32s3-sense
+source_type: canonical-board-documentation
+canonical_url: https://wiki.seeedstudio.com/xiao_esp32s3_getting_started/
+license_use_boundary: Author-written ChatMaker guidance links to manufacturer documentation and upstream code. Manufacturer
+  diagrams and binaries are omitted.
+cleaning_version: chatmaker-seeed-xiao-esp32s3-sense-wiki-v1
+review_date: '2026-11-18'
+cleaning_verified:
+  status: verified
+  date: '2026-11-18'
+  evidence: Organized source-linked guidance into eight classroom sections.
+source_reviewed:
+  status: verified
+  date: '2026-11-18'
+  evidence: Seeed Sense reference and the official Arduino-ESP32 camera pin table establish the expansion board and its camera,
+    microphone and SD conflicts.
+publication_approved:
+  status: verified
+  date: '2026-11-18'
+  evidence: Author-written content reviewed for the requested ChatMaker repository update.
+page_declarations:
+- stable_id: seeed-xiao-esp32s3-sense-start-here
+  path: published/boards/seeed-xiao-esp32s3-sense/start-here.md
+- stable_id: seeed-xiao-esp32s3-sense-identify-and-safety
+  path: published/boards/seeed-xiao-esp32s3-sense/identify-and-safety.md
+- stable_id: seeed-xiao-esp32s3-sense-pins-and-electrical
+  path: published/boards/seeed-xiao-esp32s3-sense/pins-and-electrical.md
+- stable_id: seeed-xiao-esp32s3-sense-toolchains-and-upload
+  path: published/boards/seeed-xiao-esp32s3-sense/toolchains-and-upload.md
+- stable_id: seeed-xiao-esp32s3-sense-components-and-wiring
+  path: published/boards/seeed-xiao-esp32s3-sense/components-and-wiring.md
+- stable_id: seeed-xiao-esp32s3-sense-libraries-and-examples
+  path: published/boards/seeed-xiao-esp32s3-sense/libraries-and-examples.md
+- stable_id: seeed-xiao-esp32s3-sense-web-and-protocol
+  path: published/boards/seeed-xiao-esp32s3-sense/web-and-protocol.md
+- stable_id: seeed-xiao-esp32s3-sense-troubleshooting
+  path: published/boards/seeed-xiao-esp32s3-sense/troubleshooting.md

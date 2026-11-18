@@ -1,0 +1,100 @@
+schema_version: '1.0'
+kind: board
+id: unihiker-k10
+name: DFRobot UNIHIKER K10 行空板
+aliases:
+- 行空板 K10
+- 行空板K10
+- UNIHIKER K10
+- DFR0992
+- K10
+summary: 带彩屏、摄像头、声音和传感器的行空板 K10。用 DFRobot Arduino 板卡包和 USB 直接编译与烧录。
+family: esp32-s3
+mcu: ESP32-S3 N16R8
+logic_voltage: 3.3
+chatmaker:
+  runtime_cli: chatmaker-hardware
+  runtime_module: chatmaker.hardware.workflow
+  identification: manual
+  knowledge_delivery: source
+mechanics:
+  status: research-required
+  profile_path: null
+  fit_verified: false
+  notes: Check the exact board and connector dimensions before designing a case.
+identity:
+  physical_confirmation_required: true
+  forbidden_aliases:
+  - 行空板 M10
+  - 行空板M10
+  - UNIHIKER M10
+  - DFR0706
+sources:
+- title: DFRobot K10 硬件说明和原理图
+  url: https://www.unihiker.com.cn/wiki/k10/jianjie
+- title: DFRobot K10 Arduino 工具链
+  url: https://www.unihiker.com.cn/wiki/k10/ArduinoIDE_prepare
+- title: DFRobot K10 Arduino variant
+  url: https://github.com/DFRobot/framework-arduinounihiker/blob/master/variants/unihiker_k10/pins_arduino.h
+- title: DFRobot K10 出厂程序
+  url: https://www.unihiker.com.cn/wiki/k10/default-program
+verification:
+  source_reviewed:
+    status: verified
+    checked_at: '2026-11-18'
+    evidence: Matched DFR0992 hardware documentation and schematic against DFRobot’s Arduino board package, K10 variant and
+      RGB library.
+  code_compiled:
+    status: verified
+    checked_at: '2026-11-18'
+    evidence: The ChatMaker board-rgb example linked the bundled Adafruit_NeoPixel library and produced a binary on Windows x64 with Arduino CLI 1.3.1 and DFRobot UNIHIKER 0.0.5.
+  firmware_uploaded:
+    status: unverified
+    checked_at: null
+    evidence: null
+  physical_effect_verified:
+    status: unverified
+    checked_at: null
+    evidence: null
+pins:
+- id: P19/GPIO48
+  capabilities:
+  - i2c-scl
+  - onboard-shared
+- id: P20/GPIO47
+  capabilities:
+  - i2c-sda
+  - onboard-shared
+- id: P0
+  capabilities:
+  - external-io
+  - 3.3v
+- id: P1
+  capabilities:
+  - external-io
+  - 3.3v
+- id: GPIO46
+  capabilities:
+  - onboard-rgb
+  - strapping
+- id: GPIO19/20
+  capabilities:
+  - native-usb
+  - reserved
+- id: 3V3
+  capabilities:
+  - power
+- id: GND
+  capabilities:
+  - ground
+  - shared
+constraints:
+- Confirm K10 or DFR0992. The M10 Debian project workflow does not apply.
+- Use 3.3 V signal levels. The P19/P20 I2C bus is shared with onboard peripherals; check module address collisions.
+- Reserve GPIO46 for the board RGB chain and GPIO19/20 for USB. Check the exact K10 diagram before using edge contacts.
+- Loading an Arduino sketch replaces the application in flash. Keep the original project or vendor recovery image if needed.
+toolchains:
+- id: arduino-cli-unihiker
+  version: 0.0.5
+  fqbn: UNIHIKER:esp32:k10:PSRAM=opi,USBMode=hwcdc,CDCOnBoot=cdc
+  status: managed

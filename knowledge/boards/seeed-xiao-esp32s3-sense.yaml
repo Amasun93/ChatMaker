@@ -1,0 +1,100 @@
+schema_version: '1.0'
+kind: knowledge-index
+board_id: seeed-xiao-esp32s3-sense
+max_section_bytes: 65536
+sections:
+- section_id: start-here
+  title: 从这里开始
+  summary: 第一次只插 USB，用相机检查程序拍一帧，并让电脑显示这一帧的字节数。先确认装有原装 Sense 摄像头扩展板，再选择 `seeed-xiao-esp32s3-sense`。
+  consumers:
+  - chatmaker
+  - chatduino
+  - chatweb
+  - chatcad
+  topics:
+  - classroom
+  - start
+  pack_id: chatmaker-board-seeed-xiao-esp32s3-sense-knowledge
+- section_id: identify-and-safety
+  title: 识别板型和用电安全
+  summary: 找摄像头、麦克风和 microSD 扩展板。主板丝印或串口名字可能和普通版相同。旧批次和较新的摄像头传感器型号有变化，需要镜头功能时先查手上批次。拔掉电源再调整板对板插座和排线。
+  consumers:
+  - chatmaker
+  - chatduino
+  - chatweb
+  - chatcad
+  topics:
+  - identity
+  - safety
+  pack_id: chatmaker-board-seeed-xiao-esp32s3-sense-knowledge
+- section_id: pins-and-electrical
+  title: 引脚和电气规则
+  summary: 对外 I²C 仍用 D4/D5，信号 3.3 V。microSD 占用 D8/D9/D10 的 SPI，片选 GPIO21 和用户灯共用。PDM 麦克风使用 GPIO42 时钟和 GPIO41 数据。相机的数据、时钟和控制线由原装扩展接口连好。
+  consumers:
+  - chatmaker
+  - chatduino
+  - chatweb
+  topics:
+  - pins
+  - electrical
+  pack_id: chatmaker-board-seeed-xiao-esp32s3-sense-knowledge
+- section_id: toolchains-and-upload
+  title: 编译工具和上传
+  summary: ChatMaker 选 Sense 条目，底层沿用同一 `XIAO_ESP32S3` 目标，已设 OPI PSRAM。摄像头初始化用原装排线的引脚映射。先关掉串口监视器再下载。
+  consumers:
+  - chatmaker
+  - chatduino
+  - chatweb
+  topics:
+  - toolchain
+  - compile
+  - upload
+  pack_id: chatmaker-board-seeed-xiao-esp32s3-sense-knowledge
+- section_id: components-and-wiring
+  title: 板载器件和接线
+  summary: 原装相机用板对板接口，第一次测试只插 USB。要加 3.3 V I²C 模块，可用 D4 → SDA、D5 → SCL、3V3 和 GND。已经在 D8/D9/D10 接屏幕的项目，只在确认能让 SPI 设备共享并分别控制片选后保留。使用板上
+    SD 时，GPIO21 交给 SD 片选，另选引脚做状态灯。
+  consumers:
+  - chatmaker
+  - chatduino
+  - chatweb
+  - chatcad
+  topics:
+  - wiring
+  - sensor
+  pack_id: chatmaker-board-seeed-xiao-esp32s3-sense-knowledge
+- section_id: libraries-and-examples
+  title: 库和第一个示例
+  summary: 先运行 ChatMaker 的单帧检查程序。它使用 Arduino-ESP32 核心自带的 `esp_camera.h` 与硬件引脚映射，串口报告帧大小。连续预览和自动对焦分别按 Seeed 的示例及传感器型号验证。
+  consumers:
+  - chatmaker
+  - chatduino
+  - chatweb
+  topics:
+  - libraries
+  - examples
+  pack_id: chatmaker-board-seeed-xiao-esp32s3-sense-knowledge
+- section_id: web-and-protocol
+  title: 串口、网页和通信
+  summary: 用 USB 115200 验证能读到有效帧，再按项目需要做预览网页。课堂先对着物品测试，看帧大小随画面有变化。拍摄同学前先得到同意。
+  consumers:
+  - chatmaker
+  - chatduino
+  - chatweb
+  topics:
+  - serial
+  - wifi
+  - protocol
+  pack_id: chatmaker-board-seeed-xiao-esp32s3-sense-knowledge
+- section_id: troubleshooting
+  title: 课堂常见问题和排错
+  summary: 串口里提示相机初始化失败 → 先断电，再检查 Sense 扩展板和排线就位。
+  consumers:
+  - chatmaker
+  - chatduino
+  - chatweb
+  - chatcad
+  topics:
+  - faq
+  - troubleshooting
+  pack_id: chatmaker-board-seeed-xiao-esp32s3-sense-knowledge

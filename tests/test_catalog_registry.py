@@ -16,6 +16,7 @@ import yaml
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "runtime"))
 
+from chatmaker.catalog import search_catalog
 from chatmaker.catalog_registry import (
     ALLOWED_KNOWLEDGE_PACKS,
     BOARD_REGISTRATIONS,
@@ -36,6 +37,20 @@ def load_sync_script():
 
 
 class CatalogRegistryTests(unittest.TestCase):
+    def test_new_exact_board_names_resolve_to_distinct_profiles(self):
+        cases = {
+            "Arduino UNO R4 WiFi": "arduino-uno-r4-wifi",
+            "XIAO ESP32S3 普通版": "seeed-xiao-esp32s3",
+            "XIAO ESP32-S3 Sense 摄像头版": "seeed-xiao-esp32s3-sense",
+            "行空板 K10": "unihiker-k10",
+            "行空板 M10": "unihiker-m10",
+        }
+        for query, board_id in cases.items():
+            with self.subTest(query=query):
+                result = search_catalog(query, kind="board", project_root=ROOT)
+                self.assertEqual(result["matches"][0]["id"], board_id)
+        self.assertFalse(search_catalog("XIAO ESP32S3 Plus", kind="board", project_root=ROOT)["matches"])
+
     def test_every_registered_board_has_a_readable_wiki_route(self):
         registry = json.loads((ROOT / "distribution/registry/registry.json").read_text(encoding="utf-8"))
         signed_pack_ids = {pack["pack_id"] for pack in registry["packs"]}

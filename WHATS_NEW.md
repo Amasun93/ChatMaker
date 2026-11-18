@@ -2,6 +2,12 @@
 
 这是面向老师、学生和体验者的公开更新记录。最新更新放在最上面，标明日期和对应的版本标签或主分支提交。
 
+## 2026-11-18 · 主分支新增 UNO R4 WiFi、XIAO ESP32S3 和行空板 K10
+
+- 四个板型可通过 ChatMaker 自己准备工具、编译和 USB 烧录，无需 Mind+。XIAO 普通版和带摄像头的 Sense 分别提供板卡条目和示例。
+- 各板卡新增八节 Wiki，覆盖板型识别、接线复核、共用引脚、首次准备和常见问题。先读资料，需要编译时再预览并准备工具。[板卡 Wiki](knowledge_sources/published/boards)
+- 课堂示例从 UNO R4 WiFi 点阵心跳、XIAO 小灯、Sense 单帧检查、K10 板载三灯开始。软件检查和真板观察分开记录。[验证与 WorkBuddy 复测](docs/verification/2026-11-18-classroom-boards.md)
+
 ## 2026-11-18 · 补齐板卡 Wiki 与新板接入流程
 
 - 为 Arduino Mega 2560、ESP32-C3-DevKitM-1、ESP32-C6-DevKitC-1、ESP32-S3-DevKitC-1 N8R8 和行空板 M10 补齐八节 Wiki。老师和学生可以直接查板型、接线、工具、例子和常见问题。[板卡 Wiki](https://github.com/Amasun93/ChatMaker/tree/main/knowledge_sources/published/boards)

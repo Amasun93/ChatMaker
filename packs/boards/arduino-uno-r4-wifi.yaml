@@ -1,0 +1,106 @@
+schema_version: '1.0'
+kind: board
+id: arduino-uno-r4-wifi
+name: Arduino UNO R4 WiFi
+aliases:
+- UNO R4 WiFi
+- UNO R4 无线版
+- ABX00087
+- Arduino UNO R4 WIFI 开发板
+summary: 5 V 排针、板载 12×8 点阵和 Wi-Fi。用 Arduino CLI 的 Renesas 目标独立编译和上传。
+family: renesas-ra
+mcu: Renesas RA4M1 with ESP32-S3 connectivity coprocessor
+logic_voltage: 5.0
+chatmaker:
+  runtime_cli: chatmaker-hardware
+  runtime_module: chatmaker.hardware.workflow
+  identification: manual
+  knowledge_delivery: source
+mechanics:
+  status: research-required
+  profile_path: null
+  fit_verified: false
+  notes: Check the exact board and connector dimensions before designing a case.
+identity:
+  physical_confirmation_required: true
+  forbidden_aliases:
+  - UNO R4 Minima
+  - UNO R3
+  - UNO Rev3
+sources:
+- title: Arduino UNO R4 WiFi
+  url: https://docs.arduino.cc/hardware/uno-r4-wifi/
+- title: ABX00087 full pinout
+  url: https://docs.arduino.cc/resources/pinouts/ABX00087-full-pinout.pdf
+- title: Arduino Renesas UNOWIFIR4 variant
+  url: https://github.com/arduino/ArduinoCore-renesas/tree/1.6.0/variants/UNOWIFIR4
+- title: WiFiS3 examples
+  url: https://docs.arduino.cc/tutorials/uno-r4-wifi/wifi-examples/
+verification:
+  source_reviewed:
+    status: verified
+    checked_at: '2026-11-18'
+    evidence: Arduino ABX00087 full pinout, Renesas 1.6.0 board and variant definitions establish 5 V headers, 3.3 V Qwiic
+      and the BOSSA upload path.
+  code_compiled:
+    status: verified
+    checked_at: '2026-11-18'
+    evidence: The ChatMaker matrix-heart example produced a binary on Windows x64 using Arduino CLI 1.3.1 and Arduino Renesas UNO 1.6.0.
+  firmware_uploaded:
+    status: unverified
+    checked_at: null
+    evidence: null
+  physical_effect_verified:
+    status: unverified
+    checked_at: null
+    evidence: null
+pins:
+- id: D2
+  capabilities:
+  - digital-input
+  - digital-output
+- id: D0
+  capabilities:
+  - uart-rx
+- id: D1
+  capabilities:
+  - uart-tx
+- id: A4/SDA
+  capabilities:
+  - i2c-sda
+  - shared
+- id: A5/SCL
+  capabilities:
+  - i2c-scl
+  - shared
+- id: QWIIC-SDA
+  capabilities:
+  - i2c-sda
+  - 3.3v
+  - wire1
+- id: QWIIC-SCL
+  capabilities:
+  - i2c-scl
+  - 3.3v
+  - wire1
+- id: D13
+  capabilities:
+  - builtin-led
+  - spi-clock
+- id: 5V
+  capabilities:
+  - power
+- id: GND
+  capabilities:
+  - ground
+  - shared
+constraints:
+- Confirm the WiFi model and use its Renesas profile. The ESP32-S3 bridge is not the target of the classroom upload.
+- R4 WiFi header logic is 5 V. Use the 3.3 V Qwiic bus with Wire1 for compatible modules.
+- A4 and A5 share the main SDA and SCL signals with the dedicated SDA/SCL header.
+- Do not drive motors or high-current loads from GPIO.
+toolchains:
+- id: arduino-cli-renesas
+  version: 1.6.0
+  fqbn: arduino:renesas_uno:unor4wifi
+  status: managed

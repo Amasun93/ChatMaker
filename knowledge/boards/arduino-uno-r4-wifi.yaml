@@ -1,0 +1,100 @@
+schema_version: '1.0'
+kind: knowledge-index
+board_id: arduino-uno-r4-wifi
+max_section_bytes: 65536
+sections:
+- section_id: start-here
+  title: 从这里开始
+  summary: 先用 USB-C 数据线让板上的点阵闪出一颗心。它适合从灯光、按钮过渡到联网提醒。选板时用 `arduino-uno-r4-wifi`。
+  consumers:
+  - chatmaker
+  - chatduino
+  - chatweb
+  - chatcad
+  topics:
+  - classroom
+  - start
+  pack_id: chatmaker-board-arduino-uno-r4-wifi-knowledge
+- section_id: identify-and-safety
+  title: 识别板型和用电安全
+  summary: 看板上是否写着 UNO R4 WiFi，并找 12×8 点阵或包装型号 ABX00087。R4 Minima 和 UNO R3 各有自己的配置。接线前先拔 USB。
+  consumers:
+  - chatmaker
+  - chatduino
+  - chatweb
+  - chatcad
+  topics:
+  - identity
+  - safety
+  pack_id: chatmaker-board-arduino-uno-r4-wifi-knowledge
+- section_id: pins-and-electrical
+  title: 引脚和电气规则
+  summary: 常见排针信号是 5 V。主 I²C 用 `Wire`，A4/SDA、A5/SCL 与上边独立标出的 SDA/SCL 各自相连。Qwiic 是另一条 3.3 V 总线，用 `Wire1`。D13 与 SPI 时钟共享，D0/D1
+    留给需要 `Serial1` 的项目。
+  consumers:
+  - chatmaker
+  - chatduino
+  - chatweb
+  topics:
+  - pins
+  - electrical
+  pack_id: chatmaker-board-arduino-uno-r4-wifi-knowledge
+- section_id: toolchains-and-upload
+  title: 编译工具和上传
+  summary: ChatMaker 准备 Arduino Renesas UNO 核心 1.6.0 和 Arduino CLI，并用官方板卡定义里的 BOSSA 写入主芯片。先关掉占用端口的串口窗口。保留板载无线模块的原有固件。
+  consumers:
+  - chatmaker
+  - chatduino
+  - chatweb
+  topics:
+  - toolchain
+  - compile
+  - upload
+  pack_id: chatmaker-board-arduino-uno-r4-wifi-knowledge
+- section_id: components-and-wiring
+  title: 板载器件和接线
+  summary: 点阵小例子只插 USB。外接 LED 时，D2 → 1 kΩ 电阻 → LED 长脚，短脚 → GND。只支持 3.3 V 的 I²C 模块优先接板上的 Qwiic，程序用 `Wire1`。
+  consumers:
+  - chatmaker
+  - chatduino
+  - chatweb
+  - chatcad
+  topics:
+  - wiring
+  - sensor
+  pack_id: chatmaker-board-arduino-uno-r4-wifi-knowledge
+- section_id: libraries-and-examples
+  title: 库和第一个示例
+  summary: 随板核心内含 `Arduino_LED_Matrix` 与 `WiFiS3`。先跑点阵心跳，观察点阵与串口；再用 WiFiS3 示例扫网络或联网。
+  consumers:
+  - chatmaker
+  - chatduino
+  - chatweb
+  topics:
+  - libraries
+  - examples
+  pack_id: chatmaker-board-arduino-uno-r4-wifi-knowledge
+- section_id: web-and-protocol
+  title: 串口、网页和通信
+  summary: 先用 USB 串口 115200 看心跳文字，再单独验证 Wi-Fi 扫描、连网和网页请求。真实网络密码只留在用户本机。点阵亮起和网络请求成功分别记录。
+  consumers:
+  - chatmaker
+  - chatduino
+  - chatweb
+  topics:
+  - serial
+  - wifi
+  - protocol
+  pack_id: chatmaker-board-arduino-uno-r4-wifi-knowledge
+- section_id: troubleshooting
+  title: 课堂常见问题和排错
+  summary: 没有端口 → 换一根可传数据的 USB-C 线，拔插观察哪个端口改变。
+  consumers:
+  - chatmaker
+  - chatduino
+  - chatweb
+  - chatcad
+  topics:
+  - faq
+  - troubleshooting
+  pack_id: chatmaker-board-arduino-uno-r4-wifi-knowledge

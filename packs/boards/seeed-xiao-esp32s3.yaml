@@ -1,0 +1,108 @@
+schema_version: '1.0'
+kind: board
+id: seeed-xiao-esp32s3
+name: Seeed Studio XIAO ESP32S3
+aliases:
+- XIAO ESP32S3
+- XIAO ESP32-S3
+- XIAO ESP32S3 普通版
+- Seeed XIAO ESP32S3 普通版
+summary: Seeed 普通款 XIAO ESP32S3，适合小型联网和传感器项目，从板载灯和串口开始。
+family: esp32-s3
+mcu: ESP32-S3R8
+logic_voltage: 3.3
+chatmaker:
+  runtime_cli: chatmaker-hardware
+  runtime_module: chatmaker.hardware.workflow
+  identification: manual
+  knowledge_delivery: source
+mechanics:
+  status: research-required
+  profile_path: null
+  fit_verified: false
+  notes: Check the exact board and connector dimensions before designing a case.
+identity:
+  physical_confirmation_required: true
+  forbidden_aliases:
+  - XIAO ESP32S3 Sense
+  - XIAO ESP32-S3 Sense
+  - XIAO ESP32S3 Plus
+  - XIAO ESP32-S3 Plus
+  - XIAO ESP32S3 带摄像头
+sources:
+- title: Seeed XIAO ESP32-S3 series
+  url: https://wiki.seeedstudio.com/xiao_esp32s3_getting_started/
+- title: Arduino-ESP32 XIAO variant pins
+  url: https://github.com/espressif/arduino-esp32/blob/3.3.12/variants/XIAO_ESP32S3/pins_arduino.h
+verification:
+  source_reviewed:
+    status: verified
+    checked_at: '2026-11-18'
+    evidence: Seeed’s board guide and Espressif XIAO variant establish the ordinary board, 8 MB flash and PSRAM, header labels
+      and USB route.
+  code_compiled:
+    status: verified
+    checked_at: '2026-11-18'
+    evidence: The ChatMaker usb-blink example produced a binary on Windows x64 using Arduino CLI 1.3.1 and cached Arduino-ESP32 3.3.11.
+  firmware_uploaded:
+    status: unverified
+    checked_at: null
+    evidence: null
+  physical_effect_verified:
+    status: unverified
+    checked_at: null
+    evidence: null
+pins:
+- id: D1/GPIO2
+  capabilities:
+  - digital-input
+  - digital-output
+  - analog-input
+- id: D2/GPIO3
+  capabilities:
+  - strapping
+- id: D4/GPIO5
+  capabilities:
+  - i2c-sda
+- id: D5/GPIO6
+  capabilities:
+  - i2c-scl
+- id: D6/GPIO43
+  capabilities:
+  - uart-tx
+- id: D7/GPIO44
+  capabilities:
+  - uart-rx
+- id: D8/GPIO7
+  capabilities:
+  - spi-clock
+- id: D9/GPIO8
+  capabilities:
+  - spi-miso
+- id: D10/GPIO9
+  capabilities:
+  - spi-mosi
+- id: GPIO19/20
+  capabilities:
+  - native-usb
+  - reserved
+- id: GPIO21
+  capabilities:
+  - builtin-led
+- id: 3V3
+  capabilities:
+  - power
+- id: GND
+  capabilities:
+  - ground
+  - shared
+constraints:
+- Use 3.3 V GPIO signals and a shared ground.
+- D labels on the carrier and ESP32 GPIO numbers are different. Prefer the Dn symbols in Arduino sketches.
+- Avoid a module that drives D2/GPIO3 during reset. Reserve GPIO19/20 for USB.
+- Confirm the ordinary board or camera-equipped Sense kit before choosing a Wiki.
+toolchains:
+- id: arduino-cli-esp32
+  version: 3.3.12
+  fqbn: esp32:esp32:XIAO_ESP32S3:PSRAM=opi,USBMode=hwcdc,CDCOnBoot=default
+  status: managed

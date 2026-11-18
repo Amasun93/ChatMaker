@@ -361,7 +361,8 @@ class CleanCoreIntegrationTests(unittest.TestCase):
             )
             self.assertEqual(
                 doctor["packs"]["counts"],
-            {"board": 14, "component": 35, "recipe": 33},
+                {kind: len(list((ROOT / "packs" / f"{kind}s").glob("*.yaml")))
+                 for kind in ("board", "component", "recipe")},
             )
             self.assertEqual(doctor["packs"]["knowledge_indexes"], doctor["packs"]["counts"]["board"])
             self.assertEqual(

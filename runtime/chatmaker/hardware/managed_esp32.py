@@ -15,7 +15,12 @@ PROFILES = {
     'esp32-s3-devkitc-1-n8r8': ('esp32s3', 'esp32:esp32:esp32s3:FlashSize=8M,PSRAM=opi,PartitionScheme=default_8MB,USBMode=hwcdc'),
     'esp32-c3-devkitm-1': ('esp32c3', 'esp32:esp32:esp32c3:FlashSize=4M'),
     'esp32-c6-devkitc-1': ('esp32c6', 'esp32:esp32:esp32c6:FlashSize=8M,PartitionScheme=default_8MB'),
+    'seeed-xiao-esp32s3': ('esp32s3', 'esp32:esp32:XIAO_ESP32S3:PSRAM=opi,USBMode=hwcdc,CDCOnBoot=default'),
+    'seeed-xiao-esp32s3-sense': ('esp32s3', 'esp32:esp32:XIAO_ESP32S3:PSRAM=opi,USBMode=hwcdc,CDCOnBoot=default'),
+    'unihiker-k10': ('unihiker_k10', 'UNIHIKER:esp32:k10:PSRAM=opi,USBMode=hwcdc,CDCOnBoot=cdc'),
 }
+XIAO_BOARDS = {'seeed-xiao-esp32s3', 'seeed-xiao-esp32s3-sense'}
+NATIVE_ONLY = XIAO_BOARDS | {'unihiker-k10'}
 
 
 def requested_libraries(request):
@@ -42,11 +47,15 @@ def execute_request(request: dict) -> dict:
     profile, fqbn = PROFILES[board_id]
     # Boards with both USB-UART and native USB need the serial route selected
     # before compiling. Arduino's Serial follows the CDC-on-boot setting.
-    dual_usb = profile in {'esp32s3', 'esp32c6'}
-    if request.get('usb_mode') not in ((None, 'uart', 'native') if dual_usb else (None, 'uart')):
+    fixed_native = board_id in NATIVE_ONLY
+    supported_modes = (None, 'native') if fixed_native else (None, 'uart')
+    dual_usb = not fixed_native and profile in {'esp32s3', 'esp32c6'}
+    if dual_usb:
+        supported_modes += ('native',)
+    if request.get('usb_mode') not in supported_modes:
         return {**base, 'error': 'unsupported_usb_mode'}
-    native_usb = dual_usb and request.get('usb_mode') == 'native'
-    if native_usb:
+    native_usb = fixed_native or request.get('usb_mode') == 'native'
+    if dual_usb and native_usb:
         fqbn += ',CDCOnBoot=cdc'
     libraries = requested_libraries(request)
     if action == 'prepare-environment':
@@ -73,10 +82,20 @@ def execute_request(request: dict) -> dict:
     if request.get('board_confirmed') is not True:
         return {**result, 'success': False, 'stage': 'identity', 'error': 'board_identity_required',
                 'teacher_message': '请确认本次连接的板型和模块规格。USB 串口只用于选择下载目标。'}
-    ports = [p for p in scan_ports() if not p.get('is_bluetooth')
-             and (p.get('vid') == 0x303A if native_usb else p.get('usb_uart_likely'))]
+
+    def eligible(port):
+        if port.get('is_bluetooth'):
+            return False
+        if board_id in XIAO_BOARDS and (port.get('vid'), port.get('pid')) == (0x2886, 0x0056):
+            return True
+        return port.get('vid') == 0x303A if native_usb else port.get('usb_uart_likely')
+
+    ports = [port for port in scan_ports() if eligible(port)]
     if request.get('port'):
         ports = [p for p in ports if port_matches(p['address'], request['port'])]
+    elif fixed_native and (len(ports) != 1 or ports[0].get('vid') == 0x303A):
+        return {**result, 'success': False, 'stage': 'awaiting-hardware', 'ports': ports,
+                'teacher_message': '请拔插目标板，找出随它消失和重新出现的端口，再选这个端口下载。'}
     if len(ports) != 1:
         return {**result, 'success': False, 'stage': 'awaiting-hardware', 'ports': ports,
                 'teacher_message': '程序已编译，请连接数据线并选择本次使用的 USB 串口。'}
@@ -89,7 +108,7 @@ def execute_request(request: dict) -> dict:
     if native_usb and execution.get('returncode') == 0:
         deadline = time.monotonic() + 8
         while time.monotonic() < deadline:
-            application_port = match_application_port(ports[0], scan_ports())
+            application_port = match_application_port(ports[0], scan_ports(), eligible=eligible)
             if application_port:
                 break
             time.sleep(0.25)

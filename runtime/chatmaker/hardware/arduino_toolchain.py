@@ -24,7 +24,9 @@ from chatmaker.installers.downloads import (
 from chatmaker.installers.locks import exclusive_file, rename_directory
 from chatmaker.progress import emit
 
-PROFILES = {'avr', 'esp32', 'esp32s3', 'esp32c3', 'esp32c6'}
+ESP32_PROFILES = {'esp32', 'esp32s3', 'esp32c3', 'esp32c6'}
+PROFILES = ESP32_PROFILES | {'avr', 'renesas_uno', 'unihiker_k10'}
+WINDOWS_SHORT_HOMES = {'renesas_uno': 'r4', 'unihiker_k10': 'k10'}
 
 
 def runtime_root() -> Path:
@@ -86,19 +88,21 @@ def _apply_esp32_release(data: dict, release: dict) -> None:
 
 
 def bundle(profile: str = 'esp32', *, core_version: str | None = None) -> dict:
+    if profile not in PROFILES:
+        raise ValueError('unsupported_toolchain_profile')
     registry = load_runtime_sources()
     tag = platform_tag()
     if tag is None:
         raise ValueError('unsupported_arduino_host')
     esp = registry['arduino_esp32']
-    result = copy.deepcopy(registry['arduino_avr'] if profile == 'avr' else esp)
+    result = copy.deepcopy(esp if profile in ESP32_PROFILES else registry['arduino_' + profile])
     if core_version is not None and core_version != result['core_version']:
         release = registry['arduino_esp32_preferred']
-        if profile == 'avr' or core_version != release['core_version']:
+        if profile not in ESP32_PROFILES or core_version != release['core_version']:
             raise ValueError('unsupported_core_version')
         _apply_esp32_release(result, release)
     artifacts = result['artifacts']
-    if profile == 'avr':
+    if profile not in ESP32_PROFILES:
         for name in result['common'] + result['optional_libraries']:
             if name not in artifacts:
                 artifacts[name] = copy.deepcopy(esp['artifacts'][name])
@@ -110,8 +114,10 @@ def bundle(profile: str = 'esp32', *, core_version: str | None = None) -> dict:
     if tag.startswith('macos-'):
         macos = registry['arduino_macos']
         variants = {**macos['common'], **macos[tag]}
+        host_artifacts = result.get('host_artifacts', {}).get(tag, {})
+        artifacts.update(host_artifacts)
         for name, item in artifacts.items():
-            if name in {'cli', 'core'} or item['packager'] == 'library':
+            if name in {'cli', 'core'} or name in host_artifacts or item['packager'] == 'library':
                 continue
             if name.endswith('-libs') and item['packager'] == 'esp32':
                 item['system']['host'] = tag.removeprefix('macos-') + '-apple-darwin'
@@ -129,6 +135,10 @@ def home_for(profile: str, *, core_version: str | None = None) -> Path:
         raise ValueError('unsupported_toolchain_profile')
     parent = runtime_root() / 'toolchains' / 'arduino'
     tag = platform_tag()
+    if tag == 'windows-amd64' and profile in WINDOWS_SHORT_HOMES:
+        # Older GCC packages use long multilib paths or repeated SDK include
+        # flags that can exceed Windows' path and command-line limits.
+        return runtime_root() / WINDOWS_SHORT_HOMES[profile]
     if tag and tag.startswith('macos-'):
         parent /= tag
     elif tag == 'windows-amd64' and profile in {'esp32c3', 'esp32c6'}:
@@ -141,7 +151,7 @@ def home_for(profile: str, *, core_version: str | None = None) -> Path:
 
 
 def _environment_choices(profile: str, home: Path | None) -> list[tuple[Path, str | None]]:
-    if home is not None or profile == 'avr':
+    if home is not None or profile not in ESP32_PROFILES:
         return [((home or home_for(profile)).resolve(), None)]
     version = load_runtime_sources()['arduino_esp32_preferred']['core_version']
     return [(home_for(profile, core_version=version).resolve(), version), (home_for(profile).resolve(), None)]
@@ -154,7 +164,7 @@ def native(path: Path) -> Path:
     return Path('\\\\?\\UNC\\' + value[2:] if value.startswith('\\\\') else '\\\\?\\' + value)
 
 
-def run_cli(command: list[str], timeout: int = 30, *, cpp_include: Path | None = None) -> dict:
+def run_cli(command: list[str], timeout: int = 30, *, cpp_include: Path | str | None = None) -> dict:
     """CLI environment overrides take priority over --config-file; exclude them."""
     from .esp32_devkit_v1 import _run
     compiler_paths = {'CPATH', 'C_INCLUDE_PATH', 'CPLUS_INCLUDE_PATH', 'OBJC_INCLUDE_PATH',
@@ -170,16 +180,41 @@ def run_cli(command: list[str], timeout: int = 30, *, cpp_include: Path | None =
     return _run(command, timeout=timeout, env=environment)
 
 
-def riscv_cpp_include(context: dict) -> Path | None:
+def windows_cpp_include(context: dict) -> Path | str | None:
     if context.get('platform') != 'windows-amd64':
-        return None
-    march = {'esp32c3': 'rv32imc_zicsr_zifencei', 'esp32c6': 'rv32imac_zicsr_zifencei'}.get(context.get('profile'))
-    if march is None:
         return None
     # Give GCC the canonical directory. Its built-in search expands several
     # relative segments and can run out of Win32 path space on these targets.
-    tool = Path(context['root']) / 'data/packages/esp32/tools/esp-rv32/2601'
+    profile = context.get('profile')
+    packages = Path(context['root']) / 'data/packages'
+    if profile == 'unihiker_k10':
+        tool = packages / 'UNIHIKER/tools/xtensa-esp32s3-elf-gcc/esp-2021r2-patch5-8.4.0'
+        cpp = tool / 'xtensa-esp32s3-elf/include/c++/8.4.0'
+        return os.pathsep.join((str(cpp), str(cpp / 'xtensa-esp32s3-elf/no-rtti')))
+    if profile == 'renesas_uno':
+        tool = packages / 'arduino/tools/arm-none-eabi-gcc/7-2017q4'
+        cpp = tool / 'arm-none-eabi/include/c++/7.2.1'
+        return os.pathsep.join((str(cpp), str(cpp / 'arm-none-eabi/thumb/v7e-m/fpv4-sp/hard')))
+    march = {'esp32c3': 'rv32imc_zicsr_zifencei', 'esp32c6': 'rv32imac_zicsr_zifencei'}.get(profile)
+    if march is None:
+        return None
+    tool = packages / 'esp32/tools/esp-rv32/2601'
     return tool / 'riscv32-esp-elf/include/c++/14.2.0/riscv32-esp-elf' / march / 'ilp32/no-rtti'
+
+
+def compile_properties(context: dict) -> list[str]:
+    if context.get('platform') != 'windows-amd64' or context.get('profile') != 'unihiker_k10':
+        return []
+    # The vendor platform repeats the SDK path over 200 times. GCC supports a
+    # shared prefix, retaining the regular -I search order without argv bloat.
+    core = Path(context['root']) / 'data/packages/UNIHIKER/hardware/esp32' / context['core_version']
+    property_name = 'compiler.cpreprocessor.flags.esp32s3'
+    line = next(line for line in (core / 'platform.txt').read_text(encoding='utf-8-sig').splitlines()
+                if line.startswith(property_name + '='))
+    flags = line.split('=', 1)[1].replace('"-I{compiler.sdk.path}/', '-iwithprefixbefore "')
+    flags = flags.replace('{runtime.platform.path}', core.as_posix())
+    sdk_path = (core / 'tools/sdk/esp32s3').as_posix()
+    return ['--build-property', f'{property_name}=-iprefix "{sdk_path}/" {flags}']
 
 
 def safe_relative(name: str) -> Path:
@@ -563,7 +598,9 @@ def _install(home: Path, name: str, item: dict, archive: Path) -> None:
     stage = Path(tempfile.mkdtemp(prefix=name + '-', dir=stage_parent))
     emit('stage', stage='extract', component=name, message='正在解压并核对组件')
     extract_archive(archive, stage, strip_root=item['strip_root'])
-    manifest = file_manifest(stage)
+    # A vendor archive can ship its own installed.json. The managed index
+    # replaces it after extraction and verifies the generated copy separately.
+    manifest = file_manifest(stage, exclude=('installed.json',) if name == 'core' else ())
     destination.parent.mkdir(parents=True, exist_ok=True)
     if destination.exists():
         quarantine = (home / '.quarantine' / (name + '-' + uuid.uuid4().hex)).resolve()

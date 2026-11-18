@@ -1381,5 +1381,796 @@
         ]
       }
     }
+  },
+  "arduino_renesas_uno": {
+    "core_version": "1.6.0",
+    "platform": {
+      "name": "Arduino UNO R4 Boards",
+      "architecture": "renesas_uno",
+      "version": "1.6.0",
+      "category": "Arduino",
+      "url": "https://downloads.arduino.cc/cores/staging/ArduinoCore-renesas_uno-1.6.0.tar.bz2",
+      "archiveFileName": "ArduinoCore-renesas_uno-1.6.0.tar.bz2",
+      "checksum": "SHA-256:71aa5d81f9455dbc2e8977b594963494e41466a8ed439a841b9d029b4aa31c8b",
+      "size": "14143316",
+      "help": {
+        "online": "https://github.com/arduino/ArduinoCore-renesas/issues"
+      },
+      "boards": [
+        {
+          "name": "Arduino UNO R4 Minima"
+        },
+        {
+          "name": "Arduino UNO R4 WiFi"
+        },
+        {
+          "name": "Arduino Nano R4"
+        }
+      ],
+      "toolsDependencies": [
+        {
+          "packager": "arduino",
+          "name": "arm-none-eabi-gcc",
+          "version": "7-2017q4"
+        },
+        {
+          "packager": "arduino",
+          "name": "bossac",
+          "version": "1.9.1-arduino5"
+        },
+        {
+          "packager": "arduino",
+          "name": "dfu-util",
+          "version": "0.11.0-arduino5"
+        },
+        {
+          "packager": "arduino",
+          "name": "openocd",
+          "version": "0.11.0-arduino2"
+        }
+      ],
+      "discoveryDependencies": [
+        {
+          "packager": "builtin",
+          "name": "dfu-discovery"
+        }
+      ]
+    },
+    "package_metadata": {
+      "maintainer": "Arduino",
+      "websiteURL": "https://www.arduino.cc/"
+    },
+    "common": [
+      "core",
+      "arm-none-eabi-gcc",
+      "bossac",
+      "dfu-util",
+      "openocd",
+      "ctags",
+      "serial-discovery",
+      "mdns-discovery",
+      "serial-monitor",
+      "dfu-discovery"
+    ],
+    "profiles": {
+      "renesas_uno": []
+    },
+    "optional_libraries": [
+      "U8g2"
+    ],
+    "artifacts": {
+      "core": {
+        "packager": "arduino",
+        "name": "renesas_uno",
+        "version": "1.6.0",
+        "destination": "data/packages/arduino/hardware/renesas_uno/1.6.0",
+        "strip_root": true,
+        "filename": "ArduinoCore-renesas_uno-1.6.0.tar.bz2",
+        "size": 14143316,
+        "sha256": "71aa5d81f9455dbc2e8977b594963494e41466a8ed439a841b9d029b4aa31c8b",
+        "sources": [
+          {
+            "id": "official",
+            "kind": "official_fallback",
+            "url": "https://downloads.arduino.cc/cores/staging/ArduinoCore-renesas_uno-1.6.0.tar.bz2"
+          }
+        ]
+      },
+      "arm-none-eabi-gcc": {
+        "packager": "arduino",
+        "name": "arm-none-eabi-gcc",
+        "version": "7-2017q4",
+        "destination": "data/packages/arduino/tools/arm-none-eabi-gcc/7-2017q4",
+        "strip_root": true,
+        "filename": "gcc-arm-none-eabi-7-2017-q4-major-win32-arduino1.zip",
+        "size": 131761924,
+        "sha256": "96dd0091856f4d2eb21046eba571321feecf7d50b9c156f708b2a8b683903382",
+        "sources": [
+          {
+            "id": "official",
+            "kind": "official_fallback",
+            "url": "https://downloads.arduino.cc/tools/gcc-arm-none-eabi-7-2017-q4-major-win32-arduino1.zip"
+          }
+        ],
+        "system": {
+          "host": "i686-mingw32",
+          "url": "https://downloads.arduino.cc/tools/gcc-arm-none-eabi-7-2017-q4-major-win32-arduino1.zip",
+          "archiveFileName": "gcc-arm-none-eabi-7-2017-q4-major-win32-arduino1.zip",
+          "checksum": "SHA-256:96dd0091856f4d2eb21046eba571321feecf7d50b9c156f708b2a8b683903382",
+          "size": "131761924"
+        }
+      },
+      "bossac": {
+        "packager": "arduino",
+        "name": "bossac",
+        "version": "1.9.1-arduino5",
+        "destination": "data/packages/arduino/tools/bossac/1.9.1-arduino5",
+        "strip_root": true,
+        "filename": "bossac-1.9.1-arduino5-windows.tar.gz",
+        "size": 1260650,
+        "sha256": "99e1982cf29600152e1c89b3389c1b4ce853201491ed52a12b4a327200cc6af0",
+        "sources": [
+          {
+            "id": "official",
+            "kind": "official_fallback",
+            "url": "https://downloads.arduino.cc/tools/bossac-1.9.1-arduino5-windows.tar.gz"
+          }
+        ],
+        "system": {
+          "host": "i686-mingw32",
+          "url": "https://downloads.arduino.cc/tools/bossac-1.9.1-arduino5-windows.tar.gz",
+          "archiveFileName": "bossac-1.9.1-arduino5-windows.tar.gz",
+          "checksum": "SHA-256:99e1982cf29600152e1c89b3389c1b4ce853201491ed52a12b4a327200cc6af0",
+          "size": "1260650"
+        }
+      },
+      "dfu-util": {
+        "packager": "arduino",
+        "name": "dfu-util",
+        "version": "0.11.0-arduino5",
+        "destination": "data/packages/arduino/tools/dfu-util/0.11.0-arduino5",
+        "strip_root": true,
+        "filename": "dfu-util-0.11-arduino5-windows_386.tar.gz",
+        "size": 571340,
+        "sha256": "6451e16bf77600fe2436c8708ab4b75077c49997cf8bedf03221d9d6726bb641",
+        "sources": [
+          {
+            "id": "official",
+            "kind": "official_fallback",
+            "url": "https://downloads.arduino.cc/tools/dfu-util-0.11-arduino5-windows_386.tar.gz"
+          }
+        ],
+        "system": {
+          "host": "i686-mingw32",
+          "url": "https://downloads.arduino.cc/tools/dfu-util-0.11-arduino5-windows_386.tar.gz",
+          "archiveFileName": "dfu-util-0.11-arduino5-windows_386.tar.gz",
+          "checksum": "SHA-256:6451e16bf77600fe2436c8708ab4b75077c49997cf8bedf03221d9d6726bb641",
+          "size": "571340"
+        }
+      },
+      "openocd": {
+        "packager": "arduino",
+        "name": "openocd",
+        "version": "0.11.0-arduino2",
+        "destination": "data/packages/arduino/tools/openocd/0.11.0-arduino2",
+        "strip_root": true,
+        "filename": "openocd-0.11.0-arduino2-static-i686-w64-mingw32.zip",
+        "size": 2460087,
+        "sha256": "631010980f12b1e750c4c67ce012b31c5953caabf4d30607d806e3d2b717d4b8",
+        "sources": [
+          {
+            "id": "official",
+            "kind": "official_fallback",
+            "url": "https://downloads.arduino.cc/tools/openocd-0.11.0-arduino2-static-i686-w64-mingw32.zip"
+          }
+        ],
+        "system": {
+          "host": "i686-mingw32",
+          "url": "https://downloads.arduino.cc/tools/openocd-0.11.0-arduino2-static-i686-w64-mingw32.zip",
+          "archiveFileName": "openocd-0.11.0-arduino2-static-i686-w64-mingw32.zip",
+          "checksum": "SHA-256:631010980f12b1e750c4c67ce012b31c5953caabf4d30607d806e3d2b717d4b8",
+          "size": "2460087"
+        }
+      }
+    },
+    "host_artifacts": {
+      "macos-arm64": {
+        "arm-none-eabi-gcc": {
+          "packager": "arduino",
+          "name": "arm-none-eabi-gcc",
+          "version": "7-2017q4",
+          "destination": "data/packages/arduino/tools/arm-none-eabi-gcc/7-2017q4",
+          "strip_root": true,
+          "filename": "gcc-arm-none-eabi-7-2017-q4-major-mac.tar.bz2",
+          "size": 104550003,
+          "sha256": "89b776c7cf0591c810b5b60067e4dc113b5b71bc50084a536e71b894a97fdccb",
+          "sources": [
+            {
+              "id": "official",
+              "kind": "official_fallback",
+              "url": "https://downloads.arduino.cc/tools/gcc-arm-none-eabi-7-2017-q4-major-mac.tar.bz2"
+            }
+          ],
+          "system": {
+            "host": "x86_64-apple-darwin",
+            "url": "https://downloads.arduino.cc/tools/gcc-arm-none-eabi-7-2017-q4-major-mac.tar.bz2",
+            "archiveFileName": "gcc-arm-none-eabi-7-2017-q4-major-mac.tar.bz2",
+            "checksum": "SHA-256:89b776c7cf0591c810b5b60067e4dc113b5b71bc50084a536e71b894a97fdccb",
+            "size": "104550003"
+          }
+        },
+        "bossac": {
+          "packager": "arduino",
+          "name": "bossac",
+          "version": "1.9.1-arduino5",
+          "destination": "data/packages/arduino/tools/bossac/1.9.1-arduino5",
+          "strip_root": true,
+          "filename": "bossac-1.9.1-arduino5-osx.tar.gz",
+          "size": 47862,
+          "sha256": "c76eae00874a44265029b452303fb355e9ffa006e7ba214ca7ae01b1416867da",
+          "sources": [
+            {
+              "id": "official",
+              "kind": "official_fallback",
+              "url": "https://downloads.arduino.cc/tools/bossac-1.9.1-arduino5-osx.tar.gz"
+            }
+          ],
+          "system": {
+            "host": "i386-apple-darwin11",
+            "url": "https://downloads.arduino.cc/tools/bossac-1.9.1-arduino5-osx.tar.gz",
+            "archiveFileName": "bossac-1.9.1-arduino5-osx.tar.gz",
+            "checksum": "SHA-256:c76eae00874a44265029b452303fb355e9ffa006e7ba214ca7ae01b1416867da",
+            "size": "47862"
+          }
+        },
+        "dfu-util": {
+          "packager": "arduino",
+          "name": "dfu-util",
+          "version": "0.11.0-arduino5",
+          "destination": "data/packages/arduino/tools/dfu-util/0.11.0-arduino5",
+          "strip_root": true,
+          "filename": "dfu-util-0.11-arduino5-darwin_amd64.tar.gz",
+          "size": 72429,
+          "sha256": "9e576c6e44f54b1e921a43ea77bcc08ec99e0e4e0905f4b9acf9ab2c979f0a22",
+          "sources": [
+            {
+              "id": "official",
+              "kind": "official_fallback",
+              "url": "https://downloads.arduino.cc/tools/dfu-util-0.11-arduino5-darwin_amd64.tar.gz"
+            }
+          ],
+          "system": {
+            "host": "i386-apple-darwin11",
+            "url": "https://downloads.arduino.cc/tools/dfu-util-0.11-arduino5-darwin_amd64.tar.gz",
+            "archiveFileName": "dfu-util-0.11-arduino5-darwin_amd64.tar.gz",
+            "checksum": "SHA-256:9e576c6e44f54b1e921a43ea77bcc08ec99e0e4e0905f4b9acf9ab2c979f0a22",
+            "size": "72429"
+          }
+        },
+        "openocd": {
+          "packager": "arduino",
+          "name": "openocd",
+          "version": "0.11.0-arduino2",
+          "destination": "data/packages/arduino/tools/openocd/0.11.0-arduino2",
+          "strip_root": true,
+          "filename": "openocd-0.11.0-arduino2-static-x86_64-apple-darwin13.tar.bz2",
+          "size": 1893150,
+          "sha256": "280e7234eba84e830e92d791ebc685286f71d2bc1d3347f93605ef170d54fef4",
+          "sources": [
+            {
+              "id": "official",
+              "kind": "official_fallback",
+              "url": "https://downloads.arduino.cc/tools/openocd-0.11.0-arduino2-static-x86_64-apple-darwin13.tar.bz2"
+            }
+          ],
+          "system": {
+            "host": "i386-apple-darwin11",
+            "url": "https://downloads.arduino.cc/tools/openocd-0.11.0-arduino2-static-x86_64-apple-darwin13.tar.bz2",
+            "archiveFileName": "openocd-0.11.0-arduino2-static-x86_64-apple-darwin13.tar.bz2",
+            "checksum": "SHA-256:280e7234eba84e830e92d791ebc685286f71d2bc1d3347f93605ef170d54fef4",
+            "size": "1893150"
+          }
+        }
+      },
+      "macos-x86_64": {
+        "arm-none-eabi-gcc": {
+          "packager": "arduino",
+          "name": "arm-none-eabi-gcc",
+          "version": "7-2017q4",
+          "destination": "data/packages/arduino/tools/arm-none-eabi-gcc/7-2017q4",
+          "strip_root": true,
+          "filename": "gcc-arm-none-eabi-7-2017-q4-major-mac.tar.bz2",
+          "size": 104550003,
+          "sha256": "89b776c7cf0591c810b5b60067e4dc113b5b71bc50084a536e71b894a97fdccb",
+          "sources": [
+            {
+              "id": "official",
+              "kind": "official_fallback",
+              "url": "https://downloads.arduino.cc/tools/gcc-arm-none-eabi-7-2017-q4-major-mac.tar.bz2"
+            }
+          ],
+          "system": {
+            "host": "x86_64-apple-darwin",
+            "url": "https://downloads.arduino.cc/tools/gcc-arm-none-eabi-7-2017-q4-major-mac.tar.bz2",
+            "archiveFileName": "gcc-arm-none-eabi-7-2017-q4-major-mac.tar.bz2",
+            "checksum": "SHA-256:89b776c7cf0591c810b5b60067e4dc113b5b71bc50084a536e71b894a97fdccb",
+            "size": "104550003"
+          }
+        },
+        "bossac": {
+          "packager": "arduino",
+          "name": "bossac",
+          "version": "1.9.1-arduino5",
+          "destination": "data/packages/arduino/tools/bossac/1.9.1-arduino5",
+          "strip_root": true,
+          "filename": "bossac-1.9.1-arduino5-osx.tar.gz",
+          "size": 47862,
+          "sha256": "c76eae00874a44265029b452303fb355e9ffa006e7ba214ca7ae01b1416867da",
+          "sources": [
+            {
+              "id": "official",
+              "kind": "official_fallback",
+              "url": "https://downloads.arduino.cc/tools/bossac-1.9.1-arduino5-osx.tar.gz"
+            }
+          ],
+          "system": {
+            "host": "i386-apple-darwin11",
+            "url": "https://downloads.arduino.cc/tools/bossac-1.9.1-arduino5-osx.tar.gz",
+            "archiveFileName": "bossac-1.9.1-arduino5-osx.tar.gz",
+            "checksum": "SHA-256:c76eae00874a44265029b452303fb355e9ffa006e7ba214ca7ae01b1416867da",
+            "size": "47862"
+          }
+        },
+        "dfu-util": {
+          "packager": "arduino",
+          "name": "dfu-util",
+          "version": "0.11.0-arduino5",
+          "destination": "data/packages/arduino/tools/dfu-util/0.11.0-arduino5",
+          "strip_root": true,
+          "filename": "dfu-util-0.11-arduino5-darwin_amd64.tar.gz",
+          "size": 72429,
+          "sha256": "9e576c6e44f54b1e921a43ea77bcc08ec99e0e4e0905f4b9acf9ab2c979f0a22",
+          "sources": [
+            {
+              "id": "official",
+              "kind": "official_fallback",
+              "url": "https://downloads.arduino.cc/tools/dfu-util-0.11-arduino5-darwin_amd64.tar.gz"
+            }
+          ],
+          "system": {
+            "host": "i386-apple-darwin11",
+            "url": "https://downloads.arduino.cc/tools/dfu-util-0.11-arduino5-darwin_amd64.tar.gz",
+            "archiveFileName": "dfu-util-0.11-arduino5-darwin_amd64.tar.gz",
+            "checksum": "SHA-256:9e576c6e44f54b1e921a43ea77bcc08ec99e0e4e0905f4b9acf9ab2c979f0a22",
+            "size": "72429"
+          }
+        },
+        "openocd": {
+          "packager": "arduino",
+          "name": "openocd",
+          "version": "0.11.0-arduino2",
+          "destination": "data/packages/arduino/tools/openocd/0.11.0-arduino2",
+          "strip_root": true,
+          "filename": "openocd-0.11.0-arduino2-static-x86_64-apple-darwin13.tar.bz2",
+          "size": 1893150,
+          "sha256": "280e7234eba84e830e92d791ebc685286f71d2bc1d3347f93605ef170d54fef4",
+          "sources": [
+            {
+              "id": "official",
+              "kind": "official_fallback",
+              "url": "https://downloads.arduino.cc/tools/openocd-0.11.0-arduino2-static-x86_64-apple-darwin13.tar.bz2"
+            }
+          ],
+          "system": {
+            "host": "i386-apple-darwin11",
+            "url": "https://downloads.arduino.cc/tools/openocd-0.11.0-arduino2-static-x86_64-apple-darwin13.tar.bz2",
+            "archiveFileName": "openocd-0.11.0-arduino2-static-x86_64-apple-darwin13.tar.bz2",
+            "checksum": "SHA-256:280e7234eba84e830e92d791ebc685286f71d2bc1d3347f93605ef170d54fef4",
+            "size": "1893150"
+          }
+        }
+      }
+    }
+  },
+  "arduino_unihiker_k10": {
+    "core_version": "0.0.5",
+    "platform": {
+      "category": "UNIHIKER",
+      "name": "UNIHIKER",
+      "url": "https://downloadcd.dfrobot.com.cn/UNIHIKER/unihiker_k10-0.0.5.zip",
+      "checksum": "SHA-256:98c9232302ba29d0a63f59e4417f8e492273ce12c19f4c0fc033845694573d53",
+      "help": {
+        "online": "https://www.unihiker.com.cn/"
+      },
+      "version": "0.0.5",
+      "architecture": "esp32",
+      "archiveFileName": "unihiker_k10-0.0.5.zip",
+      "boards": [
+        {
+          "name": "unihiker k10"
+        }
+      ],
+      "toolsDependencies": [
+        {
+          "packager": "UNIHIKER",
+          "version": "5.1.0",
+          "name": "esptool_py"
+        },
+        {
+          "packager": "UNIHIKER",
+          "version": "esp-2021r2-patch5-8.4.0",
+          "name": "xtensa-esp32s3-elf-gcc"
+        },
+        {
+          "packager": "UNIHIKER",
+          "version": "0.2.3",
+          "name": "mkspiffs"
+        },
+        {
+          "packager": "UNIHIKER",
+          "version": "3.0.0-gnu12-dc7f933",
+          "name": "mklittlefs"
+        }
+      ],
+      "size": "143820656"
+    },
+    "package_metadata": {
+      "maintainer": "DFRobot",
+      "websiteURL": "http://www.DFRobot.com/"
+    },
+    "common": [
+      "core",
+      "esptool_py",
+      "xtensa-esp32s3-elf-gcc",
+      "mkspiffs",
+      "mklittlefs",
+      "ctags",
+      "serial-discovery",
+      "mdns-discovery",
+      "serial-monitor",
+      "dfu-discovery"
+    ],
+    "profiles": {
+      "unihiker_k10": []
+    },
+    "optional_libraries": [],
+    "artifacts": {
+      "core": {
+        "packager": "UNIHIKER",
+        "name": "esp32",
+        "version": "0.0.5",
+        "destination": "data/packages/UNIHIKER/hardware/esp32/0.0.5",
+        "strip_root": true,
+        "filename": "unihiker_k10-0.0.5.zip",
+        "size": 143820656,
+        "sha256": "98c9232302ba29d0a63f59e4417f8e492273ce12c19f4c0fc033845694573d53",
+        "sources": [
+          {
+            "id": "dfrobot-cn",
+            "kind": "domestic_official",
+            "url": "https://downloadcd.dfrobot.com.cn/UNIHIKER/unihiker_k10-0.0.5.zip"
+          }
+        ]
+      },
+      "esptool_py": {
+        "packager": "UNIHIKER",
+        "name": "esptool_py",
+        "version": "5.1.0",
+        "destination": "data/packages/UNIHIKER/tools/esptool_py/5.1.0",
+        "strip_root": true,
+        "filename": "esptool-v5.1.0-windows-amd64.zip",
+        "size": 59936293,
+        "sha256": "f68a8f7728adfc59cd60f9424928199e76eac66372c7bdc23898aa32753a437a",
+        "sources": [
+          {
+            "id": "espressif-cn",
+            "kind": "domestic_official",
+            "url": "https://dl.espressif.cn/github_assets/espressif/esptool/releases/download/v5.1.0/esptool-v5.1.0-windows-amd64.zip"
+          },
+          {
+            "id": "official",
+            "kind": "official_fallback",
+            "url": "https://github.com/espressif/esptool/releases/download/v5.1.0/esptool-v5.1.0-windows-amd64.zip"
+          }
+        ],
+        "system": {
+          "host": "x86_64-mingw32",
+          "url": "https://github.com/espressif/esptool/releases/download/v5.1.0/esptool-v5.1.0-windows-amd64.zip",
+          "archiveFileName": "esptool-v5.1.0-windows-amd64.zip",
+          "size": "59936293",
+          "checksum": "SHA-256:f68a8f7728adfc59cd60f9424928199e76eac66372c7bdc23898aa32753a437a"
+        }
+      },
+      "xtensa-esp32s3-elf-gcc": {
+        "packager": "UNIHIKER",
+        "name": "xtensa-esp32s3-elf-gcc",
+        "version": "esp-2021r2-patch5-8.4.0",
+        "destination": "data/packages/UNIHIKER/tools/xtensa-esp32s3-elf-gcc/esp-2021r2-patch5-8.4.0",
+        "strip_root": true,
+        "filename": "xtensa-esp32s3-elf-gcc8_4_0-esp-2021r2-patch5-win64.zip",
+        "size": 86022563,
+        "sha256": "9000be38d44bf79c39b93a2aeb99b42e956c593ccbc02fe31cb9c71ae1bbcb22",
+        "sources": [
+          {
+            "id": "dfrobot-cn",
+            "kind": "domestic_official",
+            "url": "https://downloadcd.dfrobot.com.cn/UNIHIKER/tools/xtensa-esp32s3-elf-gcc8_4_0-esp-2021r2-patch5-win64.zip"
+          }
+        ],
+        "system": {
+          "host": "x86_64-mingw32",
+          "url": "https://downloadcd.dfrobot.com.cn/UNIHIKER/tools/xtensa-esp32s3-elf-gcc8_4_0-esp-2021r2-patch5-win64.zip",
+          "archiveFileName": "xtensa-esp32s3-elf-gcc8_4_0-esp-2021r2-patch5-win64.zip",
+          "checksum": "SHA-256:9000be38d44bf79c39b93a2aeb99b42e956c593ccbc02fe31cb9c71ae1bbcb22",
+          "size": "86022563"
+        }
+      },
+      "mkspiffs": {
+        "packager": "UNIHIKER",
+        "name": "mkspiffs",
+        "version": "0.2.3",
+        "destination": "data/packages/UNIHIKER/tools/mkspiffs/0.2.3",
+        "strip_root": true,
+        "filename": "mkspiffs-0.2.3-arduino-esp32-win32.zip",
+        "size": 249809,
+        "sha256": "b647f2c2efe6949819c85ea9404271b55c7c9c25bcb98d3b98a1d0ba771adf56",
+        "sources": [
+          {
+            "id": "dfrobot-cn",
+            "kind": "domestic_official",
+            "url": "https://downloadcd.dfrobot.com.cn/FireBeetle/tools/mkspiffs-0.2.3-arduino-esp32-win32.zip"
+          }
+        ],
+        "system": {
+          "url": "https://downloadcd.dfrobot.com.cn/FireBeetle/tools/mkspiffs-0.2.3-arduino-esp32-win32.zip",
+          "checksum": "SHA-256:b647f2c2efe6949819c85ea9404271b55c7c9c25bcb98d3b98a1d0ba771adf56",
+          "host": "i686-mingw32",
+          "archiveFileName": "mkspiffs-0.2.3-arduino-esp32-win32.zip",
+          "size": "249809"
+        }
+      },
+      "mklittlefs": {
+        "packager": "UNIHIKER",
+        "name": "mklittlefs",
+        "version": "3.0.0-gnu12-dc7f933",
+        "destination": "data/packages/UNIHIKER/tools/mklittlefs/3.0.0-gnu12-dc7f933",
+        "strip_root": true,
+        "filename": "x86_64-w64-mingw32.mklittlefs-c41e51a.200706.zip",
+        "size": 345132,
+        "sha256": "2e319077491f8e832e96eb4f2f7a70dd919333cee4b388c394e0e848d031d542",
+        "sources": [
+          {
+            "id": "dfrobot-cn",
+            "kind": "domestic_official",
+            "url": "https://downloadcd.dfrobot.com.cn/FireBeetle/tools/x86_64-w64-mingw32.mklittlefs-c41e51a.200706.zip"
+          }
+        ],
+        "system": {
+          "host": "x86_64-mingw32",
+          "url": "https://downloadcd.dfrobot.com.cn/FireBeetle/tools/x86_64-w64-mingw32.mklittlefs-c41e51a.200706.zip",
+          "archiveFileName": "x86_64-w64-mingw32.mklittlefs-c41e51a.200706.zip",
+          "checksum": "SHA-256:2e319077491f8e832e96eb4f2f7a70dd919333cee4b388c394e0e848d031d542",
+          "size": "345132"
+        }
+      }
+    },
+    "host_artifacts": {
+      "macos-arm64": {
+        "esptool_py": {
+          "packager": "UNIHIKER",
+          "name": "esptool_py",
+          "version": "5.1.0",
+          "destination": "data/packages/UNIHIKER/tools/esptool_py/5.1.0",
+          "strip_root": true,
+          "filename": "esptool-v5.1.0-macos-arm64.tar.gz",
+          "size": 56092727,
+          "sha256": "5d5aab5b64b10dc5001cfa96b5bfa48393ae561e6d797c41a1fdd3f5d3843d03",
+          "sources": [
+            {
+              "id": "espressif-cn",
+              "kind": "domestic_official",
+              "url": "https://dl.espressif.cn/github_assets/espressif/esptool/releases/download/v5.1.0/esptool-v5.1.0-macos-arm64.tar.gz"
+            },
+            {
+              "id": "official",
+              "kind": "official_fallback",
+              "url": "https://github.com/espressif/esptool/releases/download/v5.1.0/esptool-v5.1.0-macos-arm64.tar.gz"
+            }
+          ],
+          "system": {
+            "host": "arm64-apple-darwin",
+            "url": "https://github.com/espressif/esptool/releases/download/v5.1.0/esptool-v5.1.0-macos-arm64.tar.gz",
+            "archiveFileName": "esptool-v5.1.0-macos-arm64.tar.gz",
+            "size": "56092727",
+            "checksum": "SHA-256:5d5aab5b64b10dc5001cfa96b5bfa48393ae561e6d797c41a1fdd3f5d3843d03"
+          }
+        },
+        "xtensa-esp32s3-elf-gcc": {
+          "packager": "UNIHIKER",
+          "name": "xtensa-esp32s3-elf-gcc",
+          "version": "esp-2021r2-patch5-8.4.0",
+          "destination": "data/packages/UNIHIKER/tools/xtensa-esp32s3-elf-gcc/esp-2021r2-patch5-8.4.0",
+          "strip_root": true,
+          "filename": "xtensa-esp32s3-elf-gcc8_4_0-esp-2021r2-patch5-macos-arm64.tar.gz",
+          "size": 66791095,
+          "sha256": "c64b05be25d26916c65dcfe11de9e60b96d58980b2df706d3074cb70b1ef6cb9",
+          "sources": [
+            {
+              "id": "espressif-cn",
+              "kind": "domestic_official",
+              "url": "https://dl.espressif.cn/github_assets/espressif/crosstool-NG/releases/download/esp-2021r2-patch5/xtensa-esp32s3-elf-gcc8_4_0-esp-2021r2-patch5-macos-arm64.tar.gz"
+            },
+            {
+              "id": "official",
+              "kind": "official_fallback",
+              "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2021r2-patch5/xtensa-esp32s3-elf-gcc8_4_0-esp-2021r2-patch5-macos-arm64.tar.gz"
+            }
+          ],
+          "system": {
+            "host": "arm64-apple-darwin",
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2021r2-patch5/xtensa-esp32s3-elf-gcc8_4_0-esp-2021r2-patch5-macos-arm64.tar.gz",
+            "archiveFileName": "xtensa-esp32s3-elf-gcc8_4_0-esp-2021r2-patch5-macos-arm64.tar.gz",
+            "checksum": "SHA-256:c64b05be25d26916c65dcfe11de9e60b96d58980b2df706d3074cb70b1ef6cb9",
+            "size": "66791095"
+          }
+        },
+        "mkspiffs": {
+          "packager": "UNIHIKER",
+          "name": "mkspiffs",
+          "version": "0.2.3",
+          "destination": "data/packages/UNIHIKER/tools/mkspiffs/0.2.3",
+          "strip_root": true,
+          "filename": "mkspiffs-0.2.3-arduino-esp32-osx.tar.gz",
+          "size": 130270,
+          "sha256": "9f43fc74a858cf564966b5035322c3e5e61c31a647c5a1d71b388ed6efc48423",
+          "sources": [
+            {
+              "id": "dfrobot-cn",
+              "kind": "domestic_official",
+              "url": "https://downloadcd.dfrobot.com.cn/FireBeetle/tools/mkspiffs-0.2.3-arduino-esp32-osx.tar.gz"
+            }
+          ],
+          "system": {
+            "url": "https://downloadcd.dfrobot.com.cn/FireBeetle/tools/mkspiffs-0.2.3-arduino-esp32-osx.tar.gz",
+            "checksum": "SHA-256:9f43fc74a858cf564966b5035322c3e5e61c31a647c5a1d71b388ed6efc48423",
+            "host": "x86_64-apple-darwin",
+            "archiveFileName": "mkspiffs-0.2.3-arduino-esp32-osx.tar.gz",
+            "size": "130270"
+          }
+        },
+        "mklittlefs": {
+          "packager": "UNIHIKER",
+          "name": "mklittlefs",
+          "version": "3.0.0-gnu12-dc7f933",
+          "destination": "data/packages/UNIHIKER/tools/mklittlefs/3.0.0-gnu12-dc7f933",
+          "strip_root": true,
+          "filename": "x86_64-apple-darwin14.mklittlefs-c41e51a.200706.tar.gz",
+          "size": 362608,
+          "sha256": "e3edd5e05b70db3c7df6b9d626558348ad04804022fe955c799aeb51808c7dc3",
+          "sources": [
+            {
+              "id": "official",
+              "kind": "official_fallback",
+              "url": "https://github.com/earlephilhower/esp-quick-toolchain/releases/download/3.0.0-gnu12/x86_64-apple-darwin14.mklittlefs-c41e51a.200706.tar.gz"
+            }
+          ],
+          "system": {
+            "host": "x86_64-apple-darwin",
+            "url": "https://github.com/earlephilhower/esp-quick-toolchain/releases/download/3.0.0-gnu12/x86_64-apple-darwin14.mklittlefs-c41e51a.200706.tar.gz",
+            "archiveFileName": "x86_64-apple-darwin14.mklittlefs-c41e51a.200706.tar.gz",
+            "checksum": "SHA-256:e3edd5e05b70db3c7df6b9d626558348ad04804022fe955c799aeb51808c7dc3",
+            "size": "362608"
+          }
+        }
+      },
+      "macos-x86_64": {
+        "esptool_py": {
+          "packager": "UNIHIKER",
+          "name": "esptool_py",
+          "version": "5.1.0",
+          "destination": "data/packages/UNIHIKER/tools/esptool_py/5.1.0",
+          "strip_root": true,
+          "filename": "esptool-v5.1.0-macos-amd64.tar.gz",
+          "size": 59088390,
+          "sha256": "c485511e0906cb1e0277c5eecff1c4a77b89d76d0c940b685dc9fce2fad4b242",
+          "sources": [
+            {
+              "id": "espressif-cn",
+              "kind": "domestic_official",
+              "url": "https://dl.espressif.cn/github_assets/espressif/esptool/releases/download/v5.1.0/esptool-v5.1.0-macos-amd64.tar.gz"
+            },
+            {
+              "id": "official",
+              "kind": "official_fallback",
+              "url": "https://github.com/espressif/esptool/releases/download/v5.1.0/esptool-v5.1.0-macos-amd64.tar.gz"
+            }
+          ],
+          "system": {
+            "host": "x86_64-apple-darwin",
+            "url": "https://github.com/espressif/esptool/releases/download/v5.1.0/esptool-v5.1.0-macos-amd64.tar.gz",
+            "archiveFileName": "esptool-v5.1.0-macos-amd64.tar.gz",
+            "size": "59088390",
+            "checksum": "SHA-256:c485511e0906cb1e0277c5eecff1c4a77b89d76d0c940b685dc9fce2fad4b242"
+          }
+        },
+        "xtensa-esp32s3-elf-gcc": {
+          "packager": "UNIHIKER",
+          "name": "xtensa-esp32s3-elf-gcc",
+          "version": "esp-2021r2-patch5-8.4.0",
+          "destination": "data/packages/UNIHIKER/tools/xtensa-esp32s3-elf-gcc/esp-2021r2-patch5-8.4.0",
+          "strip_root": true,
+          "filename": "xtensa-esp32s3-elf-gcc8_4_0-esp-2021r2-patch5-macos.tar.gz",
+          "size": 75719772,
+          "sha256": "99b6d44cea5aebbedc8b6965e7bf551aa4a40ed83ddbe1c0e9b7cb255564ded5",
+          "sources": [
+            {
+              "id": "espressif-cn",
+              "kind": "domestic_official",
+              "url": "https://dl.espressif.cn/github_assets/espressif/crosstool-NG/releases/download/esp-2021r2-patch5/xtensa-esp32s3-elf-gcc8_4_0-esp-2021r2-patch5-macos.tar.gz"
+            },
+            {
+              "id": "official",
+              "kind": "official_fallback",
+              "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2021r2-patch5/xtensa-esp32s3-elf-gcc8_4_0-esp-2021r2-patch5-macos.tar.gz"
+            }
+          ],
+          "system": {
+            "host": "x86_64-apple-darwin",
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2021r2-patch5/xtensa-esp32s3-elf-gcc8_4_0-esp-2021r2-patch5-macos.tar.gz",
+            "archiveFileName": "xtensa-esp32s3-elf-gcc8_4_0-esp-2021r2-patch5-macos.tar.gz",
+            "checksum": "SHA-256:99b6d44cea5aebbedc8b6965e7bf551aa4a40ed83ddbe1c0e9b7cb255564ded5",
+            "size": "75719772"
+          }
+        },
+        "mkspiffs": {
+          "packager": "UNIHIKER",
+          "name": "mkspiffs",
+          "version": "0.2.3",
+          "destination": "data/packages/UNIHIKER/tools/mkspiffs/0.2.3",
+          "strip_root": true,
+          "filename": "mkspiffs-0.2.3-arduino-esp32-osx.tar.gz",
+          "size": 130270,
+          "sha256": "9f43fc74a858cf564966b5035322c3e5e61c31a647c5a1d71b388ed6efc48423",
+          "sources": [
+            {
+              "id": "dfrobot-cn",
+              "kind": "domestic_official",
+              "url": "https://downloadcd.dfrobot.com.cn/FireBeetle/tools/mkspiffs-0.2.3-arduino-esp32-osx.tar.gz"
+            }
+          ],
+          "system": {
+            "url": "https://downloadcd.dfrobot.com.cn/FireBeetle/tools/mkspiffs-0.2.3-arduino-esp32-osx.tar.gz",
+            "checksum": "SHA-256:9f43fc74a858cf564966b5035322c3e5e61c31a647c5a1d71b388ed6efc48423",
+            "host": "x86_64-apple-darwin",
+            "archiveFileName": "mkspiffs-0.2.3-arduino-esp32-osx.tar.gz",
+            "size": "130270"
+          }
+        },
+        "mklittlefs": {
+          "packager": "UNIHIKER",
+          "name": "mklittlefs",
+          "version": "3.0.0-gnu12-dc7f933",
+          "destination": "data/packages/UNIHIKER/tools/mklittlefs/3.0.0-gnu12-dc7f933",
+          "strip_root": true,
+          "filename": "x86_64-apple-darwin14.mklittlefs-c41e51a.200706.tar.gz",
+          "size": 362608,
+          "sha256": "e3edd5e05b70db3c7df6b9d626558348ad04804022fe955c799aeb51808c7dc3",
+          "sources": [
+            {
+              "id": "official",
+              "kind": "official_fallback",
+              "url": "https://github.com/earlephilhower/esp-quick-toolchain/releases/download/3.0.0-gnu12/x86_64-apple-darwin14.mklittlefs-c41e51a.200706.tar.gz"
+            }
+          ],
+          "system": {
+            "host": "x86_64-apple-darwin",
+            "url": "https://github.com/earlephilhower/esp-quick-toolchain/releases/download/3.0.0-gnu12/x86_64-apple-darwin14.mklittlefs-c41e51a.200706.tar.gz",
+            "archiveFileName": "x86_64-apple-darwin14.mklittlefs-c41e51a.200706.tar.gz",
+            "checksum": "SHA-256:e3edd5e05b70db3c7df6b9d626558348ad04804022fe955c799aeb51808c7dc3",
+            "size": "362608"
+          }
+        }
+      }
+    }
   }
 }

@@ -52,6 +52,24 @@
       "runtime_cli": "chatmaker-uno",
       "runtime_module": "chatmaker.hardware.uno_mindplus"
     },
+    "arduino-uno-r4-wifi": {
+      "identification": "manual",
+      "knowledge": {
+        "delivery": "source",
+        "index_path": "knowledge/boards/arduino-uno-r4-wifi.yaml",
+        "pack_id": "chatmaker-board-arduino-uno-r4-wifi-knowledge",
+        "source_ref": "source-arduino-uno-r4-wifi-official"
+      },
+      "mechanics": {
+        "fit_verified": false,
+        "notes": "Check the exact board and connector dimensions before designing a case.",
+        "profile_path": null,
+        "status": "research-required"
+      },
+      "record_path": "packs/boards/arduino-uno-r4-wifi.yaml",
+      "runtime_cli": "chatmaker-hardware",
+      "runtime_module": "chatmaker.hardware.workflow"
+    },
     "esp32-c3-devkitm-1": {
       "identification": "manual",
       "knowledge": {
@@ -192,6 +210,42 @@
       "runtime_cli": "chatmaker-mpython-v3",
       "runtime_module": "chatmaker.hardware.mpython_v3"
     },
+    "seeed-xiao-esp32s3": {
+      "identification": "manual",
+      "knowledge": {
+        "delivery": "source",
+        "index_path": "knowledge/boards/seeed-xiao-esp32s3.yaml",
+        "pack_id": "chatmaker-board-seeed-xiao-esp32s3-knowledge",
+        "source_ref": "source-seeed-xiao-esp32s3-official"
+      },
+      "mechanics": {
+        "fit_verified": false,
+        "notes": "Check the exact board and connector dimensions before designing a case.",
+        "profile_path": null,
+        "status": "research-required"
+      },
+      "record_path": "packs/boards/seeed-xiao-esp32s3.yaml",
+      "runtime_cli": "chatmaker-hardware",
+      "runtime_module": "chatmaker.hardware.workflow"
+    },
+    "seeed-xiao-esp32s3-sense": {
+      "identification": "manual",
+      "knowledge": {
+        "delivery": "source",
+        "index_path": "knowledge/boards/seeed-xiao-esp32s3-sense.yaml",
+        "pack_id": "chatmaker-board-seeed-xiao-esp32s3-sense-knowledge",
+        "source_ref": "source-seeed-xiao-esp32s3-sense-official"
+      },
+      "mechanics": {
+        "fit_verified": false,
+        "notes": "Check the exact board and connector dimensions before designing a case.",
+        "profile_path": null,
+        "status": "research-required"
+      },
+      "record_path": "packs/boards/seeed-xiao-esp32s3-sense.yaml",
+      "runtime_cli": "chatmaker-hardware",
+      "runtime_module": "chatmaker.hardware.workflow"
+    },
     "stardust-atmega328p": {
       "identification": "assisted",
       "knowledge": {
@@ -209,6 +263,24 @@
       "record_path": "packs/boards/stardust-atmega328p.yaml",
       "runtime_cli": "chatmaker-stardust",
       "runtime_module": "chatmaker.hardware.stardust"
+    },
+    "unihiker-k10": {
+      "identification": "manual",
+      "knowledge": {
+        "delivery": "source",
+        "index_path": "knowledge/boards/unihiker-k10.yaml",
+        "pack_id": "chatmaker-board-unihiker-k10-knowledge",
+        "source_ref": "source-unihiker-k10-official"
+      },
+      "mechanics": {
+        "fit_verified": false,
+        "notes": "Check the exact board and connector dimensions before designing a case.",
+        "profile_path": null,
+        "status": "research-required"
+      },
+      "record_path": "packs/boards/unihiker-k10.yaml",
+      "runtime_cli": "chatmaker-hardware",
+      "runtime_module": "chatmaker.hardware.workflow"
     },
     "unihiker-m10": {
       "identification": "manual",

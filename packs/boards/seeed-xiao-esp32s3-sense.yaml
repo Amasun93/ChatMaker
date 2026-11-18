@@ -1,0 +1,123 @@
+schema_version: '1.0'
+kind: board
+id: seeed-xiao-esp32s3-sense
+name: Seeed Studio XIAO ESP32S3 Sense
+aliases:
+- XIAO ESP32S3 Sense
+- XIAO ESP32-S3 Sense
+- XIAO ESP32S3 带摄像头
+- XIAO ESP32-S3 摄像头版
+- XIAO ESP32S3 摄像头版
+- XIAO ESP32S3 Sense 摄像头版
+summary: XIAO ESP32S3 加原装摄像头、麦克风和 microSD 扩展板。单独提供相机示例和共用引脚说明。
+family: esp32-s3
+mcu: ESP32-S3R8
+logic_voltage: 3.3
+chatmaker:
+  runtime_cli: chatmaker-hardware
+  runtime_module: chatmaker.hardware.workflow
+  identification: manual
+  knowledge_delivery: source
+mechanics:
+  status: research-required
+  profile_path: null
+  fit_verified: false
+  notes: Check the exact board and connector dimensions before designing a case.
+identity:
+  physical_confirmation_required: true
+  forbidden_aliases:
+  - XIAO ESP32S3 Plus
+  - XIAO ESP32-S3 Plus
+sources:
+- title: Seeed XIAO ESP32-S3 series
+  url: https://wiki.seeedstudio.com/xiao_esp32s3_getting_started/
+- title: Arduino-ESP32 XIAO variant pins
+  url: https://github.com/espressif/arduino-esp32/blob/3.3.12/variants/XIAO_ESP32S3/pins_arduino.h
+- title: Seeed Sense camera examples
+  url: https://wiki.seeedstudio.com/xiao_esp32s3_camera_usage/
+- title: Espressif CameraWebServer pin definitions
+  url: https://github.com/espressif/arduino-esp32/blob/3.3.12/libraries/ESP32/examples/Camera/CameraWebServer/camera_pins.h
+verification:
+  source_reviewed:
+    status: verified
+    checked_at: '2026-11-18'
+    evidence: Seeed Sense reference and the official Arduino-ESP32 camera pin table establish the expansion board and its
+      camera, microphone and SD conflicts.
+  code_compiled:
+    status: verified
+    checked_at: '2026-11-18'
+    evidence: The ChatMaker camera-check example linked the ESP32 camera driver and produced a binary on Windows x64 with Arduino CLI 1.3.1 and cached Arduino-ESP32 3.3.11.
+  firmware_uploaded:
+    status: unverified
+    checked_at: null
+    evidence: null
+  physical_effect_verified:
+    status: unverified
+    checked_at: null
+    evidence: null
+pins:
+- id: D1/GPIO2
+  capabilities:
+  - digital-input
+  - digital-output
+  - analog-input
+- id: D2/GPIO3
+  capabilities:
+  - strapping
+- id: D4/GPIO5
+  capabilities:
+  - i2c-sda
+- id: D5/GPIO6
+  capabilities:
+  - i2c-scl
+- id: D6/GPIO43
+  capabilities:
+  - uart-tx
+- id: D7/GPIO44
+  capabilities:
+  - uart-rx
+- id: D8/GPIO7
+  capabilities:
+  - spi-clock
+- id: D9/GPIO8
+  capabilities:
+  - spi-miso
+- id: D10/GPIO9
+  capabilities:
+  - spi-mosi
+- id: GPIO19/20
+  capabilities:
+  - native-usb
+  - reserved
+- id: GPIO21
+  capabilities:
+  - builtin-led
+  - sd-chip-select
+  - shared
+- id: GPIO41
+  capabilities:
+  - pdm-mic-data
+  - onboard
+- id: GPIO42
+  capabilities:
+  - pdm-mic-clock
+  - onboard
+- id: 3V3
+  capabilities:
+  - power
+- id: GND
+  capabilities:
+  - ground
+  - shared
+constraints:
+- Use 3.3 V GPIO signals and a shared ground.
+- D labels on the carrier and ESP32 GPIO numbers are different. Prefer the Dn symbols in Arduino sketches.
+- Avoid a module that drives D2/GPIO3 during reset. Reserve GPIO19/20 for USB.
+- Camera kit identity requires the attached Seeed Sense expansion. The USB descriptor can be shared with the ordinary board.
+- Sense SD uses D8/D9/D10 and GPIO21 chip select. Do not drive the user LED independently while the SD card uses GPIO21.
+- The Sense camera and PDM microphone have dedicated assignments. Disconnect power before changing the board-to-board connection.
+toolchains:
+- id: arduino-cli-esp32
+  version: 3.3.12
+  fqbn: esp32:esp32:XIAO_ESP32S3:PSRAM=opi,USBMode=hwcdc,CDCOnBoot=default
+  status: managed

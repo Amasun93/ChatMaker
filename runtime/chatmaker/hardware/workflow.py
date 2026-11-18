@@ -12,6 +12,7 @@ MODULES = {
     'arduino-mega-2560': 'managed_avr',
     'arduino-nano-classic': 'managed_avr',
     'arduino-uno-r3': 'managed_avr',
+    'arduino-uno-r4-wifi': 'managed_avr',
     'idmc-0001-starcore-v4-2-2': 'starcore',
     'mpython-classic-v2x': 'mpython_classic',
     'mpython-v3': 'mpython_v3',
@@ -21,6 +22,9 @@ MODULES = {
     'esp32-c3-devkitm-1': 'managed_esp32',
     'esp32-c6-devkitc-1': 'managed_esp32',
     'waveshare-esp32-s3-touch-lcd-2-8': 'waveshare_s3',
+    'seeed-xiao-esp32s3': 'managed_esp32',
+    'seeed-xiao-esp32s3-sense': 'managed_esp32',
+    'unihiker-k10': 'managed_esp32',
 }
 
 

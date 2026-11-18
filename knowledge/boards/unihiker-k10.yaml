@@ -1,0 +1,100 @@
+schema_version: '1.0'
+kind: knowledge-index
+board_id: unihiker-k10
+max_section_bytes: 65536
+sections:
+- section_id: start-here
+  title: 从这里开始
+  summary: 先让 K10 的三颗板载彩灯轮流亮，再尝试接入屏幕和传感器。看包装或背面是否写 K10 / DFR0992，选择 `unihiker-k10`。
+  consumers:
+  - chatmaker
+  - chatduino
+  - chatweb
+  - chatcad
+  topics:
+  - classroom
+  - start
+  pack_id: chatmaker-board-unihiker-k10-knowledge
+- section_id: identify-and-safety
+  title: 识别板型和用电安全
+  summary: K10 是用 USB 写入程序的微控制器。看清 K10 或 DFR0992，M10 的 Python 同步走另一条路线。先用 USB-C 数据线供电。Arduino 程序会替换板上原应用，先留好想继续用的程序或出厂恢复资料。
+  consumers:
+  - chatmaker
+  - chatduino
+  - chatweb
+  - chatcad
+  topics:
+  - identity
+  - safety
+  pack_id: chatmaker-board-unihiker-k10-knowledge
+- section_id: pins-and-electrical
+  title: 引脚和电气规则
+  summary: 4 针 Gravity I²C 的数据是 P20/SDA，时钟是 P19/SCL，对应核心的 GPIO47/48。板上也有设备使用该总线。两个 3 针 Gravity 接口看 P0、P1 丝印。信号为 3.3 V，USB
+    的 5 V 是供电规格。
+  consumers:
+  - chatmaker
+  - chatduino
+  - chatweb
+  topics:
+  - pins
+  - electrical
+  pack_id: chatmaker-board-unihiker-k10-knowledge
+- section_id: toolchains-and-upload
+  title: 编译工具和上传
+  summary: ChatMaker 准备 DFRobot 官方 K10 Arduino 核心 0.0.5 和它的下载工具。先在板型和端口确认后上传。进不了下载模式时，按住背面 BOOT，短按 RESET，再松开 BOOT，检查新端口。
+  consumers:
+  - chatmaker
+  - chatduino
+  - chatweb
+  topics:
+  - toolchain
+  - compile
+  - upload
+  pack_id: chatmaker-board-unihiker-k10-knowledge
+- section_id: components-and-wiring
+  title: 板载器件和接线
+  summary: 先用板载 RGB、温湿度或光线传感器，省下接线时间。外接 I²C 模块用 4 针接口，逐一确认 3V3、GND、SDA、SCL 与模块匹配，并扫描地址避免和板载器件撞车。已经接到 P0/P1 的 3.3 V 单路传感器可按项目复核，先看插头标签和供电规格。
+  consumers:
+  - chatmaker
+  - chatduino
+  - chatweb
+  - chatcad
+  topics:
+  - wiring
+  - sensor
+  pack_id: chatmaker-board-unihiker-k10-knowledge
+- section_id: libraries-and-examples
+  title: 库和第一个示例
+  summary: 三灯例子用核心自带的 `Adafruit_NeoPixel` 控制三颗板载灯，数据引脚是 GPIO46。还可从 DFRobot 的 `unihiker_k10` 库示例开始做屏幕和板载传感器。
+  consumers:
+  - chatmaker
+  - chatduino
+  - chatweb
+  topics:
+  - libraries
+  - examples
+  pack_id: chatmaker-board-unihiker-k10-knowledge
+- section_id: web-and-protocol
+  title: 串口、网页和通信
+  summary: USB 串口用 115200，先看板卡自检文字。再单独验证 Wi-Fi、相机或屏幕所需功能。只跑三灯例子时，屏幕没有课程画面属于正常现象。
+  consumers:
+  - chatmaker
+  - chatduino
+  - chatweb
+  topics:
+  - serial
+  - wifi
+  - protocol
+  pack_id: chatmaker-board-unihiker-k10-knowledge
+- section_id: troubleshooting
+  title: 课堂常见问题和排错
+  summary: 端口没有出现 → 换数据线，再按背面 BOOT 与 RESET 进入下载模式，选随 K10 出现的端口。
+  consumers:
+  - chatmaker
+  - chatduino
+  - chatweb
+  - chatcad
+  topics:
+  - faq
+  - troubleshooting
+  pack_id: chatmaker-board-unihiker-k10-knowledge

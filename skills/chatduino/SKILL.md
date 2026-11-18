@@ -85,6 +85,15 @@ For a confirmed Arduino Uno Rev3 / Genuino Uno with ATmega328P, use the shared C
 - Reject Bluetooth ports. Auto-select only one confirmed Uno or one remaining wired candidate; require a choice when multiple wired ports remain.
 - Keep compile, upload, serial marker, reboot, and visible LED effect as separate evidence gates.
 
+## UNO R4 WiFi, XIAO ESP32S3 and UNIHIKER K10
+
+Use `chatmaker-hardware` for `arduino-uno-r4-wifi`, `seeed-xiao-esp32s3`, `seeed-xiao-esp32s3-sense`, and `unihiker-k10`. Preview and prepare only the selected board's environment. These boards use the managed Arduino CLI route.
+
+- Read the exact board's local Wiki or the [bundled quick start](references/managed-board-quick-start.md). R4 WiFi uses the Renesas RA4M1 target. K10 uses the DFRobot Arduino target and USB upload. M10 runs Python projects on Debian.
+- Confirm the Sense kit and original camera expansion before choosing its camera example. The ordinary/Sense Arduino target and USB name can be identical.
+- After confirming the board, pass the selected USB port and `board_confirmed` internally. For a generic ESP32 USB serial port, verify which port changes when the exact board is unplugged and reconnected.
+- Use the board's visible example or the Sense serial frame-size result as a starting check. Report compilation, upload, and observed hardware separately.
+
 ## 星辰板（ATmega328P / CH340）
 
 - Keep product identity `stardust-atmega328p` separate from a generic Nano even though compilation reuses the compatible Nano target.

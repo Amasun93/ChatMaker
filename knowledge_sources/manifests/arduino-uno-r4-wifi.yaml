@@ -1,0 +1,40 @@
+schema_version: '1.0'
+id: source-arduino-uno-r4-wifi-official
+title: Arduino UNO R4 WiFi 官方资料
+board_id: arduino-uno-r4-wifi
+source_type: canonical-board-documentation
+canonical_url: https://docs.arduino.cc/hardware/uno-r4-wifi/
+license_use_boundary: Author-written ChatMaker guidance links to manufacturer documentation and upstream code. Manufacturer
+  diagrams and binaries are omitted.
+cleaning_version: chatmaker-arduino-uno-r4-wifi-wiki-v1
+review_date: '2026-11-18'
+cleaning_verified:
+  status: verified
+  date: '2026-11-18'
+  evidence: Organized source-linked guidance into eight classroom sections.
+source_reviewed:
+  status: verified
+  date: '2026-11-18'
+  evidence: Arduino ABX00087 full pinout, Renesas 1.6.0 board and variant definitions establish 5 V headers, 3.3 V Qwiic and
+    the BOSSA upload path.
+publication_approved:
+  status: verified
+  date: '2026-11-18'
+  evidence: Author-written content reviewed for the requested ChatMaker repository update.
+page_declarations:
+- stable_id: arduino-uno-r4-wifi-start-here
+  path: published/boards/arduino-uno-r4-wifi/start-here.md
+- stable_id: arduino-uno-r4-wifi-identify-and-safety
+  path: published/boards/arduino-uno-r4-wifi/identify-and-safety.md
+- stable_id: arduino-uno-r4-wifi-pins-and-electrical
+  path: published/boards/arduino-uno-r4-wifi/pins-and-electrical.md
+- stable_id: arduino-uno-r4-wifi-toolchains-and-upload
+  path: published/boards/arduino-uno-r4-wifi/toolchains-and-upload.md
+- stable_id: arduino-uno-r4-wifi-components-and-wiring
+  path: published/boards/arduino-uno-r4-wifi/components-and-wiring.md
+- stable_id: arduino-uno-r4-wifi-libraries-and-examples
+  path: published/boards/arduino-uno-r4-wifi/libraries-and-examples.md
+- stable_id: arduino-uno-r4-wifi-web-and-protocol
+  path: published/boards/arduino-uno-r4-wifi/web-and-protocol.md
+- stable_id: arduino-uno-r4-wifi-troubleshooting
+  path: published/boards/arduino-uno-r4-wifi/troubleshooting.md
