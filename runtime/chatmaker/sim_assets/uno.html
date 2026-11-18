@@ -3,122 +3,144 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>ChatSim · UNO R3</title>
+<title>ChatSim · UNO R3 按钮亮灯</title>
 <style>
-:root { color-scheme: light; font-family: system-ui, sans-serif; color: #142733; background: #f2f5f4; }
-* { box-sizing: border-box; }
-body { margin: 0; }
-main { max-width: 850px; margin: auto; padding: clamp(22px, 6vw, 60px) clamp(12px, 4vw, 28px); }
-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px 18px; }
-.brand { margin: 0; font-weight: 820; letter-spacing: .035em; }
-.status { margin: 0; border: 1px solid #c8ded4; background: #e3f2eb; color: #18483d; border-radius: 20px; padding: 4px 10px; font-size: .8rem; font-weight: 700; }
-h1 { font-size: clamp(1.55rem, 5vw, 2.45rem); margin: 1.7rem 0 .62rem; line-height: 1.15; }
-.intro { color: #485e67; margin: 0 0 1.35rem; line-height: 1.6; }
-.lab { border: 1px solid #c9d6d9; border-radius: 18px; overflow: hidden; background: #fcfefd; }
-.bench {
-  position: relative; isolation: isolate; display: grid; align-items: center;
-  grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr);
-  gap: clamp(45px, 11vw, 140px); padding: clamp(24px, 7vw, 65px) clamp(12px, 5vw, 55px);
-  background-color: #f7faf9; background-image: radial-gradient(#c4d3d5 1px, transparent 1px); background-size: 16px 16px;
-}
-.device { position: relative; z-index: 1; min-width: 0; }
-.uno {
-  min-height: clamp(152px, 32vw, 228px); overflow: hidden;
-  border: 2px solid #0a525f; border-radius: 12px 18px 20px 11px;
-  background: linear-gradient(140deg, #188e96, #076272);
-  box-shadow: 0 5px 0 #134d59, 0 16px 24px #14374826;
-  color: #f4fffb; padding: 27px 12px 16px 24px;
-}
-.header-strip { position: absolute; left: 13%; width: 66%; height: 11px; border-radius: 3px; background: repeating-linear-gradient(90deg, #212d37 0 3px, #b6c3c5 3px 6px, #212d37 6px 9px); border: 2px solid #202c35; }
-.header-strip.top { top: 5px; }
-.header-strip.bottom { bottom: 6px; }
-.usb { position: absolute; width: clamp(14px, 5vw, 36px); height: 34px; top: 25%; left: 0; border-radius: 0 4px 4px 0; background: linear-gradient(#5f7a85, #d5e1e5 38%, #7c959d); border: 1px solid #7a969b; }
-.chip { width: min(54%, 91px); height: clamp(27px, 6vw, 45px); margin-top: 14px; border: 5px solid transparent; border-width: 5px 0; border-image: repeating-linear-gradient(90deg, #d3dfe4 0 3px, transparent 3px 7px) 6; background: #253640; background-clip: padding-box; border-radius: 4px; }
-.device-name { display: grid; gap: 2px; font-size: clamp(.8rem, 3.3vw, 1.45rem); line-height: 1.15; font-weight: 850; letter-spacing: .015em; }
-.device-name small { font: 600 clamp(.64rem, 1.6vw, .78rem) system-ui, sans-serif; }
-.uno-content { height: 100%; display: flex; flex-direction: column; justify-content: space-around; padding: 0 clamp(22px, 5vw, 58px) 0 clamp(0px, 2vw, 14px); }
-.lamp-row { font-size: clamp(.72rem, 2vw, .88rem); margin-top: 8px; display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
-.lamp { width: .78rem; height: .78rem; flex: 0 0 .78rem; border-radius: 50%; background: #59757e; border: 1px solid #a5c7cc; }
-[data-led="on"] .lamp { background: #ffd55b; border-color: #fff1b8; box-shadow: 0 0 13px 3px #ffcb62aa; }
-#led-state { font-weight: 680; }
-.switch { border: 1px solid #bccbd0; border-radius: 12px; background: #e4e9eb; min-height: clamp(132px, 26vw, 182px); box-shadow: 0 4px 0 #b2c2c8; color: #182b37; text-align: center; padding: 14px 12px 12px clamp(18px, 5vw, 36px); }
-.switch-name { font-size: clamp(.72rem, 2.1vw, .97rem); font-weight: 740; margin: 4px 0 10px; line-height: 1.2; }
-.switch-button {
-  border: 3px solid #d9e1e5; outline: 1px solid #94a6ae; box-shadow: 0 4px 0 #142d3b;
-  width: clamp(48px, 12vw, 72px); height: clamp(48px, 12vw, 72px); border-radius: 50%;
-  background: linear-gradient(155deg, #48616e, #1a3443 68%); color: #fff; padding: 2px;
-  cursor: pointer; touch-action: none; user-select: none;
-}
-.switch-button[aria-pressed="true"] { transform: translateY(3px); box-shadow: 0 1px 0 #142d3b; background: #246f7b; }
-.switch-label { font-size: .68rem; line-height: 1.2; }
-.terminals { position: absolute; top: 16%; bottom: 14%; display: flex; flex-direction: column; justify-content: space-evenly; z-index: 3; }
-.uno .terminals { right: 0; }
-.switch .terminals { left: 0; }
-.terminal {
-  position: relative; display: flex; align-items: center; gap: 5px; padding: 3px 5px; min-height: 42px;
-  border: 0; background: transparent; color: inherit; font: 750 clamp(.65rem, 1.7vw, .84rem) system-ui, sans-serif;
-  cursor: crosshair; border-radius: 6px; white-space: nowrap;
-}
-.uno .terminal { justify-content: flex-end; }
-.socket { width: 14px; height: 14px; border-radius: 50%; background: #30424d; border: 3px solid #b4c7cf; box-shadow: 0 0 0 1px #4f6c78; }
-.terminal[data-connected="true"] .socket { background: #a7eee7; }
-.terminal[aria-pressed="true"] .socket { border-color: #ffe08a; box-shadow: 0 0 0 3px #d79923; }
-button:focus-visible { outline: 3px solid #d09217; outline-offset: 2px; }
-button:disabled { opacity: .56; cursor: default; }
-.wires { position: absolute; z-index: 2; inset: 0; width: 100%; height: 100%; pointer-events: none; }
-.lab-footer { display: flex; gap: 6px 18px; justify-content: space-between; align-items: center; padding: 10px 14px; border-top: 1px solid #c9d6d9; }
-.wiring-status { margin: 0; color: #314b58; font-size: .88rem; line-height: 1.5; }
-.clear { flex: none; border: 1px solid #c3d1d5; border-radius: 8px; background: #fff; color: #194957; min-height: 38px; padding: 6px 10px; font: 700 .78rem system-ui, sans-serif; cursor: pointer; }
-footer { color: #485e67; margin-top: 1rem; font-size: .79rem; line-height: 1.6; }
-code { overflow-wrap: anywhere; }
-@media (max-width: 380px) {
-  .uno { padding-left: 17px; }
-  .switch { padding-right: 7px; }
-  .lab-footer { padding-inline: 9px; }
-}
+  :root {
+    color-scheme: light;
+    font-family: "Microsoft YaHei", "PingFang SC", system-ui, sans-serif;
+    color: #202d37;
+    background: #f3f5f6;
+    font-synthesis: none;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; }
+  .page { width: min(100% - 48px, 1120px); margin: 0 auto; }
+  header { border-bottom: 1px solid #dbe2e5; background: #fff; }
+  header .page { min-height: 61px; display: flex; align-items: center; }
+  .brand { margin: 0; color: #075d59; font-size: 21px; font-weight: 800; letter-spacing: -.025em; }
+  main { padding: 30px 0 24px; }
+  h1 { margin: 0 0 7px; font-size: clamp(23px, 4vw, 34px); letter-spacing: -.035em; }
+  .intro { margin: 0 0 22px; color: #4b5b65; font-size: 15px; line-height: 1.65; }
+  .workspace { display: grid; grid-template-columns: minmax(0, 1fr) 290px; gap: 18px; align-items: start; }
+  .preview, aside { min-width: 0; background: #fff; border: 1px solid #dbe2e5; border-radius: 14px; overflow: hidden; }
+  .toolbar { padding: 12px 14px; display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+  button { font: inherit; }
+  #run {
+    display: inline-flex; align-items: center; gap: 9px; padding: 0 15px; min-height: 42px;
+    background: #096962; border: 1px solid transparent; border-radius: 8px;
+    color: #fff; font-size: 14px; font-weight: 700; cursor: pointer;
+  }
+  #run::before { content: ""; width: 11px; height: 12px; background: currentColor; clip-path: polygon(0 0, 100% 50%, 0 100%); }
+  #run[data-running="true"] { background: #fff; border-color: #afc7c5; color: #115e58; }
+  #run[data-running="true"]::before { clip-path: none; width: 10px; height: 10px; }
+  #run:disabled { background: #637d7c; cursor: wait; }
+  #run:focus-visible, #button:focus-visible { outline: 3px solid #007594; outline-offset: 2px; }
+  .lamp-row {
+    display: flex; align-items: center; gap: 7px; padding: 7px 9px; white-space: nowrap;
+    border-radius: 7px; background: #eef2f4; color: #40515c; font-size: 13px;
+  }
+  .lamp { background: #86959d; border-radius: 50%; width: 8px; height: 8px; }
+  .lamp-row[data-led="on"] { background: #fff1cd; color: #634500; }
+  .lamp-row[data-led="on"] .lamp { background: #b77500; box-shadow: 0 0 6px 2px #ffd068; }
+  .viewport {
+    position: relative; width: 100%; aspect-ratio: 560 / 340;
+    min-height: 225px; max-height: 386px; overflow: hidden;
+    border-block: 1px solid #dee5e7;
+    background: #f5f8f9 radial-gradient(#cdd8dc 1px, transparent 1.15px) center / 16px 16px;
+  }
+  .schematic {
+    width: 560px; height: 340px; position: absolute; left: 50%; top: 50%;
+    transform: translate(-50%, -50%) scale(var(--scale, 0)); transform-origin: center;
+  }
+  #uno-part { display: block; position: absolute; top: 86px; left: 36px; }
+  #button {
+    position: absolute; left: 434px; top: 111px; width: 102px; height: 90px;
+    display: grid; place-items: center; border: 1px solid transparent; border-radius: 12px;
+    padding: 0; background: transparent; touch-action: none; user-select: none; cursor: pointer;
+  }
+  #button:not(:disabled):hover { border-color: #91aeae; background: #e7f1f1; }
+  #button:disabled { cursor: default; }
+  .switch-caption, .board-caption {
+    position: absolute; margin: 0; color: #3b4d58; font-size: 14px;
+    font-weight: 700; background: #f5f8f9; padding: 3px 6px; border-radius: 4px;
+  }
+  .switch-caption { left: 485px; top: 207px; transform: translateX(-50%); white-space: nowrap; }
+  .board-caption { left: 53px; top: 300px; }
+  .wires { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+  .status { margin: 0; padding: 13px 14px; min-height: 46px; color: #40515c; font-size: 14px; line-height: 1.4; }
+  aside section { padding: 17px 16px; }
+  aside section + section { border-top: 1px solid #e4e9eb; }
+  h2 { margin: 0 0 11px; font-size: 16px; }
+  ul { margin: 0; padding: 0; list-style: none; }
+  .parts li { display: flex; justify-content: space-between; padding: 6px 0; gap: 8px; font-size: 14px; }
+  .parts span { color: #4b5b65; white-space: nowrap; }
+  .wire-list { display: grid; gap: 9px; }
+  .wire-list li {
+    display: grid; grid-template-columns: 19px minmax(0, 1fr); column-gap: 8px; align-items: start;
+    padding: 8px 9px; background: #f1f5f6; border-radius: 7px; font-size: 13px; line-height: 1.5;
+  }
+  .wire-list li::before { content: ""; display: block; height: 4px; border-radius: 4px; background: var(--wire); margin-top: .55em; }
+  .signal { --wire: #176eb3; }
+  .ground { --wire: #353e47; }
+  .hint { margin: 10px 0 0; color: #4b5b65; font-size: 13px; line-height: 1.55; }
+  footer { margin: 15px 0 0; color: #53616a; font-size: 12px; overflow-wrap: anywhere; line-height: 1.6; }
+  @media (max-width: 760px) {
+    .page { width: min(100% - 24px, 610px); }
+    main { padding-top: 20px; }
+    .workspace { grid-template-columns: minmax(0, 1fr); gap: 13px; }
+    .intro { margin-bottom: 15px; }
+  }
 </style>
 </head>
 <body>
-<main>
-  <header><p class="brand">ChatSim</p><p class="status" id="status" role="status">正在启动固件</p></header>
-  <h1>UNO R3 接线点灯</h1>
-  <p class="intro">依次点击两个接点连线。把 D2 和 GND 各接到按钮一端，再按住按钮。</p>
-  <section class="lab" aria-label="虚拟电路">
-    <div class="bench">
-      <div class="device uno" role="group" aria-label="Arduino UNO R3 主控板">
-        <span class="header-strip top" aria-hidden="true"></span>
-        <span class="header-strip bottom" aria-hidden="true"></span>
-        <span class="usb" aria-hidden="true"></span>
-        <div class="uno-content">
-          <div class="device-name">UNO R3<small>主控板</small></div>
-          <div class="chip" aria-hidden="true"></div>
-          <div class="lamp-row" id="led" data-led="off" aria-label="D13 板载灯">
-            <span class="lamp" aria-hidden="true"></span><span>D13</span><strong id="led-state">熄灭</strong>
-          </div>
-        </div>
-        <div class="terminals">
-          <button type="button" class="terminal" data-terminal="d2" aria-label="主控板 D2" aria-pressed="false">D2<span class="socket" aria-hidden="true"></span></button>
-          <button type="button" class="terminal" data-terminal="gnd" aria-label="主控板 GND" aria-pressed="false">GND<span class="socket" aria-hidden="true"></span></button>
+<header><div class="page"><p class="brand">ChatSim</p></div></header>
+<main class="page">
+  <h1>UNO R3 按钮亮灯</h1>
+  <p class="intro">试按外接按钮，观察 D13 板载灯。</p>
+  <div class="workspace">
+    <section class="preview" aria-label="电路仿真">
+      <div class="toolbar">
+        <button id="run" type="button" disabled>运行仿真</button>
+        <div class="lamp-row" id="led" data-led="off" aria-label="D13 板载灯">
+          <span class="lamp" aria-hidden="true"></span><span>D13 板载灯</span><strong id="led-state">熄灭</strong>
         </div>
       </div>
-      <div class="device switch" role="group" aria-label="外接按钮">
-        <p class="switch-name">外接按钮</p>
-        <button id="button" class="switch-button" type="button" aria-label="按住按钮" aria-pressed="false" disabled><span class="switch-label" aria-hidden="true">按住</span></button>
-        <div class="terminals">
-          <button type="button" class="terminal" data-terminal="1" aria-label="按钮接点 1" aria-pressed="false"><span class="socket" aria-hidden="true"></span>1</button>
-          <button type="button" class="terminal" data-terminal="2" aria-label="按钮接点 2" aria-pressed="false"><span class="socket" aria-hidden="true"></span>2</button>
+      <div class="viewport">
+        <div class="schematic">
+          <wokwi-arduino-uno id="uno-part" inert aria-hidden="true"></wokwi-arduino-uno>
+          <button id="button" type="button" aria-label="按住外接按钮" aria-pressed="false" disabled>
+            <wokwi-pushbutton id="button-part" color="red" inert aria-hidden="true"></wokwi-pushbutton>
+          </button>
+          <canvas class="wires" aria-hidden="true"></canvas>
+          <p class="board-caption">Arduino UNO R3</p>
+          <p class="switch-caption">外接按钮</p>
         </div>
       </div>
-      <canvas class="wires" aria-hidden="true"></canvas>
-    </div>
-    <div class="lab-footer">
-      <p class="wiring-status" id="wiring-status" aria-live="polite">先选一个接点开始接线。</p>
-      <button type="button" class="clear" id="clear-wires" disabled>清空接线</button>
-    </div>
-  </section>
-  <footer>引脚位置为仿真示意。运行固件 <code id="sketch">$sketch</code> · <code id="firmware-id" title="$sha256">$short_hash</code></footer>
+      <p class="status" id="status" role="status">正在加载元件…</p>
+    </section>
+    <aside aria-label="元件和接线">
+      <section>
+        <h2>需要的元件</h2>
+        <ul class="parts">
+          <li>Arduino UNO R3 <span>1 块</span></li>
+          <li>四脚按键开关 <span>1 个</span></li>
+          <li>杜邦线 <span>2 根</span></li>
+        </ul>
+      </section>
+      <section>
+        <h2>接线图已配好</h2>
+        <ul class="wire-list">
+          <li class="signal" data-board-pin="2" data-button-pin="1.l"><span><strong>D2</strong> → 图中按钮左上脚</span></li>
+          <li class="ground" data-board-pin="GND.2" data-button-pin="2.l"><span><strong>GND</strong> → 图中按钮左下脚</span></li>
+        </ul>
+        <p class="hint">图中的 GND 在电源排针上，紧挨着 5V。接实物时，把按钮摆成和图中一样的方向。</p>
+      </section>
+    </aside>
+  </div>
+  <footer>运行固件 <code id="sketch">$sketch</code> · <code id="firmware-id" title="$sha256">$short_hash</code></footer>
 </main>
 <script>$engine</script>
+<script>$parts</script>
 <script id="firmware" type="application/octet-stream">$firmware</script>
 <script>$simulator</script>
 </body>

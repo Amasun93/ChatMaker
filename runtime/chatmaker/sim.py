@@ -63,6 +63,7 @@ def render_preview(firmware_path: Path, *, runtime_root: Path, output: Path | No
         sha256=digest,
         short_hash=digest[:12],
         engine=assets.joinpath("avr8js.js").read_text(encoding="utf-8"),
+        parts=assets.joinpath("wokwi-parts.js").read_text(encoding="utf-8"),
         firmware=base64.b64encode(firmware).decode("ascii"),
         simulator=assets.joinpath("uno.js").read_text(encoding="utf-8"),
     )

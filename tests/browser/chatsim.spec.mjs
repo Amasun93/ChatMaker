@@ -4,8 +4,8 @@ import { expect, test } from "@playwright/test";
 const assets = new URL("../../runtime/chatmaker/sim_assets/", import.meta.url);
 
 async function openSimulation(page, inverted) {
-  const [template, engine, simulator] = await Promise.all(
-    ["uno.html", "avr8js.js", "uno.js"].map((name) => readFile(new URL(name, assets), "utf8")),
+  const [template, engine, parts, simulator] = await Promise.all(
+    ["uno.html", "avr8js.js", "wokwi-parts.js", "uno.js"].map((name) => readFile(new URL(name, assets), "utf8")),
   );
   // A small AVR program sets PB5 as output and enables the PD2 pull-up.
   // Then it checks PIND2 and sets/clears PORTB5 in a loop.
@@ -18,64 +18,62 @@ async function openSimulation(page, inverted) {
   const firmware = Buffer.alloc(instructions.length * 2);
   instructions.forEach((word, index) => firmware.writeUInt16LE(word, index * 2));
   const tokens = { sketch: "fixture.hex", sha256: "fixture", short_hash: "fixture",
-    engine, firmware: firmware.toString("base64"), simulator };
+    engine, parts, firmware: firmware.toString("base64"), simulator };
   await page.goto("about:blank");
   await page.setContent(template.replace(/\$([a-z_0-9]+)/g, (_, name) => tokens[name]));
-  await expect(page.getByRole("status")).toHaveText("固件仿真运行中");
+  await expect(page.getByRole("button", { name: "运行仿真" })).toBeEnabled();
 }
 
-async function wire(page, first, second) {
-  await page.getByRole("button", { name: first, exact: true }).click();
-  await page.getByRole("button", { name: second, exact: true }).click();
+async function expectLed(page, on) {
+  await expect(page.locator("#led")).toHaveAttribute("data-led", on ? "on" : "off");
+  await expect.poll(() => page.locator("wokwi-arduino-uno").evaluate((board) => board.led13)).toBe(on);
 }
 
 test("virtual UNO LED follows the provided AVR program", async ({ page, context }) => {
   await context.setOffline(true);
   for (const inverted of [false, true]) {
     await openSimulation(page, inverted);
-    await wire(page, "主控板 D2", "按钮接点 1");
-    await wire(page, "按钮接点 2", "主控板 GND");
-    const led = page.locator("#led");
-    const button = page.getByRole("button", { name: "按住按钮" });
-    await expect(led).toHaveAttribute("data-led", inverted ? "on" : "off");
+    const button = page.getByRole("button", { name: "按住外接按钮" });
+    await expect(button).toBeDisabled();
+    await page.getByRole("button", { name: "运行仿真" }).click();
+    await expectLed(page, inverted);
     await button.focus();
     await page.keyboard.down("Space");
     await expect(button).toHaveAttribute("aria-pressed", "true");
-    await expect(led).toHaveAttribute("data-led", inverted ? "off" : "on");
+    await expectLed(page, !inverted);
     await page.keyboard.up("Space");
-    await expect(led).toHaveAttribute("data-led", inverted ? "on" : "off");
+    await expectLed(page, inverted);
   }
 });
 
-test("the switch needs two independent wires and unplugging breaks the circuit", async ({ page }) => {
+test("the wired circuit is visible before running and can be used on a narrow screen", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 740 });
   await openSimulation(page, false);
-  const led = page.locator("#led");
-  const switchButton = page.getByRole("button", { name: "按住按钮" });
-  await wire(page, "主控板 D2", "按钮接点 1");
-  await wire(page, "主控板 GND", "按钮接点 1");
-  await expect(page.getByRole("button", { name: "主控板 D2" })).toHaveAttribute("data-connected", "false");
+  await expect(page.locator(".wire-list li")).toHaveText(["D2 → 图中按钮左上脚", "GND → 图中按钮左下脚"]);
+  await expect(page.locator("wokwi-arduino-uno")).toBeVisible();
+  await expect(page.locator("wokwi-pushbutton")).toBeVisible();
+  const hasWires = await page.locator(".wires").evaluate((canvas) =>
+    canvas.getContext("2d").getImageData(0, 0, canvas.width, canvas.height).data.some((value) => value !== 0));
+  expect(hasWires).toBe(true);
+
+  const switchButton = page.getByRole("button", { name: "按住外接按钮" });
+  const runButton = page.locator("#run");
+  await runButton.click();
   await switchButton.hover();
   await page.mouse.down();
-  await expect(switchButton).toHaveAttribute("aria-pressed", "true");
-  await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
-  await expect(led).toHaveAttribute("data-led", "off");
+  await expectLed(page, true);
   await page.mouse.up();
+  await expectLed(page, false);
+  await expect(runButton).toHaveText("停止仿真");
+  await runButton.click();
+  await expect(switchButton).toBeDisabled();
 
-  await wire(page, "主控板 D2", "按钮接点 2");
-  await expect(page.locator("#wiring-status")).toContainText("两根线已接好");
-  await switchButton.hover();
-  await page.mouse.down();
-  await expect(led).toHaveAttribute("data-led", "on");
-  await page.mouse.up();
-  await expect(led).toHaveAttribute("data-led", "off");
-
-  await page.getByRole("button", { name: "清空接线" }).click();
-  await expect(page.locator("#wiring-status")).toHaveText("接线已清空。");
+  await page.setViewportSize({ width: 320, height: 740 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(320);
+  await runButton.click();
   await switchButton.focus();
-  await page.keyboard.down("Space");
-  await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
-  await expect(led).toHaveAttribute("data-led", "off");
-  await page.keyboard.up("Space");
-  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
+  await page.keyboard.down("Enter");
+  await expectLed(page, true);
+  await page.keyboard.up("Enter");
+  await expectLed(page, false);
 });

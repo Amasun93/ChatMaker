@@ -7,6 +7,7 @@
   },
   "devDependencies": {
     "@playwright/test": "1.62.1",
+    "@wokwi/elements": "1.9.2",
     "avr8js": "0.21.1",
     "esbuild": "0.28.2"
   }

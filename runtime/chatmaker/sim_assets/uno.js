@@ -1,17 +1,18 @@
 (() => {
+  const viewport = document.querySelector(".viewport");
+  const schematic = document.querySelector(".schematic");
+  const canvas = document.querySelector(".wires");
+  const board = document.querySelector("#uno-part");
+  const switchGraphic = document.querySelector("#button-part");
+  const run = document.querySelector("#run");
   const button = document.querySelector("#button");
   const led = document.querySelector("#led");
   const ledState = document.querySelector("#led-state");
   const status = document.querySelector("#status");
-  const wiringStatus = document.querySelector("#wiring-status");
-  const clearWires = document.querySelector("#clear-wires");
-  const canvas = document.querySelector(".wires");
-  const terminals = new Map(Array.from(document.querySelectorAll("[data-terminal]"),
-    (element) => [element.dataset.terminal, element]));
-  const connections = new Map();
-  const wireColors = { d2: "#137cc5", gnd: "#405067" };
-  let selected = null;
-  let pressed = false;
+
+  const signal = document.querySelector(".wire-list .signal");
+  const ground = document.querySelector(".wire-list .ground");
+  const inputPin = Number(signal.dataset.boardPin);
   const { CPU, avrInstruction, AVRIOPort, PinState, portBConfig, portCConfig,
     portDConfig, AVRTimer, timer0Config, timer1Config, timer2Config, AVRUSART, usart0Config } = ChatSimAVR;
   const flashWords = new Uint16Array(16 * 1024).fill(0xffff);
@@ -21,106 +22,130 @@
     flashWords[index / 2] = firmware.charCodeAt(index) | (high << 8);
   }
 
-  const cpu = new CPU(flashWords, 2048);
-  new AVRTimer(cpu, timer0Config);
-  new AVRTimer(cpu, timer1Config);
-  new AVRTimer(cpu, timer2Config);
-  new AVRUSART(cpu, usart0Config, 16_000_000);
-  const portB = new AVRIOPort(cpu, portBConfig);
-  new AVRIOPort(cpu, portCConfig);
-  const portD = new AVRIOPort(cpu, portDConfig);
+  let scale;
+  let emulation = null;
+  let lastFrame;
+  let pendingFrame;
 
-  function updateInput() {
-    // With INPUT_PULLUP, D2 goes LOW only through a closed path to GND.
-    portD.setPin(2, !(pressed && connections.has("d2") && connections.has("gnd")));
-  }
-
-  function setPressed(active) {
-    pressed = active;
-    button.setAttribute("aria-pressed", String(active));
-    updateInput();
+  function fitSchematic() {
+    scale = Math.min(1, viewport.clientWidth / schematic.offsetWidth, viewport.clientHeight / schematic.offsetHeight);
+    schematic.style.setProperty("--scale", String(scale));
   }
 
   function drawWires() {
-    const bounds = canvas.getBoundingClientRect();
-    const scale = Math.min(window.devicePixelRatio || 1, 2);
-    canvas.width = Math.round(bounds.width * scale);
-    canvas.height = Math.round(bounds.height * scale);
+    const pixelRatio = 2;
+    canvas.width = schematic.offsetWidth * pixelRatio;
+    canvas.height = schematic.offsetHeight * pixelRatio;
     const context = canvas.getContext("2d");
-    if (!context) return;
-    context.scale(scale, scale);
+    context.scale(pixelRatio, pixelRatio);
+    context.lineJoin = "round";
+    context.lineCap = "round";
+    context.font = "bold 14px system-ui, sans-serif";
+    const origin = schematic.getBoundingClientRect();
 
-    function socketPosition(name) {
-      const socket = terminals.get(name).querySelector(".socket").getBoundingClientRect();
-      return { x: socket.left + socket.width / 2 - bounds.left,
-        y: socket.top + socket.height / 2 - bounds.top };
+    function findPin(part, name) {
+      const pin = part.pinInfo.find((entry) => entry.name === name);
+      const bounds = part.getBoundingClientRect();
+      return { x: (bounds.left - origin.left) / scale + pin.x, y: (bounds.top - origin.top) / scale + pin.y };
     }
 
-    for (const [pin, leg] of connections) {
-      const start = socketPosition(pin);
-      const end = socketPosition(leg);
-      const offset = Math.abs(end.x - start.x) * 0.52;
-      context.lineCap = "round";
+    function drawConnection(row, laneX, laneY, pinName, labelY) {
+      const start = findPin(board, row.dataset.boardPin);
+      const end = findPin(switchGraphic, row.dataset.buttonPin);
+      const color = getComputedStyle(row).getPropertyValue("--wire");
       context.beginPath();
       context.moveTo(start.x, start.y);
-      context.bezierCurveTo(start.x + offset, start.y, end.x - offset, end.y, end.x, end.y);
+      context.lineTo(start.x, laneY);
+      context.lineTo(laneX, laneY);
+      context.lineTo(laneX, end.y);
+      context.lineTo(end.x, end.y);
       context.lineWidth = 7;
-      context.strokeStyle = "#f7faf9";
+      context.strokeStyle = "#f5f8f9";
       context.stroke();
-      context.lineWidth = 4;
-      context.strokeStyle = wireColors[pin];
+      context.lineWidth = 3.5;
+      context.strokeStyle = color;
       context.stroke();
+      context.fillStyle = color;
+      for (const pin of [start, end]) {
+        context.beginPath();
+        context.arc(pin.x, pin.y, 4, 0, Math.PI * 2);
+        context.fill();
+      }
+      context.fillText(pinName, start.x + 9, labelY);
+    }
+
+    drawConnection(signal, 403, 51, "D2", 42);
+    drawConnection(ground, 420, 316, "GND", 307);
+  }
+
+  function setPressed(pressed) {
+    switchGraphic.pressed = pressed;
+    button.setAttribute("aria-pressed", String(pressed));
+    // The depicted switch closes the circuit from D2 to GND when pressed.
+    emulation?.portD.setPin(inputPin, !pressed);
+  }
+
+  function updateLed(on) {
+    const state = on ? "on" : "off";
+    if (led.dataset.led === state) return;
+    board.led13 = on;
+    led.dataset.led = state;
+    ledState.textContent = on ? "点亮" : "熄灭";
+  }
+
+  function setRunningUI(running, message) {
+    board.ledPower = running;
+    run.dataset.running = String(running);
+    run.textContent = running ? "停止仿真" : "运行仿真";
+    button.disabled = !running;
+    status.textContent = message;
+  }
+
+  function stop(message = "仿真已停止，可以重新运行。") {
+    cancelAnimationFrame(pendingFrame);
+    emulation = null;
+    setPressed(false);
+    updateLed(false);
+    setRunningUI(false, message);
+  }
+
+  function frame(time) {
+    const { cpu, portB } = emulation;
+    const elapsed = Math.min(lastFrame === undefined ? 16 : time - lastFrame, 32);
+    const end = cpu.cycles + Math.round(elapsed * 16_000);
+    lastFrame = time;
+    try {
+      while (cpu.cycles < end) {
+        avrInstruction(cpu);
+        cpu.tick();
+      }
+      updateLed(portB.pinState(5) === PinState.High);
+      pendingFrame = requestAnimationFrame(frame);
+    } catch {
+      stop("仿真中断，请检查程序是否适用于 UNO R3。");
     }
   }
 
-  function showWiring(message) {
-    const connected = new Set([...connections.keys(), ...connections.values()]);
-    for (const [name, element] of terminals) {
-      element.setAttribute("aria-pressed", String(name === selected));
-      element.dataset.connected = String(connected.has(name));
-    }
-    clearWires.disabled = !selected && connections.size === 0;
-    wiringStatus.textContent = message;
-    updateInput();
-    drawWires();
+  function start() {
+    const cpu = new CPU(flashWords.slice(), 2048);
+    new AVRTimer(cpu, timer0Config);
+    new AVRTimer(cpu, timer1Config);
+    new AVRTimer(cpu, timer2Config);
+    new AVRUSART(cpu, usart0Config, 16_000_000);
+    const portB = new AVRIOPort(cpu, portBConfig);
+    new AVRIOPort(cpu, portCConfig);
+    const portD = new AVRIOPort(cpu, portDConfig);
+    emulation = { cpu, portB, portD };
+    lastFrame = undefined;
+    setPressed(false);
+    setRunningUI(true, "按住图中的红色按钮，看看 D13 板载灯。");
+    pendingFrame = requestAnimationFrame(frame);
   }
 
-  for (const [name, element] of terminals) {
-    element.addEventListener("click", () => {
-      if (selected === name) {
-        selected = null;
-        showWiring("已取消选点。");
-        return;
-      }
-      const isBoardPin = Object.hasOwn(wireColors, name);
-      if (selected === null || isBoardPin === Object.hasOwn(wireColors, selected)) {
-        selected = name;
-        showWiring(isBoardPin ? "再选一个按钮接点。" : "再选主控板的 D2 或 GND。");
-        return;
-      }
-      const pin = isBoardPin ? name : selected;
-      const leg = isBoardPin ? selected : name;
-      for (const [wiredPin, wiredLeg] of connections) {
-        if (wiredLeg === leg) connections.delete(wiredPin);
-      }
-      connections.set(pin, leg);
-      selected = null;
-      showWiring(connections.size === 2 ? "两根线已接好，按住按钮看 D13。"
-        : "接好一根线，再把另一端接上。");
-    });
-  }
-  clearWires.addEventListener("click", () => {
-    connections.clear();
-    selected = null;
-    showWiring("接线已清空。");
+  run.addEventListener("click", () => {
+    if (emulation) stop();
+    else start();
   });
-  document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape" && selected !== null) {
-      selected = null;
-      showWiring("已取消选点。");
-    }
-  });
-  new ResizeObserver(drawWires).observe(canvas.parentElement);
 
   button.addEventListener("pointerdown", (event) => {
     if (!event.isPrimary || event.button !== 0) return;
@@ -138,32 +163,14 @@
     });
   }
   window.addEventListener("blur", () => setPressed(false));
-  setPressed(false);
 
-  let lastFrame;
-  function frame(time) {
-    const elapsed = Math.min(lastFrame === undefined ? 16 : time - lastFrame, 32);
-    const end = cpu.cycles + Math.round(elapsed * 16_000);
-    lastFrame = time;
-    try {
-      while (cpu.cycles < end) {
-        avrInstruction(cpu);
-        cpu.tick();
-      }
-      const on = portB.pinState(5) === PinState.High;
-      if (led.dataset.led !== (on ? "on" : "off")) {
-        led.dataset.led = on ? "on" : "off";
-        ledState.textContent = on ? "点亮" : "熄灭";
-      }
-      if (button.disabled) {
-        button.disabled = false;
-        status.textContent = "固件仿真运行中";
-      }
-      requestAnimationFrame(frame);
-    } catch {
-      button.disabled = true;
-      status.textContent = "仿真中断，请检查程序和当前板型。";
-    }
-  }
-  requestAnimationFrame(frame);
+  Promise.all([board.updateComplete, switchGraphic.updateComplete]).then(() => {
+    fitSchematic();
+    drawWires();
+    new ResizeObserver(fitSchematic).observe(viewport);
+    setRunningUI(false, "接线图已就绪。点「运行仿真」后试按按钮。");
+    run.disabled = false;
+  }).catch(() => {
+    status.textContent = "元件图加载失败，请重新生成预览。";
+  });
 })();
