@@ -44,6 +44,19 @@ class CatalogTests(unittest.TestCase):
     def test_catalog_runtime_exists(self):
         self.assertIsNotNone(self.catalog, "catalog runtime is missing")
 
+    def test_waveshare_v2_names_resolve_to_the_exact_board(self):
+        board_id = "waveshare-esp32-s3-touch-lcd-2-8"
+        for query in ("ESP32-S3-Touch-LCD-2.8 · V2 / CST3530", "微雪 2.8 V2"):
+            with self.subTest(query=query):
+                result = self.catalog.search_catalog(query, kind="board", project_root=ROOT)
+                self.assertEqual([match["id"] for match in result["matches"]], [board_id])
+
+    def test_waveshare_28b_and_28c_do_not_match_the_28_board(self):
+        for model in ("ESP32-S3-Touch-LCD-2.8B", "ESP32-S3-Touch-LCD-2.8C"):
+            with self.subTest(model=model):
+                result = self.catalog.search_catalog(f"微雪 {model} 触摸屏", kind="board", project_root=ROOT)
+                self.assertNotIn("waveshare-esp32-s3-touch-lcd-2-8", [match["id"] for match in result["matches"]])
+
     def test_search_finds_a_component_by_chinese_alias(self):
         self.assertIsNotNone(self.catalog, "catalog runtime is missing")
 

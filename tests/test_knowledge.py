@@ -9,6 +9,7 @@ import threading
 import unittest
 from datetime import datetime, timezone
 from pathlib import Path
+from unittest.mock import Mock
 
 import yaml
 
@@ -300,6 +301,35 @@ class KnowledgeSignedRegistryFixture:
         )
 
 class KnowledgeReaderTests(unittest.TestCase):
+    def test_waveshare_v2_wiki_is_readable_from_the_checkout_without_installation(self):
+        board_id = "waveshare-esp32-s3-touch-lcd-2-8"
+        request = {"action": "index", "board_id": board_id, "consumer": "chatduino"}
+        index = execute_request(request, project_root=ROOT, resolver=RecordingResolver())
+        self.assertTrue(index["success"], index)
+        self.assertEqual([section["section_id"] for section in index["sections"]], list(SECTION_IDS))
+        self.assertTrue(all(section["available"] for section in index["sections"]))
+
+        request.update(action="section", section_id="toolchains-and-upload", auto_install=False)
+        section = execute_request(request, project_root=ROOT, resolver=RecordingResolver())
+        self.assertTrue(section["success"], section)
+        self.assertEqual(section["provenance"]["kind"], "source_checkout")
+        self.assertIn("CST3530", section["body"])
+        self.assertIn("准备", section["body"])
+
+    def test_missing_source_only_wiki_asks_for_the_bundled_reference(self):
+        board_id = "waveshare-esp32-s3-touch-lcd-2-8"
+        request = {"action": "section", "board_id": board_id, "consumer": "chatduino",
+                   "section_id": "start-here"}
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            index = Path("knowledge", "boards", f"{board_id}.yaml")
+            (root / index.parent).mkdir(parents=True)
+            (root / index).write_bytes((ROOT / index).read_bytes())
+            manager = Mock()
+            result = execute_request(request, project_root=root, manager=manager)
+        self.assertEqual(result["error"]["code"], "source_knowledge_unavailable")
+        manager.ensure.assert_not_called()
+
     def write_index(self, root: Path) -> None:
         path = root / "knowledge" / "boards" / f"{BOARD_ID}.yaml"
         path.parent.mkdir(parents=True)
@@ -446,6 +476,7 @@ class KnowledgeReaderTests(unittest.TestCase):
                 "mpython-classic-v2x",
                 "mpython-v3",
                 "stardust-atmega328p",
+                "waveshare-esp32-s3-touch-lcd-2-8",
             ),
         )
         self.assertEqual(PACK_IDS[BOARD_ID], PACK_ID)

@@ -8,6 +8,7 @@ from pathlib import Path
 import sys
 from typing import Any, Mapping
 
+from .catalog_registry import BOARD_REGISTRATIONS
 from .installers.pack_manager import PackManager, PackManagerError
 from .knowledge_semantics import (
     BOARD_IDS,
@@ -19,7 +20,7 @@ from .knowledge_semantics import (
     validate_index_bytes,
     validate_page_bytes,
 )
-from .resources import ResourceIntegrityError, ResourceResolver
+from .resources import ResolvedResource, ResourceIntegrityError, ResourceResolver
 
 
 API_VERSION = "1"
@@ -95,6 +96,14 @@ def _resolve_optional(resolver: Any, path: str, pack_id: str):
         return None
 
 
+def _resolve_source_section(root: Path, board_id: str, section_id: str) -> ResolvedResource | None:
+    relative = Path("knowledge_sources", "published", "boards", board_id, f"{section_id}.md")
+    path = (root / relative).resolve()
+    if path.is_relative_to(root) and path.is_file():
+        return ResolvedResource(path, {"kind": "source_checkout", "path": relative.as_posix()}, "source_checkout")
+    return None
+
+
 def _validate_request(request: Any) -> tuple[str, str, str, str | None, bool] | dict[str, Any]:
     if not isinstance(request, dict):
         return _invalid(request, "Knowledge request must be an object")
@@ -144,9 +153,11 @@ def execute_request(
         return validated
     action, board_id, consumer, section_id, auto_install = validated
     try:
-        index = _load_index(_project_root(project_root), board_id)
+        root = _project_root(project_root)
+        index = _load_index(root, board_id)
         pack_id = PACK_IDS[board_id]
-        if resolver is None:
+        source_delivery = BOARD_REGISTRATIONS[board_id]["knowledge"].get("delivery") == "source"
+        if not source_delivery and resolver is None:
             if manager is None:
                 manager = PackManager()
             resolver = ResourceResolver(manager=manager)
@@ -156,9 +167,9 @@ def execute_request(
             for metadata in index["sections"]:
                 if consumer not in metadata["consumers"]:
                     continue
-                resolved = _resolve_optional(
-                    resolver, _section_resource(metadata["section_id"]), pack_id
-                )
+                item_id = metadata["section_id"]
+                resolved = (_resolve_source_section(root, board_id, item_id) if source_delivery else
+                            _resolve_optional(resolver, _section_resource(item_id), pack_id))
                 sections.append(
                     {
                         "section_id": metadata["section_id"],
@@ -188,8 +199,13 @@ def execute_request(
                 request=request,
             )
         resource_path = _section_resource(section_id)
-        resolved = _resolve_optional(resolver, resource_path, pack_id)
+        resolved = (_resolve_source_section(root, board_id, section_id) if source_delivery else
+                    _resolve_optional(resolver, resource_path, pack_id))
         if resolved is None:
+            if source_delivery:
+                return _error("source_knowledge_unavailable",
+                              "Use the board reference bundled with the ChatMaker Skill or a full source checkout.",
+                              request=request)
             if not auto_install:
                 return _error("offline_pack_unavailable", f"Pack is not installed: {pack_id}", request=request)
             if manager is None:

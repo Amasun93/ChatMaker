@@ -28,6 +28,7 @@
 - 新板卡只在 `packs/boards/<board-id>.yaml` 手工登记一次；其中 `chatmaker` 指向运行入口和识别方式，`mechanics` 指向机械档案或明确写 `research-required`。
 - 新模块只在 `packs/components/<component-id>.yaml` 手工登记一次；机械档案如存在，使用同一个 component ID 放在 `knowledge/mechanical/components/`。
 - `python scripts/sync_catalog_registry.py` 从板卡、模块、Knowledge、机械档案和来源清单生成运行时快照。不要再向 Python 文件添加手写板卡白名单。
+- 板卡可用 `chatmaker.knowledge_delivery: source` 登记为直接从源码读取 Wiki。该模式需要紧凑索引和已整理的八节章节，读取时不触发知识包下载。通过 Skill 安装的用户可读随包的板卡速查说明。
 - 新增或修改后先运行 `python scripts/sync_catalog_registry.py --check`；失败意味着某个关联文件漏建、身份不一致或快照未同步。
 
 ## 每块板的完成记录

@@ -69,6 +69,11 @@ def build_registry(root: Path) -> dict[str, Any]:
         mechanics = record.get("mechanics")
         if not isinstance(chatmaker, dict) or not isinstance(mechanics, dict):
             raise CatalogRegistryError(f"board_registration_missing:{board_id}")
+        knowledge = _knowledge_registration(root, board_id)
+        if chatmaker.get("knowledge_delivery") == "source":
+            if knowledge is None:
+                raise CatalogRegistryError(f"knowledge_index_missing:{board_id}")
+            knowledge["delivery"] = "source"
         profile_path = mechanics.get("profile_path")
         if profile_path is not None:
             profile = root / str(profile_path)
@@ -86,7 +91,7 @@ def build_registry(root: Path) -> dict[str, Any]:
             "runtime_module": chatmaker.get("runtime_module"),
             "identification": chatmaker.get("identification"),
             "mechanics": mechanics,
-            "knowledge": _knowledge_registration(root, board_id),
+            "knowledge": knowledge,
         }
 
     components: dict[str, Any] = {}

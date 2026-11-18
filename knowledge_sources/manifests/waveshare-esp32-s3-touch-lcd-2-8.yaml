@@ -1,0 +1,32 @@
+schema_version: "1.0"
+id: source-waveshare-esp32-s3-touch-lcd-2-8-official
+title: 微雪 ESP32-S3-Touch-LCD-2.8 V1/V2 官方资料
+board_id: waveshare-esp32-s3-touch-lcd-2-8
+source_type: canonical-board-documentation
+canonical_url: https://docs.waveshare.net/ESP32-S3-Touch-LCD-2.8/Resources-And-Documents/
+license_use_boundary: >
+  ChatMaker author-written guidance links to the official documentation, schematic, and archives.
+  Vendor sample code, drawings, firmware, and binaries are not redistributed as Wiki content.
+cleaning_version: chatmaker-waveshare-s3-wiki-v1
+review_date: "2026-11-18"
+cleaning_verified:
+  status: verified
+  date: "2026-11-18"
+  evidence: Organized the existing exact-board technical reference, official V1 and V2 archive entries, and recorded compile evidence into the eight ChatMaker sections.
+source_reviewed:
+  status: verified
+  date: "2026-11-18"
+  evidence: Compared the exact official board and revision resources, the canonical board record and verified managed toolchain inputs with the 2026-11-10 compile record.
+publication_approved:
+  status: verified
+  date: "2026-11-18"
+  evidence: Reviewed ChatMaker-authored guidance for the repository under the standing ChatMaker GitHub update authorization. Physical verification remains separate.
+page_declarations:
+  - {stable_id: waveshare-esp32-s3-touch-lcd-2-8-start-here, path: published/boards/waveshare-esp32-s3-touch-lcd-2-8/start-here.md}
+  - {stable_id: waveshare-esp32-s3-touch-lcd-2-8-identify-and-safety, path: published/boards/waveshare-esp32-s3-touch-lcd-2-8/identify-and-safety.md}
+  - {stable_id: waveshare-esp32-s3-touch-lcd-2-8-pins-and-electrical, path: published/boards/waveshare-esp32-s3-touch-lcd-2-8/pins-and-electrical.md}
+  - {stable_id: waveshare-esp32-s3-touch-lcd-2-8-toolchains-and-upload, path: published/boards/waveshare-esp32-s3-touch-lcd-2-8/toolchains-and-upload.md}
+  - {stable_id: waveshare-esp32-s3-touch-lcd-2-8-components-and-wiring, path: published/boards/waveshare-esp32-s3-touch-lcd-2-8/components-and-wiring.md}
+  - {stable_id: waveshare-esp32-s3-touch-lcd-2-8-libraries-and-examples, path: published/boards/waveshare-esp32-s3-touch-lcd-2-8/libraries-and-examples.md}
+  - {stable_id: waveshare-esp32-s3-touch-lcd-2-8-web-and-protocol, path: published/boards/waveshare-esp32-s3-touch-lcd-2-8/web-and-protocol.md}
+  - {stable_id: waveshare-esp32-s3-touch-lcd-2-8-troubleshooting, path: published/boards/waveshare-esp32-s3-touch-lcd-2-8/troubleshooting.md}

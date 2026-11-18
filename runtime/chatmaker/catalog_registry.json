@@ -203,7 +203,12 @@
     },
     "waveshare-esp32-s3-touch-lcd-2-8": {
       "identification": "assisted",
-      "knowledge": null,
+      "knowledge": {
+        "delivery": "source",
+        "index_path": "knowledge/boards/waveshare-esp32-s3-touch-lcd-2-8.yaml",
+        "pack_id": "chatmaker-board-waveshare-esp32-s3-touch-lcd-2-8-knowledge",
+        "source_ref": "source-waveshare-esp32-s3-touch-lcd-2-8-official"
+      },
       "mechanics": {
         "fit_verified": false,
         "notes": "Official 2D/3D drawings are available; connector envelopes and physical fit have not been registered or verified.",

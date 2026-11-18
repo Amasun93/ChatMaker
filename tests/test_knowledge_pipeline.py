@@ -165,6 +165,7 @@ class KnowledgePublicationPipelineTests(unittest.TestCase):
                     "mpython-classic-v2x",
                     "mpython-v3",
                     "stardust-atmega328p",
+                    "waveshare-esp32-s3-touch-lcd-2-8",
                 }
                 else "unverified"
             )

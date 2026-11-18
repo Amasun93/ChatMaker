@@ -2,13 +2,15 @@
 
 Exact board ID: `waveshare-esp32-s3-touch-lcd-2-8`. This is not DOIT ESP32 DevKit V1, and the separately named 2.8B/2.8C models are not aliases.
 
+If the user supplies the exact product name and V2 / CST3530, select `--revision v2` for generation and compilation. A controller name on its own is a clue. Verify the physical target and port before upload.
+
 ## Classroom route
 
 Save the complete program, then use the explicit checkout's `chatmaker-hardware --request-file project.json` (or `--request-json -` via stdin) with `board_id`, `revision`, `sketch` (or complete `code`), and `expected_serial_marker`. After the physical board and revision have actually been confirmed, pass `board_confirmed:true` internally. Do not ask the student to fill technical JSON fields. With multiple native USB candidates, select the intended `port` explicitly.
 
 `revision` must be `v1` (CST328) or `v2` (CST3530), determined by the back label or equivalent reliable evidence. Unknown revision remains unknown; the shared software can be prepared separately but do not upload a guessed touch variant. Reading an ESP32-S3 chip or a COM port does not prove the product model/revision.
 
-The independent board CLI is `chatmaker-waveshare-s3` with `doctor`, `prepare-environment`, `ports`, `compile`, `compile-upload`. Missing Mind+ does not block this route. First preparation installs required tools into the managed runtime; subsequent projects reuse the verified cache. The general local check is not a board-specific readiness decision.
+The independent board CLI is `chatmaker-waveshare-s3` with `doctor`, `prepare-environment`, `ports`, `compile`, `compile-upload`. Use this route with the project's managed tools. For compilation on a new setup, preview pending downloads with `chatmaker-hardware --action prepare-environment --board-id waveshare-esp32-s3-touch-lcd-2-8 --revision v2 --dry-run`. If files are needed, name the component the tool reports. With `remaining_download_bytes: 0`, the downloaded archives are already present and verified, although first preparation may still unpack them. Reuse the same runtime root across projects. Use the board-specific preparation result for readiness.
 
 On macOS use the source checkout's launcher prepared by `bash scripts/setup_local_runtime.sh`. The native USB serial address is a `/dev/cu.*` path. See `docs/verification/workbuddy-retest-macos.md` for setup and the USB retest.
 
@@ -33,7 +35,7 @@ Official resources include factory test firmware for recovery. Preparation keeps
 
 ## Knowledge and evidence
 
-This source reference and the canonical board record are available locally. A signed downloadable Knowledge package has not been published; use this reference instead of requesting a nonexistent pack. Mechanical fit and CAD hole placement remain research-required.
+The installed ChatMaker Skill contains this reference. A full ChatMaker checkout also provides the eight Wiki sections under `knowledge_sources/published/boards/waveshare-esp32-s3-touch-lcd-2-8/`. Use `chatmaker-knowledge` with the exact board ID and `auto_install:false` for one section. If the full checkout is unavailable, use the bundled reference for board questions. Mechanical fit and CAD hole placement remain research-required.
 
 Sources:
 - https://docs.waveshare.net/ESP32-S3-Touch-LCD-2.8/

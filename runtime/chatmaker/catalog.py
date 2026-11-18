@@ -187,16 +187,20 @@ def _knowledge_search_text(
     return searchable
 
 
+def _searchable_identity(record: dict[str, Any]) -> Any:
+    identity = record.get("identity", {})
+    if isinstance(identity, dict):
+        return {
+            key: value
+            for key, value in identity.items()
+            if key != "forbidden_aliases" and not key.endswith("_is_not") and "compatibility" not in key
+        }
+    return identity
+
+
 def _search_text(
     record: dict[str, Any], project_root: Path | None = None
 ) -> list[str]:
-    identity = record.get("identity", {})
-    if isinstance(identity, dict):
-        identity = {
-            key: value
-            for key, value in identity.items()
-            if not key.endswith("_is_not") and "compatibility" not in key
-        }
     values: list[Any] = [
         record.get("id"),
         record.get("name"),
@@ -207,7 +211,7 @@ def _search_text(
         record.get("boards", []),
         record.get("supported_boards", []),
         record.get("components", []),
-        identity,
+        _searchable_identity(record),
         record.get("onboard_hardware", []),
         record.get("module_profile", {}) if record.get("kind") == "component" else {},
     ]
@@ -219,14 +223,7 @@ def _search_text(
 
 
 def _board_identity_search_text(record: dict[str, Any]) -> list[str]:
-    identity = record.get("identity", {})
-    if isinstance(identity, dict):
-        identity = {
-            key: value
-            for key, value in identity.items()
-            if not key.endswith("_is_not") and "compatibility" not in key
-        }
-    values = [record.get("id"), record.get("name"), record.get("aliases", []), identity]
+    values = [record.get("id"), record.get("name"), record.get("aliases", []), _searchable_identity(record)]
     flattened: list[str] = []
     for value in values:
         flattened.extend(_flatten_search_values(value))
@@ -254,6 +251,11 @@ def _score(
     if not query:
         return 1
     normalized = query.casefold().strip()
+    identity = record.get("identity")
+    if record.get("kind") == "board" and isinstance(identity, dict):
+        if any(re.search(r"(?<![a-z0-9.])" + re.escape(alias.casefold()) + r"(?![a-z0-9.])", normalized)
+               for alias in _flatten_search_values(identity.get("forbidden_aliases", [])) if alias):
+            return 0
     candidates = _search_candidates(_search_text(record, project_root))
     score = 0
     for candidate in candidates:
@@ -264,7 +266,7 @@ def _score(
         elif normalized in candidate:
             score = max(score, 30)
 
-    terms = [term for term in normalized.split() if term]
+    terms = [term for term in normalized.split() if any(character.isalnum() for character in term)]
     if len(terms) > 1:
         if record.get("kind") == "board":
             identity_candidates = _search_candidates(_board_identity_search_text(record))

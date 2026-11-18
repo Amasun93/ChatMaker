@@ -1,0 +1,13 @@
+schema_version: "1.0"
+kind: knowledge-index
+board_id: waveshare-esp32-s3-touch-lcd-2-8
+max_section_bytes: 65536
+sections:
+  - {section_id: start-here, title: 微雪 2.8 触屏板从这里开始, summary: 确认完整型号和 V1 或 V2。查资料和准备编译工具各走自己的入口。, consumers: [chatmaker, chatduino, chatweb, chatcad], topics: [waveshare, v1, v2, cst328, cst3530, classroom], pack_id: chatmaker-board-waveshare-esp32-s3-touch-lcd-2-8-knowledge}
+  - {section_id: identify-and-safety, title: 识别板型和安全注意事项, summary: 用板子背面的完整型号和版本确认 V2。信号脚按 3.3 V 使用。, consumers: [chatmaker, chatduino, chatweb, chatcad], topics: [identity, safety, revision, usb], pack_id: chatmaker-board-waveshare-esp32-s3-touch-lcd-2-8-knowledge}
+  - {section_id: pins-and-electrical, title: 引脚和电气规则, summary: 区分板载屏幕和触摸占用的引脚、外接 I²C 和 USB 引脚。, consumers: [chatmaker, chatduino, chatweb], topics: [pins, electrical, gpio, i2c], pack_id: chatmaker-board-waveshare-esp32-s3-touch-lcd-2-8-knowledge}
+  - {section_id: toolchains-and-upload, title: 编译工具、首次准备和写入程序, summary: V2 用 CST3530。按确切版本准备所需工具，后续项目复用校验过的缓存。, consumers: [chatmaker, chatduino], topics: [compile, upload, download, cache, cst3530, windows, macos], pack_id: chatmaker-board-waveshare-esp32-s3-touch-lcd-2-8-knowledge}
+  - {section_id: components-and-wiring, title: 板载器件和接线, summary: 屏幕和触摸已在板上。屏幕诊断及触屏计时器只需接 USB。, consumers: [chatmaker, chatduino, chatweb, chatcad], topics: [display, touch, wiring, onboard-hardware], pack_id: chatmaker-board-waveshare-esp32-s3-touch-lcd-2-8-knowledge}
+  - {section_id: libraries-and-examples, title: 屏幕与触摸驱动及示例, summary: 优先复用已编译的屏幕诊断与触屏计时器，按版本使用正确的触摸驱动。, consumers: [chatmaker, chatduino], topics: [lvgl, st7789, cst3530, examples], pack_id: chatmaker-board-waveshare-esp32-s3-touch-lcd-2-8-knowledge}
+  - {section_id: web-and-protocol, title: 串口、网页和通信, summary: 先确认连接和消息格式，再观察板子、浏览器各自的结果。, consumers: [chatmaker, chatduino, chatweb], topics: [serial, usb, wifi, web, protocol], pack_id: chatmaker-board-waveshare-esp32-s3-touch-lcd-2-8-knowledge}
+  - {section_id: troubleshooting, title: 排错和验证状态, summary: 区分找板型、准备工具、编译、烧录、屏幕触摸与通电重启。, consumers: [chatmaker, chatduino, chatweb, chatcad], topics: [troubleshooting, workbuddy, cache, verification], pack_id: chatmaker-board-waveshare-esp32-s3-touch-lcd-2-8-knowledge}

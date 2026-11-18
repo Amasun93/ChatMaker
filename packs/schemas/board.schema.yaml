@@ -17,6 +17,7 @@ properties:
       runtime_cli: {type: [string, "null"], minLength: 1}
       runtime_module: {type: [string, "null"], pattern: "^chatmaker\\.[a-z0-9_.]+$"}
       identification: {enum: [automatic, assisted, manual]}
+      knowledge_delivery: {const: source}
   mechanics:
     type: object
     additionalProperties: false

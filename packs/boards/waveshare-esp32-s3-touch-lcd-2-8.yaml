@@ -2,6 +2,8 @@ schema_version: "1.0"
 kind: board
 id: waveshare-esp32-s3-touch-lcd-2-8
 name: 微雪 ESP32-S3-Touch-LCD-2.8 触屏开发板
+aliases: [Waveshare ESP32-S3-Touch-LCD-2.8, ESP32-S3-Touch-LCD-2.8 V1, ESP32-S3-Touch-LCD-2.8 V2, 微雪 2.8 V1, 微雪 2.8 V2]
+summary: 微雪 2.8 英寸触屏开发板，V1 使用 CST328，V2 使用 CST3530。ChatMaker 提供独立的屏幕与触摸编译路线。
 family: esp32-s3
 mcu: ESP32-S3R8
 logic_voltage: 3.3
@@ -9,6 +11,7 @@ chatmaker:
   runtime_cli: chatmaker-waveshare-s3
   runtime_module: chatmaker.hardware.waveshare_s3
   identification: assisted
+  knowledge_delivery: source
 mechanics:
   status: research-required
   profile_path: null
