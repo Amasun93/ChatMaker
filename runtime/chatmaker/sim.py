@@ -15,11 +15,11 @@ import webbrowser
 from .hardware.workflow import run_project
 from .progress import emit, reporting
 from .runtime_info import identity
-from .sim_catalog import ASSETS, STARCORE_BOARD, load_catalog, load_starcore_modules
+from .sim_catalog import ASSETS, LIBRARY_IDS, STARCORE_BOARD, load_catalog, load_starcore_modules
 
 BOARD_ID = "arduino-uno-r3"
 FLASH_BYTES = 32 * 1024
-CIRCUITS = ("button-led", "button-oled")
+CIRCUITS = ("button-led", "button-oled", "knob-led")
 
 
 def read_avr_hex(text: str) -> bytes:
@@ -64,10 +64,19 @@ def render_preview(
 
 def render_avr_preview(original: bytes, name: str, *, runtime_root: Path, output: Path | None, circuit: str) -> dict:
     digest = sha256(original).hexdigest()
+    html = render_avr_page(original, name, circuit)
+    return {**save_preview(html, runtime_root, output), "firmware_sha256": digest}
+
+
+def render_avr_page(original: bytes, name: str, circuit: str) -> str:
+    if circuit == "knob-led":
+        demo = next(entry for entry in load_catalog()["demos"] if entry["id"] == "uno-r3-knob-led")
+        return render_knob_page(demo, original)
+    digest = sha256(original).hexdigest()
     firmware = read_avr_hex(original.decode("ascii"))
     assets = files("chatmaker").joinpath("sim_assets")
     oled = circuit == "button-oled"
-    html = Template(assets.joinpath("uno.html").read_text(encoding="utf-8")).substitute(
+    return Template(assets.joinpath("uno.html").read_text(encoding="utf-8")).substitute(
         circuit=escape(circuit),
         lesson="UNO R3 按钮与小屏幕" if oled else "UNO R3 按钮亮灯",
         intro="试按外接按钮，观察 OLED 上的文字。" if oled else "试按外接按钮，观察 D13 板载灯。",
@@ -83,7 +92,6 @@ def render_avr_preview(original: bytes, name: str, *, runtime_root: Path, output
         firmware=base64.b64encode(firmware).decode("ascii"),
         simulator=assets.joinpath("uno.js").read_text(encoding="utf-8"),
     )
-    return {**save_preview(html, runtime_root, output), "firmware_sha256": digest}
 
 
 def save_preview(html: str, runtime_root: Path, output: Path | None) -> dict:
@@ -141,32 +149,67 @@ def render_wasm_demo(demo: dict, program: bytes) -> str:
     return Template(read_asset(demo["template"])).substitute(tokens)
 
 
+def render_knob_page(demo: dict, program: bytes) -> str:
+    firmware = demo["mode"] == "firmware"
+    name, tag = ("Arduino UNO R3", "wokwi-arduino-uno") if firmware else (
+        "DOIT ESP32 DEVKIT V1", "wokwi-esp32-devkit-v1")
+    browser_program = read_avr_hex(program.decode("ascii")) if firmware else program
+    return Template(read_asset(demo["template"])).substitute(
+        mode=demo["mode"], board_name=name, board_tag=tag,
+        engine=read_asset("avr8js.js") if firmware else "", parts=read_asset("wokwi-parts.js"),
+        simulator=read_asset("knob-led.js"), program=base64.b64encode(browser_program).decode("ascii"),
+        circuit_data=inline_json({"mode": demo["mode"], **demo["wiring"]}),
+        wiring_note="电阻串在灯的回路中。图中旋钮两端接 5V 和 GND。" if firmware else
+                    "按 DOIT 30 针版丝印接线。旋钮用 3V3 供电，GPIO34 只能输入。",
+        execution_note="浏览器运行 UNO R3 固件，读取 A0 并测量 D3 的输出。" if firmware else
+                       "浏览器运行与真板共用的调光程序，提供虚拟旋钮输入。",
+    )
+
+
+def render_demo_page(demo: dict, program: bytes) -> str:
+    if demo.get("template") == "knob-led.html":
+        return render_knob_page(demo, program)
+    if demo["mode"] == "firmware":
+        return render_avr_page(program, f'{demo["id"]}.ino.hex', demo["circuit"])
+    return render_wasm_demo(demo, program)
+
+
 def run_library(library: str, *, runtime_root: Path, output: Path | None, open_browser: bool) -> dict:
     catalog = load_catalog()
-    state = {"success": False, "action": "library", "library": library, "board_id": STARCORE_BOARD,
+    entry = catalog["libraries"].get(library)
+    state = {"success": False, "action": "library", "library": library,
              "chatsim_version": catalog["chatsim_version"], "code_compiled": False,
              "preview_ready": False, "firmware_uploaded": False, "physical_effect_verified": False}
-    if library != "starcore":
+    if entry is None:
         return {**state, "stage": "source", "error": "unknown_simulation_library"}
+    state["board_id"] = entry["board"]
     if output is not None and output.suffix.lower() != ".html":
         return {**state, "stage": "preview", "error": "output_requires_html_extension"}
-    modules = load_starcore_modules()
+    modules = entry["parts"]
     examples = []
     try:
+        boards = {board["id"]: board for board in catalog["boards"]}
         for demo in catalog["demos"]:
-            if demo["board"] != STARCORE_BOARD:
+            if demo["board"] not in entry["boards"]:
                 continue
             program = ASSETS.joinpath(demo["program"]).read_bytes()
-            page = render_wasm_demo(demo, program)
-            examples.append({**{key: demo[key] for key in ("id", "name", "parts")},
+            page = render_demo_page(demo, program)
+            examples.append({**{key: demo[key] for key in ("id", "name", "parts", "mode")},
+                             "board_name": boards[demo["board"]]["name"],
                              "html": base64.b64encode(page.encode("utf-8")).decode("ascii")})
-        html = Template(read_asset("starcore-library.html")).substitute(
-            version=catalog["chatsim_version"],
-            artwork=read_asset("starcore-board.js"),
-            module_artwork=read_asset("starcore-components.js"),
-            module_data=inline_json(modules),
-            examples=inline_json(examples),
-        )
+        tokens = {"version": catalog["chatsim_version"], "examples": inline_json(examples)}
+        if entry["board"] == STARCORE_BOARD:
+            html = Template(read_asset("starcore-library.html")).substitute(
+                **tokens, artwork=read_asset("starcore-board.js"), module_artwork=read_asset("starcore-components.js"),
+                module_data=inline_json(load_starcore_modules()))
+        else:
+            board = boards[entry["board"]]
+            parts = [{"id": part, **catalog["parts"][part]} for part in modules]
+            name = "Arduino" if library == "arduino" else "ESP32"
+            html = Template(read_asset("starter-library.html")).substitute(
+                **tokens, title=f"{name} 常用元件库", board_name=escape(board["name"]),
+                board_tag=board["appearance"], parts=inline_json(parts),
+                artwork=read_asset("wokwi-parts.js"))
         preview = save_preview(html, runtime_root, output)
     except (OSError, ValueError) as exc:
         return {**state, "stage": "preview", "error": str(exc)}
@@ -185,12 +228,9 @@ def run_demo(demo_id: str, *, runtime_root: Path, output: Path | None, open_brow
         return {**state, "stage": "preview", "error": "output_requires_html_extension"}
     try:
         program = ASSETS.joinpath(demo["program"]).read_bytes()
-        if demo["mode"] == "firmware":
-            preview = render_avr_preview(program, f"{demo_id}.ino.hex", runtime_root=runtime_root,
-                                         output=output, circuit=demo["circuit"])
-        else:
-            preview = save_preview(render_wasm_demo(demo, program), runtime_root, output)
-            preview["program_sha256"] = sha256(program).hexdigest()
+        preview = save_preview(render_demo_page(demo, program), runtime_root, output)
+        hash_key = "firmware_sha256" if demo["mode"] == "firmware" else "program_sha256"
+        preview[hash_key] = sha256(program).hexdigest()
     except (OSError, ValueError) as exc:
         return {**state, "stage": "preview", "error": str(exc)}
     return open_preview({**state, "uses_precompiled_program": True}, preview, open_browser)
@@ -239,7 +279,7 @@ def main(argv: list[str] | None = None) -> int:
     entry = parser.add_mutually_exclusive_group(required=True)
     entry.add_argument("--sketch", type=Path, help="Compile a custom UNO R3 sketch")
     entry.add_argument("--demo", help="Open a bundled demo by ID")
-    entry.add_argument("--library", choices=("starcore",), help="Open a board's component library")
+    entry.add_argument("--library", choices=LIBRARY_IDS, help="Open a board's component library")
     entry.add_argument("--list", action="store_true", help="List boards, parts and bundled demos")
     entry.add_argument("--version", action="store_true")
     parser.add_argument("--circuit", choices=CIRCUITS, default="button-led", help="Virtual UNO R3 circuit")

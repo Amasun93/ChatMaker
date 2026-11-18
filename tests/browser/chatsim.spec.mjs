@@ -225,3 +225,57 @@ test("Starcore library opens both bundled labs and keeps reference parts discove
     await expect(example.getByRole("list", { name: "接线明细" })).toHaveText(
       /VCC → 3V3.*RED → P9.*GREEN → P15.*BLUE → P23/);
   });
+
+for (const board of [
+  { library: "arduino", mode: "firmware", pins: ["5V", "A0", "D3"], interactive: 4 },
+  { library: "esp32", mode: "program-logic", pins: ["3V3", "GPIO34", "GPIO18"], interactive: 2 },
+]) {
+  test(board.library + " starter gallery opens its real knob program without network",
+    async ({ page, context }, testInfo) => {
+      const path = testInfo.outputPath("starter.html");
+      execFileSync(process.env.CHATMAKER_TEST_PYTHON || "python",
+        ["-m", "chatmaker.sim", "--library", board.library, "--output", path, "--progress", "none"]);
+      await context.setOffline(true);
+      await page.setViewportSize({ width: 390, height: 800 });
+      await page.goto(pathToFileURL(path).href);
+      await expect(page.getByRole("article")).toHaveCount(10);
+      await expect(page.locator('article[data-status="interactive"]')).toHaveCount(board.interactive);
+      await expect(page.locator('article[data-part="resistor-330"]')).toHaveAttribute("data-status", "wiring");
+      for (const model of await page.locator(".art > :not(.oled)").all()) {
+        expect(await model.evaluate(async element => {
+          await element.updateComplete;
+          return Boolean(element.shadowRoot?.querySelector("svg"));
+        })).toBe(true);
+      }
+      await expect(page.locator(".art .oled .terminals span")).toHaveText(["VCC", "GND", "SDA", "SCL"]);
+      expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
+      await page.getByRole("button", { name: "转旋钮调 LED 亮度" }).click();
+      const example = page.frameLocator("iframe");
+      await expect(example.locator("html")).toHaveAttribute("data-simulation", board.mode);
+      const slider = example.getByRole("slider", { name: "旋钮位置" });
+      const status = example.getByRole("status");
+      const lamp = example.locator("#lamp");
+      const wiring = example.getByRole("list", { name: "接线明细" });
+      for (const pin of board.pins) await expect(wiring).toContainText(pin);
+      await expect(slider).toBeEnabled();
+      await expect(status).toHaveText("LED 亮度 0%");
+      await slider.fill("50");
+      await expect.poll(() => lamp.evaluate(element => element.brightness)).toBeGreaterThan(.43);
+      await expect.poll(() => lamp.evaluate(element => element.brightness)).toBeLessThan(.57);
+      await slider.press("End");
+      await expect(status).toHaveText("LED 亮度 100%");
+      await slider.press("Home");
+      await expect(status).toHaveText("LED 亮度 0%");
+      expect(await lamp.evaluate(element => element.value)).toBe(false);
+      await example.locator("#pot input").press("End");
+      await expect(status).toHaveText("LED 亮度 100%");
+      await page.getByRole("button", { name: "返回元件库" }).click();
+      if (board.library === "esp32") {
+        await page.getByRole("button", { name: "按住屏幕按钮问好" }).click();
+        await expect(example.getByRole("status")).toHaveText("触屏已就绪。");
+      } else {
+        await page.getByRole("button", { name: "按住按钮在 OLED 显示你好" }).click();
+        await expect(example.getByRole("button", { name: "运行仿真" })).toBeEnabled();
+      }
+    });
+}

@@ -64,6 +64,8 @@ For an explicit hardware simulation request, select `$chatsim` before connected-
 
 For a request to see Starcore v4.2.2 and its virtual classroom components, open `chatmaker-sim --library starcore --open`. The two included experiments use bundled programs and do not require board setup. Use the card's availability to set expectations before promising an interactive result for another component.
 
+For Arduino UNO R3 or ESP32 starter components, open `chatmaker-sim --library arduino --open` or `--library esp32 --open`. Use the exact board's circuit. The ESP32 starter gallery lists the DOIT 30-pin board for external components and Waveshare V2 for its built-in touchscreen. Each interactive demonstration has a bundled program.
+
 1. Restate the intended effect in everyday language.
 2. Ask only for information that changes safety, architecture, or the acceptance test.
 3. For firmware work with a connected but unknown MCU board, after resolving any wiring safety concern, run `chatmaker-board-identify --request-json '{"action":"identify","allow_temporary_firmware":true}'` through the workspace's local-command capability. It first performs safe reads. When needed, a 临时识别程序 may run only after a 完整备份 is verified, and the original firmware must be restored and verified before identification can complete. If evidence remains ambiguous, tell the beginner where the model/version is normally printed; if they still cannot identify it, request clear 正反面照片 and help visually. Do not expose USB IDs, bus addresses, registers, or raw commands unless diagnosis actually needs them.

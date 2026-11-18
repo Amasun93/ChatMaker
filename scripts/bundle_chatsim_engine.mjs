@@ -34,9 +34,19 @@ await bundle("avr8js.js", `
   export { CPU, avrInstruction, AVRIOPort, PinState, portBConfig, portCConfig, portDConfig,
     AVRTimer, timer0Config, timer1Config, timer2Config, AVRUSART, usart0Config } from "avr8js";
   export { AVRTWI, twiConfig } from "avr8js/dist/esm/peripherals/twi.js";
+  export { AVRADC, adcConfig } from "avr8js/dist/esm/peripherals/adc.js";
 `, ["avr8js"], "ChatSimAVR");
 
 await bundle("wokwi-parts.js", `
   import "@wokwi/elements/dist/esm/arduino-uno-element.js";
   import "@wokwi/elements/dist/esm/pushbutton-element.js";
+  import "@wokwi/elements/dist/esm/esp32-devkit-v1-element.js";
+  import "@wokwi/elements/dist/esm/potentiometer-element.js";
+  import "@wokwi/elements/dist/esm/led-element.js";
+  import "@wokwi/elements/dist/esm/resistor-element.js";
+  import "@wokwi/elements/dist/esm/buzzer-element.js";
+  import "@wokwi/elements/dist/esm/servo-element.js";
+  import "@wokwi/elements/dist/esm/dht22-element.js";
+  import "@wokwi/elements/dist/esm/hc-sr04-element.js";
+  import "@wokwi/elements/dist/esm/photoresistor-sensor-element.js";
 `, ["@wokwi/elements", "lit", "lit-element", "lit-html", "@lit/reactive-element"]);

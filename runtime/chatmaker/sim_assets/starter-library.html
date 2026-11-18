@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ChatSim · $title</title>
+<style>
+  :root { font: 15px/1.55 "Microsoft YaHei", "PingFang SC", system-ui, sans-serif; color: #1b3032; background: #f3f7f6; }
+  * { box-sizing: border-box; }
+  body { margin: 0; }
+  .wrap { width: min(1120px, calc(100% - 48px)); margin-inline: auto; }
+  header { background: #fff; border-bottom: 1px solid #d6e2df; }
+  header .wrap { min-height: 56px; display: flex; align-items: center; gap: 13px; }
+  .brand { color: #075d59; font-size: 22px; font-weight: 800; }
+  .version, .model { color: #376962; font: 700 13px ui-monospace, monospace; }
+  main { padding-block: 23px 45px; }
+  .hero {
+    display: grid; grid-template-columns: minmax(0, 1fr) 280px; align-items: center; gap: 22px;
+    padding: 28px 34px; border: 1px solid #ccdfda; border-radius: 19px;
+    background: linear-gradient(115deg, #fff 4%, #e4f2ed 100%);
+  }
+  .model { margin: 0 0 7px; }
+  h1 { margin: 0; font-size: clamp(30px, 5vw, 45px); letter-spacing: -.045em; line-height: 1.18; }
+  .intro { margin: 9px 0 16px; color: #415a5b; }
+  .hero-art { height: 215px; display: grid; place-items: center; pointer-events: none; filter: drop-shadow(0 7px 7px #23453a2b); }
+  button { font: inherit; cursor: pointer; color: #164745; border: 1px solid #b5d0c7; border-radius: 7px; background: #fff; }
+  button:focus-visible { outline: 3px solid #307e89; outline-offset: 2px; }
+  .examples { display: flex; gap: 7px; flex-wrap: wrap; }
+  .examples button { font-size: 13px; font-weight: 700; padding: 8px 10px; min-height: 40px; }
+  .examples button:first-child { background: #075d59; border-color: #075d59; color: #fff; }
+  h2 { font-size: 23px; margin: 23px 0 11px; letter-spacing: -.03em; }
+  .grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; }
+  article { overflow: hidden; border: 1px solid #d5e2df; border-radius: 12px; background: #fff; }
+  .art { height: 115px; display: grid; place-items: center; background: #edf4f2 radial-gradient(#bdceca 1px, transparent 1.15px) center / 15px 15px; }
+  .art > * { pointer-events: none; display: block; }
+  .oled {
+    position: relative; width: 117px; height: 84px; padding: 9px 11px;
+    border-radius: 6px; border: 1px solid #1a5075; background: #286291; box-shadow: inset 0 2px #4984b1;
+  }
+  .oled .terminals { display: flex; justify-content: center; gap: 5px; color: #fff; font: 7px ui-monospace, monospace; }
+  .oled .terminals span { display: grid; justify-items: center; }
+  .oled .terminals span::before { content: ""; width: 6px; height: 6px; border-radius: 50%; border: 1px solid #d8b982; background: #2c302d; }
+  .oled .screen { height: 45px; margin-top: 5px; border: 3px solid #252c32; border-radius: 2px; background: #06141d; }
+  .detail { padding: 10px 12px 13px; }
+  .badge { font-size: 11px; color: #4a6562; padding: 2px 5px; border-radius: 4px; background: #edf2f0; }
+  [data-status=interactive] .badge { color: #1d5c3d; background: #dff4e7; }
+  h3 { font-size: 15px; margin: 5px 0 2px; }
+  .pins, .hint { margin: 4px 0 0; font-size: 12px; overflow-wrap: anywhere; }
+  .pins { font-weight: 700; color: #325957; }
+  .hint { color: #526667; }
+  dialog { width: min(1160px, 100% - 24px); max-width: none; padding: 0; border: 1px solid #d0ddda; border-radius: 13px; }
+  dialog::backdrop { background: #112b2b88; }
+  dialog form { display: flex; justify-content: flex-end; padding: 8px; }
+  dialog button { padding: 6px 12px; }
+  iframe { display: block; width: 100%; height: min(78vh, 760px); border: 0; }
+  @media (max-width: 880px) { .grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+  @media (max-width: 620px) {
+    .wrap { width: calc(100% - 24px); }
+    .hero { grid-template-columns: minmax(0, 1fr); gap: 14px; padding: 16px; }
+    .hero-art > * { transform: scale(.88); }
+    .hero-art { height: 180px; }
+    .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+    .art > * { transform: scale(.82); }
+    .detail { padding: 8px 9px; }
+  }
+</style>
+</head>
+<body>
+<header><div class="wrap"><span class="brand">ChatSim</span><span class="version">$version</span></div></header>
+<main class="wrap">
+  <section class="hero">
+    <div>
+      <p class="model">$board_name</p>
+      <h1>$title</h1>
+      <p class="intro">打开接好的实验动手试，也可以先认元件、查针脚和接线提醒。</p>
+      <div class="examples" aria-label="课堂实验"></div>
+    </div>
+    <div class="hero-art" role="img" aria-label="$board_name 正面"><$board_tag inert aria-hidden="true"></$board_tag></div>
+  </section>
+  <h2 id="part-title">配套元件</h2>
+  <section class="grid" aria-labelledby="part-title"></section>
+</main>
+<dialog aria-label="ChatSim 课堂实验">
+  <form method="dialog"><button type="submit">返回元件库</button></form>
+  <iframe title="ChatSim 课堂实验" sandbox="allow-scripts"></iframe>
+</dialog>
+<template id="card">
+  <article>
+    <div class="art" inert aria-hidden="true"></div>
+    <div class="detail"><span class="badge"></span><h3></h3><p class="pins"></p><p class="hint"></p></div>
+  </article>
+</template>
+<template id="i2c-oled">
+  <div class="oled"><div class="terminals"><span>VCC</span><span>GND</span><span>SDA</span><span>SCL</span></div>
+    <div class="screen"></div>
+  </div>
+</template>
+<script>$artwork</script>
+<script>
+(() => {
+  const parts = $parts;
+  const examples = $examples;
+  const inExamples = new Set(examples.flatMap(example => example.parts));
+  const mounts = document.querySelector(".examples");
+  const dialog = document.querySelector("dialog");
+  const preview = dialog.querySelector("iframe");
+  for (const example of examples) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.textContent = example.name;
+    button.addEventListener("click", () => {
+      preview.title = example.board_name + " · " + example.name;
+      preview.srcdoc = new TextDecoder().decode(Uint8Array.from(atob(example.html), char => char.charCodeAt(0)));
+      dialog.showModal();
+    });
+    mounts.append(button);
+  }
+  dialog.addEventListener("close", () => preview.removeAttribute("srcdoc"));
+  document.querySelector("#part-title").textContent = "配套元件 · " + parts.length + " 项";
+  const grid = document.querySelector(".grid");
+  for (const part of parts) {
+    const card = document.querySelector("#card").content.firstElementChild.cloneNode(true);
+    const model = part.id === "ssd1306-i2c-128x64-module"
+      ? document.querySelector("#i2c-oled").content.firstElementChild.cloneNode(true)
+      : document.createElement(part.appearance);
+    if (part.id === "resistor-330") model.value = "330";
+    if (part.id === "momentary-button-two-pin") model.color = "red";
+    card.querySelector(".art").append(model);
+    const included = inExamples.has(part.id);
+    const interactive = included && part.availability === "interactive";
+    card.dataset.part = part.id;
+    card.dataset.status = interactive ? "interactive" : included ? "wiring" : "reference";
+    card.querySelector(".badge").textContent = interactive ? "可互动" : included ? "接线用" : "外观与接线参考";
+    card.querySelector("h3").textContent = part.name;
+    card.querySelector(".pins").textContent = part.pins;
+    card.querySelector(".hint").textContent = part.hint;
+    grid.append(card);
+  }
+})();
+</script>
+</body>
+</html>

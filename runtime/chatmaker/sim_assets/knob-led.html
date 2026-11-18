@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="zh-CN" data-simulation="$mode">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ChatSim · $board_name 旋钮调光</title>
+<style>
+  :root { font: 15px/1.6 "Microsoft YaHei", "PingFang SC", system-ui, sans-serif; color: #203537; background: #f3f7f6; }
+  * { box-sizing: border-box; }
+  body { margin: 0; }
+  .wrap { width: min(1050px, calc(100% - 48px)); margin: auto; }
+  header { background: #fff; border-bottom: 1px solid #dce6e2; }
+  header .wrap { display: flex; align-items: center; min-height: 54px; }
+  .brand { color: #075d59; font-size: 21px; font-weight: 800; }
+  main { padding-block: 22px 40px; }
+  h1 { font-size: clamp(23px, 5vw, 36px); letter-spacing: -.025em; margin: 0 0 4px; line-height: 1.23; }
+  .intro { margin: 0 0 17px; color: #415b5b; }
+  .layout { display: grid; grid-template-columns: minmax(0, 1fr) 280px; gap: 13px; align-items: start; }
+  .panel, aside { background: #fff; border: 1px solid #d3e1de; border-radius: 13px; overflow: hidden; }
+  .viewport { position: relative; width: 100%; aspect-ratio: 580 / 322; overflow: hidden; background: #edf5f2 radial-gradient(#bdcec8 1px, transparent 1.15px) center / 15px 15px; }
+  .schematic { position: absolute; width: 580px; height: 322px; left: 50%; top: 50%; transform: translate(-50%, -50%) scale(var(--scale, 0)); }
+  .schematic > * { position: absolute; display: block; }
+  #board { left: 25px; top: 51px; }
+  #board:is(wokwi-esp32-devkit-v1) { left: 102px; top: 54px; }
+  #pot { left: 368px; top: 102px; }
+  #resistor { left: 362px; top: 43px; display: flex; }
+  #lamp { left: 483px; top: 87px; }
+  .legend { font-weight: 700; color: #395c5b; margin: 0; font-size: 14px; }
+  .knob-label { left: 368px; top: 76px; }
+  .led-label { left: 486px; top: 61px; }
+  .resistor-label { left: 358px; top: 10px; }
+  #wires { inset: 0; pointer-events: none; width: 100%; height: 100%; }
+  .controls { padding: 11px 15px 14px; }
+  label { font-weight: 700; }
+  input { display: block; width: 100%; min-height: 32px; margin: 1px 0 6px; accent-color: #075d59; }
+  input:focus-visible { outline: 2px solid #307e89; outline-offset: 2px; }
+  output { color: #3b5556; }
+  aside { padding: 13px; }
+  h2 { font-size: 16px; margin: 0 0 7px; }
+  ul { list-style: none; margin: 0; padding: 0; }
+  li { display: flex; align-items: center; gap: 7px; background: #eff5f3; border-radius: 6px; margin-bottom: 5px; padding: 5px 7px; font-size: 13px; }
+  li::before { content: ""; width: 15px; height: 4px; border-radius: 3px; flex: none; background: var(--wire); }
+  .note { margin: 8px 0 0; color: #4a6262; font-size: 13px; }
+  @media (max-width: 745px) {
+    .wrap { width: min(590px, calc(100% - 24px)); }
+    main { padding-top: 15px; }
+    .layout { grid-template-columns: minmax(0, 1fr); }
+  }
+</style>
+</head>
+<body>
+<header><div class="wrap"><span class="brand">ChatSim</span></div></header>
+<main class="wrap">
+  <h1>$board_name 旋钮调光</h1>
+  <p class="intro">转动图中的旋钮或拖动滑条，观察外接 LED 从灭到亮。</p>
+  <div class="layout">
+    <section class="panel" aria-label="旋钮与 LED 电路">
+      <div class="viewport"><div class="schematic">
+        <$board_tag id="board" inert aria-hidden="true"></$board_tag>
+        <wokwi-potentiometer id="pot" aria-label="图中的 10 kΩ 电位器"></wokwi-potentiometer>
+        <wokwi-resistor id="resistor" value="330" inert aria-hidden="true"></wokwi-resistor>
+        <wokwi-led id="lamp" color="red" inert aria-hidden="true"></wokwi-led>
+        <p class="legend resistor-label">330 Ω</p>
+        <p class="legend knob-label">10 kΩ 旋钮</p><p class="legend led-label">LED</p>
+        <canvas id="wires" width="1160" height="644" aria-hidden="true"></canvas>
+      </div></div>
+      <div class="controls">
+        <label for="level">旋钮位置</label>
+        <input id="level" type="range" min="0" max="100" step="1" value="0" disabled>
+        <output id="status" for="level">正在加载实验。</output>
+      </div>
+    </section>
+    <aside>
+      <h2>接线</h2>
+      <ul aria-label="接线明细"></ul>
+      <p class="note">$wiring_note</p>
+      <p class="note">$execution_note</p>
+    </aside>
+  </div>
+</main>
+<script>$engine</script>
+<script>$parts</script>
+<script id="program" type="application/octet-stream">$program</script>
+<script>
+const ChatSimDimmer = $circuit_data;
+$simulator
+</script>
+</body>
+</html>

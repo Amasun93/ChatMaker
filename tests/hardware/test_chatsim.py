@@ -54,6 +54,9 @@ class ChatSimTests(unittest.TestCase):
         uno = execute_request({"simulation": True, "hardware": {"board": "arduino-uno-r3"}})
         self.assertTrue(uno["success"])
         self.assertEqual(uno["specialists"], ["chatduino", "chatsim"])
+        self.assertEqual(uno["libraries"], ["arduino"])
+        esp = execute_request({"simulation": True, "hardware": {"board": "esp32-devkit-v1"}})
+        self.assertEqual(esp["libraries"], ["esp32"])
         r4 = execute_request({"simulation": True, "hardware": {"board": "arduino-uno-r4-wifi"}})
         self.assertFalse(r4["success"])
         self.assertIn("arduino-uno-r3", r4["supported_boards"])
@@ -81,7 +84,8 @@ class ChatSimTests(unittest.TestCase):
             for demo in catalog["demos"]:
                 with self.subTest(demo=demo["id"]):
                     for part in demo["parts"]:
-                        self.assertEqual(catalog["parts"][part]["availability"], "interactive")
+                        availability = "reference" if part == "resistor-330" else "interactive"
+                        self.assertEqual(catalog["parts"][part]["availability"], availability)
                     result = sim.run_demo(demo["id"], runtime_root=root, output=None, open_browser=False)
                     self.assertTrue(result["success"], result)
                     self.assertTrue(result["uses_precompiled_program"])
