@@ -1,5 +1,6 @@
 import hashlib
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from itertools import chain, repeat
 import json
 import os
 from pathlib import Path
@@ -124,13 +125,18 @@ class ResumableDownloadTests(unittest.TestCase):
 
         def open_from_source(request, **options):
             requested.append(request.host)
-            return local_open(request, **options)
+            response = local_open(request, **options)
+            if request.host == 'official.example':
+                # TCP may deliver the fast response across many short reads.
+                read1 = response.read1
+                response.read1 = lambda count: read1(min(count, 4096))
+            return response
 
         events = []
-        # The first source delivers 128 KiB in 30 seconds. Its remaining bytes
-        # would take more than the threshold in this test. The backup is fast.
+        # The primary's first chunk arrives at t=30. The backup starts at t=31
+        # and delivers its bytes by t=32, regardless of the number of reads.
         with mock.patch.object(downloads, '_open_url', side_effect=open_from_source), \
-             mock.patch.object(downloads, 'monotonic', side_effect=[0, 30, 31, 32], create=True), \
+             mock.patch.object(downloads, 'monotonic', side_effect=chain((0, 30, 31), repeat(32))), \
              mock.patch.object(downloads, 'SLOW_DOWNLOAD_ETA', 5, create=True), listening(events.append):
             receipt = downloads.download_locked(self.item, self.destination)
         self.assertEqual(requested, ['cn.example', 'official.example'])
@@ -146,7 +152,7 @@ class ResumableDownloadTests(unittest.TestCase):
     def test_single_source_remains_available_when_progress_is_slow(self):
         self.mode = 'normal'
         self.item['sources'].pop()
-        with mock.patch.object(downloads, 'monotonic', side_effect=[0, 30, 60], create=True), \
+        with mock.patch.object(downloads, 'monotonic', side_effect=chain((0, 30), repeat(60))), \
              mock.patch.object(downloads, 'SLOW_DOWNLOAD_ETA', 5, create=True):
             receipt = downloads.download_locked(self.item, self.destination)
         self.assertEqual(receipt.source_id, 'cn')
@@ -162,7 +168,7 @@ class ResumableDownloadTests(unittest.TestCase):
             return local_open(request, **options)
 
         with mock.patch.object(downloads, '_open_url', side_effect=open_from_source), \
-             mock.patch.object(downloads, 'monotonic', side_effect=[0, 30, 31, 100]), \
+             mock.patch.object(downloads, 'monotonic', side_effect=chain((0, 30, 31), repeat(100))), \
              mock.patch.object(downloads, 'SLOW_DOWNLOAD_ETA', 5):
             receipt = downloads.download_locked(self.item, self.destination)
         self.assertEqual(receipt.attempted_source_ids, ('cn', 'fallback', 'cn'))
