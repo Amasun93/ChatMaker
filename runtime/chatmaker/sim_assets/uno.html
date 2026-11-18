@@ -5,50 +5,118 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>ChatSim · UNO R3</title>
 <style>
-:root { color-scheme: light; font-family: system-ui, sans-serif; color: #112622; background: #f1f4ec; }
+:root { color-scheme: light; font-family: system-ui, sans-serif; color: #142733; background: #f2f5f4; }
 * { box-sizing: border-box; }
 body { margin: 0; }
-main { max-width: 720px; margin: auto; padding: clamp(24px, 7vw, 70px) 24px; }
-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
-.brand { margin: 0; font-weight: 750; letter-spacing: .05em; }
-.board-label { margin: 0; font-size: .9rem; font-weight: 650; }
-h1 { font-size: clamp(1.75rem, 6vw, 2.5rem); margin: 2rem 0 .65rem; line-height: 1.14; }
-p { line-height: 1.6; }
-.intro { color: #43554c; margin: 0 0 1.4rem; }
-.board { background: #17443e; color: #fff; border: 1px solid #32655f; border-radius: 24px; padding: clamp(20px, 6vw, 36px); }
-.io { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-.tile { min-width: 0; padding: clamp(14px, 4vw, 24px); border-radius: 14px; background: #0c302c; }
-.pin { color: #c2ded1; font: 650 .82rem system-ui, sans-serif; margin: 0 0 12px; }
-.lamp { display: inline-block; width: 1.15rem; height: 1.15rem; border-radius: 50%; background: #7e9187; border: 2px solid #b3c5b8; margin-right: 8px; vertical-align: -.14rem; }
-.tile[data-led="on"] .lamp { background: #ffd462; border-color: #fff2bd; box-shadow: 0 0 16px #ffca5e; }
-.status { margin: .85rem 0 0; color: #c2ded1; font-size: .92rem; }
-button { color: #102f28; background: #e7f4d4; border: 0; padding: 10px 13px; min-height: 44px; border-radius: 9px; font: inherit; font-weight: 700; cursor: pointer; touch-action: none; user-select: none; }
-button[aria-pressed="true"] { background: #b4dc85; box-shadow: inset 0 2px 5px #143a2b40; }
-button:disabled { opacity: .55; cursor: default; }
-button:focus-visible { outline: 3px solid #ffd462; outline-offset: 4px; }
-footer { color: #43554c; margin-top: 1rem; font-size: .88rem; }
+main { max-width: 850px; margin: auto; padding: clamp(22px, 6vw, 60px) clamp(12px, 4vw, 28px); }
+header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px 18px; }
+.brand { margin: 0; font-weight: 820; letter-spacing: .035em; }
+.status { margin: 0; border: 1px solid #c8ded4; background: #e3f2eb; color: #18483d; border-radius: 20px; padding: 4px 10px; font-size: .8rem; font-weight: 700; }
+h1 { font-size: clamp(1.55rem, 5vw, 2.45rem); margin: 1.7rem 0 .62rem; line-height: 1.15; }
+.intro { color: #485e67; margin: 0 0 1.35rem; line-height: 1.6; }
+.lab { border: 1px solid #c9d6d9; border-radius: 18px; overflow: hidden; background: #fcfefd; }
+.bench {
+  position: relative; isolation: isolate; display: grid; align-items: center;
+  grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr);
+  gap: clamp(45px, 11vw, 140px); padding: clamp(24px, 7vw, 65px) clamp(12px, 5vw, 55px);
+  background-color: #f7faf9; background-image: radial-gradient(#c4d3d5 1px, transparent 1px); background-size: 16px 16px;
+}
+.device { position: relative; z-index: 1; min-width: 0; }
+.uno {
+  min-height: clamp(152px, 32vw, 228px); overflow: hidden;
+  border: 2px solid #0a525f; border-radius: 12px 18px 20px 11px;
+  background: linear-gradient(140deg, #188e96, #076272);
+  box-shadow: 0 5px 0 #134d59, 0 16px 24px #14374826;
+  color: #f4fffb; padding: 27px 12px 16px 24px;
+}
+.header-strip { position: absolute; left: 13%; width: 66%; height: 11px; border-radius: 3px; background: repeating-linear-gradient(90deg, #212d37 0 3px, #b6c3c5 3px 6px, #212d37 6px 9px); border: 2px solid #202c35; }
+.header-strip.top { top: 5px; }
+.header-strip.bottom { bottom: 6px; }
+.usb { position: absolute; width: clamp(14px, 5vw, 36px); height: 34px; top: 25%; left: 0; border-radius: 0 4px 4px 0; background: linear-gradient(#5f7a85, #d5e1e5 38%, #7c959d); border: 1px solid #7a969b; }
+.chip { width: min(54%, 91px); height: clamp(27px, 6vw, 45px); margin-top: 14px; border: 5px solid transparent; border-width: 5px 0; border-image: repeating-linear-gradient(90deg, #d3dfe4 0 3px, transparent 3px 7px) 6; background: #253640; background-clip: padding-box; border-radius: 4px; }
+.device-name { display: grid; gap: 2px; font-size: clamp(.8rem, 3.3vw, 1.45rem); line-height: 1.15; font-weight: 850; letter-spacing: .015em; }
+.device-name small { font: 600 clamp(.64rem, 1.6vw, .78rem) system-ui, sans-serif; }
+.uno-content { height: 100%; display: flex; flex-direction: column; justify-content: space-around; padding: 0 clamp(22px, 5vw, 58px) 0 clamp(0px, 2vw, 14px); }
+.lamp-row { font-size: clamp(.72rem, 2vw, .88rem); margin-top: 8px; display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+.lamp { width: .78rem; height: .78rem; flex: 0 0 .78rem; border-radius: 50%; background: #59757e; border: 1px solid #a5c7cc; }
+[data-led="on"] .lamp { background: #ffd55b; border-color: #fff1b8; box-shadow: 0 0 13px 3px #ffcb62aa; }
+#led-state { font-weight: 680; }
+.switch { border: 1px solid #bccbd0; border-radius: 12px; background: #e4e9eb; min-height: clamp(132px, 26vw, 182px); box-shadow: 0 4px 0 #b2c2c8; color: #182b37; text-align: center; padding: 14px 12px 12px clamp(18px, 5vw, 36px); }
+.switch-name { font-size: clamp(.72rem, 2.1vw, .97rem); font-weight: 740; margin: 4px 0 10px; line-height: 1.2; }
+.switch-button {
+  border: 3px solid #d9e1e5; outline: 1px solid #94a6ae; box-shadow: 0 4px 0 #142d3b;
+  width: clamp(48px, 12vw, 72px); height: clamp(48px, 12vw, 72px); border-radius: 50%;
+  background: linear-gradient(155deg, #48616e, #1a3443 68%); color: #fff; padding: 2px;
+  cursor: pointer; touch-action: none; user-select: none;
+}
+.switch-button[aria-pressed="true"] { transform: translateY(3px); box-shadow: 0 1px 0 #142d3b; background: #246f7b; }
+.switch-label { font-size: .68rem; line-height: 1.2; }
+.terminals { position: absolute; top: 16%; bottom: 14%; display: flex; flex-direction: column; justify-content: space-evenly; z-index: 3; }
+.uno .terminals { right: 0; }
+.switch .terminals { left: 0; }
+.terminal {
+  position: relative; display: flex; align-items: center; gap: 5px; padding: 3px 5px; min-height: 42px;
+  border: 0; background: transparent; color: inherit; font: 750 clamp(.65rem, 1.7vw, .84rem) system-ui, sans-serif;
+  cursor: crosshair; border-radius: 6px; white-space: nowrap;
+}
+.uno .terminal { justify-content: flex-end; }
+.socket { width: 14px; height: 14px; border-radius: 50%; background: #30424d; border: 3px solid #b4c7cf; box-shadow: 0 0 0 1px #4f6c78; }
+.terminal[data-connected="true"] .socket { background: #a7eee7; }
+.terminal[aria-pressed="true"] .socket { border-color: #ffe08a; box-shadow: 0 0 0 3px #d79923; }
+button:focus-visible { outline: 3px solid #d09217; outline-offset: 2px; }
+button:disabled { opacity: .56; cursor: default; }
+.wires { position: absolute; z-index: 2; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.lab-footer { display: flex; gap: 6px 18px; justify-content: space-between; align-items: center; padding: 10px 14px; border-top: 1px solid #c9d6d9; }
+.wiring-status { margin: 0; color: #314b58; font-size: .88rem; line-height: 1.5; }
+.clear { flex: none; border: 1px solid #c3d1d5; border-radius: 8px; background: #fff; color: #194957; min-height: 38px; padding: 6px 10px; font: 700 .78rem system-ui, sans-serif; cursor: pointer; }
+footer { color: #485e67; margin-top: 1rem; font-size: .79rem; line-height: 1.6; }
 code { overflow-wrap: anywhere; }
+@media (max-width: 380px) {
+  .uno { padding-left: 17px; }
+  .switch { padding-right: 7px; }
+  .lab-footer { padding-inline: 9px; }
+}
 </style>
 </head>
 <body>
 <main>
-  <header><p class="brand">ChatSim</p><p class="board-label">Arduino UNO R3 · 虚拟板</p></header>
-  <h1>按按钮，看板载灯</h1>
-  <p class="intro">按住虚拟按钮，观察 D13 的变化。也可以用 Tab 选中按钮，再按空格。</p>
-  <section class="board" aria-label="虚拟电路">
-    <div class="io">
-      <div class="tile" id="led" data-led="off">
-        <p class="pin">D13 · 板载灯</p>
-        <span class="lamp" aria-hidden="true"></span><strong id="led-state">熄灭</strong>
+  <header><p class="brand">ChatSim</p><p class="status" id="status" role="status">正在启动固件</p></header>
+  <h1>UNO R3 接线点灯</h1>
+  <p class="intro">依次点击两个接点连线。把 D2 和 GND 各接到按钮一端，再按住按钮。</p>
+  <section class="lab" aria-label="虚拟电路">
+    <div class="bench">
+      <div class="device uno" role="group" aria-label="Arduino UNO R3 主控板">
+        <span class="header-strip top" aria-hidden="true"></span>
+        <span class="header-strip bottom" aria-hidden="true"></span>
+        <span class="usb" aria-hidden="true"></span>
+        <div class="uno-content">
+          <div class="device-name">UNO R3<small>主控板</small></div>
+          <div class="chip" aria-hidden="true"></div>
+          <div class="lamp-row" id="led" data-led="off" aria-label="D13 板载灯">
+            <span class="lamp" aria-hidden="true"></span><span>D13</span><strong id="led-state">熄灭</strong>
+          </div>
+        </div>
+        <div class="terminals">
+          <button type="button" class="terminal" data-terminal="d2" aria-label="主控板 D2" aria-pressed="false">D2<span class="socket" aria-hidden="true"></span></button>
+          <button type="button" class="terminal" data-terminal="gnd" aria-label="主控板 GND" aria-pressed="false">GND<span class="socket" aria-hidden="true"></span></button>
+        </div>
       </div>
-      <div class="tile">
-        <p class="pin">D2 → 按钮 → GND</p>
-        <button id="button" type="button" aria-pressed="false" disabled>按住按钮</button>
+      <div class="device switch" role="group" aria-label="外接按钮">
+        <p class="switch-name">外接按钮</p>
+        <button id="button" class="switch-button" type="button" aria-label="按住按钮" aria-pressed="false" disabled><span class="switch-label" aria-hidden="true">按住</span></button>
+        <div class="terminals">
+          <button type="button" class="terminal" data-terminal="1" aria-label="按钮接点 1" aria-pressed="false"><span class="socket" aria-hidden="true"></span>1</button>
+          <button type="button" class="terminal" data-terminal="2" aria-label="按钮接点 2" aria-pressed="false"><span class="socket" aria-hidden="true"></span>2</button>
+        </div>
       </div>
+      <canvas class="wires" aria-hidden="true"></canvas>
     </div>
-    <p class="status" id="status" role="status">正在启动固件</p>
+    <div class="lab-footer">
+      <p class="wiring-status" id="wiring-status" aria-live="polite">先选一个接点开始接线。</p>
+      <button type="button" class="clear" id="clear-wires" disabled>清空接线</button>
+    </div>
   </section>
-  <footer>固件来自 <code id="sketch">$sketch</code> · <code id="firmware-id" title="$sha256">$short_hash</code></footer>
+  <footer>引脚位置为仿真示意。运行固件 <code id="sketch">$sketch</code> · <code id="firmware-id" title="$sha256">$short_hash</code></footer>
 </main>
 <script>$engine</script>
 <script id="firmware" type="application/octet-stream">$firmware</script>
