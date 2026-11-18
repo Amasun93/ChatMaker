@@ -1,0 +1,34 @@
+schema_version: '1.0'
+kind: recipe
+id: waveshare-s3-v2-tilt-dot
+name: 微雪 V2 倾斜小球
+summary: V2 / CST3530 only. A QMI8658 and direct-ST7789 starting point for a 平衡球 or 重力感应 project.
+sources:
+- title: Waveshare official V2 examples
+  url: https://docs.waveshare.net/ESP32-S3-Touch-LCD-2.8/Resources-And-Documents/
+- title: Verified observations reported in ChatMaker issue 6
+  url: https://github.com/Amasun93/ChatMaker/issues/6
+verification:
+  source_reviewed:
+    status: verified
+    checked_at: '2026-11-19'
+    evidence: Reviewed QMI8658 addressing and board I2C helper, ST7789 LCD_addWindow, and the V2 archive contents.
+  code_compiled:
+    status: verified
+    checked_at: '2026-11-19'
+    evidence: Windows managed V2 compile and fixed-directory rebuild with Arduino-ESP32 3.3.11. See docs/verification/2026-11-19-waveshare-issue-6.md.
+  firmware_uploaded:
+    status: unverified
+    checked_at: null
+    evidence: null
+  physical_effect_verified:
+    status: unverified
+    checked_at: null
+    evidence: null
+boards:
+- waveshare-esp32-s3-touch-lcd-2-8
+components: []
+wiring: []
+source_file: examples/chatduino/waveshare-s3/v2-tilt-dot/v2-tilt-dot.ino
+expected_effect: After upload to V2, tilt the board to move the dot. D requests a snapshot
+  of frame intervals and the most recent QMI8658 read.

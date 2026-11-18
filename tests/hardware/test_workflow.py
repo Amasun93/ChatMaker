@@ -26,6 +26,20 @@ class BoardBoundary:
 
 
 class WorkflowTests(unittest.TestCase):
+    def test_optional_probe_is_written_after_open_before_waiting_for_marker(self):
+        with mock.patch('chatmaker.hardware.serial_monitor.SERIAL_MANAGER') as serial:
+            serial.open.return_value = {'success': True, 'session_id': 'session'}
+            serial.write.return_value = {'success': True, 'bytes_written': 1}
+            serial.expect.return_value = {'success': True, 'matched': True}
+            result = workflow._observe('COM9', 'READY', 115200, 3, probe='?')
+        self.assertTrue(result['matched'])
+        self.assertEqual(serial.mock_calls, [
+            mock.call.open('COM9', baudrate=115200, timeout=.1),
+            mock.call.write('session', '?'),
+            mock.call.expect('session', 'READY', timeout=3, max_lines=300),
+            mock.call.close('session'),
+        ])
+
     def run_board(self, board, **kwargs):
         return workflow.run_project({'board_id': 'test-board', 'code': 'void setup(){} void loop(){}', **kwargs}, adapters={'test-board': board})
 

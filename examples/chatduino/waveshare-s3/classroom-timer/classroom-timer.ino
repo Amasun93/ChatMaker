@@ -7,7 +7,6 @@ static lv_obj_t *stateLabel;
 static uint32_t remaining = 60000;
 static uint32_t lastTick = 0;
 static uint32_t lastPaint = 0;
-static uint32_t lastReport = 0;
 static bool running = false;
 
 static void updateLabels() {
@@ -20,13 +19,12 @@ static void updateLabels() {
 static void onStart(lv_event_t *) {
   if (remaining == 0) remaining = 60000;
   running = true; lastTick = millis(); updateLabels();
-  Serial.println("TIMER_START");
 }
 static void onPause(lv_event_t *) {
-  running = false; updateLabels(); Serial.println("TIMER_PAUSE");
+  running = false; updateLabels();
 }
 static void onReset(lv_event_t *) {
-  running = false; remaining = 60000; updateLabels(); Serial.println("TIMER_RESET");
+  running = false; remaining = 60000; updateLabels();
 }
 static void addButton(const char *text, int y, lv_event_cb_t callback, uint32_t color) {
   lv_obj_t *button = lv_btn_create(lv_scr_act());
@@ -62,8 +60,7 @@ void loop() {
   }
   if (now - lastPaint >= 100) { lastPaint = now; updateLabels(); }
   Lvgl_Loop();
-  if (now - lastReport >= 2000) {
-    lastReport = now;
+  if (Serial.available() && Serial.read() == '?') {
     Serial.printf("CHATMAKER_WAVESHARE_TIMER_READY remaining_ms=%lu running=%d\n", (unsigned long)remaining, running);
   }
   delay(5);

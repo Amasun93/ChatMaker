@@ -27,6 +27,9 @@ def main_entry(handler, argv=None, *, board_id=None) -> int:
         parser.add_argument('--' + name)
     parser.add_argument('--bootloader', choices=('old', 'new'), help='Classic Nano bootloader')
     parser.add_argument('--usb-mode', choices=('uart', 'native'), help='USB connector on ESP32 S3/C6 DevKit')
+    parser.add_argument('--compile-timeout', type=int, help='Managed Arduino compile time limit in seconds')
+    parser.add_argument('--build-path', help='Dedicated persistent Arduino build directory for a saved sketch')
+    parser.add_argument('--jobs', type=int, help='Managed Arduino compiler parallelism (0 for automatic)')
     parser.add_argument('--board-confirmed', action='store_true', default=None)
     parser.add_argument('--library', action='append', dest='libraries')
     parser.add_argument('--dry-run', action='store_true', default=None)
@@ -52,7 +55,7 @@ def main_entry(handler, argv=None, *, board_id=None) -> int:
             if not isinstance(request, dict):
                 raise ValueError('request_must_be_object')
             for name in ('action', 'board_id', 'revision', 'sketch', 'port', 'board_confirmed',
-                         'dry_run', 'libraries', 'bootloader', 'usb_mode'):
+                         'dry_run', 'libraries', 'bootloader', 'usb_mode', 'compile_timeout', 'build_path', 'jobs'):
                 value = getattr(args, name)
                 if value is not None:
                     request[name] = value

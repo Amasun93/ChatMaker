@@ -6,7 +6,7 @@ If the user supplies the exact product name and V2 / CST3530, select `--revision
 
 ## Classroom route
 
-Save the complete program, then use the explicit checkout's `chatmaker-hardware --request-file project.json` (or `--request-json -` via stdin) with `board_id`, `revision`, `sketch` (or complete `code`), and `expected_serial_marker`. After the physical board and revision have actually been confirmed, pass `board_confirmed:true` internally. Do not ask the student to fill technical JSON fields. With multiple native USB candidates, select the intended `port` explicitly.
+Save the complete program, then use the explicit checkout's `chatmaker-hardware --request-file project.json` (or `--request-json -` via stdin) with `board_id`, `revision`, and `sketch` (or complete `code`). To observe a marker via native USB, use `expected_serial_marker` and set `serial_probe` to the example's single-character query. After the physical board and revision have actually been confirmed, pass `board_confirmed:true` internally. Do not ask the student to fill technical JSON fields. With multiple native USB candidates, select the intended `port` explicitly.
 
 `revision` must be `v1` (CST328) or `v2` (CST3530), determined by the back label or equivalent reliable evidence. Unknown revision remains unknown; the shared software can be prepared separately but do not upload a guessed touch variant. Reading an ESP32-S3 chip or a COM port does not prove the product model/revision.
 
@@ -16,18 +16,23 @@ On macOS use the source checkout's launcher prepared by `bash scripts/setup_loca
 
 Integrity covers the complete S3 compiler, core, SDK and relevant Arduino tools, plus all prepared drivers and recovery images. A ready receipt also requires configuration for the current local root. ESP32 core/compiler/SDK/flasher use identical hash-locked archives from the official domestic endpoint first. CLI and Arduino helper artifacts currently use official fallback addresses. With `CHATMAKER_DOWNLOAD_POLICY=domestic-only`, any missing component without a verified domestic source must stop explicitly; cached verified archives or a configured school HTTPS mirror can satisfy it. Rebuild isolated configuration at the destination root instead of treating a copied installation receipt as portable. See `docs/verification/workbuddy-retest-0.2.0-beta.5.md` for preview, provenance and test commands.
 
+During repeated compilation of the same saved sketch, use a dedicated `--build-path`, optionally `--compile-timeout 1800` and `--jobs 2`. Use a new or empty path for the first build and reuse it for the same sketch and revision. On timeout, preserve the JSON and inspect actual compiler output and object file progress. On Windows, ChatMaker passes explicit GCC C++ standard-library and ESP32-S3 no-RTTI target include paths. If the path remains too deep, use a shorter local runtime root and a verified cache.
+
 ## Available examples
 
 - `examples/chatduino/waveshare-s3/screen-diagnostic`: color screen status; marker `CHATMAKER_WAVESHARE_SCREEN_READY`.
-- `examples/chatduino/waveshare-s3/classroom-timer`: 60-second START/PAUSE/RESET touch timer; marker `CHATMAKER_WAVESHARE_TIMER_READY` and event logs. The initial controls use clear English labels to avoid claiming a complete Chinese font solution.
+- `examples/chatduino/waveshare-s3/classroom-timer`: 60-second START/PAUSE/RESET touch timer; marker `CHATMAKER_WAVESHARE_TIMER_READY`.
+- `examples/chatduino/waveshare-s3/v2-tilt-dot`: V2-only direct ST7789 drawing and QMI8658 input. `D` requests a `TILT_DOT` summary with bus and recent frame measurements.
 
-Both repeat their startup/status markers every two seconds so a serial observer opened after USB reset can still verify execution. Observe the real screen/touch and power-cycle separately; log messages alone cannot prove the visible effect.
+The screen and timer print one startup marker, and reply to `?` after a serial observer opens. For real-time interaction record timing in RAM and report it on demand. Host backpressure can stall hardware CDC writes even with a USB connection. Observe the device with no serial reader before querying, then check the actual screen, touch and power-cycle separately.
 
 ## Fixed technical configuration
 
 Managed Arduino CLI 1.6.0 or 1.3.1, official Arduino-ESP32 3.3.11, target `esp32:esp32:esp32s3`, 16 MB flash, 8 MB OPI PSRAM, QIO flash, `app3M_fat9M_16MB` partition, hardware CDC/JTAG with CDC enabled at boot. Verify compilation evidence before describing this as tested on hardware.
 
 Vendor LVGL 8.3.10 and display/touch sources are downloaded from the official revision-specific ZIP and checked by size/SHA-256. The V2 archive supplies CST3530 but its display/LVGL callbacks still invoke CST328. The managed preparation explicitly selects `TOUCH2_Init`, `Touch2_Read_Data`, `Touch2_Get_XY` and the CST3530 point-count definition. Changes are made to locally prepared files; the official archive is retained unchanged.
+
+The V2 managed package also extracts QMI8658 and its board I²C helper as `WaveshareMotion`. Check `peripheral_coverage` and `ready_for_compile` first. `ESP_I2S.h` comes from the ESP32 core, with PCM5101 BCLK48/WS38/DOUT47 for this model. The vendor's audio/SD stack and full LVGL example require separate dependencies. Do not infer actual sound, initialization, or real-time smoothness from compilation or a successful serial command. Issue #6 reports whole-region composition as a verified baseline for its v6.4 firmware. The cause of local erase trails remains unknown. See `docs/verification/2026-11-19-waveshare-issue-6.md`.
 
 GPIO layout: display MOSI45/SCLK40/CS42/DC41/RST39/backlight5; touch SDA1/SCL3/RST2/INT4; external shared I2C SDA11/SCL10; free extension GPIO15/18; UART43/44. GPIO19/20 are native USB and remain reserved during this classroom route. GPIO logic is 3.3 V. Board power hold is GPIO7; examples set it high.
 

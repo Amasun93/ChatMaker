@@ -11,6 +11,58 @@ from chatmaker.hardware import waveshare_toolchain as chain
 
 
 class WaveshareTests(unittest.TestCase):
+    def test_compile_uses_canonical_s3_headers_and_exports_only_this_attempt(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp).resolve()
+            sketch = root / 'demo'
+            sketch.mkdir()
+            (sketch / 'demo.ino').write_text('void setup(){} void loop(){}')
+            build = root / 'cache with spaces'
+            ctx = {'cli': 'cli', 'config': 'config', 'libraries': 'libs', 'root': str(root),
+                   'platform': 'windows-amd64', 'profile': 'esp32s3'}
+            request = {'sketch': str(sketch), 'revision': 'v2', 'build_path': str(build),
+                       'compile_timeout': 1800, 'jobs': 2}
+
+            def compiler(command, *, timeout, cpp_include):
+                self.assertEqual(timeout, 1800)
+                self.assertEqual(command[command.index('--jobs') + 1], '2')
+                self.assertEqual(Path(command[command.index('--build-path') + 1]), build)
+                include = cpp_include.split(os.pathsep)
+                self.assertTrue(include[0].endswith(str(Path('xtensa-esp-elf/include/c++/14.2.0'))))
+                self.assertTrue(include[1].endswith(str(Path('xtensa-esp-elf/esp32s3/no-rtti'))))
+                (build / 'demo.ino.bin').write_bytes(b'cached')
+                output = Path(command[command.index('--output-dir') + 1])
+                output.mkdir()
+                if not compiled:
+                    (output / 'demo.ino.bin').write_bytes(b'first')
+                return {'returncode': 0}
+
+            compiled = None
+            with mock.patch.object(board, 'run', side_effect=compiler):
+                compiled = board.compile_project(request, ctx)
+                missing = board.compile_project(request, ctx)
+            self.assertTrue(compiled['success'])
+            self.assertFalse(missing['success'])
+            self.assertEqual(missing['error'], 'compile_artifact_missing')
+            self.assertEqual(Path(compiled['artifacts'][0]['path']).read_bytes(), b'first')
+
+    def test_fixed_build_path_leaves_unrelated_nonempty_directory_untouched(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            build = root / 'notes'
+            build.mkdir()
+            note = build / 'keep.txt'
+            note.write_text('keep')
+            sketch = root / 'demo'
+            sketch.mkdir()
+            (sketch / 'demo.ino').write_text('void setup(){} void loop(){}')
+            ctx = {'cli': 'cli', 'config': 'config', 'libraries': 'libs', 'root': str(root)}
+            with mock.patch.object(board, 'run') as run:
+                result = board.compile_project({'sketch': str(sketch), 'build_path': str(build)}, ctx)
+            self.assertEqual(result['error'], 'build_path_not_owned')
+            self.assertEqual(note.read_text(), 'keep')
+            run.assert_not_called()
+
     def make_receipt(self, home, tools):
         if len(tools) > 2:
             data, ids = chain.managed.selected('esp32s3')
@@ -139,6 +191,9 @@ class WaveshareTests(unittest.TestCase):
                 z.writestr(base+'LVGL_Driver.cpp', 'Touch_Read_Data(); Touch_Get_XY(); CST328_LCD_TOUCH_MAX_POINTS;')
                 for n in ('Display_ST7789.h','LVGL_Driver.h','Touch_CST328.h','Touch_CST3530.h','Touch_CST3530.cpp'):
                     z.writestr(base+n, '// source')
+                for name in chain.MOTION_FILES:
+                    z.writestr(base+name, '// motion')
+                z.writestr(base+'Audio_PCM5101.h', '// depends on the vendor SD and audio stack')
                 z.writestr('Arduino/libraries/lvgl/library.properties', 'name=lvgl\nversion=8.3.10')
                 z.writestr('Arduino/libraries/lvgl/src/lvgl.h', '// header')
                 z.writestr('Arduino/libraries/lvgl/../../escape.txt', 'bad')
@@ -159,6 +214,11 @@ class WaveshareTests(unittest.TestCase):
             self.assertIn('Touch2_Read_Data()', touch)
             self.assertIn('Touch2_Get_XY()', touch)
             self.assertNotIn('CST328_LCD_TOUCH_MAX_POINTS',touch)
+            self.assertTrue((root/'WaveshareMotion/src/Gyro_QMI8658.cpp').is_file())
+            self.assertTrue((root/'WaveshareMotion/src/I2C_Driver.h').is_file())
+            self.assertEqual(list(root.rglob('Audio_PCM5101.h')), [])
+            chain.extract_vendor(good, Path(tmp)/'v1', 'v1')
+            self.assertFalse((Path(tmp)/'v1/WaveshareMotion').exists())
 
     def test_modified_manifest_file_is_not_accepted_as_ready(self):
         with tempfile.TemporaryDirectory() as tmp:

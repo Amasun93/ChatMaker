@@ -13,3 +13,5 @@ source_refs: [source-waveshare-esp32-s3-touch-lcd-2-8-official]
 可以用 `--action prepare-environment --dry-run` 看还缺哪些工具。这一步只预览。首次确需编译时，ChatMaker 会准备编译器、ESP32-S3 板卡核心、烧录工具及正确版本的屏幕和触摸驱动。显示 `remaining_download_bytes: 0` 时，所需压缩包已有校验通过的缓存。第一次解包和准备驱动可能还要一点时间。
 
 沿用同一个 `CHATMAKER_RUNTIME_ROOT` 可在后续项目复用已经校验的环境。工作区或工具目录换了、归档缺失或校验失败时，按当前工具报告处理。确认实物型号、版本和端口后，再执行上传。编译通过、成功写入和看到实物效果是三次检查。[微雪官方 V1/V2 资料](https://docs.waveshare.net/ESP32-S3-Touch-LCD-2.8/Resources-And-Documents/)
+
+同一个已保存的草图反复修改时，编译可加 `--build-path <专用目录> --compile-timeout 1800 --jobs 2`。专用目录第一次选一个新的或空的，之后用同一路径复用对象文件。默认编译上限仍是 900 秒。固定目录的烧录文件以当前成功编译单独导出的文件为准。出现超时时，查看 `compile.execution.stderr`、`elapsed_seconds` 和 `build_path`，结合对象文件是否持续写入再决定重试方式。

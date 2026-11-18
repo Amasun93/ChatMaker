@@ -1,11 +1,10 @@
 """Exact Waveshare ESP32-S3-Touch-LCD-2.8 V1/V2 compile/upload adapter."""
 from __future__ import annotations
 
-import argparse
+from contextlib import nullcontext
 import json
 from pathlib import Path
 import re
-import sys
 import tempfile
 import time
 
@@ -14,6 +13,7 @@ from .arduino_toolchain import compile_properties, run_cli as run, windows_cpp_i
 from .classroom_cli import dry_run_guard
 from .esp32_devkit_v1 import port_matches
 from chatmaker.installers.downloads import sha256
+from chatmaker.installers.locks import exclusive_file
 from chatmaker.progress import emit
 
 BOARD_ID = 'waveshare-esp32-s3-touch-lcd-2-8'
@@ -46,8 +46,22 @@ def match_application_port(original: dict, ports: list[dict], *, eligible=None) 
 
 
 def compile_project(request: dict, context: dict, *, fqbn: str = FQBN, output_suffix: str = 'bin') -> dict:
-    build_root = Path(context['root'])/'builds'; build_root.mkdir(parents=True,exist_ok=True)
-    build = Path(tempfile.mkdtemp(prefix='project-',dir=build_root))
+    try:
+        timeout = int(request.get('compile_timeout', request.get('timeout', 900)))
+        jobs = int(request['jobs']) if 'jobs' in request else None
+        if timeout <= 0 or (jobs is not None and jobs < 0):
+            raise ValueError
+    except (ValueError, TypeError, OverflowError):
+        return {'success': False, 'error': 'invalid_compile_options'}
+
+    fixed = request.get('build_path')
+    if fixed is not None and (not isinstance(fixed, str) or not fixed.strip()):
+        return {'success': False, 'error': 'invalid_build_path'}
+    if fixed and not request.get('sketch'):
+        return {'success': False, 'error': 'fixed_build_requires_saved_sketch'}
+    build_root = Path(context['root']) / 'builds'
+    build_root.mkdir(parents=True, exist_ok=True)
+    build = Path(tempfile.mkdtemp(prefix='project-', dir=build_root))
     if request.get('sketch'):
         sketch = Path(request['sketch']).expanduser().resolve()
         if sketch.is_file():
@@ -61,18 +75,62 @@ def compile_project(request: dict, context: dict, *, fqbn: str = FQBN, output_su
         (sketch/(name+'.ino')).write_text(str(request['code']),encoding='utf-8')
     else:
         return {'success':False,'error':'sketch_or_code_required'}
-    output = build/'compiled'
-    emit('stage', stage='compile', message='正在编译程序')
-    command = [context['cli'],'--config-file',context['config'],'compile','--fqbn',fqbn,
-               '--libraries',context['libraries'],'--build-path',str(output),
-               *compile_properties(context),str(sketch)]
+    output = Path(fixed).expanduser().resolve() if fixed else build / 'compiled'
+    if fixed and (output == sketch or output in sketch.parents or sketch in output.parents):
+        return {'success': False, 'error': 'build_path_overlaps_sketch'}
+    if fixed and not output.name:
+        return {'success': False, 'error': 'invalid_build_path'}
+    artifact_dir = build / 'exported' if fixed else output
+    command = [context['cli'], '--config-file', context['config'], 'compile', '--fqbn', fqbn,
+               '--libraries', context['libraries'], '--build-path', str(output)]
+    if fixed:
+        command.extend(['--output-dir', str(artifact_dir)])
+    if jobs is not None:
+        command.extend(['--jobs', str(jobs)])
+    command.extend([*compile_properties(context), str(sketch)])
     include = windows_cpp_include(context)
     options = {'cpp_include': include} if include is not None else {}
-    execution = run(command, timeout=int(request.get('timeout', 900)), **options)
-    binaries = sorted(output.glob(f'*.{output_suffix}')) if execution.get('returncode')==0 else []
-    success = bool(binaries) and (output/f'{sketch.name}.ino.{output_suffix}').is_file()
-    return {'success':success,'execution':execution,'fqbn':fqbn,'revision':request.get('revision'),
-            'build_path':str(output),'sketch':str(sketch),'artifacts':[{'path':str(p),'size':p.stat().st_size,'sha256':sha256(p)} for p in binaries]}
+    lock = exclusive_file(output.with_name(output.name + '.chatmaker.lock')) if fixed else nullcontext()
+    try:
+        with lock:
+            if fixed:
+                output.mkdir(parents=True, exist_ok=True)
+                marker = output / '.chatmaker-build.json'
+                identity = {'sketch': str(sketch), 'fqbn': fqbn, 'revision': request.get('revision')}
+                if marker.is_file():
+                    if json.loads(marker.read_text(encoding='utf-8')) != identity:
+                        return {'success': False, 'error': 'build_path_project_mismatch'}
+                elif any(output.iterdir()):
+                    return {'success': False, 'error': 'build_path_not_owned'}
+                marker.write_text(json.dumps(identity), encoding='utf-8')
+            emit('stage', stage='compile', message='正在编译程序')
+            started = time.monotonic()
+            execution = run(command, timeout=timeout, **options)
+            if fixed and not marker.exists():
+                marker.write_text(json.dumps(identity), encoding='utf-8')
+    except RuntimeError as exc:
+        if not str(exc).startswith('operation_in_progress:'):
+            raise
+        return {'success': False, 'error': 'build_path_in_use', 'build_path': str(output)}
+    except (OSError, ValueError) as exc:
+        return {'success': False, 'error': 'build_path_unavailable', 'detail': str(exc)}
+
+    binaries = sorted(artifact_dir.glob(f'*.{output_suffix}')) if execution.get('returncode') == 0 else []
+    success = (artifact_dir / f'{sketch.name}.ino.{output_suffix}').is_file() and bool(binaries)
+    result = {'success': success, 'execution': execution, 'fqbn': fqbn, 'revision': request.get('revision'),
+              'timeout_seconds': timeout, 'jobs': jobs, 'elapsed_seconds': round(time.monotonic() - started, 2),
+              'build_path': str(output), 'artifact_dir': str(artifact_dir), 'sketch': str(sketch),
+              'artifacts': [{'path': str(p), 'size': p.stat().st_size, 'sha256': sha256(p)} for p in binaries]}
+    if execution.get('timed_out'):
+        result.update(error='compile_timeout',
+                      teacher_message='编译超过本次时间上限。请保留错误输出和构建目录，核对编译进度后再调整时间或重试。')
+    elif not success:
+        result['error'] = 'compile_failed' if execution.get('returncode') != 0 else 'compile_artifact_missing'
+        if include and context.get('profile') == 'esp32s3' and re.search(
+                r'bits/(?:error_constants|c\+\+config)\.h: No such file', execution.get('stderr') or ''):
+            result.update(error='windows_target_header_missing',
+                          teacher_message='GCC 没找到 ESP32-S3 的目标头文件。请检查托管缓存，并用更短的本地工具目录复测。')
+    return result
 
 
 def execute_request(request: dict) -> dict:
@@ -92,13 +150,16 @@ def execute_request(request: dict) -> dict:
     ctx = chain.context(revision)
     if action=='doctor':
         return {**base,'success':True,'ready_for_compile':ctx is not None,'environment':ctx,
-                'required_fqbn':FQBN,'touch_controller':'CST328' if revision=='v1' else 'CST3530'}
+                'required_fqbn':FQBN,'touch_controller':'CST328' if revision=='v1' else 'CST3530',
+                'peripheral_coverage':chain.peripheral_coverage(revision)}
     if action not in {'compile','compile-upload'}:
         return {**base,'error':'unsupported_action'}
     if not ctx:
         return {**base,'error':'managed_toolchain_missing','next_action':'prepare-environment'}
     compiled = compile_project(request,ctx)
     result = {**base,'compile':compiled,'stage':'compile','success':compiled.get('success',False)}
+    if not compiled.get('success'):
+        result.update({key: compiled[key] for key in ('error', 'teacher_message') if key in compiled})
     if not compiled.get('success') or action=='compile':
         return result
     if request.get('board_confirmed') is not True:
@@ -108,10 +169,11 @@ def execute_request(request: dict) -> dict:
     if selected is None:
         return {**result,'success':False,'stage':'awaiting-hardware','ports':ports,
                 'teacher_message':'请接入这块板的数据 USB 接口；有多块候选设备时选择本次使用的一块。'}
-    # A successfully compiled fresh build is the sole upload source.
+    # Persistent object files are shared across iterations. Upload always uses
+    # this invocation's separately exported files.
     emit('stage', stage='upload', message='正在下载程序到已确认的微雪板')
     command = [ctx['cli'],'--config-file',ctx['config'],'upload','--fqbn',FQBN,
-               '--port',selected['address'],'--input-dir',compiled['build_path'],compiled['sketch']]
+               '--port',selected['address'],'--input-dir',compiled.get('artifact_dir', compiled['build_path']),compiled['sketch']]
     execution = run(command,timeout=int(request.get('upload_timeout',180)))
     uploaded = {'success':execution.get('returncode')==0,'port':selected['address'],
                 'execution':execution,'application_port':None}

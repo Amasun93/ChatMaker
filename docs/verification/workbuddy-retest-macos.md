@@ -71,7 +71,7 @@ SKETCH="$PWD/examples/chatduino/waveshare-s3/classroom-timer"
   --board-confirmed --port /dev/cu.usbmodemXXXX
 ```
 
-运行后观察屏幕和 START、PAUSE、RESET 触控，再检查断电重启。需要串口运行证据时，用 JSON 请求文件设置 `expected_serial_marker` 为 `CHATMAKER_WAVESHARE_TIMER_READY`，并用 `--request-file` 传给同一个入口。
+运行后观察屏幕和 START、PAUSE、RESET 触控，再检查断电重启。需要串口运行证据时，在 JSON 请求文件同时设置 `serial_probe` 为 `?`、`expected_serial_marker` 为 `CHATMAKER_WAVESHARE_TIMER_READY`，并用 `--request-file` 传给同一个入口。
 
 ## 回传记录
 

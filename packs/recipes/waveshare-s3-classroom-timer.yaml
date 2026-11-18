@@ -28,5 +28,5 @@ boards:
 components: []
 wiring: []
 source_file: examples/chatduino/waveshare-s3/classroom-timer/classroom-timer.ino
-expected_effect: After actual upload, screen displays the example and serial repeats
-  CHATMAKER_WAVESHARE_TIMER_READY; touch and visible effect require physical observation.
+expected_effect: After upload, the timer replies to ? with
+  CHATMAKER_WAVESHARE_TIMER_READY. Check START, PAUSE and RESET on the actual screen.

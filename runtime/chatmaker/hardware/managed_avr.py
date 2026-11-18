@@ -88,7 +88,7 @@ def execute_request(request: dict) -> dict:
                 for row in scan_ports()):
             break
         execution = chain.run_cli([context['cli'], '--config-file', context['config'], 'upload', '--fqbn', target,
-                                   '--port', port, '--input-dir', compiled['build_path'], compiled['sketch']],
+                                   '--port', port, '--input-dir', compiled.get('artifact_dir', compiled['build_path']), compiled['sketch']],
                                   timeout=int(request.get('upload_timeout', 180)))
         attempts.append(execution)
         if execution.get('returncode') == 0 or execution.get('timed_out'):

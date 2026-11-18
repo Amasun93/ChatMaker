@@ -2,7 +2,6 @@
 #include <Display_ST7789.h>
 #include <LVGL_Driver.h>
 
-static uint32_t lastReport = 0;
 void setup() {
   Serial.begin(115200);
   pinMode(7, OUTPUT); digitalWrite(7, HIGH);
@@ -18,8 +17,7 @@ void setup() {
 }
 void loop() {
   Lvgl_Loop();
-  if (millis() - lastReport >= 2000) {
-    lastReport = millis();
+  if (Serial.available() && Serial.read() == '?') {
     Serial.println("CHATMAKER_WAVESHARE_SCREEN_READY");
   }
   delay(5);

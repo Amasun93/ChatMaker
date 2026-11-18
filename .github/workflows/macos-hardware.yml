@@ -1,6 +1,7 @@
 name: macOS hardware compile
 
 on:
+  workflow_dispatch:
   push:
     paths:
       - '.github/workflows/macos-hardware.yml'
@@ -27,13 +28,15 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        runner: [macos-15, macos-15-intel]
+        suite: [classroom, waveshare]
         include:
           - runner: macos-15
             architecture: arm64
           - runner: macos-15-intel
             architecture: x86_64
     runs-on: ${{ matrix.runner }}
-    timeout-minutes: 40
+    timeout-minutes: 45
     env:
       CHATMAKER_PYTHON: python3
     steps:
@@ -50,6 +53,7 @@ jobs:
           bash scripts/setup_local_runtime.sh
           python3 scripts/workbuddy_preflight.py --expected-revision "$GITHUB_SHA"
       - name: Verify portable Python setup without Python on PATH
+        if: matrix.suite == 'classroom'
         run: |
           tools=$(mktemp -d "$RUNNER_TEMP/chatmaker-setup-tools.XXXXXX")
           for name in dirname uname mkdir rmdir mktemp mv rm; do
@@ -60,12 +64,21 @@ jobs:
           python3 -c 'import json, sys; r = json.load(open(sys.argv[1])); assert r["success"] and r["mode"] == "portable-python", r' "$RUNNER_TEMP/chatmaker-portable-result.json"
           CHATMAKER_RUNTIME_ROOT="$portable_runtime" "$portable_runtime/venv/bin/python3" scripts/workbuddy_preflight.py --expected-revision "$GITHUB_SHA"
       - name: Run hardware regression tests
+        if: matrix.suite == 'classroom'
         run: |
           "$CHATMAKER_RUNTIME_ROOT/venv/bin/python3" -m unittest \
             tests.hardware.test_macos_arduino tests.hardware.test_managed_arduino \
             tests.hardware.test_managed_boundaries tests.hardware.test_workflow \
             tests.hardware.test_serial_monitor tests.hardware.test_waveshare_s3 -q
+      - name: Cache the official K10 core archive
+        if: matrix.suite == 'classroom'
+        uses: actions/cache@v5
+        with:
+          path: ${{ runner.temp }}/ChatMaker Runtime/downloads/arduino/unihiker_k10-0.0.5.zip
+          key: k10-archive-${{ hashFiles('runtime/chatmaker/installers/runtime_sources.json') }}
       - name: Prepare tools and compile the classroom examples
+        env:
+          CHATMAKER_COMPILE_SUITE: ${{ matrix.suite }}
         run: |
           set -euo pipefail
           cli="$CHATMAKER_RUNTIME_ROOT/bin/chatmaker-hardware"
@@ -76,10 +89,17 @@ jobs:
           prepare() {
             local key=$1
             shift
-            "$cli" --action prepare-environment --progress human "$@" > "$work/$key-prepare.json" || {
+            if "$cli" --action prepare-environment --progress human "$@" > "$work/$key-prepare.json"; then
+              return 0
+            fi
+            cat "$work/$key-prepare.json"
+            if "$python" -c 'import json,sys; r=json.load(open(sys.argv[1])); e=str(r.get("detail","")); sys.exit(0 if "all_pinned_sources_failed:" in e and any(s in e for s in ("URLError:", "TimeoutError:", "download_interrupted", "download_too_slow", "download_http_status:503")) else 1)' "$work/$key-prepare.json"; then
+              mv "$work/$key-prepare.json" "$work/$key-prepare-first-attempt.json"
+              sleep 5
+              "$cli" --action prepare-environment --progress human "$@" > "$work/$key-prepare.json" && return 0
               cat "$work/$key-prepare.json"
-              return 1
-            }
+            fi
+            return 1
           }
           compile() {
             local key=$1
@@ -90,6 +110,16 @@ jobs:
             }
             "$python" -c 'import json,sys; r=json.load(open(sys.argv[1])); assert r["success"] and r["compile"]["artifacts"]; print(r["compile"]["fqbn"], [(a["size"],a["sha256"]) for a in r["compile"]["artifacts"]])' "$work/$key.json"
           }
+
+          if [ "$CHATMAKER_COMPILE_SUITE" = waveshare ]; then
+            for revision in v1 v2; do
+              prepare "waveshare-$revision" --board-id waveshare-esp32-s3-touch-lcd-2-8 --revision "$revision"
+              compile "screen-$revision" --board-id waveshare-esp32-s3-touch-lcd-2-8 --revision "$revision" --sketch examples/chatduino/waveshare-s3/screen-diagnostic
+              compile "timer-$revision" --board-id waveshare-esp32-s3-touch-lcd-2-8 --revision "$revision" --sketch examples/chatduino/waveshare-s3/classroom-timer
+            done
+            compile tilt-dot --board-id waveshare-esp32-s3-touch-lcd-2-8 --revision v2 --sketch examples/chatduino/waveshare-s3/v2-tilt-dot
+            exit 0
+          fi
 
           prepare avr --board-id arduino-uno-r3
           compile uno --board-id arduino-uno-r3 --sketch examples/chatduino/uno/blink
@@ -103,11 +133,7 @@ jobs:
           compile nova --board-id nova-esp32 --sketch examples/chatduino/nova-oled-hello
           compile doit --board-id esp32-devkit-v1 --sketch examples/chatduino/esp32/blink-external-led
 
-          for revision in v1 v2; do
-            prepare "waveshare-$revision" --board-id waveshare-esp32-s3-touch-lcd-2-8 --revision "$revision"
-            compile "screen-$revision" --board-id waveshare-esp32-s3-touch-lcd-2-8 --revision "$revision" --sketch examples/chatduino/waveshare-s3/screen-diagnostic
-            compile "timer-$revision" --board-id waveshare-esp32-s3-touch-lcd-2-8 --revision "$revision" --sketch examples/chatduino/waveshare-s3/classroom-timer
-          done
+          prepare s3 --board-id esp32-s3-devkitc-1-n8r8
           compile s3-devkit --board-id esp32-s3-devkitc-1-n8r8 --usb-mode native --sketch examples/chatduino/uno/blink
           compile xiao --board-id seeed-xiao-esp32s3 --sketch examples/chatduino/xiao-esp32s3/usb-blink
           compile xiao-sense --board-id seeed-xiao-esp32s3-sense --sketch examples/chatduino/xiao-esp32s3-sense/camera-check
@@ -122,9 +148,20 @@ jobs:
 
           "$cli" --action prepare-environment --board-id nova-esp32 --library U8g2 --download-policy domestic-only > "$work/cache-reuse.json"
           "$python" -c 'import json,sys; r=json.load(open(sys.argv[1])); assert r["success"] and not r["installation_performed"]' "$work/cache-reuse.json"
-      - uses: actions/upload-artifact@v7
+      - name: Upload compile evidence
+        id: evidence
+        uses: actions/upload-artifact@v7
         if: always()
+        continue-on-error: true
         with:
-          name: macos-${{ matrix.architecture }}-compile-results
+          name: macos-${{ matrix.architecture }}-${{ matrix.suite }}-compile-results
           path: ${{ runner.temp }}/chatmaker-mac-results/*.json
           if-no-files-found: ignore
+      - name: Retry evidence upload after a service error
+        uses: actions/upload-artifact@v7
+        if: always() && steps.evidence.outcome == 'failure'
+        with:
+          name: macos-${{ matrix.architecture }}-${{ matrix.suite }}-compile-results
+          path: ${{ runner.temp }}/chatmaker-mac-results/*.json
+          if-no-files-found: ignore
+          overwrite: true

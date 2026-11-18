@@ -102,7 +102,7 @@ def execute_request(request: dict) -> dict:
     port = ports[0]['address']
     emit('stage', stage='upload', component=board_id, message='正在下载程序到已确认的板子')
     execution = run([ctx['cli'], '--config-file', ctx['config'], 'upload', '--fqbn', fqbn,
-                     '--port', port, '--input-dir', compiled['build_path'], compiled['sketch']],
+                     '--port', port, '--input-dir', compiled.get('artifact_dir', compiled['build_path']), compiled['sketch']],
                     timeout=int(request.get('upload_timeout', 180)))
     application_port = None if native_usb else port
     if native_usb and execution.get('returncode') == 0:

@@ -14,7 +14,7 @@ from . import arduino_toolchain as managed
 from chatmaker.progress import emit
 
 CORE_VERSION = '3.3.11'
-PREPARATION_VERSION = 3
+PREPARATION_VERSION = 4
 CORE_TREE = f'data/packages/esp32/hardware/esp32/{CORE_VERSION}'
 COMPILER_TREE = 'data/packages/esp32/tools/esp-x32/2601'
 SDK_TREE = f'data/packages/esp32/tools/esp32s3-libs/{CORE_VERSION}'
@@ -48,6 +48,16 @@ VENDORS = {
            'sha256':'b09e8cdfb47212ea94a06ba02a11568dfb70dcc1ea040142067d08e374b29737',
            'sources':[{'id':'waveshare-cn','kind':'domestic_official','url':'https://files.waveshare.net/wiki/ESP32-S3-Touch-LCD-2.8/ESP32-S3-Touch-LCD-2.8-V2-Demo.zip'}]},
 }
+MOTION_FILES = {'Gyro_QMI8658.h', 'Gyro_QMI8658.cpp', 'I2C_Driver.h', 'I2C_Driver.cpp'}
+
+
+def peripheral_coverage(revision: str) -> dict:
+    return {
+        'prepared': ['ST7789', 'CST3530' if revision == 'v2' else 'CST328', 'LVGL 8.3.10']
+                    + (['QMI8658', 'board I2C helper'] if revision == 'v2' else []),
+        'core_api': ['ESP_I2S'],
+        'full_vendor_examples_prepared': False,
+    }
 
 
 def root() -> Path:
@@ -149,6 +159,9 @@ def extract_vendor(archive: Path, libraries: Path, revision: str) -> None:
                     content = content.replace(b'Touch_Read_Data()', b'Touch2_Read_Data()')
                     content = content.replace(b'Touch_Get_XY(', b'Touch2_Get_XY(')
                     content = content.replace(b'CST328_LCD_TOUCH_MAX_POINTS', b'CST3530_LCD_TOUCH_MAX_POINTS')
+            elif revision == 'v2' and name == 'Arduino/examples/LVGL_Arduino/' + rel.name and rel.name in MOTION_FILES:
+                destination = libraries/'WaveshareMotion'/'src'/rel.name
+                content = z.read(info)
             else:
                 continue
             destination.parent.mkdir(parents=True, exist_ok=True)
@@ -156,6 +169,15 @@ def extract_vendor(archive: Path, libraries: Path, revision: str) -> None:
     properties = libraries/'WaveshareBoard'/'library.properties'
     properties.parent.mkdir(parents=True, exist_ok=True)
     properties.write_text('name=WaveshareBoard\nversion=1.0.0\nauthor=Waveshare\nmaintainer=ChatMaker\nsentence=Locally prepared official Waveshare board drivers.\nparagraph=Revision-selected from verified official demo archive.\ncategory=Display\nurl=https://docs.waveshare.net/ESP32-S3-Touch-LCD-2.8/\narchitectures=esp32\n', encoding='utf-8')
+    if revision == 'v2':
+        motion = libraries/'WaveshareMotion'
+        if not all((motion/'src'/name).is_file() for name in MOTION_FILES):
+            raise ValueError('v2_motion_sources_missing')
+        (motion/'library.properties').write_text(
+            'name=WaveshareMotion\nversion=1.0.0\nauthor=Waveshare\nmaintainer=ChatMaker\n'
+            'sentence=QMI8658 and I2C helper from the verified V2 demo.\n'
+            'category=Sensors\nurl=https://docs.waveshare.net/ESP32-S3-Touch-LCD-2.8/\narchitectures=esp32\n',
+            encoding='utf-8')
 
 
 def context(revision: str) -> dict | None:
@@ -186,7 +208,8 @@ def context(revision: str) -> dict | None:
             return None
         return {**environment,'libraries':str(prepared/'libraries'),
                 'factory_recovery':receipt.get('recovery', []),
-                'revision':revision,'backend':'chatmaker-managed-waveshare-s3'}
+                'revision':revision,'backend':'chatmaker-managed-waveshare-s3',
+                'peripheral_coverage':peripheral_coverage(revision)}
     except (OSError, ValueError, TypeError):
         return None
 
@@ -206,6 +229,7 @@ def prepare_environment(revision: str, *, dry_run=False) -> dict:
         plan['components'].append({'id':'waveshare-'+revision,'version':revision,'archive_bytes':vendor['size'],
                                    'cached':cached,'sources':vendor['sources']})
         plan['archive_bytes'] += vendor['size']
+        plan['peripheral_coverage'] = peripheral_coverage(revision)
         if not cached:
             plan['remaining_download_bytes'] += vendor['size']
         return plan
@@ -248,7 +272,7 @@ def prepare_environment(revision: str, *, dry_run=False) -> dict:
             with exclusive_file(vendor_zip.with_name(vendor_zip.name+'.lock')):
                 shutil.copyfile(previous_vendor, vendor_zip)
         download_locked(VENDORS[revision],vendor_zip,timeout=180)
-        emit('stage', stage='vendor', message='准备微雪显示、触摸和恢复固件')
+        emit('stage', stage='vendor', message='按板卡版本准备微雪外设库和恢复固件')
         # Prepare into a fresh directory so stale sources cannot enter a new
         # manifest. Keep the previous files until a complete receipt is ready.
         revision_root.mkdir(parents=True, exist_ok=True)

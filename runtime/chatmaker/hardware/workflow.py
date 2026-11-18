@@ -28,12 +28,16 @@ MODULES = {
 }
 
 
-def _observe(port: str, marker: str, baudrate: int, timeout: float) -> dict:
+def _observe(port: str, marker: str, baudrate: int, timeout: float, *, probe: str | None = None) -> dict:
     from .serial_monitor import SERIAL_MANAGER
     opened = SERIAL_MANAGER.open(port, baudrate=baudrate, timeout=0.1)
     if not opened.get('success'):
         return opened
     try:
+        if probe:
+            sent = SERIAL_MANAGER.write(opened['session_id'], probe)
+            if not sent.get('success'):
+                return sent
         return SERIAL_MANAGER.expect(opened['session_id'], marker, timeout=timeout, max_lines=300)
     finally:
         SERIAL_MANAGER.close(opened['session_id'])
@@ -90,7 +94,10 @@ def run_project(request: dict, *, adapters: Mapping[str, Any] | None = None) -> 
     marker = request.get('expected_serial_marker')
     if port and marker:
         try:
-            observation = _observe(str(port), str(marker), int(request.get('serial_baudrate', 115200)), float(request.get('serial_timeout', 10)))
+            probe = request.get('serial_probe')
+            options = {'probe': str(probe)} if probe else {}
+            observation = _observe(str(port), str(marker), int(request.get('serial_baudrate', 115200)),
+                                   float(request.get('serial_timeout', 10)), **options)
         except Exception as exc:
             observation = {'success': False, 'error': str(exc)}
         result['serial_evidence'] = observation

@@ -28,5 +28,5 @@ boards:
 components: []
 wiring: []
 source_file: examples/chatduino/waveshare-s3/screen-diagnostic/screen-diagnostic.ino
-expected_effect: After actual upload, screen displays the example and serial repeats
-  CHATMAKER_WAVESHARE_SCREEN_READY; touch and visible effect require physical observation.
+expected_effect: After upload, the device shows a screen status and replies to ? with
+  CHATMAKER_WAVESHARE_SCREEN_READY. Observe the actual screen separately.

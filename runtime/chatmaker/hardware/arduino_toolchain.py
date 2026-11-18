@@ -187,6 +187,10 @@ def windows_cpp_include(context: dict) -> Path | str | None:
     # relative segments and can run out of Win32 path space on these targets.
     profile = context.get('profile')
     packages = Path(context['root']) / 'data/packages'
+    if profile == 'esp32s3':
+        tool = packages / 'esp32/tools/esp-x32/2601'
+        cpp = tool / 'xtensa-esp-elf/include/c++/14.2.0'
+        return os.pathsep.join((str(cpp), str(cpp / 'xtensa-esp-elf/esp32s3/no-rtti')))
     if profile == 'unihiker_k10':
         tool = packages / 'UNIHIKER/tools/xtensa-esp32s3-elf-gcc/esp-2021r2-patch5-8.4.0'
         cpp = tool / 'xtensa-esp32s3-elf/include/c++/8.4.0'
