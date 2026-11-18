@@ -1,5 +1,6 @@
+import { execFileSync } from "node:child_process";
 import { readFile } from "node:fs/promises";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { expect, test } from "@playwright/test";
 
 const assets = new URL("../../runtime/chatmaker/sim_assets/", import.meta.url);
@@ -173,3 +174,54 @@ test("Waveshare V2 touch stays connected to the LVGL demo", async ({ page, conte
   await page.mouse.up();
   expect(await frame(lcd)).toBe(rest);
 });
+
+test("Starcore library opens both bundled labs and keeps reference parts discoverable offline",
+  async ({ page, context }, testInfo) => {
+    const output = testInfo.outputPath("starcore-library.html");
+    execFileSync(process.env.CHATMAKER_TEST_PYTHON || "python",
+      ["-m", "chatmaker.sim", "--library", "starcore", "--output", output, "--progress", "none"]);
+    await context.setOffline(true);
+    await page.setViewportSize({ width: 390, height: 780 });
+    await page.goto(pathToFileURL(output).href);
+    await expect(page.getByRole("heading", { name: "配套元件 · 22 项" })).toBeVisible();
+    await expect(page.getByRole("article")).toHaveCount(22);
+    await page.getByRole("button", { name: "可互动", exact: true }).click();
+    await expect(page.getByRole("article")).toHaveCount(4);
+    await page.getByRole("button", { name: "外观参考", exact: true }).click();
+    await expect(page.getByRole("article")).toHaveCount(7);
+    await page.getByRole("button", { name: "外形与孔位", exact: true }).click();
+    await expect(page.getByRole("article")).toHaveCount(11);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
+
+    await page.getByRole("button", { name: "按住星核板 A 键在 OLED 问好" }).click();
+    const example = page.frameLocator("iframe");
+    await expect(example.getByRole("button", { name: "按住板载 A 键" })).toBeEnabled();
+    await page.getByRole("button", { name: "返回元件库" }).click();
+    await page.getByRole("button", { name: "按住外接按钮，转旋钮调 RGB 灯色" }).click();
+    const status = example.getByRole("status");
+    const press = example.getByRole("button", { name: "按住外接按钮" });
+    const lamp = example.locator("#rgb");
+    await expect(status).toHaveText("灯已熄灭");
+    const off = await frame(lamp);
+    const box = await press.boundingBox();
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    await page.mouse.down();
+    await expect(status).toHaveText("灯已亮 · RGB 255 / 0 / 0");
+    const red = await frame(lamp);
+    expect(red).not.toBe(off);
+    await page.mouse.up();
+    await expect(status).toHaveText("灯已熄灭");
+    expect(await frame(lamp)).toBe(off);
+    await example.getByRole("button", { name: "保持按下" }).click();
+    const slider = example.getByRole("slider", { name: "转动旋钮" });
+    await slider.fill("2048");
+    await expect(status).toHaveText("灯已亮 · RGB 0 / 255 / 0");
+    await slider.press("End");
+    await expect(status).toHaveText("灯已亮 · RGB 0 / 0 / 255");
+    expect(await frame(lamp)).not.toBe(red);
+    await example.getByRole("button", { name: "松开按钮" }).click();
+    await expect(status).toHaveText("灯已熄灭");
+    await example.getByRole("button", { name: "灯", exact: true }).click();
+    await expect(example.getByRole("list", { name: "接线明细" })).toHaveText(
+      /VCC → 3V3.*RED → P9.*GREEN → P15.*BLUE → P23/);
+  });

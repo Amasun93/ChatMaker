@@ -129,6 +129,7 @@ def route_project_intent(request: dict[str, Any]) -> dict[str, Any]:
         }
         if ready:
             result["demos"] = [entry for entry in catalog["demos"] if entry["board"] == board_id]
+            result["libraries"] = [name for name, entry in catalog["libraries"].items() if entry["board"] == board_id]
         elif required_revision:
             result["required_revision"] = required_revision
         return result

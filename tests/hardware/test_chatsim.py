@@ -60,7 +60,9 @@ class ChatSimTests(unittest.TestCase):
         self.assertNotIn("arduino-uno-r4-wifi", r4["supported_boards"])
         starcore = execute_request({"simulation": True, "hardware": {"board": "idmc-0001-starcore-v4-2-2"}})
         self.assertTrue(starcore["success"])
-        self.assertEqual([demo["mode"] for demo in starcore["demos"]], ["program-logic"])
+        self.assertEqual([demo["id"] for demo in starcore["demos"]], ["starcore-oled-greeting", "starcore-rgb-lab"])
+        self.assertEqual({demo["mode"] for demo in starcore["demos"]}, {"program-logic"})
+        self.assertEqual(starcore["libraries"], ["starcore"])
         for revision in (None, "v1", "v2"):
             request = {"simulation": True, "hardware": {"board": "waveshare-esp32-s3-touch-lcd-2-8",
                                                         "revision": revision}}

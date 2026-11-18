@@ -1,4 +1,4 @@
-"""Open a bundled ChatSim demo or compile an Arduino UNO R3 sketch for simulation."""
+"""Open a ChatSim example or component library, or compile an UNO R3 sketch for simulation."""
 from __future__ import annotations
 
 import argparse
@@ -15,7 +15,7 @@ import webbrowser
 from .hardware.workflow import run_project
 from .progress import emit, reporting
 from .runtime_info import identity
-from .sim_catalog import load_catalog
+from .sim_catalog import ASSETS, STARCORE_BOARD, load_catalog, load_starcore_modules
 
 BOARD_ID = "arduino-uno-r3"
 FLASH_BYTES = 32 * 1024
@@ -119,6 +119,61 @@ def open_preview(state: dict, preview: dict, open_browser: bool) -> dict:
             "browser_requested": open_browser, "browser_dispatched": dispatched}
 
 
+def inline_json(data) -> str:
+    return json.dumps(data, ensure_ascii=False).replace("<", "\\u003c")
+
+
+def read_asset(name: str) -> str:
+    return ASSETS.joinpath(name).read_text(encoding="utf-8")
+
+
+def render_wasm_demo(demo: dict, program: bytes) -> str:
+    tokens = {"wasm": base64.b64encode(program).decode("ascii")}
+    if demo.get("artwork"):
+        tokens["artwork"] = read_asset(demo["artwork"])
+    if demo.get("module_artwork"):
+        parts = [part for part in load_starcore_modules() if part["id"] in demo["parts"]]
+        tokens.update(module_artwork=read_asset(demo["module_artwork"]),
+                      module_data=inline_json(parts), wiring=inline_json(demo["wiring"]))
+    if "lvgl" in demo.get("notices", []):
+        font = files("chatmaker").joinpath("cad", "assets", "OFL-1.1.txt").read_text(encoding="utf-8")
+        tokens["notices"] = escape(read_asset("lvgl-license.txt") + "\n\n" + font)
+    return Template(read_asset(demo["template"])).substitute(tokens)
+
+
+def run_library(library: str, *, runtime_root: Path, output: Path | None, open_browser: bool) -> dict:
+    catalog = load_catalog()
+    state = {"success": False, "action": "library", "library": library, "board_id": STARCORE_BOARD,
+             "chatsim_version": catalog["chatsim_version"], "code_compiled": False,
+             "preview_ready": False, "firmware_uploaded": False, "physical_effect_verified": False}
+    if library != "starcore":
+        return {**state, "stage": "source", "error": "unknown_simulation_library"}
+    if output is not None and output.suffix.lower() != ".html":
+        return {**state, "stage": "preview", "error": "output_requires_html_extension"}
+    modules = load_starcore_modules()
+    examples = []
+    try:
+        for demo in catalog["demos"]:
+            if demo["board"] != STARCORE_BOARD:
+                continue
+            program = ASSETS.joinpath(demo["program"]).read_bytes()
+            page = render_wasm_demo(demo, program)
+            examples.append({**{key: demo[key] for key in ("id", "name", "parts")},
+                             "html": base64.b64encode(page.encode("utf-8")).decode("ascii")})
+        html = Template(read_asset("starcore-library.html")).substitute(
+            version=catalog["chatsim_version"],
+            artwork=read_asset("starcore-board.js"),
+            module_artwork=read_asset("starcore-components.js"),
+            module_data=inline_json(modules),
+            examples=inline_json(examples),
+        )
+        preview = save_preview(html, runtime_root, output)
+    except (OSError, ValueError) as exc:
+        return {**state, "stage": "preview", "error": str(exc)}
+    return open_preview({**state, "module_count": len(modules), "demos": [entry["id"] for entry in examples]},
+                        preview, open_browser)
+
+
 def run_demo(demo_id: str, *, runtime_root: Path, output: Path | None, open_browser: bool) -> dict:
     state = {"success": False, "action": "demo", "demo": demo_id, "code_compiled": False,
              "preview_ready": False, "firmware_uploaded": False, "physical_effect_verified": False}
@@ -129,22 +184,12 @@ def run_demo(demo_id: str, *, runtime_root: Path, output: Path | None, open_brow
     if output is not None and output.suffix.lower() != ".html":
         return {**state, "stage": "preview", "error": "output_requires_html_extension"}
     try:
-        package = files("chatmaker")
-        assets = package.joinpath("sim_assets")
-        program = assets.joinpath(demo["program"]).read_bytes()
+        program = ASSETS.joinpath(demo["program"]).read_bytes()
         if demo["mode"] == "firmware":
             preview = render_avr_preview(program, f"{demo_id}.ino.hex", runtime_root=runtime_root,
                                          output=output, circuit=demo["circuit"])
         else:
-            template = Template(assets.joinpath(demo["template"]).read_text(encoding="utf-8"))
-            tokens = {"wasm": base64.b64encode(program).decode("ascii")}
-            if demo.get("artwork"):
-                tokens["artwork"] = assets.joinpath(demo["artwork"]).read_text(encoding="utf-8")
-            if "lvgl" in demo.get("notices", []):
-                lvgl = assets.joinpath("lvgl-license.txt").read_text(encoding="utf-8")
-                font = package.joinpath("cad", "assets", "OFL-1.1.txt").read_text(encoding="utf-8")
-                tokens["notices"] = escape(lvgl + "\n\n" + font)
-            preview = save_preview(template.substitute(tokens), runtime_root, output)
+            preview = save_preview(render_wasm_demo(demo, program), runtime_root, output)
             preview["program_sha256"] = sha256(program).hexdigest()
     except (OSError, ValueError) as exc:
         return {**state, "stage": "preview", "error": str(exc)}
@@ -194,6 +239,7 @@ def main(argv: list[str] | None = None) -> int:
     entry = parser.add_mutually_exclusive_group(required=True)
     entry.add_argument("--sketch", type=Path, help="Compile a custom UNO R3 sketch")
     entry.add_argument("--demo", help="Open a bundled demo by ID")
+    entry.add_argument("--library", choices=("starcore",), help="Open a board's component library")
     entry.add_argument("--list", action="store_true", help="List boards, parts and bundled demos")
     entry.add_argument("--version", action="store_true")
     parser.add_argument("--circuit", choices=CIRCUITS, default="button-led", help="Virtual UNO R3 circuit")
@@ -206,7 +252,8 @@ def main(argv: list[str] | None = None) -> int:
     if args.expect_revision and args.expect_revision != info["source_commit"]:
         result = {"success": False, "error": "source_revision_mismatch"}
     elif args.version:
-        result = {"success": True, "action": "version", "board_id": BOARD_ID}
+        result = {"success": True, "action": "version", "board_id": BOARD_ID,
+                  "chatsim_version": load_catalog()["chatsim_version"]}
     elif args.list:
         result = {"success": True, "action": "list", **load_catalog()}
     else:
@@ -215,6 +262,9 @@ def main(argv: list[str] | None = None) -> int:
         with reporting(args.progress):
             if args.demo is not None:
                 result = run_demo(args.demo, runtime_root=runtime_root, output=output, open_browser=args.open_browser)
+            elif args.library is not None:
+                result = run_library(args.library, runtime_root=runtime_root, output=output,
+                                     open_browser=args.open_browser)
             else:
                 result = run_simulation(args.sketch.expanduser(), runtime_root=runtime_root, output=output,
                                         open_browser=args.open_browser, circuit=args.circuit)

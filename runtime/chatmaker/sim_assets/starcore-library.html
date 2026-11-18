@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ChatSim · 星核板元件库</title>
+<style>
+  :root { font: 15px/1.55 "Microsoft YaHei", "PingFang SC", system-ui, sans-serif; color: #1b3032; background: #f3f7f6; }
+  * { box-sizing: border-box; }
+  body { margin: 0; }
+  [hidden] { display: none !important; }
+  .wrap { max-width: 1120px; width: calc(100% - 48px); margin-inline: auto; }
+  header { background: #fff; border-bottom: 1px solid #d6e2df; }
+  header .wrap { min-height: 60px; display: flex; align-items: center; gap: 14px; }
+  .brand { color: #075d59; font-size: 22px; font-weight: 800; letter-spacing: -.03em; }
+  .version { color: #496265; font: 13px ui-monospace, monospace; }
+  main { padding-block: 24px 48px; }
+  .hero {
+    display: grid; grid-template-columns: 1fr .82fr; align-items: center; gap: 40px; padding: 36px 40px;
+    border: 1px solid #ccdfda; border-radius: 20px; background: linear-gradient(120deg, #fff 5%, #e4f2ed 100%);
+  }
+  .model { margin: 0; color: #376962; font: 700 13px ui-monospace, monospace; }
+  h1 { font-size: clamp(31px, 5vw, 47px); line-height: 1.16; letter-spacing: -.045em; margin: 8px 0 10px; }
+  .intro { color: #415a5b; margin: 0 0 23px; }
+  .board { display: block; width: 100%; max-width: 392px; margin: auto; height: auto; filter: drop-shadow(0 8px 8px #23453a27); }
+  button { font: inherit; cursor: pointer; border: 1px solid #b7d0c9; border-radius: 8px; background: #fff; color: #173d3c; }
+  button:focus-visible { outline: 3px solid #307e89; outline-offset: 3px; }
+  .examples { display: flex; flex-wrap: wrap; gap: 8px; }
+  .examples button { padding: 9px 13px; min-height: 41px; font-weight: 700; font-size: 14px; }
+  .examples button:first-child { background: #075d59; border-color: #075d59; color: #fff; }
+  .examples button:hover { box-shadow: 0 2px 5px #173d3c20; }
+  .heading { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin: 27px 0 13px; }
+  h2 { font-size: 23px; margin: 0; letter-spacing: -.035em; }
+  .filters { display: flex; gap: 6px; flex-wrap: wrap; }
+  .filters button { min-height: 37px; padding: 5px 11px; font-size: 13px; }
+  .filters button[aria-pressed=true] { background: #dff2eb; border-color: #82b5a8; color: #084c49; font-weight: 700; }
+  .grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 13px; }
+  .card { overflow: hidden; background: #fff; border: 1px solid #d5e2df; border-radius: 13px; }
+  .drawing {
+    height: 137px; display: grid; place-items: center;
+    background: #edf4f2 radial-gradient(#bfceca 1px, transparent 1.15px) center / 15px 15px;
+  }
+  .drawing canvas { display: block; width: auto; height: auto; max-width: calc(100% - 18px); max-height: 108px; object-fit: contain; }
+  .detail { padding: 12px 14px 14px; }
+  .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; justify-content: space-between; }
+  .code { color: #526867; font: 700 12px ui-monospace, monospace; }
+  .tag { border-radius: 5px; background: #eef2f1; color: #46615e; padding: 2px 6px; font-size: 11px; white-space: nowrap; }
+  [data-kind=interactive] .tag { background: #dff4e7; color: #1d5c3d; }
+  h3 { font-size: 16px; margin: 6px 0 3px; }
+  .pins { margin: 0; color: #345958; font: 12px/1.45 ui-monospace, monospace; overflow-wrap: anywhere; }
+  .measure { margin: 6px 0 0; color: #546968; font-size: 12px; }
+  dialog { width: min(1160px, 100% - 24px); max-width: none; padding: 0; border: 1px solid #d0ddda; border-radius: 14px; }
+  dialog::backdrop { background: #112b2b88; }
+  dialog form { display: flex; justify-content: flex-end; padding: 8px; }
+  dialog button { padding: 6px 12px; }
+  iframe { display: block; width: 100%; height: min(78vh, 760px); border: 0; }
+  @media (max-width: 850px) { .grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+  @media (max-width: 610px) {
+    .wrap { width: calc(100% - 24px); }
+    .hero { grid-template-columns: 1fr; gap: 20px; padding: 20px; }
+    .board { max-width: 292px; }
+    .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+    .drawing { height: 105px; }
+    .drawing canvas { max-height: 85px; }
+    .detail { padding: 9px; }
+  }
+</style>
+</head>
+<body>
+<header><div class="wrap"><span class="brand">ChatSim</span><span class="version">$version</span></div></header>
+<main class="wrap">
+  <div class="hero">
+    <div>
+      <p class="model">IDMC-0001 · v4.2.2</p>
+      <h1>星核板元件库</h1>
+      <p class="intro">从接好的课堂实验开始，也可以按模块编号查外形和引脚。引脚名称按资料列出，实物插头的线序请核对丝印。</p>
+      <div class="examples" aria-label="课堂实验"></div>
+    </div>
+    <canvas class="board" width="1640" height="1120" role="img" aria-label="星核板 v4.2.2 正面"></canvas>
+  </div>
+  <div class="heading">
+    <h2 id="module-count" aria-live="polite">配套元件</h2>
+    <div class="filters" aria-label="筛选元件">
+      <button type="button" data-filter="all" aria-pressed="true">全部</button>
+      <button type="button" data-filter="interactive" aria-pressed="false">可互动</button>
+      <button type="button" data-filter="appearance" aria-pressed="false">外观参考</button>
+      <button type="button" data-filter="outline" aria-pressed="false">外形与孔位</button>
+    </div>
+  </div>
+  <section class="grid" aria-labelledby="module-count"></section>
+</main>
+<dialog aria-label="ChatSim 课堂实验">
+  <form method="dialog"><button type="submit">返回元件库</button></form>
+  <iframe title="ChatSim 课堂实验" sandbox="allow-scripts"></iframe>
+</dialog>
+<template id="module-card">
+  <article class="card">
+    <div class="drawing"><canvas aria-hidden="true"></canvas></div>
+    <div class="detail"><div class="meta"><span class="code"></span><span class="tag"></span></div>
+    <h3></h3><p class="pins"></p><p class="measure"></p></div>
+  </article>
+</template>
+<script>
+$artwork
+$module_artwork
+(() => {
+  const modules = $module_data;
+  const examples = $examples;
+  const labels = { interactive: "可互动", appearance: "外观参考", outline: "外形与孔位" };
+  const dialog = document.querySelector("dialog");
+  const preview = dialog.querySelector("iframe");
+  const templates = new Map();
+  const names = new Set(examples.flatMap(example => example.parts));
+  const filters = document.querySelectorAll("[data-filter]");
+  StarcoreArtwork.drawBoard(document.querySelector(".board"));
+
+  for (const example of examples) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.textContent = example.name;
+    button.addEventListener("click", () => {
+      if (!templates.has(example.id)) {
+        const bytes = Uint8Array.from(atob(example.html), character => character.charCodeAt(0));
+        templates.set(example.id, new TextDecoder().decode(bytes));
+      }
+      preview.title = example.name;
+      preview.srcdoc = templates.get(example.id);
+      dialog.showModal();
+    });
+    document.querySelector(".examples").append(button);
+  }
+  dialog.addEventListener("close", () => preview.removeAttribute("srcdoc"));
+
+  const grid = document.querySelector(".grid");
+  for (const module of modules) {
+    const card = document.querySelector("#module-card").content.firstElementChild.cloneNode(true);
+    const kind = names.has(module.id) ? "interactive" : module.art === "outline" ? "outline" : "appearance";
+    card.dataset.kind = kind;
+    card.dataset.part = module.id;
+    card.querySelector(".code").textContent = module.code;
+    card.querySelector(".tag").textContent = labels[kind];
+    card.querySelector("h3").textContent = module.name;
+    card.querySelector(".pins").textContent = module.pins.join(" · ") || "引脚资料待核对";
+    const dimensions = module.size_mm.map(value => Number(value.toFixed(2))).join(" × ");
+    card.querySelector(".measure").textContent = dimensions + " mm · " + module.holes_mm.length + " 个孔位";
+    const canvas = card.querySelector("canvas");
+    [canvas.width, canvas.height] = module.size_mm.map(value => Math.round((value + 2.8) * 10));
+    StarcoreComponents.draw(canvas, module);
+    grid.append(card);
+  }
+
+  function filter(value) {
+    for (const button of filters) button.setAttribute("aria-pressed", String(button.dataset.filter === value));
+    let shown = 0;
+    for (const card of grid.children) {
+      card.hidden = value !== "all" && card.dataset.kind !== value;
+      if (!card.hidden) shown++;
+    }
+    document.querySelector("#module-count").textContent = "配套元件 · " + shown + " 项";
+  }
+  for (const button of filters) button.addEventListener("click", () => filter(button.dataset.filter));
+  filter("all");
+})();
+</script>
+</body>
+</html>

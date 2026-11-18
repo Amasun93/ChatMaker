@@ -1,5 +1,6 @@
 {
   "schema_version": 1,
+  "chatsim_version": "1.0.0",
   "boards": [
     {"id": "arduino-uno-r3", "name": "Arduino UNO R3", "series": "arduino", "appearance": "wokwi-arduino-uno", "onboard_parts": ["uno-d13-led"], "recommended_parts": ["momentary-button-two-pin", "ssd1306-i2c-128x64-module"]},
     {"id": "waveshare-esp32-s3-touch-lcd-2-8", "name": "微雪 ESP32-S3-Touch-LCD-2.8 V2", "series": "esp32", "revision": "v2", "appearance": "waveshare-touch.html", "onboard_parts": ["waveshare-v2-touch-lcd"], "recommended_parts": []},
@@ -13,18 +14,29 @@
     "starcore-button-a": {"name": "星核板板载 A 键", "availability": "interactive", "appearance": "starcore-board.js"},
     "starcore-button-b": {"name": "星核板板载 B 键", "availability": "reference"},
     "starcore-buzzer": {"name": "星核板板载无源蜂鸣器", "availability": "reference"},
-    "starcore-qmi8658": {"name": "星核板板载 QMI8658", "availability": "reference"},
-    "idmd-0021-starcore-oled-1-3": {"name": "IDMD-0021 1.3 寸 OLED", "availability": "interactive", "appearance": "starcore-board.js", "catalog_id": "idmd-0021-starcore-oled-1-3"},
-    "idms-0001-starcore-button": {"name": "IDMS-0001 外接三线按钮", "availability": "reference", "catalog_id": "idms-0001-starcore-button"},
-    "idms-0003-starcore-potentiometer": {"name": "IDMS-0003 电位器", "availability": "reference", "catalog_id": "idms-0003-starcore-potentiometer"},
-    "idms-0008-starcore-dht11": {"name": "IDMS-0008 温湿度", "availability": "reference", "catalog_id": "idms-0008-starcore-dht11"},
-    "idms-0009-starcore-ultrasonic": {"name": "IDMS-0009 超声波", "availability": "reference", "catalog_id": "idms-0009-starcore-ultrasonic"},
-    "idmd-0001-starcore-rgb-light": {"name": "IDMD-0001 共阳 RGB 灯", "availability": "reference", "catalog_id": "idmd-0001-starcore-rgb-light"}
+    "starcore-qmi8658": {"name": "星核板板载 QMI8658", "availability": "reference"}
   },
   "demos": [
     {"id": "uno-r3-button-led", "name": "按住按钮亮灯", "board": "arduino-uno-r3", "mode": "firmware", "parts": ["momentary-button-two-pin", "uno-d13-led"], "sketch": "examples/chatsim/uno-r3-button-led", "circuit": "button-led", "program": "uno-r3-button-led.hex"},
     {"id": "uno-r3-button-oled", "name": "按住按钮在 OLED 显示你好", "board": "arduino-uno-r3", "mode": "firmware", "parts": ["momentary-button-two-pin", "ssd1306-i2c-128x64-module"], "sketch": "examples/chatsim/uno-r3-button-oled", "circuit": "button-oled", "program": "uno-r3-button-oled.hex"},
     {"id": "waveshare-v2-touch-greeting", "name": "按住屏幕按钮问好", "board": "waveshare-esp32-s3-touch-lcd-2-8", "mode": "interface", "parts": ["waveshare-v2-touch-lcd"], "sketch": "examples/chatsim/waveshare-v2-touch-greeting", "template": "waveshare-touch.html", "program": "waveshare-touch.wasm", "notices": ["lvgl"]},
-    {"id": "starcore-oled-greeting", "name": "按住星核板 A 键在 OLED 问好", "board": "idmc-0001-starcore-v4-2-2", "mode": "program-logic", "parts": ["starcore-button-a", "idmd-0021-starcore-oled-1-3"], "sketch": "examples/chatsim/starcore-oled-greeting", "template": "starcore-oled.html", "artwork": "starcore-board.js", "program": "starcore-oled.wasm"}
+    {"id": "starcore-oled-greeting", "name": "按住星核板 A 键在 OLED 问好", "board": "idmc-0001-starcore-v4-2-2", "mode": "program-logic", "parts": ["starcore-button-a", "idmd-0021-starcore-oled-1-3"], "sketch": "examples/chatsim/starcore-oled-greeting", "template": "starcore-oled.html", "artwork": "starcore-board.js", "program": "starcore-oled.wasm"},
+    {
+      "id": "starcore-rgb-lab",
+      "name": "按住外接按钮，转旋钮调 RGB 灯色",
+      "board": "idmc-0001-starcore-v4-2-2",
+      "mode": "program-logic",
+      "parts": ["idms-0001-starcore-button", "idms-0003-starcore-potentiometer", "idmd-0001-starcore-rgb-light"],
+      "sketch": "examples/chatsim/starcore-rgb-lab",
+      "template": "starcore-rgb-lab.html",
+      "artwork": "starcore-board.js",
+      "module_artwork": "starcore-components.js",
+      "program": "starcore-rgb-lab.wasm",
+      "wiring": {
+        "idms-0001-starcore-button": {"VCC": "3V3", "GND": "GND", "SIG": "P8"},
+        "idms-0003-starcore-potentiometer": {"VCC": "3V3", "GND": "GND", "SIG": "P0"},
+        "idmd-0001-starcore-rgb-light": {"VCC": "3V3", "RED": "P9", "GREEN": "P15", "BLUE": "P23"}
+      }
+    }
   ]
 }

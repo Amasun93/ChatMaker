@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="zh-CN" data-simulation="program-logic">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ChatSim · 星核板按钮与调色灯</title>
+<style>
+  :root { font: 15px/1.55 "Microsoft YaHei", "PingFang SC", system-ui, sans-serif; color: #203537; background: #f3f7f6; }
+  * { box-sizing: border-box; }
+  body { margin: 0; }
+  .wrap { width: min(1110px, calc(100% - 42px)); margin: auto; }
+  header { background: #fff; border-bottom: 1px solid #d9e4e0; }
+  header .wrap { display: flex; align-items: center; gap: 12px; min-height: 54px; }
+  .brand { color: #075d59; font-size: 21px; font-weight: 800; }
+  .model { color: #536d6c; font: 12px ui-monospace, monospace; }
+  main { padding-block: 20px 32px; }
+  h1 { font-size: clamp(22px, 4.1vw, 36px); margin: 0 0 3px; letter-spacing: -.035em; }
+  .intro { margin: 0 0 16px; color: #415b5b; }
+  .layout { display: grid; grid-template-columns: minmax(0, 1fr) 276px; gap: 15px; align-items: start; }
+  .panel, aside { border: 1px solid #d3e0dd; border-radius: 13px; background: #fff; overflow: hidden; }
+  .viewport {
+    position: relative; overflow: hidden; width: 100%; aspect-ratio: 760 / 540;
+    background: #edf4f2 radial-gradient(#c1d1cb 1px, transparent 1.15px) center / 16px 16px;
+  }
+  .schematic {
+    position: absolute; width: 760px; height: 540px; left: 50%; top: 50%;
+    transform: translate(-50%, -50%) scale(var(--scale, 0));
+  }
+  #board-art { position: absolute; left: 126px; top: 15px; width: 508px; height: auto; }
+  .device { position: absolute; top: 389px; width: 119px; margin: 0; }
+  .device canvas { display: block; width: 100%; height: auto; filter: drop-shadow(0 4px 4px #2037353b); }
+  .device figcaption { margin-top: 4px; text-align: center; white-space: nowrap; font-weight: 700; }
+  #button-module { left: 107px; }
+  #knob-module { left: 320px; }
+  #rgb-module { left: 533px; }
+  .wires { position: absolute; inset: 0; pointer-events: none; }
+  button { font: inherit; color: #164945; cursor: pointer; }
+  #press {
+    position: absolute; inset: 0 0 auto; height: 119px; border: 0; background: transparent;
+    touch-action: none; -webkit-tap-highlight-color: transparent; user-select: none;
+  }
+  #press::after {
+    content: ""; position: absolute; left: 50%; top: 50%; width: 46px; height: 46px;
+    transform: translate(-50%, -50%); border: 2px solid #82e3f1; border-radius: 50%; background: #75cef222;
+  }
+  #press[aria-pressed=true]::after, #press:hover::after { background: #8de1ed55; }
+  #press:disabled { cursor: wait; }
+  button:focus-visible, input:focus-visible { outline: 3px solid #367d8e; outline-offset: 2px; }
+  #press:focus-visible { outline-offset: -6px; border-radius: 10px; }
+  .controls { display: grid; grid-template-columns: 1fr 1.6fr; align-items: center; gap: 14px; padding: 13px 15px 7px; }
+  #hold { min-height: 41px; border: 1px solid #adcec5; border-radius: 7px; background: #def1eb; font-weight: 700; }
+  #hold[aria-pressed=true] { color: #fff; background: #075d59; }
+  label { font-weight: 700; }
+  input { display: block; width: 100%; margin: 4px 0 0; accent-color: #075d59; min-height: 22px; }
+  #state { margin: 0; padding: 2px 15px 11px; color: #405859; }
+  aside { padding: 14px; }
+  h2 { font-size: 17px; margin: 0 0 8px; }
+  .tabs { display: flex; gap: 5px; }
+  .tabs button { flex: 1; min-height: 35px; padding: 3px 6px; border-radius: 6px; background: #fff; border: 1px solid #bfd3cf; }
+  .tabs button[aria-pressed=true] { background: #dbf0e9; border-color: #78a99e; font-weight: 700; }
+  ul { list-style: none; margin: 10px 0; padding: 0; }
+  li { display: flex; align-items: center; gap: 8px; margin: 5px 0; padding: 6px 7px; border-radius: 5px; background: #f0f5f3; font: 13px ui-monospace, monospace; }
+  li::before { content: ""; border: 1px solid #26323837; border-radius: 4px; height: 5px; width: 16px; background: var(--wire); }
+  .hint { font-size: 13px; margin: 8px 0 0; color: #465d5f; }
+  @media (max-width: 760px) {
+    .wrap { width: min(630px, calc(100% - 24px)); }
+    .layout { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+    main { padding-top: 14px; }
+  }
+</style>
+</head>
+<body>
+<header><div class="wrap"><span class="brand">ChatSim</span><span class="model">IDMC-0001 · v4.2.2</span></div></header>
+<main class="wrap">
+  <h1>星核板按钮与调色灯</h1>
+  <p class="intro">按住外接按钮亮灯，调旋钮换颜色。也可以先点「保持按下」，空出手来调旋钮。</p>
+  <div class="layout">
+    <section class="panel" aria-label="按钮、旋钮与灯的模拟电路">
+      <div class="viewport">
+        <div class="schematic">
+          <canvas id="board-art" width="1640" height="1120" role="img" aria-label="星核板 v4.2.2 正面"></canvas>
+          <figure class="device" id="button-module">
+            <canvas width="330" height="330" aria-hidden="true"></canvas>
+            <button type="button" id="press" aria-label="按住外接按钮" aria-pressed="false" disabled></button>
+            <figcaption>按钮 · IDMS-0001</figcaption>
+          </figure>
+          <figure class="device" id="knob-module">
+            <canvas width="330" height="330" aria-hidden="true"></canvas>
+            <figcaption>旋钮 · IDMS-0003</figcaption>
+          </figure>
+          <figure class="device" id="rgb-module">
+            <canvas width="330" height="330" id="rgb" role="img" aria-label="RGB 灯"></canvas>
+            <figcaption>RGB 灯 · IDMD-0001</figcaption>
+          </figure>
+          <canvas class="wires" width="760" height="540" aria-hidden="true"></canvas>
+        </div>
+      </div>
+      <div class="controls">
+        <button id="hold" type="button" aria-pressed="false" disabled>保持按下</button>
+        <label>转动旋钮 <input id="knob" type="range" min="0" max="4095" step="1" value="0" disabled></label>
+      </div>
+      <p id="state" role="status">正在加载实验。</p>
+    </section>
+    <aside>
+      <h2>元件接线</h2>
+      <div class="tabs" aria-label="选要查看的线路"></div>
+      <ul aria-label="接线明细"></ul>
+      <p class="hint">点击一个元件，图中就会显示它的线。模块端是示意线序，接实物前核对接口丝印；供电请对同一组 3V3 和 GND。</p>
+      <p class="hint">浏览器运行和星核板程序共用的调色代码。</p>
+    </aside>
+  </div>
+</main>
+<script>
+$artwork
+$module_artwork
+(() => {
+  const modules = $module_data;
+  const wiring = $wiring;
+  const ids = Object.keys(wiring);
+  const layout = [["button", 107], ["knob", 320], ["rgb", 533]];
+  const labels = ["按钮", "旋钮", "灯"];
+  const colors = { VCC: "#be3f48", GND: "#3a4a4d", SIG: "#16856d", RED: "#bd5331", GREEN: "#287447", BLUE: "#3869b6" };
+  const boardCanvas = document.querySelector("#board-art");
+  const boardScale = 508 / StarcoreArtwork.board.width;
+  const origin = StarcoreArtwork.boardOrigin;
+  const viewport = document.querySelector(".viewport");
+  const wires = document.querySelector(".wires").getContext("2d");
+  const tabs = document.querySelector(".tabs");
+  const connections = document.querySelector("aside ul");
+  const press = document.querySelector("#press");
+  const hold = document.querySelector("#hold");
+  const knob = document.querySelector("#knob");
+  const status = document.querySelector("#state");
+  let pointer = false;
+  let keyboard = false;
+  let latched = false;
+  let program;
+
+  StarcoreArtwork.drawBoard(boardCanvas);
+  new ResizeObserver(() => viewport.style.setProperty("--scale", viewport.clientWidth / 760)).observe(viewport);
+
+  function showWiring(index) {
+    const [, left] = layout[index];
+    const rows = Object.entries(wiring[ids[index]]);
+    wires.clearRect(0, 0, 760, 540);
+    connections.replaceChildren();
+    for (const [i, [terminal, pin]] of rows.entries()) {
+      const socket = StarcoreArtwork.sockets.find(entry => entry.id === pin.toLowerCase());
+      const header = StarcoreArtwork.pins.find(entry => entry.label === pin);
+      const point = socket ?? { x: header.x, y: 407 };
+      const x = 126 + (point.x - origin.x) * boardScale;
+      const y = 15 + (point.y - origin.y) * boardScale;
+      const endX = left + 113;
+      const endY = 448.5 + (i - (rows.length - 1) / 2) * 7.6;
+      const lane = 350 + i * 9;
+      const elbow = endX + 13 + i * 8;
+      const path = [[x, y], ...(socket ? [[643 + i * 8, y]] : []),
+        [socket ? 643 + i * 8 : x, lane], [elbow, lane], [elbow, endY], [endX, endY]];
+      wires.beginPath();
+      for (const [j, [px, py]] of path.entries()) {
+        if (j === 0) wires.moveTo(px, py);
+        else wires.lineTo(px, py);
+      }
+      wires.lineJoin = "round";
+      wires.lineWidth = 6;
+      wires.strokeStyle = "#f8fffb";
+      wires.stroke();
+      wires.lineWidth = 3;
+      wires.strokeStyle = colors[terminal];
+      wires.stroke();
+      for (const [px, py] of [[x, y], [endX, endY]]) {
+        wires.beginPath();
+        wires.arc(px, py, 3.5, 0, 2 * Math.PI);
+        wires.fillStyle = colors[terminal];
+        wires.fill();
+      }
+      const row = document.createElement("li");
+      row.textContent = terminal + " → " + pin + (header ? " · S 排" : "");
+      row.style.setProperty("--wire", colors[terminal]);
+      connections.append(row);
+    }
+    for (const [i, tab] of Array.from(tabs.children).entries()) {
+      tab.setAttribute("aria-pressed", String(index === i));
+    }
+  }
+
+  function update() {
+    const pressed = pointer || keyboard || latched;
+    const sample = Number(knob.value);
+    const pwm = program ? program.starcore_light_pwm(Number(pressed), sample) : 0xffffff;
+    const color = [16, 8, 0].map(shift => 255 - ((pwm >> shift) & 255));
+    for (const [i, [key]] of layout.entries()) {
+      StarcoreComponents.draw(document.querySelector("#" + key + "-module canvas"),
+        modules.find(module => module.id === ids[i]), { pressed, sample, color });
+    }
+    press.setAttribute("aria-pressed", String(pressed));
+    hold.setAttribute("aria-pressed", String(latched));
+    hold.textContent = latched ? "松开按钮" : "保持按下";
+    if (program) {
+      status.textContent = color.some(Boolean) ? "灯已亮 · RGB " + color.join(" / ") : "灯已熄灭";
+      document.querySelector("#rgb").setAttribute("aria-label", status.textContent);
+    }
+  }
+
+  for (const [index, label] of labels.entries()) {
+    const tab = document.createElement("button");
+    tab.type = "button";
+    tab.textContent = label;
+    tab.addEventListener("click", () => showWiring(index));
+    tabs.append(tab);
+  }
+  press.addEventListener("pointerdown", event => {
+    if (!event.isPrimary || event.button !== 0) return;
+    latched = false;
+    pointer = true;
+    press.setPointerCapture(event.pointerId);
+    update();
+  });
+  for (const type of ["pointerup", "pointercancel", "lostpointercapture"]) {
+    press.addEventListener(type, event => {
+      if (!event.isPrimary) return;
+      pointer = false;
+      update();
+    });
+  }
+  function activationKey(event) { return event.key === " " || event.key === "Enter"; }
+  press.addEventListener("keydown", event => {
+    if (!activationKey(event)) return;
+    event.preventDefault();
+    latched = false;
+    keyboard = true;
+    update();
+  });
+  window.addEventListener("keyup", event => {
+    if (!keyboard || !activationKey(event)) return;
+    keyboard = false;
+    update();
+  });
+  window.addEventListener("blur", () => {
+    keyboard = pointer = false;
+    update();
+  });
+  hold.addEventListener("click", () => { latched = !latched; update(); });
+  knob.addEventListener("input", update);
+  showWiring(0);
+  update();
+
+  const bytes = Uint8Array.from(atob("$wasm"), character => character.charCodeAt(0));
+  WebAssembly.instantiate(bytes, {}).then(({ instance }) => {
+    program = instance.exports;
+    if (program._initialize) program._initialize();
+    press.disabled = hold.disabled = knob.disabled = false;
+    update();
+  }).catch(() => { status.textContent = "程序加载失败，请重新生成实验页面。"; });
+})();
+</script>
+</body>
+</html>
