@@ -10,6 +10,9 @@ import os
 from pathlib import Path
 import re
 import subprocess
+import sys
+import tempfile
+import time
 import tomllib
 from urllib.request import Request, urlopen
 
@@ -24,6 +27,8 @@ SKILL_FILE_TYPES = {'.md', '.py', '.yaml', '.yml', '.json'}
 PACKAGE_INPUTS = ('pyproject.toml', 'distribution/core-runtime/requirements.lock')
 REVISION = re.compile(r'[0-9a-f]{40}')
 REFRESH_PENDING = '.chatmaker-runtime-refresh-pending'
+STARTUP_TTL = 24 * 60 * 60
+STARTUP_RETRY = 15 * 60
 
 
 def command(args, *, env=None, timeout=10):
@@ -267,7 +272,88 @@ def apply_update(root, target, runtime, current_runtime):
     return before != revision, after
 
 
+def startup_cache(args):
+    if os.name == 'nt':
+        base = Path(os.environ.get('LOCALAPPDATA') or Path.home() / 'AppData/Local')
+    elif sys.platform == 'darwin':
+        base = Path.home() / 'Library/Caches'
+    else:
+        base = Path(os.environ.get('XDG_CACHE_HOME') or Path.home() / '.cache')
+    paths = [str(path.expanduser().absolute()) if path else '' for path in
+             (args.skill_dir, args.checkout, args.runtime_root)]
+    fingerprint = hashlib.sha256(json.dumps(paths).encode()).hexdigest()[:24]
+    return base / 'ChatMaker' / 'version-check' / f'{fingerprint}.json'
+
+
+def save_startup(cache, report):
+    cache.parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.NamedTemporaryFile(dir=cache.parent, delete=False, mode='w', encoding='utf-8') as handle:
+        temporary = Path(handle.name)
+        json.dump({**report, 'checked_at': time.time()}, handle)
+    try:
+        temporary.replace(cache)
+    finally:
+        temporary.unlink(missing_ok=True)
+
+
+def startup(args):
+    cache = startup_cache(args)
+    skill = args.skill_dir.expanduser().absolute()
+    skill_stamp = []
+    for path in (skill / 'SKILL.md', skill / 'scripts/chatmaker_version.py'):
+        try:
+            info = path.stat()
+            skill_stamp.append([info.st_mtime_ns, info.st_size])
+        except FileNotFoundError:
+            skill_stamp.append(None)
+    if args.action == '_startup-worker':
+        try:
+            report = run(argparse.Namespace(**{**vars(args), 'action': 'check-update'}))
+            root = checkout_for_skill(skill)
+            if report.get('update_available') and root and (root / '.git').exists():
+                # A dirty checkout or a lagging mirror is not a newer release.
+                head = git(root, 'rev-parse', 'HEAD')
+                target = report['target']['commit']
+                if not head.returncode and (head.stdout.strip() == target or
+                                            not git(root, 'merge-base', '--is-ancestor', target, 'HEAD').returncode):
+                    report.update(status='no_newer_source', update_available=False)
+        except (OSError, ValueError, KeyError, subprocess.SubprocessError):
+            report = {'success': False, 'status': 'startup_check_unavailable', 'update_available': None}
+        save_startup(cache, {**report, 'skill_stamp': skill_stamp})
+        return report
+
+    empty = {'success': True, 'status': 'startup_check_not_run', 'update_available': None}
+    try:
+        cached = json.loads(cache.read_text(encoding='utf-8'))
+        ttl = STARTUP_TTL if cached['status'] in {'update_checked', 'no_newer_source'} else STARTUP_RETRY
+        if cached['status'] == 'startup_check_pending':
+            ttl = 120
+        if cached.get('skill_stamp') == skill_stamp and 0 <= time.time() - cached['checked_at'] < ttl:
+            return {**cached, 'success': True}
+    except (OSError, ValueError, KeyError, TypeError):
+        pass
+    if args.action == 'startup-status':
+        return empty
+
+    worker = [sys.executable, '-I', '-B', str(Path(__file__).resolve()), '_startup-worker']
+    for name, path in (('--skill-dir', args.skill_dir), ('--checkout', args.checkout),
+                       ('--runtime-root', args.runtime_root)):
+        if path:
+            worker.extend((name, str(path.expanduser().absolute())))
+    pending = {**empty, 'status': 'startup_check_pending'}
+    detached = {'creationflags': subprocess.CREATE_NO_WINDOW} if os.name == 'nt' else {'start_new_session': True}
+    try:
+        save_startup(cache, {**pending, 'skill_stamp': skill_stamp})
+        subprocess.Popen(worker, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
+                         stderr=subprocess.DEVNULL, **detached)
+    except OSError:
+        return {**empty, 'status': 'startup_check_unavailable'}
+    return pending
+
+
 def run(args):
+    if args.action in {'startup-check', 'startup-status', '_startup-worker'}:
+        return startup(args)
     # Keep the host-visible path so separate Skill directory links stay visible.
     skill = args.skill_dir.expanduser().absolute()
     if not (skill / 'SKILL.md').is_file():
@@ -317,13 +403,18 @@ def run(args):
         if skill_match is not True:
             return {**report, 'success': False, 'status': 'skill_verification_needed'}
         status = 'updated' if report.get('source_updated') else 'current'
+        try:
+            startup_cache(args).unlink(missing_ok=True)
+        except OSError:
+            pass
         return {**report, 'success': True, 'status': status}
     return {**report, 'success': True, 'status': 'update_checked'}
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('action', choices=('self-check', 'check-update', 'update'))
+    parser.add_argument('action', choices=('self-check', 'check-update', 'update',
+                                          'startup-check', 'startup-status', '_startup-worker'))
     parser.add_argument('--skill-dir', type=Path, default=SKILL)
     parser.add_argument('--checkout', type=Path, help='ChatMaker source directory, when separate from the loaded Skill')
     parser.add_argument('--runtime-root', type=Path, help='Runtime directory of the tool this session uses')

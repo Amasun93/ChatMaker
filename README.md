@@ -57,7 +57,7 @@ https://gitee.com/amasun93/ChatMaker
 
 SkillHub、WorkBuddy、Codex 或其他支持 GitHub Skill 的宿主，均使用宿主自己的 Skill 安装入口。纯生成能力只读取 Skill 文件，不要求 Python、Mind+ 或 OpenSCAD。
 
-在 Windows 上需要本地 CLI 时，源码目录里的脚本优先复用已有 Python 3.11。缺少时把固定便携 Python 安装在当前项目的 `.chatmaker-runtime`，国内镜像优先：
+需要本地工具时，ChatMaker 先用已经准备好的项目环境，其次用电脑上兼容的 Python。两者都用不了时，才准备项目内的便携 Python，优先用已校验的缓存和国内镜像。Windows 可以在源码目录查看准备计划并执行。
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/setup_local_runtime.ps1 -CheckOnly

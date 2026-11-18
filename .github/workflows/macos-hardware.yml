@@ -49,6 +49,16 @@ jobs:
           bash scripts/setup_local_runtime.sh --check-only
           bash scripts/setup_local_runtime.sh
           python3 scripts/workbuddy_preflight.py --expected-revision "$GITHUB_SHA"
+      - name: Verify portable Python setup without Python on PATH
+        run: |
+          tools=$(mktemp -d "$RUNNER_TEMP/chatmaker-setup-tools.XXXXXX")
+          for name in dirname uname mkdir rmdir mktemp mv rm; do
+            ln -s "$(command -v "$name")" "$tools/$name"
+          done
+          portable_runtime="$RUNNER_TEMP/ChatMaker Portable Runtime"
+          PATH="$tools" CHATMAKER_RUNTIME_ROOT="$portable_runtime" /bin/bash scripts/setup_local_runtime.sh > "$RUNNER_TEMP/chatmaker-portable-result.json"
+          python3 -c 'import json, sys; r = json.load(open(sys.argv[1])); assert r["success"] and r["mode"] == "portable-python", r' "$RUNNER_TEMP/chatmaker-portable-result.json"
+          CHATMAKER_RUNTIME_ROOT="$portable_runtime" "$portable_runtime/venv/bin/python3" scripts/workbuddy_preflight.py --expected-revision "$GITHUB_SHA"
       - name: Run hardware regression tests
         run: |
           "$CHATMAKER_RUNTIME_ROOT/venv/bin/python3" -m unittest \

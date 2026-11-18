@@ -17,11 +17,13 @@ Local execution is an optional second layer. When the AI workspace can run local
 
 ## Check or update ChatMaker
 
-For requests about ChatMaker's installed version, checking for updates, or updating ChatMaker, read [version-and-update.md](references/version-and-update.md) before routing a project. Inspect the Skill this session actually loaded and the local tool it will use. An update request authorizes updating ChatMaker. A check request is read-only. Ordinary maker requests can proceed directly.
+On the first ChatMaker use in a conversation, start the background check in [version-and-update.md](references/version-and-update.md) and continue the user's project immediately. If a new version is found, ask once whether to update and wait for a clear yes before making changes. Declining or postponing an update leaves the current project usable. For an explicit version, check, or update request, follow the same reference.
 
 ## Prepare local environments progressively
 
-When a local action needs Python, Node.js, a board toolchain, or another runtime, reuse a valid project-local environment first. On macOS, use `bash scripts/setup_local_runtime.sh` from the ChatMaker source checkout with Python 3.11 or newer. Use `--check-only` for a plan and run the checkout's `.chatmaker-runtime/bin/chatmaker-hardware` after setup. Apple silicon needs Rosetta for Arduino's Intel helper tools. See `docs/verification/workbuddy-retest-macos.md` for supported boards and the retest.
+When a local action needs Python, reuse a working ChatMaker runtime first, then use compatible Python already on the computer to create a project-local environment. If it is missing or cannot create a working environment, reuse the cached portable Python or download the verified build for this platform. For a source checkout, the setup scripts accept compatible CPython 3.11 or newer. The Windows prebuilt Core wheelhouse requires CPython 3.11 x64.
+
+On macOS, use `bash scripts/setup_local_runtime.sh` from the source checkout. Use `--check-only` for a plan and run the checkout's `.chatmaker-runtime/bin/chatmaker-hardware` after setup. Apple silicon needs Rosetta for Arduino's Intel helper tools. See `docs/verification/workbuddy-retest-macos.md` for supported boards and the retest.
 
 On Windows, reuse the checkout's local CLI or the pinned ChatMaker environment bundle. Use `chatmaker-install local` when you need to diagnose local capabilities. If the local CLI is missing and the ChatMaker source/Core bundle is available, inspect the setup plan:
 

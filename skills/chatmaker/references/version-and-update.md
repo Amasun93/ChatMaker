@@ -2,6 +2,16 @@
 
 Use the directory of the `SKILL.md` actually loaded for this conversation. Run `scripts/chatmaker_version.py` from that Skill directory with an available Python 3.11 or newer. Reuse the project's Python if the runtime is already prepared. The script uses Python's standard library and can check the Skill before any board tools are installed.
 
+## Check in the background during project work
+
+On first use in a conversation, run `python -I <loaded-skill-directory>/scripts/chatmaker_version.py startup-check` with a Python you already know works. It returns a cached result or starts a detached read-only check. Continue the project without waiting. If it reports `startup_check_pending`, read the result with `startup-status` at the next natural pause or reply, using the same paths. A pending or unavailable result needs no status message and no polling loop. If the user explicitly asks for an offline self-check, use `self-check` directly.
+
+When `update_available` is true, briefly show the available version or commit, link the changelog, and ask whether to update now. Ask once per target in a conversation. Continue the project if the user skips or declines the update. Run `update` only when the user explicitly requests it or agrees to the proposed update.
+
+When an existing Python is unavailable, use the host's repository tools in parallel if the host can identify the loaded revision and check the official source. Skip the automatic check if the host cannot do so without interrupting the project. A version check never needs a Python installation, board tools, or a serial scan.
+
+## Respond to an explicit version request
+
 | User request | Action |
 | --- | --- |
 | “版本自检”, “检查更新”, “我用的是最新版吗” | `check-update` |

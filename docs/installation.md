@@ -45,9 +45,11 @@ python scripts/cleanup_legacy_mcp.py --config "$env:USERPROFILE\.workbuddy\.mcp.
 
 ## 需要编译、烧录、串口或真实渲染时
 
-macOS 的 Arduino AVR 和 ESP32 项目可从源码目录运行 `bash scripts/setup_local_runtime.sh`，再使用 `.chatmaker-runtime/bin/chatmaker-hardware`。先准备 Python 3.11 或更高版本。Apple 芯片的 Mac 还需要 Rosetta。板型、版本预检和烧录步骤见 [WorkBuddy 的 Mac 复测说明](verification/workbuddy-retest-macos.md)。
+本地工具优先复用当前项目的 ChatMaker 环境。首次准备时，源码安装会尝试用电脑已有的兼容 CPython 3.11 或更高版本创建项目内环境。缺少 Python、版本不合适或创建环境失败时，才会复用或下载项目内的便携 Python。Windows 预编译 Core wheelhouse 使用 CPython 3.11 x64。
 
-Windows 本地执行统一使用 `chatmaker-*` CLI。源码目录的脚本先复用电脑里可用的 Python 3.11，没有时把固定的便携 Python 下载到当前项目：
+macOS 的 Arduino AVR 和 ESP32 项目可从源码目录运行 `bash scripts/setup_local_runtime.sh`，再使用 `.chatmaker-runtime/bin/chatmaker-hardware`。macOS 12 及以上可按 Apple 芯片或 Intel 自动准备对应的便携包。Apple 芯片的 Mac 仍需要 Rosetta 来运行 Arduino 的 Intel 辅助工具。板型、版本预检和烧录步骤见 [WorkBuddy 的 Mac 复测说明](verification/workbuddy-retest-macos.md)。
+
+Windows 在源码目录执行以下命令。第一条可以查看准备计划，第二条执行准备。
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/setup_local_runtime.ps1 -CheckOnly
@@ -191,7 +193,9 @@ chatmaker-cad --request-json '{"action":"openscad-prepare","allow_install":true}
 
 ## 检查和更新 ChatMaker
 
-在会话中对 `$chatmaker` 说「检查更新」，就可以核对实际加载的 Skill 和本地工具。ChatMaker 先查询 GitHub 主分支，访问失败时查 Gitee 镜像，并给出实际来源、版本、提交和更新日志。即使版本号相同，也会比较提交和实际文件。只想看本地版本时，可以说「离线自检」。
+会话第一次使用 ChatMaker 时，它会尝试后台检查更新，教学和项目操作可以立即开始。检查发现新版后，会附上更新日志，等用户同意才更新。检查结果会暂存，减少频繁开启会话时的重复查询。
+
+对 `$chatmaker` 说「检查更新」，可以马上核对实际加载的 Skill 和本地工具。ChatMaker 先查询 GitHub 主分支，访问失败时查 Gitee 镜像，并给出实际来源、版本、提交和更新日志。即使版本号相同，也会比较提交和实际文件。只想看本地版本时，可以说「离线自检」。
 
 说「更新 ChatMaker」即可执行更新。从 Git 主分支使用的源码可以直接更新，已有改动会受到保护。通过 WorkBuddy 或 Codex 安装的 Skill 副本由对应应用的更新入口处理。完成后重新加载 ChatMaker，再做一次自检，确认 Demo 会使用这次更新的文件。
 

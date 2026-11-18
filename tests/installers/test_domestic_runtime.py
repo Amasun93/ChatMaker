@@ -6,6 +6,7 @@ import os
 from pathlib import Path
 import shutil
 import subprocess
+import sys
 import tempfile
 import unittest
 from unittest import mock
@@ -169,6 +170,48 @@ class DomesticRuntimeTests(unittest.TestCase):
             value = json.loads(completed.stdout.strip())
             self.assertEqual(value["package_mode"], "offline-core-wheelhouse")
             self.assertFalse(runtime.exists())
+
+    @unittest.skipUnless(os.name == "nt", "Windows runtime setup")
+    def test_source_setup_reuses_compatible_host_python_in_an_isolated_environment(self):
+        powershell = shutil.which("powershell")
+        if not powershell or sys.version_info < (3, 11):
+            self.skipTest("PowerShell and a supported CPython are required")
+        base_python = Path(sys._base_executable)
+        if base_python.name.lower() != "python.exe":
+            self.skipTest("Python not exposed under the normal Windows executable name")
+        with tempfile.TemporaryDirectory() as directory:
+            runtime = Path(directory) / "runtime"
+            env = {**os.environ, "PATH": os.pathsep.join((str(base_python.parent), os.environ["SystemRoot"])),
+                   "PYTHONHOME": str(Path(directory) / "invalid-python-home")}
+            result = subprocess.run(
+                [powershell, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(ROOT / "scripts/setup_local_runtime.ps1"),
+                 "-RuntimeRoot", str(runtime), "-CheckOnly"], env=env, text=True,
+                capture_output=True, check=True, timeout=40,
+            )
+            plan = json.loads(result.stdout)
+            self.assertEqual(plan["mode"], "existing-python")
+            self.assertTrue(Path(plan["python"]["executable"]).samefile(base_python))
+            self.assertFalse(runtime.exists())
+
+    @unittest.skipUnless(os.name == "nt", "Windows runtime setup")
+    def test_source_setup_prefers_a_working_project_venv_even_without_host_python(self):
+        powershell = shutil.which("powershell")
+        if not powershell:
+            self.skipTest("PowerShell unavailable")
+        with tempfile.TemporaryDirectory() as directory:
+            runtime = Path(directory) / "runtime"
+            venv = runtime / "venv"
+            subprocess.run([sys.executable, "-I", "-m", "venv", str(venv)], check=True, timeout=60)
+            env = {**os.environ, "PATH": os.environ["SystemRoot"]}
+            result = subprocess.run(
+                [powershell, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(ROOT / "scripts/setup_local_runtime.ps1"),
+                 "-RuntimeRoot", str(runtime), "-CheckOnly"], env=env, text=True,
+                capture_output=True, check=True, timeout=40,
+            )
+            plan = json.loads(result.stdout)
+            self.assertEqual(plan["mode"], "existing-venv")
+            self.assertTrue(Path(plan["python"]["executable"]).samefile(venv / "Scripts/python.exe"))
+            self.assertFalse((runtime / "downloads").exists())
 
     def test_release_lock_contains_the_runtime_font_dependency(self):
         lines = (ROOT / "distribution/core-runtime/requirements.lock").read_text(

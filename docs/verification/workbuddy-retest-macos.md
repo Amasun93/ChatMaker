@@ -1,6 +1,6 @@
 # ChatMaker 在 macOS 上的 WorkBuddy 复测
 
-从 GitHub `main` 取源码，再切到本次复测指定的提交。Apple 芯片和 Intel Mac 各有对应的工具包。需要 Git、Python 3.11 或更高版本，以及能运行本地命令的 WorkBuddy。Apple 芯片的 Mac 需要 Rosetta 来运行当前固定版本的 Arduino 辅助工具和 AVR 编译器。[Apple 的 Rosetta 安装说明](https://support.apple.com/102527)
+从 GitHub `main` 取源码，再切到本次复测指定的提交。需要 Git 以及能运行本地命令的 WorkBuddy。准备时先复用可用的 Python。macOS 12 及以上缺少可用 Python 时，按 Apple 芯片或 Intel 下载并校验便携包。Apple 芯片的 Mac 需要 Rosetta 来运行当前固定版本的 Arduino 辅助工具和 AVR 编译器。[Apple 的 Rosetta 安装说明](https://support.apple.com/102527)
 
 ## 确认复测版本并准备环境
 
@@ -13,7 +13,7 @@ git status --short
 git rev-parse HEAD
 bash scripts/setup_local_runtime.sh --check-only
 bash scripts/setup_local_runtime.sh
-python3 scripts/workbuddy_preflight.py --expected-revision FULL_COMMIT_SHA
+".chatmaker-runtime/venv/bin/python3" scripts/workbuddy_preflight.py --expected-revision FULL_COMMIT_SHA
 ```
 
 预检返回 `success: true` 后继续。它会核对源码目录、完整提交号、工作区状态、安装版本和本地 Python。若电脑安装了多个 Python，可在运行安装脚本时通过 `CHATMAKER_PYTHON` 指定所需的解释器路径。

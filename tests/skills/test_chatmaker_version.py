@@ -23,6 +23,42 @@ def git(root, *args):
 
 
 class ChatMakerVersionTests(unittest.TestCase):
+    def test_startup_check_returns_immediately_and_only_schedules_a_read(self):
+        with tempfile.TemporaryDirectory() as directory:
+            cache = Path(directory) / 'startup.json'
+            args = SimpleNamespace(action='startup-check', skill_dir=SCRIPT.parents[1],
+                                   checkout=None, runtime_root=None)
+            with (patch.object(version, 'startup_cache', return_value=cache),
+                  patch.object(version.subprocess, 'Popen') as worker,
+                  patch.object(version, 'official_target') as remote,
+                  patch.object(version, 'inspect_runtime') as runtime):
+                self.assertEqual(version.run(args)['status'], 'startup_check_pending')
+                self.assertEqual(version.run(args)['status'], 'startup_check_pending')
+                args.action = 'startup-status'
+                self.assertEqual(version.run(args)['status'], 'startup_check_pending')
+                worker.assert_called_once()
+                self.assertIn('_startup-worker', worker.call_args.args[0])
+                remote.assert_not_called()
+                runtime.assert_not_called()
+
+    def test_startup_status_surfaces_an_update_without_installing_it(self):
+        with tempfile.TemporaryDirectory() as directory:
+            cache = Path(directory) / 'startup.json'
+            args = SimpleNamespace(action='_startup-worker', skill_dir=SCRIPT.parents[1],
+                                   checkout=None, runtime_root=None)
+            target = {'source': 'GitHub', 'commit': 'b' * 40, 'version': '0.2.0b7'}
+            with (patch.object(version, 'startup_cache', return_value=cache),
+                  patch.object(version, 'official_target', return_value=(target, {})) as remote,
+                  patch.object(version, 'check_skill', return_value={'matches_target': False, 'source_commit': None}),
+                  patch.object(version, 'update_checkout') as update):
+                version.run(args)
+                args.action = 'startup-status'
+                report = version.run(args)
+                self.assertTrue(report['update_available'])
+                self.assertEqual(report['target'], target)
+                remote.assert_called_once()
+                update.assert_not_called()
+
     def test_official_lookup_uses_pinned_mirror_after_primary_error(self):
         revision = 'a' * 40
         metadata = '[project]\nversion = "0.2.0b6"\n'

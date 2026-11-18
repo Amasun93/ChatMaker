@@ -2,6 +2,12 @@
 
 这是面向老师、学生和体验者的公开更新记录。最新更新放在最上面，标明日期和对应的版本标签或主分支提交。
 
+## 2026-11-18 · 主分支更新检查与 Python 环境准备
+
+- 会话第一次使用 ChatMaker 时，会尝试后台检查版本。项目可以立即开始。发现新版后会说明更新内容，等用户同意才更新。[检查和更新说明](docs/installation.md#检查和更新-chatmaker)
+- 编译、烧录等操作先复用可用的项目环境，其次用电脑上兼容的 Python。找不到或无法创建可用环境时，才使用便携 Python。源码安装支持兼容的 CPython 3.11 或更高版本，Windows 预编译 Core 包仍使用 CPython 3.11 x64。
+- 便携 Python 按 Windows x64、Apple 芯片和 Intel Mac 选择，并校验下载大小与 SHA-256。Mac 的便携包适用于 macOS 12 及以上，实际安装流程待双架构 Mac 复测。[Mac 复测说明](docs/verification/workbuddy-retest-macos.md)
+
 ## 2026-11-13 · 主分支新增版本自检和更新入口
 
 - 可以直接对 ChatMaker 说「检查更新」，核对正在用的 Skill 和本地工具。版本号相同时也能按提交和文件内容检查。GitHub 查询失败时会试 Gitee，并给出实际来源与更新日志。

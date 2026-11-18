@@ -23,6 +23,50 @@
           "url": "https://github.com/astral-sh/python-build-standalone/releases/download/20241016/cpython-3.11.10%2B20241016-x86_64-pc-windows-msvc-shared-install_only.tar.gz"
         }
       ]
+    },
+    "macos-arm64": {
+      "version": "3.11.10",
+      "build": "20241016",
+      "filename": "cpython-3.11.10+20241016-aarch64-apple-darwin-install_only.tar.gz",
+      "size": 17793306,
+      "sha256": "5a69382da99c4620690643517ca1f1f53772331b347e75f536088c42a4cf6620",
+      "archive_root": "python",
+      "upstream": "https://github.com/astral-sh/python-build-standalone/releases/tag/20241016",
+      "license_notice_url": "https://github.com/astral-sh/python-build-standalone/blob/20241016/LICENSE",
+      "sources": [
+        {
+          "id": "npmmirror-python-build-standalone",
+          "kind": "domestic_mirror",
+          "url": "https://registry.npmmirror.com/-/binary/python-build-standalone/20241016/cpython-3.11.10+20241016-aarch64-apple-darwin-install_only.tar.gz"
+        },
+        {
+          "id": "astral-python-build-standalone",
+          "kind": "official_fallback",
+          "url": "https://github.com/astral-sh/python-build-standalone/releases/download/20241016/cpython-3.11.10%2B20241016-aarch64-apple-darwin-install_only.tar.gz"
+        }
+      ]
+    },
+    "macos-x86_64": {
+      "version": "3.11.10",
+      "build": "20241016",
+      "filename": "cpython-3.11.10+20241016-x86_64-apple-darwin-install_only.tar.gz",
+      "size": 18165899,
+      "sha256": "1e23ffe5bc473e1323ab8f51464da62d77399afb423babf67f8e13c82b69c674",
+      "archive_root": "python",
+      "upstream": "https://github.com/astral-sh/python-build-standalone/releases/tag/20241016",
+      "license_notice_url": "https://github.com/astral-sh/python-build-standalone/blob/20241016/LICENSE",
+      "sources": [
+        {
+          "id": "npmmirror-python-build-standalone",
+          "kind": "domestic_mirror",
+          "url": "https://registry.npmmirror.com/-/binary/python-build-standalone/20241016/cpython-3.11.10+20241016-x86_64-apple-darwin-install_only.tar.gz"
+        },
+        {
+          "id": "astral-python-build-standalone",
+          "kind": "official_fallback",
+          "url": "https://github.com/astral-sh/python-build-standalone/releases/download/20241016/cpython-3.11.10%2B20241016-x86_64-apple-darwin-install_only.tar.gz"
+        }
+      ]
     }
   },
   "node": {
