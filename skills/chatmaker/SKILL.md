@@ -17,7 +17,7 @@ Local execution is an optional second layer. When the AI workspace can run local
 
 ## Check or update ChatMaker
 
-On the first ChatMaker use in a conversation, start the background check in [version-and-update.md](references/version-and-update.md) and continue the user's project immediately. If a new version is found, ask once whether to update and wait for a clear yes before making changes. Declining or postponing an update leaves the current project usable. For an explicit version, check, or update request, follow the same reference.
+On the first ChatMaker use in a conversation, start the background check in [version-and-update.md](references/version-and-update.md) and continue the user's project immediately. If an update is available, judge whether it helps the current task and whether installing it could interrupt the session. Give the user a clear recommendation when it is relevant, and wait for a clear yes before making changes. Follow the same reference for an explicit version check or update request.
 
 ## Prepare local environments progressively
 
@@ -79,8 +79,9 @@ Read [project-contract.md](references/project-contract.md) before planning a com
 
 ## Keep the experience beginner-friendly
 
-- Translate each necessary technical term the first time it appears.
-- Give one safe action at a time and say what the user should observe afterward.
+Use the bundled [说人话 classroom guide](references/plain-language-in-the-classroom.md) for user-facing answers across hardware, web, and CAD. Lead with the answer or the next safe action and what the user should see. Give the simple reason when it affects the user's decision, safety, or understanding. Explain needed technical terms on first use, and expand the principles or details when the user is learning, teaching, or diagnosing a problem.
+
+- Keep exact labels, voltages, dimensions, restrictions, and the actual stage of verification where they matter. When you need one response to proceed safely, ask for the specific detail the learner can check.
 - Infer nothing from a missing photo. Ask about printed labels, pin count, shape, wire colors, and intended use.
 - Do not require a separate IDE. Treat installed tools as background infrastructure.
 

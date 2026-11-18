@@ -56,8 +56,44 @@ class ChatMakerVersionTests(unittest.TestCase):
                 report = version.run(args)
                 self.assertTrue(report['update_available'])
                 self.assertEqual(report['target'], target)
+                self.assertEqual(report['update_impact'], {'scope': 'unknown'})
                 remote.assert_called_once()
                 update.assert_not_called()
+
+    def test_check_distinguishes_skill_edits_from_download_or_setup_changes(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            git(root, 'init', '-b', 'main')
+            git(root, 'config', 'user.name', 'ChatMaker Test')
+            git(root, 'config', 'user.email', 'chatmaker@example.invalid')
+            skill = root / 'skills/chatmaker'
+            skill.mkdir(parents=True)
+            for name in version.SPECIALISTS:
+                (root / 'skills' / name).mkdir()
+                (root / 'skills' / name / 'SKILL.md').write_bytes(b'old\n')
+            (skill / 'SKILL.md').write_bytes(b'old\n')
+            (root / 'pyproject.toml').write_bytes(b'[project]\nversion = "0.2.0b6"\n')
+            git(root, 'add', '--all')
+            git(root, 'commit', '-m', 'before')
+            baseline = {path.relative_to(root).as_posix(): version.blob_hash(path.read_bytes())
+                        for path in (root / 'skills').rglob('SKILL.md')}
+            baseline['pyproject.toml'] = version.blob_hash((root / 'pyproject.toml').read_bytes())
+            revision = git(root, 'rev-parse', 'HEAD')
+            docs = {**baseline, 'WHATS_NEW.md': version.blob_hash(b'new\n')}
+            skill_only = {**docs, 'skills/chatmaker/SKILL.md': version.blob_hash(b'new\n')}
+            package_change = {**skill_only, 'distribution/core-runtime/requirements.lock': version.blob_hash(b'pack\n')}
+            setup_change = {**skill_only, 'runtime/chatmaker/installers/runtime_sources.json': version.blob_hash(b'{}\n')}
+            args = SimpleNamespace(action='check-update', skill_dir=skill, checkout=None, runtime_root=None)
+            target = {'source': 'GitHub', 'commit': 'b' * 40, 'version': '0.2.0b6'}
+            with patch.object(version, 'official_target', return_value=(target, skill_only)):
+                report = version.run(args)
+            self.assertTrue(report['update_available'])
+            self.assertEqual(report['update_impact']['scope'], 'skill_only')
+            self.assertEqual(version.update_impact(root, revision, docs)['scope'], 'docs_only')
+            self.assertTrue(version.update_impact(root, revision, package_change)['changes_package_inputs'])
+            self.assertTrue(version.update_impact(root, revision, setup_change)['changes_tool_setup'])
+            self.assertEqual(git(root, 'rev-parse', 'HEAD'), revision)
+            self.assertEqual(git(root, 'status', '--porcelain'), '')
 
     def test_official_lookup_uses_pinned_mirror_after_primary_error(self):
         revision = 'a' * 40

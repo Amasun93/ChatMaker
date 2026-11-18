@@ -25,6 +25,10 @@ REPOSITORIES = {
 SPECIALISTS = ('chatduino', 'chatweb', 'chatcad')
 SKILL_FILE_TYPES = {'.md', '.py', '.yaml', '.yml', '.json'}
 PACKAGE_INPUTS = ('pyproject.toml', 'distribution/core-runtime/requirements.lock')
+TOOL_SETUP_INPUTS = {
+    'runtime/chatmaker/installers/runtime_sources.json',
+    'scripts/setup_local_runtime.ps1', 'scripts/setup_local_runtime.sh',
+}
 REVISION = re.compile(r'[0-9a-f]{40}')
 REFRESH_PENDING = '.chatmaker-runtime-refresh-pending'
 STARTUP_TTL = 24 * 60 * 60
@@ -161,6 +165,42 @@ def runtime_matches(runtime, target):
     if runtime['status'] != 'checked' or runtime.get('source_commit') is None or runtime.get('source_dirty') is not False:
         return None
     return runtime['source_commit'] == target['commit'] and runtime['installed_version'] == runtime['version'] == target['version']
+
+
+def update_impact(root, revision, remote_blobs):
+    unknown = {'scope': 'unknown'}
+    if root is None or not revision or 'pyproject.toml' not in remote_blobs:
+        return unknown
+    try:
+        result = git(root, 'ls-tree', '-r', '-z', revision)
+    except (OSError, subprocess.TimeoutExpired):
+        return unknown
+    if result.returncode:
+        return unknown
+
+    local_blobs = {}
+    for item in result.stdout.split('\0'):
+        header, _, path = item.partition('\t')
+        if path and header.split()[1] == 'blob':
+            local_blobs[path] = header.rsplit(' ', 1)[-1]
+    changed = {path for path in local_blobs.keys() | remote_blobs.keys()
+               if local_blobs.get(path) != remote_blobs.get(path)}
+    docs = {path for path in changed if path.startswith('docs/') or path in {
+        'README.md', 'README_EN.md', 'WHATS_NEW.md', 'CONTRIBUTING.md',
+    }}
+    if changed == docs:
+        scope = 'docs_only'
+    elif all(path.startswith('skills/') for path in changed - docs):
+        scope = 'skill_only'
+    else:
+        scope = 'project'
+    return {
+        'scope': scope,
+        'changes_package_inputs': bool(changed.intersection(PACKAGE_INPUTS)),
+        'changes_tool_setup': bool(changed.intersection(TOOL_SETUP_INPUTS)) or any(
+            path.startswith('runtime/chatmaker/hardware/') and path.endswith('toolchain.py') for path in changed
+        ),
+    }
 
 
 def official_main(root):
@@ -317,6 +357,7 @@ def startup(args):
                 if not head.returncode and (head.stdout.strip() == target or
                                             not git(root, 'merge-base', '--is-ancestor', target, 'HEAD').returncode):
                     report.update(status='no_newer_source', update_available=False)
+                    report.pop('update_impact', None)
         except (OSError, ValueError, KeyError, subprocess.SubprocessError):
             report = {'success': False, 'status': 'startup_check_unavailable', 'update_available': None}
         save_startup(cache, {**report, 'skill_stamp': skill_stamp})
@@ -395,6 +436,8 @@ def run(args):
     runtime_match = report['runtime']['matches_target']
     report['update_available'] = (True if False in (skill_match, runtime_match) else
                                   False if skill_match is True and (runtime_match is True or runtime is None) else None)
+    if args.action == 'check-update' and report['update_available']:
+        report['update_impact'] = update_impact(skill_root, report['skill']['source_commit'], blobs)
     if args.action == 'update':
         if skill_match is not True and (skill_root is None or skill_root != root):
             return {**report, 'success': False, 'status': 'host_skill_update_required'}

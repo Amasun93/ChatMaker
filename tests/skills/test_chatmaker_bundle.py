@@ -32,6 +32,9 @@ class ChatMakerBundleTests(unittest.TestCase):
             self.assertEqual(result["manifest"], expected)
             self.assertEqual(builder.bundle_manifest(output), expected)
             self.assertTrue((output / "agents" / "openai.yaml").is_file())
+            classroom_guide = "references/plain-language-in-the-classroom.md"
+            self.assertIn(classroom_guide, result["manifest"])
+            self.assertIn(classroom_guide, (output / "SKILL.md").read_text(encoding="utf-8"))
             for name in builder.SPECIALISTS:
                 self.assertTrue((output / "internal_skills" / name / "SKILL.md").is_file())
 
