@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="zh-CN" data-simulation="interface">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ChatSim · 微雪 V2 触屏问候</title>
+<style>
+  :root {
+    color-scheme: light;
+    font-family: "Microsoft YaHei", "PingFang SC", system-ui, sans-serif;
+    color: #222e34;
+    background: #f3f5f6;
+  }
+  * { box-sizing: border-box; }
+  body, figure { margin: 0; }
+  .page { width: min(1080px, calc(100% - 48px)); margin: 0 auto; }
+  header { background: #fff; border-bottom: 1px solid #dbe2e5; }
+  header .page { display: flex; align-items: center; min-height: 59px; }
+  .brand { color: #075d59; font-weight: 800; font-size: 21px; letter-spacing: -.025em; }
+  main { padding-block: 28px; }
+  h1 { font-size: clamp(24px, 5vw, 38px); margin: 0 0 6px; }
+  .model { margin: 0 0 21px; color: #45575f; font-size: 15px; overflow-wrap: anywhere; }
+  .workspace { display: grid; grid-template-columns: minmax(0, 1fr) 265px; gap: 18px; align-items: start; }
+  .preview, aside { border: 1px solid #d8e0e3; border-radius: 14px; background: #fff; overflow: hidden; }
+  .stage {
+    display: grid; place-items: center; position: relative; min-width: 0;
+    padding: 24px 21px 31px;
+    background: #f3f7f7 radial-gradient(#cbd9d8 1px, transparent 1.15px) center / 16px 16px;
+  }
+  .board {
+    position: relative; width: min(100%, 300px); aspect-ratio: 50.54 / 73.06;
+    border: 2px solid #1a2428; border-radius: 10px;
+    background: linear-gradient(148deg, #333e3d, #212b2c 60%, #1a2224);
+    box-shadow: inset 0 0 0 1px #4c5752, 0 3px 1px #10191daa, 0 10px 22px #24383c46;
+  }
+  .board::after {
+    position: absolute; content: ""; bottom: -9px; left: 43%; width: 14%; height: 12px;
+    background: linear-gradient(#859198, #c7cdd0 45%, #9ca7ad);
+    border: 1px solid #66787e; border-radius: 0 0 4px 4px;
+  }
+  .mount {
+    position: absolute; width: 3%; aspect-ratio: 1; border-radius: 50%; background: #111b1d;
+    border: 1px solid #7d8985; box-shadow: inset 0 1px 1px #000b;
+  }
+  .top { top: 2.5%; }
+  .bottom { bottom: 2.5%; }
+  .left { left: 3.5%; }
+  .right { right: 3.5%; }
+  .glass {
+    position: absolute; width: 93%; left: 3.5%; top: 5.1%; height: 87%;
+    background: #0d1517; border-radius: 4px;
+    border: 1px solid #081417; box-shadow: inset 0 0 0 1px #42514e;
+  }
+  #lcd {
+    display: block; position: absolute; left: 7.25%; top: 8.8%;
+    width: 85.5%; aspect-ratio: 3 / 4; background: #122824;
+    touch-action: none; user-select: none; cursor: pointer;
+  }
+  #lcd:focus-visible { outline: 3px solid #53caac; outline-offset: 3px; }
+  .status {
+    display: flex; align-items: center; min-height: 44px; margin: 0; padding: 10px 16px;
+    border-top: 1px solid #d8e0e3; color: #40565b; font-size: 14px;
+  }
+  aside section { padding: 17px 16px; }
+  aside section + section { border-top: 1px solid #e2e7e8; }
+  h2 { font-size: 16px; margin: 0 0 9px; }
+  aside p { margin: 0; color: #3e545e; font-size: 14px; line-height: 1.65; }
+  aside p + p { margin-top: 8px; }
+  @media (max-width: 760px) {
+    .page { width: min(520px, calc(100% - 24px)); }
+    .workspace { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+    main { padding-block: 19px; }
+    .model { margin-bottom: 15px; }
+    .stage { padding: 18px 32px 25px; }
+  }
+</style>
+</head>
+<body>
+<header><div class="page"><span class="brand">ChatSim</span></div></header>
+<main class="page">
+  <h1>触屏问候</h1>
+  <p class="model">微雪 ESP32-S3-Touch-LCD-2.8 · V2</p>
+  <div class="workspace">
+    <section class="preview" aria-label="板卡触屏预览">
+      <figure class="stage">
+        <div class="board">
+          <i class="mount top left" aria-hidden="true"></i><i class="mount top right" aria-hidden="true"></i>
+          <i class="mount bottom left" aria-hidden="true"></i><i class="mount bottom right" aria-hidden="true"></i>
+          <div class="glass" aria-hidden="true"></div>
+          <canvas id="lcd" width="240" height="320" tabindex="0"
+                  aria-label="虚拟触摸屏。按住屏幕下方的按钮，或按住空格。"></canvas>
+        </div>
+      </figure>
+      <p class="status" id="status" role="status">正在启动触屏预览…</p>
+    </section>
+    <aside aria-label="使用说明">
+      <section>
+        <h2>怎么试</h2>
+        <p>按住屏幕里的「按住我」，看上方文字变成「你好」。松开回到「再见」。</p>
+      </section>
+      <section>
+        <h2>需要的元件</h2>
+        <p>微雪 ESP32-S3-Touch-LCD-2.8 V2 × 1</p>
+        <p>触摸屏已经在板上。这个例子只用板子本身。</p>
+      </section>
+    </aside>
+  </div>
+</main>
+<template id="notices">$notices</template>
+<script id="program" type="application/octet-stream">$wasm</script>
+<script>
+  async function startPreview() {
+    const lcd = document.querySelector("#lcd");
+    const encoded = document.querySelector("#program").textContent;
+    const bytes = Uint8Array.from(atob(encoded), (byte) => byte.charCodeAt(0));
+    const { instance } = await WebAssembly.instantiate(bytes, {});
+    const device = instance.exports;
+    device._initialize();
+    device.demo_start();
+
+    const context = lcd.getContext("2d", { alpha: false });
+    const frame = context.createImageData(lcd.width, lcd.height);
+    let rendered = -1;
+    function paint() {
+      const revision = device.demo_generation();
+      if (revision === rendered) return;
+      frame.data.set(new Uint8Array(device.memory.buffer, device.demo_pixels(), frame.data.length));
+      context.putImageData(frame, 0, 0);
+      rendered = revision;
+    }
+
+    let heldPointer = null;
+    let heldKey = null;
+    let lastX = 0;
+    let lastY = 0;
+    function sample(event, pressed) {
+      const bounds = lcd.getBoundingClientRect();
+      lastX = Math.max(0, Math.min(lcd.width - 1, Math.floor((event.clientX - bounds.left) * lcd.width / bounds.width)));
+      lastY = Math.max(0, Math.min(lcd.height - 1, Math.floor((event.clientY - bounds.top) * lcd.height / bounds.height)));
+      device.demo_pointer(lastX, lastY, pressed);
+      paint();
+    }
+
+    function release() {
+      if (heldPointer !== null) device.demo_pointer(lastX, lastY, 0);
+      if (heldKey !== null) device.demo_key(0);
+      heldPointer = heldKey = null;
+      paint();
+    }
+
+    lcd.addEventListener("pointerdown", (event) => {
+      if (!event.isPrimary || event.button !== 0 || heldKey !== null) return;
+      heldPointer = event.pointerId;
+      lcd.setPointerCapture(heldPointer);
+      sample(event, 1);
+    });
+    lcd.addEventListener("pointermove", (event) => {
+      if (event.pointerId === heldPointer) sample(event, 1);
+    });
+    lcd.addEventListener("pointerup", (event) => {
+      if (event.pointerId !== heldPointer) return;
+      heldPointer = null;
+      sample(event, 0);
+    });
+    for (const name of ["pointercancel", "lostpointercapture"]) {
+      lcd.addEventListener(name, (event) => {
+        if (event.pointerId === heldPointer) release();
+      });
+    }
+    lcd.addEventListener("keydown", (event) => {
+      if (event.key !== " " && event.key !== "Enter") return;
+      event.preventDefault();
+      if (heldPointer !== null || heldKey !== null) return;
+      heldKey = event.key;
+      device.demo_key(1);
+      paint();
+    });
+    lcd.addEventListener("keyup", (event) => {
+      if (event.key !== heldKey) return;
+      event.preventDefault();
+      release();
+    });
+    lcd.addEventListener("blur", release);
+    window.addEventListener("blur", release);
+    document.addEventListener("visibilitychange", () => {
+      if (document.hidden) release();
+    });
+
+    paint();
+    document.querySelector("#status").textContent = "触屏已就绪。";
+  }
+
+  startPreview().catch((error) => {
+    document.querySelector("#status").textContent = "触屏预览启动失败。";
+    console.error(error);
+  });
+</script>
+</body>
+</html>

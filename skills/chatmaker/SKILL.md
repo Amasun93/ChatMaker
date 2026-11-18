@@ -60,7 +60,7 @@ For a requested hardware project, save the complete source promptly, then contin
 
 ## Route the request
 
-For an explicit UNO R3 hardware simulation request, route to `$chatduino` to save the sketch and `$chatsim` to compile and run the firmware in a browser with virtual components. The available circuits use a D2 pushbutton with either the D13 LED or an SSD1306 I²C OLED. Select this path before connected-board identification. For the structured router use `"simulation":true` with `"hardware":{"board":"arduino-uno-r3"}`. ChatWeb handles projects in which the browser page itself is the product or the control panel.
+For an explicit hardware simulation request, select `$chatsim` before connected-board identification. Read `chatmaker-sim --list` and choose the exact board and demo, currently UNO R3, Waveshare ESP32-S3-Touch-LCD-2.8 V2, or IDMC-0001 Starcore v4.2.2. The structured router uses `"simulation":true` and the exact `hardware.board` ID, with `hardware.revision:"v2"` for Waveshare. Open bundled demos directly. Involve `$chatduino` when saving a custom UNO R3 sketch or preparing a real-board build. ChatWeb handles projects in which the browser page itself is the product or the control panel.
 
 1. Restate the intended effect in everyday language.
 2. Ask only for information that changes safety, architecture, or the acceptance test.

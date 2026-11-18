@@ -2,6 +2,12 @@
 
 这是面向老师、学生和体验者的公开更新记录。最新更新放在最上面，标明日期和对应的版本标签或主分支提交。
 
+## 2026-11-19 · ChatSim 三系列课堂示例与元件目录
+
+- 现成示例可直接在浏览器打开。首批覆盖 Arduino UNO R3、微雪 ESP32-S3-Touch-LCD-2.8 V2 和 IDMC-0001 星核板 v4.2.2。
+- 星核板示例用板载 A 键控制外接 IDMD-0021 OLED。四芯线的接法已画好，按住显示「你好」，松手变回「再见」。
+- `chatmaker-sim --list` 按板卡列出已能互动的元件、示例和已有资料的模块。用 `--demo` 打开现成示例，体验阶段直接使用随包的程序。[入口与复测说明](docs/verification/2026-11-19-chatsim-three-series.md)
+
 ## 2026-11-18 · ChatSim 的 UNO R3 浏览器 Demo
 
 - 对 ChatMaker 说「我手边没有板子，帮我在浏览器模拟按按钮亮灯」。ChatDuino 保存并编译 UNO R3 程序，ChatSim 把编译产物交给 AVR8js，在浏览器模拟 D2 按钮和 D13 板载灯。

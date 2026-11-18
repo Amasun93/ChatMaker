@@ -7,6 +7,7 @@ from unittest.mock import patch
 
 from chatmaker import sim
 from chatmaker.route import execute_request
+from chatmaker.sim_catalog import load_catalog
 
 
 class ChatSimTests(unittest.TestCase):
@@ -49,10 +50,41 @@ class ChatSimTests(unittest.TestCase):
             self.assertIn('class ChatSimSSD1306', html)
             self.assertIn('data-board-pin="A4" data-oled-pin="SDA"', html)
 
-    def test_simulation_routes_only_the_exact_uno_r3_profile(self):
+    def test_simulation_routes_exact_models_and_checks_waveshare_revision(self):
         uno = execute_request({"simulation": True, "hardware": {"board": "arduino-uno-r3"}})
         self.assertTrue(uno["success"])
         self.assertEqual(uno["specialists"], ["chatduino", "chatsim"])
         r4 = execute_request({"simulation": True, "hardware": {"board": "arduino-uno-r4-wifi"}})
         self.assertFalse(r4["success"])
-        self.assertEqual(r4["supported_boards"], ["arduino-uno-r3"])
+        self.assertIn("arduino-uno-r3", r4["supported_boards"])
+        self.assertNotIn("arduino-uno-r4-wifi", r4["supported_boards"])
+        starcore = execute_request({"simulation": True, "hardware": {"board": "idmc-0001-starcore-v4-2-2"}})
+        self.assertTrue(starcore["success"])
+        self.assertEqual([demo["mode"] for demo in starcore["demos"]], ["program-logic"])
+        for revision in (None, "v1", "v2"):
+            request = {"simulation": True, "hardware": {"board": "waveshare-esp32-s3-touch-lcd-2-8",
+                                                        "revision": revision}}
+            result = execute_request(request)
+            self.assertEqual(result["success"], revision == "v2")
+            if revision == "v2":
+                self.assertEqual([demo["mode"] for demo in result["demos"]], ["interface"])
+            else:
+                self.assertEqual(result["required_revision"], "v2")
+
+    def test_bundled_demos_open_without_preparation_or_compilation(self):
+        catalog = load_catalog()
+        self.assertEqual({item["series"] for item in catalog["boards"]}, {"arduino", "esp32", "starcore"})
+        with tempfile.TemporaryDirectory() as tmp, patch.object(sim, "run_project") as hardware:
+            root = Path(tmp).resolve()
+            for demo in catalog["demos"]:
+                with self.subTest(demo=demo["id"]):
+                    for part in demo["parts"]:
+                        self.assertEqual(catalog["parts"][part]["availability"], "interactive")
+                    result = sim.run_demo(demo["id"], runtime_root=root, output=None, open_browser=False)
+                    self.assertTrue(result["success"], result)
+                    self.assertTrue(result["uses_precompiled_program"])
+                    self.assertFalse(result["code_compiled"])
+                    self.assertFalse(result["firmware_uploaded"])
+                    self.assertEqual(result["simulation_mode"], demo["mode"])
+                    self.assertTrue(Path(result["preview"]["path"]).is_file())
+            hardware.assert_not_called()

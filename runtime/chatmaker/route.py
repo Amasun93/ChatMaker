@@ -10,9 +10,11 @@ if __package__ in {None, ""}:  # Allow direct execution from a checked-out relea
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
     from chatmaker.catalog import get_catalog_record
     from chatmaker.knowledge_semantics import BOARD_IDS as KNOWLEDGE_BOARD_IDS
+    from chatmaker.sim_catalog import load_catalog as load_sim_catalog
 else:
     from .catalog import get_catalog_record
     from .knowledge_semantics import BOARD_IDS as KNOWLEDGE_BOARD_IDS
+    from .sim_catalog import load_catalog as load_sim_catalog
 
 
 def _has_hardware_intent(request: dict[str, Any]) -> bool:
@@ -107,17 +109,29 @@ def _planned_knowledge_requests(
 def route_project_intent(request: dict[str, Any]) -> dict[str, Any]:
     if request.get("simulation") is True:
         board_id = _exact_board_id(request)
-        ready = board_id == "arduino-uno-r3"
-        return {
+        catalog = load_sim_catalog()
+        board = next((entry for entry in catalog["boards"] if entry["id"] == board_id), None)
+        revision = request["hardware"].get("revision") if board else None
+        required_revision = board.get("revision") if board else None
+        revision_matches = required_revision is None or (
+            isinstance(revision, str) and revision.strip().lower() == required_revision
+        )
+        ready = board is not None and revision_matches
+        result = {
             "success": ready,
             "route": "simulation",
             "status": "ready" if ready else "blocked",
             "stage": "routed" if ready else "planning",
             "specialists": ["chatduino", "chatsim"] if ready else [],
-            "supported_boards": ["arduino-uno-r3"],
+            "supported_boards": [entry["id"] for entry in catalog["boards"]],
             "contract_requirements": [],
             "evidence_boundaries": {"physical_effect_requires_separate_verification": True},
         }
+        if ready:
+            result["demos"] = [entry for entry in catalog["demos"] if entry["board"] == board_id]
+        elif required_revision:
+            result["required_revision"] = required_revision
+        return result
     has_hardware = _has_hardware_intent(request)
     has_web = _has_web_intent(request)
     has_cad = _has_cad_intent(request)

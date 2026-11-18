@@ -113,3 +113,51 @@ test("SSD1306 framebuffer follows I2C commands and data", async ({ page }) => {
   });
   expect(states).toEqual({ beforePowerOn: false, wrongAddress: false, powered: true, cleared: false });
 });
+
+async function openWasmDemo(page, name) {
+  const [template, program] = await Promise.all([
+    readFile(new URL(name + ".html", assets), "utf8"),
+    readFile(new URL(name + ".wasm", assets)),
+  ]);
+  await page.goto("about:blank");
+  await page.setContent(template.replace("$wasm", program.toString("base64")).replace("$notices", ""));
+}
+
+async function frame(canvas) {
+  return canvas.evaluate((element) => element.toDataURL());
+}
+
+test("Starcore A key drives the compiled OLED program off network", async ({ page, context }) => {
+  await context.setOffline(true);
+  await page.setViewportSize({ width: 390, height: 780 });
+  await openWasmDemo(page, "starcore-oled");
+  const button = page.getByRole("button", { name: "按住板载 A 键" });
+  const oled = page.locator("#oled-screen");
+  await expect(button).toBeEnabled();
+  await expect(page.locator(".wiring li")).toHaveCount(4);
+  const viewport = await page.locator(".viewport").boundingBox();
+  const display = await oled.boundingBox();
+  expect(display.x + display.width).toBeLessThanOrEqual(viewport.x + viewport.width);
+  const rest = await frame(oled);
+  await button.focus();
+  await page.keyboard.down("Space");
+  await expect(button).toHaveAttribute("aria-pressed", "true");
+  expect(await frame(oled)).not.toBe(rest);
+  await page.keyboard.up("Space");
+  expect(await frame(oled)).toBe(rest);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
+});
+
+test("Waveshare V2 touch stays connected to the LVGL demo", async ({ page, context }) => {
+  await context.setOffline(true);
+  await openWasmDemo(page, "waveshare-touch");
+  await expect(page.getByRole("status")).toHaveText("触屏已就绪。");
+  const lcd = page.locator("#lcd");
+  const rest = await frame(lcd);
+  const box = await lcd.boundingBox();
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height * .75);
+  await page.mouse.down();
+  expect(await frame(lcd)).not.toBe(rest);
+  await page.mouse.up();
+  expect(await frame(lcd)).toBe(rest);
+});

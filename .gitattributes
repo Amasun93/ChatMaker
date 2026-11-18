@@ -4,3 +4,7 @@
 
 # Published pack archives are byte-exact binary artifacts.
 *.cmpack -text
+
+# Preserve the exact bytes of compiled ChatSim demo programs.
+runtime/chatmaker/sim_assets/*.hex binary
+runtime/chatmaker/sim_assets/*.wasm binary

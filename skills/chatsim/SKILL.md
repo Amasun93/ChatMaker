@@ -1,19 +1,23 @@
 ---
 name: chatsim
-description: Internal ChatMaker specialist for running compiled Arduino UNO R3 programs with virtual buttons, LEDs and an SSD1306 OLED in the browser.
+description: Internal ChatMaker specialist for browser simulation of exact Arduino, ESP32 and Starcore boards using the bundled circuits and virtual components.
 ---
 
 # ChatSim
 
-ChatSim is an internal specialist of ChatMaker. Use through `$chatmaker` to run a compiled Arduino UNO R3 sketch with virtual electronics inside the browser. Pick the circuit that matches the learner's requested electronics. Both circuits use an external normally open pushbutton from D2 to GND and configure D2 as `INPUT_PULLUP`.
+ChatSim is an internal specialist of ChatMaker. Use through `$chatmaker`. Run `chatmaker-sim --list` to read the current boards, available parts and demos. Match the exact board and revision. A part marked `reference` has hardware information in the catalog, while `interactive` parts come with tested behavior in the listed demo. Review wiring in the existing ChatMaker Knowledge board and component cards.
 
-| Circuit | Virtual output | Starter folder |
+| Demo ID | Board and controls | Execution |
 | --- | --- | --- |
-| `button-led` (default) | D13 on while held, off when released | `examples/chatsim/uno-r3-button-led` |
-| `button-oled` | SSD1306 128×64 I²C OLED at `0x3C`, SDA on A4, SCL on A5. Shows 再见 at rest, 你好 while held. | `examples/chatsim/uno-r3-button-oled` |
+| `uno-r3-button-led` | UNO R3, D2 pushbutton and D13 LED | Compiled AVR firmware |
+| `uno-r3-button-oled` | UNO R3, D2 pushbutton and SSD1306 I²C OLED | Compiled AVR firmware |
+| `waveshare-v2-touch-greeting` | ESP32-S3-Touch-LCD-2.8 V2, hold the on-screen button | Shared LVGL interface compiled for the browser |
+| `starcore-oled-greeting` | IDMC-0001 v4.2.2, hold the board's A key. IDMD-0021 OLED shows 你好 while held and 再见 at rest | Shared C logic compiled for the browser |
 
-1. Have ChatDuino save the complete sketch in a folder with the same name as its main `.ino` file. For the OLED lesson, start from the included sketch. It uses the built-in Arduino Wire library and stores the four Chinese glyphs in the firmware.
-2. Use `chatmaker-sim --sketch <sketch-folder> --circuit <circuit> --open` from the same checkout or installed Core as the Skill. The launcher prepares the managed UNO R3 compiler if needed. If the launcher is missing, run `-m chatmaker.sim` with the project Python or refresh the checkout runtime.
-3. Verify the returned `preview.path`. If the default browser could not be launched, link to the generated HTML. The page comes prewired and includes the parts list. Tell the learner to click Run, then hold and release the red button (or focus it and hold Space). Report a simulated result after observing the chosen output in the browser. For real wiring with the OLED profile, use a module explicitly rated for 5 V power and I²C signals and match each pin by its printed label.
+1. Open an included example with `chatmaker-sim --demo <demo-id> --open` from the same Core as the Skill. These pages use already compiled programs and open directly. For a new UNO R3 sketch, have ChatDuino save it in a folder matching the main `.ino` filename. Use `chatmaker-sim --sketch <sketch-folder> --circuit button-led --open` or `--circuit button-oled`. Both use an active-low D2 switch to GND. The UNO R3 OLED uses A4/SDA, A5/SCL and a 5 V compatible SSD1306 module at `0x3C`.
+2. Verify `preview.path`. Link to the generated HTML if browser dispatch is unavailable. UNO R3 learners select Run before pressing the red button. The Waveshare and Starcore demos start automatically. Report outcomes after observing them in the browser.
+3. For the Starcore physical circuit, use the board's A key and plug the IDMD-0021's complete four-wire cable into one 3V3 I²C socket. Keep P19/SCL, P20/SDA, power and ground in that socket. Use the same voltage and bus as the diagram. See the starter sources under `examples/chatsim` for hardware builds, shared logic and developer rebuild instructions.
 
-The OLED model supports the display RAM and basic SSD1306 commands used by the starter. ChatWeb handles webpages and control panels as projects in their own right. If the learner requests another board or peripheral, state the current simulation coverage. A ChatSim run verifies virtual behavior and needs no connected board. Verify voltage, wiring and the displayed result separately on real hardware.
+For ESP32 and Starcore use the included code and its declared execution mode. Modified shared interface or logic requires a fresh browser build from the example sources. For hardware results, compile, upload and observe on the physical device separately with ChatDuino. ChatWeb handles projects whose product is a web page or control panel.
+
+When adding a board, reuse the exact board/component IDs and their wiring references. Add the schematic outline, tested inputs and outputs, runnable example, execution mode and a hold/release or other observable test together. Keep parts whose behavior is still pending in `reference` status. In source checkouts the inventory lives in `runtime/chatmaker/sim_assets/catalog.json`.

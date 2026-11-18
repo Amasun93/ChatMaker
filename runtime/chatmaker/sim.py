@@ -1,4 +1,4 @@
-"""Compile an Arduino UNO R3 sketch into a self-contained ChatSim preview."""
+"""Open a bundled ChatSim demo or compile an Arduino UNO R3 sketch for simulation."""
 from __future__ import annotations
 
 import argparse
@@ -15,6 +15,7 @@ import webbrowser
 from .hardware.workflow import run_project
 from .progress import emit, reporting
 from .runtime_info import identity
+from .sim_catalog import load_catalog
 
 BOARD_ID = "arduino-uno-r3"
 FLASH_BYTES = 32 * 1024
@@ -57,7 +58,11 @@ def read_avr_hex(text: str) -> bytes:
 def render_preview(
     firmware_path: Path, *, runtime_root: Path, output: Path | None, circuit: str = "button-led"
 ) -> dict:
-    original = firmware_path.read_bytes()
+    return render_avr_preview(firmware_path.read_bytes(), firmware_path.name, runtime_root=runtime_root,
+                              output=output, circuit=circuit)
+
+
+def render_avr_preview(original: bytes, name: str, *, runtime_root: Path, output: Path | None, circuit: str) -> dict:
     digest = sha256(original).hexdigest()
     firmware = read_avr_hex(original.decode("ascii"))
     assets = files("chatmaker").joinpath("sim_assets")
@@ -69,7 +74,7 @@ def render_preview(
         button_ground="GND.1" if oled else "GND.2",
         ground_leg="2.r" if oled else "2.l",
         ground_label="图中按钮右下脚" if oled else "图中按钮左下脚",
-        sketch=escape(firmware_path.name),
+        sketch=escape(name),
         sha256=digest,
         short_hash=digest[:12],
         engine=assets.joinpath("avr8js.js").read_text(encoding="utf-8"),
@@ -78,10 +83,14 @@ def render_preview(
         firmware=base64.b64encode(firmware).decode("ascii"),
         simulator=assets.joinpath("uno.js").read_text(encoding="utf-8"),
     )
+    return {**save_preview(html, runtime_root, output), "firmware_sha256": digest}
+
+
+def save_preview(html: str, runtime_root: Path, output: Path | None) -> dict:
     if output is None:
         previews = runtime_root / "previews" / "chatsim"
         previews.mkdir(parents=True, exist_ok=True)
-        output = Path(tempfile.mkdtemp(prefix="uno-", dir=previews)) / "index.html"
+        output = Path(tempfile.mkdtemp(prefix="preview-", dir=previews)) / "index.html"
     output.parent.mkdir(parents=True, exist_ok=True)
     # Keep an existing preview usable if generating a replacement is interrupted.
     with tempfile.NamedTemporaryFile(dir=output.parent, suffix=".tmp", delete=False) as stream:
@@ -96,7 +105,48 @@ def render_preview(
         staging.replace(output)
     finally:
         staging.unlink(missing_ok=True)
-    return {"path": str(output), "url": output.as_uri(), "firmware_sha256": digest}
+    return {"path": str(output), "url": output.as_uri()}
+
+
+def open_preview(state: dict, preview: dict, open_browser: bool) -> dict:
+    dispatched = False
+    if open_browser:
+        try:
+            dispatched = webbrowser.open(preview["url"], new=2)
+        except (OSError, webbrowser.Error):
+            pass
+    return {**state, "success": True, "stage": "preview-ready", "preview_ready": True, "preview": preview,
+            "browser_requested": open_browser, "browser_dispatched": dispatched}
+
+
+def run_demo(demo_id: str, *, runtime_root: Path, output: Path | None, open_browser: bool) -> dict:
+    state = {"success": False, "action": "demo", "demo": demo_id, "code_compiled": False,
+             "preview_ready": False, "firmware_uploaded": False, "physical_effect_verified": False}
+    demo = next((entry for entry in load_catalog()["demos"] if entry["id"] == demo_id), None)
+    if demo is None:
+        return {**state, "stage": "source", "error": "unknown_simulation_demo"}
+    state.update(board_id=demo["board"], simulation_mode=demo["mode"], parts=demo["parts"])
+    if output is not None and output.suffix.lower() != ".html":
+        return {**state, "stage": "preview", "error": "output_requires_html_extension"}
+    try:
+        package = files("chatmaker")
+        assets = package.joinpath("sim_assets")
+        program = assets.joinpath(demo["program"]).read_bytes()
+        if demo["mode"] == "firmware":
+            preview = render_avr_preview(program, f"{demo_id}.ino.hex", runtime_root=runtime_root,
+                                         output=output, circuit=demo["circuit"])
+        else:
+            template = Template(assets.joinpath(demo["template"]).read_text(encoding="utf-8"))
+            tokens = {"wasm": base64.b64encode(program).decode("ascii")}
+            if "lvgl" in demo.get("notices", []):
+                lvgl = assets.joinpath("lvgl-license.txt").read_text(encoding="utf-8")
+                font = package.joinpath("cad", "assets", "OFL-1.1.txt").read_text(encoding="utf-8")
+                tokens["notices"] = escape(lvgl + "\n\n" + font)
+            preview = save_preview(template.substitute(tokens), runtime_root, output)
+            preview["program_sha256"] = sha256(program).hexdigest()
+    except (OSError, ValueError) as exc:
+        return {**state, "stage": "preview", "error": str(exc)}
+    return open_preview({**state, "uses_precompiled_program": True}, preview, open_browser)
 
 
 def run_simulation(
@@ -104,7 +154,7 @@ def run_simulation(
 ) -> dict:
     state = {"success": False, "action": "simulate", "board_id": BOARD_ID, "code_compiled": False,
              "preview_ready": False, "firmware_uploaded": False, "physical_effect_verified": False,
-             "circuit": circuit}
+             "circuit": circuit, "simulation_mode": "firmware"}
     if circuit not in CIRCUITS:
         return {**state, "stage": "source", "error": "unsupported_simulation_circuit"}
     source = sketch.resolve()
@@ -134,23 +184,19 @@ def run_simulation(
     except (OSError, ValueError) as exc:
         return {**state, "stage": "preview", "error": str(exc)}
 
-    dispatched = False
-    if open_browser:
-        try:
-            dispatched = webbrowser.open(preview["url"], new=2)
-        except (OSError, webbrowser.Error):
-            pass
-    return {**state, "success": True, "stage": "preview-ready", "preview_ready": True, "preview": preview,
-            "browser_requested": open_browser, "browser_dispatched": dispatched}
+    return open_preview(state, preview, open_browser)
 
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--sketch", type=Path)
+    entry = parser.add_mutually_exclusive_group(required=True)
+    entry.add_argument("--sketch", type=Path, help="Compile a custom UNO R3 sketch")
+    entry.add_argument("--demo", help="Open a bundled demo by ID")
+    entry.add_argument("--list", action="store_true", help="List boards, parts and bundled demos")
+    entry.add_argument("--version", action="store_true")
     parser.add_argument("--circuit", choices=CIRCUITS, default="button-led", help="Virtual UNO R3 circuit")
     parser.add_argument("--output", type=Path, help="Optional path to the generated HTML")
     parser.add_argument("--open", action="store_true", dest="open_browser")
-    parser.add_argument("--version", action="store_true")
     parser.add_argument("--expect-revision")
     parser.add_argument("--progress", choices=("human", "jsonl", "none"), default="human")
     args = parser.parse_args(argv)
@@ -159,13 +205,17 @@ def main(argv: list[str] | None = None) -> int:
         result = {"success": False, "error": "source_revision_mismatch"}
     elif args.version:
         result = {"success": True, "action": "version", "board_id": BOARD_ID}
-    elif args.sketch is None:
-        parser.error("--sketch is required unless using --version")
+    elif args.list:
+        result = {"success": True, "action": "list", **load_catalog()}
     else:
+        output = args.output.expanduser().resolve() if args.output else None
+        runtime_root = Path(info["runtime_root"])
         with reporting(args.progress):
-            result = run_simulation(args.sketch.expanduser(), runtime_root=Path(info["runtime_root"]),
-                                    output=args.output.expanduser().resolve() if args.output else None,
-                                    open_browser=args.open_browser, circuit=args.circuit)
+            if args.demo is not None:
+                result = run_demo(args.demo, runtime_root=runtime_root, output=output, open_browser=args.open_browser)
+            else:
+                result = run_simulation(args.sketch.expanduser(), runtime_root=runtime_root, output=output,
+                                        open_browser=args.open_browser, circuit=args.circuit)
     print(json.dumps({**result, "runtime": info}, ensure_ascii=True))
     return 0 if result["success"] else 1
 
