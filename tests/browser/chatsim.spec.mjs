@@ -154,6 +154,9 @@ test("Starcore A key drives the compiled OLED program off network", async ({ pag
   await expect(page.locator("#pin-note")).toHaveText("P5 的 S 排是 GPIO0。");
   await select.selectOption("");
   await expect(page.locator("#pin-marker")).toBeHidden();
+  await page.locator('.pin-target[data-label="P15"]').click();
+  await expect(select).toHaveValue("P15");
+  await expect(page.locator("#pin-note")).toHaveText("P15 的 S 排是 GPIO21。");
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
 });
 

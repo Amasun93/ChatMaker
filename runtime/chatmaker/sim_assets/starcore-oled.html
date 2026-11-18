@@ -32,17 +32,22 @@
   }
   .starcore {
     position: absolute; left: 17px; top: 38px; width: 492px; aspect-ratio: 820 / 560;
-    filter: drop-shadow(0 4px 5px #1f393945);
+    filter: drop-shadow(0 3px 3px #1f393933);
   }
   #board-art, #oled-art { display: block; width: 100%; height: 100%; }
   #button-a {
     position: absolute; width: 38px; height: 38px; padding: 0;
     transform: translate(-50%, -50%); border-radius: 50%;
-    border: 2px solid #8fd4e7; background: #6aa9bc35;
+    border: 0; background: transparent;
     touch-action: none; user-select: none; cursor: pointer; color: transparent;
   }
+  #button-a::after {
+    content: ""; position: absolute; inset: 6px; border-radius: 50%;
+    border: 1.5px solid #a1e3f1; background: #6aa9bc18;
+  }
   #button-a:disabled { cursor: wait; }
-  #button-a[aria-pressed="true"] { background: #81dcf298; border-color: #d2f5ff; }
+  #button-a:hover::after { background: #6aa9bc38; }
+  #button-a[aria-pressed="true"]::after { background: #81dcf270; border-color: #d2f5ff; }
   #button-a:focus-visible { outline: 3px solid #fff5c0; outline-offset: 3px; }
   #pin-marker {
     position: absolute; transform: translateX(-50%); pointer-events: none; z-index: 1;
@@ -51,6 +56,11 @@
   .starcore [data-pin] {
     position: absolute; width: 1px; height: 1px; transform: translate(-50%, -50%);
   }
+  .pin-target {
+    position: absolute; transform: translateX(-50%); cursor: pointer;
+    border-radius: 3px;
+  }
+  .pin-target:hover { background: #74d9ff3d; box-shadow: inset 0 0 0 1px #86dfff; }
   .oled {
     position: absolute; left: 565px; top: 138px; width: 194px; aspect-ratio: 550 / 301;
     filter: drop-shadow(0 4px 4px #243c4142);
@@ -109,6 +119,7 @@
           <div class="starcore">
             <canvas id="board-art" width="1640" height="1120" aria-label="星核板 v4.2.2 正面，引脚沿下边缘排列"></canvas>
             <button id="button-a" type="button" aria-label="按住板载 A 键" aria-pressed="false" title="板载 A 键 · P5" disabled>A</button>
+            <div id="pin-targets" aria-hidden="true"></div>
             <span id="pin-marker" aria-hidden="true" hidden></span>
             <i data-pin="3v3" aria-hidden="true"></i><i data-pin="gnd" aria-hidden="true"></i>
             <i data-pin="scl" aria-hidden="true"></i><i data-pin="sda" aria-hidden="true"></i>
@@ -176,8 +187,8 @@
     const context = wires.getContext("2d");
     const origin = schematic.getBoundingClientRect();
     context.scale(2, 2);
-    context.lineWidth = 3;
     context.lineCap = "round";
+    context.lineJoin = "round";
 
     function pin(name) {
       const bounds = document.querySelector('[data-pin="' + name + '"]').getBoundingClientRect();
@@ -185,15 +196,25 @@
         y: (bounds.top + bounds.height / 2 - origin.top) / scale };
     }
 
-    for (const row of document.querySelectorAll("[data-from]")) {
+    const rows = document.querySelectorAll("[data-from]");
+    rows.forEach((row, index) => {
       const start = pin(row.dataset.from);
       const end = pin(row.dataset.to);
       const color = getComputedStyle(row).getPropertyValue("--color");
-      const middle = (start.x + end.x) / 2;
-      context.strokeStyle = color;
+      const bend = start.x + (end.x - start.x) * (.81 - .14 * index);
+      const radius = 4;
       context.beginPath();
       context.moveTo(start.x, start.y);
-      context.bezierCurveTo(middle, start.y, middle, end.y, end.x, end.y);
+      context.lineTo(bend - radius, start.y);
+      context.quadraticCurveTo(bend, start.y, bend, start.y + radius);
+      context.lineTo(bend, end.y - radius);
+      context.quadraticCurveTo(bend, end.y, bend + radius, end.y);
+      context.lineTo(end.x, end.y);
+      context.lineWidth = 5;
+      context.strokeStyle = "#f3f7f7";
+      context.stroke();
+      context.lineWidth = 3;
+      context.strokeStyle = color;
       context.stroke();
       context.fillStyle = color;
       for (const contact of [start, end]) {
@@ -201,13 +222,19 @@
         context.arc(contact.x, contact.y, 3, 0, Math.PI * 2);
         context.fill();
       }
-    }
+    });
   }
 
   function setBoardPosition(element, point) {
     const { board, boardOrigin } = StarcoreArtwork;
     element.style.left = ((point.x - boardOrigin.x) / board.width * 100) + "%";
     element.style.top = ((point.y - boardOrigin.y) / board.height * 100) + "%";
+  }
+
+  function placePinColumn(element, pin) {
+    setBoardPosition(element, { x: pin.x, y: 378 });
+    element.style.width = (22 / StarcoreArtwork.board.width * 100) + "%";
+    element.style.height = (93 / StarcoreArtwork.board.height * 100) + "%";
   }
 
   function prepareArtwork() {
@@ -222,22 +249,33 @@
     const select = document.querySelector("#pin-select");
     const note = document.querySelector("#pin-note");
     const marker = document.querySelector("#pin-marker");
+    const targets = document.querySelector("#pin-targets");
     for (const pin of art.pins) {
       const name = pin.mark === pin.label ? pin.label : pin.mark + " / " + pin.label;
       select.add(new Option(name + " · GPIO" + pin.gpio, pin.label));
+      const target = document.createElement("span");
+      target.className = "pin-target";
+      target.dataset.label = pin.label;
+      target.title = name + " · GPIO" + pin.gpio;
+      placePinColumn(target, pin);
+      target.addEventListener("click", () => {
+        select.value = pin.label;
+        updateMarker();
+      });
+      targets.append(target);
     }
-    select.addEventListener("change", () => {
+
+    function updateMarker() {
       const pin = art.pins.find((entry) => entry.label === select.value);
       marker.hidden = !pin;
       if (!pin) {
         note.textContent = "S 是信号，V 是供电，G 是地线。";
         return;
       }
-      setBoardPosition(marker, { x: pin.x, y: 378 });
-      marker.style.width = (22 / art.board.width * 100) + "%";
-      marker.style.height = (93 / art.board.height * 100) + "%";
+      placePinColumn(marker, pin);
       note.textContent = pin.label + " 的 S 排是 GPIO" + pin.gpio + "。";
-    });
+    }
+    select.addEventListener("change", updateMarker);
   }
 
   async function start() {
