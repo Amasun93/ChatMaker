@@ -6,6 +6,7 @@
 
 - 现成示例可直接在浏览器打开。首批覆盖 Arduino UNO R3、微雪 ESP32-S3-Touch-LCD-2.8 V2 和 IDMC-0001 星核板 v4.2.2。
 - 星核板示例用板载 A 键控制外接 IDMD-0021 OLED。四芯线的接法已画好，按住显示「你好」，松手变回「再见」。
+- 星核板和 OLED 的外观按原课堂渲染图重画。可对照 USB-C、A/B 键、3V3/5V I²C 插口和三排排针，在右侧选择引脚后查看它在板上的位置。
 - `chatmaker-sim --list` 按板卡列出已能互动的元件、示例和已有资料的模块。用 `--demo` 打开现成示例，体验阶段直接使用随包的程序。[入口与复测说明](docs/verification/2026-11-19-chatsim-three-series.md)
 
 ## 2026-11-18 · ChatSim 的 UNO R3 浏览器 Demo

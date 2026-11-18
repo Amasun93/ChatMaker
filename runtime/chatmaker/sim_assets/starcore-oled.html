@@ -23,80 +23,55 @@
   .layout { display: grid; grid-template-columns: minmax(0, 1fr) 265px; gap: 16px; align-items: start; }
   .panel, aside { border: 1px solid #d8e0e3; border-radius: 14px; background: #fff; overflow: hidden; }
   .viewport {
-    position: relative; width: 100%; aspect-ratio: 556 / 299; min-height: 205px; max-height: 356px; overflow: hidden;
+    position: relative; width: 100%; aspect-ratio: 780 / 413; min-height: 224px; max-height: 442px; overflow: hidden;
     background: #f3f7f7 radial-gradient(#cbd9d8 1px, transparent 1.15px) center / 16px 16px;
   }
   .schematic {
-    position: absolute; left: 50%; top: 50%; width: 556px; height: 299px;
+    position: absolute; left: 50%; top: 50%; width: 780px; height: 413px;
     transform: translate(-50%, -50%) scale(var(--scale, 0));
   }
   .starcore {
-    position: absolute; left: 23px; top: 36px; width: 306px; aspect-ratio: 90 / 61.5;
-    border-radius: 9px; border: 2px solid #1b3957;
-    background: linear-gradient(135deg, #2b506e, #203851);
-    box-shadow: inset 0 0 0 1px #547083, 0 5px 9px #293c513f;
-    color: #e9f3fc;
+    position: absolute; left: 17px; top: 38px; width: 492px; aspect-ratio: 820 / 560;
+    filter: drop-shadow(0 4px 5px #1f393945);
   }
-  .mount { position: absolute; width: 16px; height: 16px; border-radius: 50%; background: #18283e; border: 3px solid #6a9cca; }
-  .top { top: 11px; } .bottom { bottom: 34px; }
-  .left { left: 8px; } .right { right: 8px; }
-  .usb {
-    position: absolute; top: -3px; left: 126px; width: 34px; height: 17px;
-    border: 1px solid #6f818b; border-radius: 3px; background: linear-gradient(#cdd5d9, #8a9da6);
-  }
-  .chip {
-    position: absolute; left: 105px; top: 68px; width: 83px; height: 60px;
-    border: 5px solid #1a2633; border-radius: 5px;
-    background: repeating-linear-gradient(145deg, #afbfc8, #cbd2d6 10px, #b1c3ca 18px);
-    color: #304855; font: 800 10px/50px system-ui, sans-serif; text-align: center;
-  }
-  .pcb-label { position: absolute; top: 25px; left: 25px; font-size: 15px; font-weight: 800; }
-  .version { position: absolute; top: 30px; left: 81px; font: 700 10px monospace; color: #cadbeb; }
-  .keys { position: absolute; top: 76px; left: 23px; display: flex; gap: 9px; align-items: flex-start; }
-  .key {
-    display: grid; place-items: center; width: 35px; height: 35px; border-radius: 8px;
-    border: 2px solid #748a9c; background: #36465b;
-    color: #eef6fc; font: 800 16px system-ui, sans-serif;
-  }
+  #board-art, #oled-art { display: block; width: 100%; height: 100%; }
   #button-a {
-    width: 45px; height: 45px; margin: -5px 0 0 -3px; padding: 0; border-color: #cfdfeb;
-    background: #e0eaf2; color: #183047; touch-action: none; user-select: none; cursor: pointer;
-    box-shadow: 0 3px 0 #667b92;
+    position: absolute; width: 38px; height: 38px; padding: 0;
+    transform: translate(-50%, -50%); border-radius: 50%;
+    border: 2px solid #8fd4e7; background: #6aa9bc35;
+    touch-action: none; user-select: none; cursor: pointer; color: transparent;
   }
   #button-a:disabled { cursor: wait; }
-  #button-a[aria-pressed="true"] { background: #b4dbf4; box-shadow: 0 1px 0 #6c869d; transform: translateY(2px); }
-  #button-a:focus-visible { outline: 3px solid #8ee4f3; outline-offset: 4px; }
-  .pins {
-    position: absolute; left: 34px; right: 34px; bottom: 14px; height: 24px;
-    border: 2px solid #1b2a3a; border-radius: 3px; background: #162333;
+  #button-a[aria-pressed="true"] { background: #81dcf298; border-color: #d2f5ff; }
+  #button-a:focus-visible { outline: 3px solid #fff5c0; outline-offset: 3px; }
+  #pin-marker {
+    position: absolute; transform: translateX(-50%); pointer-events: none; z-index: 1;
+    border: 2px solid #70d8ff; border-radius: 4px; background: #2e93d052;
   }
-  .pins::before {
-    content: ""; position: absolute; inset: 3px;
-    background: radial-gradient(circle, #cebb87 1.3px, transparent 1.7px) 0 0 / 10px 6px;
+  .starcore [data-pin] {
+    position: absolute; width: 1px; height: 1px; transform: translate(-50%, -50%);
   }
-  .ports {
-    position: absolute; left: 245px; top: 59px; padding: 6px 6px 6px 5px; width: 60px;
-    border: 1px solid #22374a; border-radius: 5px; background: #dfe7e9; color: #324758;
-  }
-  .ports span, .oled-pins span { display: flex; align-items: center; gap: 6px; height: 16px; font: 700 9.5px monospace; }
-  .ports span { justify-content: flex-end; }
-  [data-pin] { display: block; width: 7px; height: 7px; border: 1px solid #d3af6b; background: #253544; border-radius: 2px; }
   .oled {
-    position: absolute; left: 391px; top: 91px; width: 149px; height: 94px;
-    border: 2px solid #143b52; border-radius: 9px;
-    background: linear-gradient(124deg, #2e708d, #21516c);
-    box-shadow: 0 4px 9px #30495538;
+    position: absolute; left: 565px; top: 138px; width: 194px; aspect-ratio: 550 / 301;
+    filter: drop-shadow(0 4px 4px #243c4142);
   }
-  .oled-pins { position: absolute; left: -7px; top: 9px; padding: 2px 2px; border-radius: 4px; background: #3d6274; }
+  .oled-pins {
+    position: absolute; left: -12px; top: 14px; width: 17px; padding: 3px 0;
+    display: grid; justify-items: center; gap: 6px;
+    background: #e6ddd0; border: 1px solid #a89b84; border-radius: 3px;
+  }
+  .oled-pins [data-pin] {
+    display: block; width: 7px; height: 7px; border: 1px solid #b39b5b;
+    background: #262d27; border-radius: 1px;
+  }
   #oled-screen {
-    position: absolute; left: 13px; top: 14px; box-sizing: content-box;
-    width: 123px; height: 61.5px; background: #061318; border: 2px solid #183a4b; border-radius: 4px;
-    image-rendering: pixelated;
+    position: absolute; left: 21.45%; top: 21.6%; width: 57.1%; height: auto;
+    aspect-ratio: 2 / 1; background: #061318; image-rendering: pixelated;
   }
   .wires { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
   .label { position: absolute; margin: 0; font-size: 14px; font-weight: 700; color: #3c505c; }
-  .board-label { left: 23px; top: 258px; }
-  .oled-label { left: 391px; top: 197px; }
+  .board-label { left: 17px; top: 385px; }
+  .oled-label { left: 566px; top: 255px; }
   .status { margin: 0; min-height: 45px; padding: 12px 14px; border-top: 1px solid #d8e0e3; color: #40515c; font-size: 14px; }
   aside section { padding: 16px; }
   aside section + section { border-top: 1px solid #e2e7e8; }
@@ -110,6 +85,11 @@
   .power { --color: #bf3946; } .ground { --color: #37414b; }
   .clock { --color: #8d5b18; } .data { --color: #168161; }
   .hint { margin: 9px 0 0; color: #465a65; font-size: 13px; line-height: 1.58; }
+  .pin-select {
+    width: 100%; min-height: 36px; border: 1px solid #b4c5c9; border-radius: 6px;
+    background: #fff; color: #253c46; padding: 4px 7px; font: inherit; font-size: 13px;
+  }
+  .pin-select:focus-visible { outline: 2px solid #227597; outline-offset: 2px; }
   @media (max-width: 760px) {
     .page { width: min(610px, calc(100% - 24px)); }
     main { padding-block: 18px; }
@@ -127,27 +107,17 @@
       <div class="viewport">
         <div class="schematic">
           <div class="starcore">
-            <i class="mount top left" aria-hidden="true"></i><i class="mount top right" aria-hidden="true"></i>
-            <i class="mount bottom left" aria-hidden="true"></i><i class="mount bottom right" aria-hidden="true"></i>
-            <div class="usb" aria-hidden="true"></div>
-            <div class="pcb-label">星核板</div><div class="version">V4.2.2</div>
-            <div class="chip" aria-hidden="true">ESP32</div>
-            <div class="keys">
-              <button id="button-a" class="key" type="button" aria-label="按住板载 A 键" aria-pressed="false" disabled>A</button>
-              <span class="key" title="本示例使用 A 键">B</span>
-            </div>
-            <div class="pins" aria-hidden="true"></div>
-            <div class="ports" aria-hidden="true">
-              <span>3V3<i data-pin="3v3"></i></span>
-              <span>GND<i data-pin="gnd"></i></span>
-              <span>SCL/C<i data-pin="scl"></i></span>
-              <span>SDA/D<i data-pin="sda"></i></span>
-            </div>
+            <canvas id="board-art" width="1640" height="1120" aria-label="星核板 v4.2.2 正面，引脚沿下边缘排列"></canvas>
+            <button id="button-a" type="button" aria-label="按住板载 A 键" aria-pressed="false" title="板载 A 键 · P5" disabled>A</button>
+            <span id="pin-marker" aria-hidden="true" hidden></span>
+            <i data-pin="3v3" aria-hidden="true"></i><i data-pin="gnd" aria-hidden="true"></i>
+            <i data-pin="scl" aria-hidden="true"></i><i data-pin="sda" aria-hidden="true"></i>
           </div>
           <div class="oled">
-            <div class="oled-pins" aria-hidden="true">
-              <span><i data-pin="vcc"></i></span><span><i data-pin="oled-gnd"></i></span>
-              <span><i data-pin="oled-scl"></i></span><span><i data-pin="oled-sda"></i></span>
+            <canvas id="oled-art" width="1100" height="602" aria-hidden="true"></canvas>
+            <div class="oled-pins" title="背面四针 I²C 插口的示意" aria-hidden="true">
+              <i data-pin="vcc"></i><i data-pin="oled-gnd"></i>
+              <i data-pin="oled-scl"></i><i data-pin="oled-sda"></i>
             </div>
             <canvas id="oled-screen" width="128" height="64" aria-label="外接虚拟 OLED 屏幕"></canvas>
           </div>
@@ -175,11 +145,17 @@
           <li class="clock" data-from="scl" data-to="oled-scl">SCL/C（P19）→ SCL</li>
           <li class="data" data-from="sda" data-to="oled-sda">SDA/D（P20）→ SDA</li>
         </ul>
-        <p class="hint">接实物时，按丝印把整条四芯线插入同一个 3V3 I²C 插口。A 键已经在板上。</p>
+        <p class="hint">整条四芯线插入同一个 3V3 I²C 插口。OLED 的四针插口在背面，图上把它画在侧边。</p>
+      </section>
+      <section>
+        <h2><label for="pin-select">查找下方排针</label></h2>
+        <select id="pin-select" class="pin-select"><option value="">选一个丝印或引脚名</option></select>
+        <p class="hint" id="pin-note" aria-live="polite">S 是信号，V 是供电，G 是地线。</p>
       </section>
     </aside>
   </div>
 </main>
+<script>$artwork</script>
 <script id="program" type="application/octet-stream">$wasm</script>
 <script>
   const viewport = document.querySelector(".viewport");
@@ -228,7 +204,44 @@
     }
   }
 
+  function setBoardPosition(element, point) {
+    const { board, boardOrigin } = StarcoreArtwork;
+    element.style.left = ((point.x - boardOrigin.x) / board.width * 100) + "%";
+    element.style.top = ((point.y - boardOrigin.y) / board.height * 100) + "%";
+  }
+
+  function prepareArtwork() {
+    const art = StarcoreArtwork;
+    art.drawBoard(document.querySelector("#board-art"));
+    art.drawOled(document.querySelector("#oled-art"));
+    setBoardPosition(button, art.buttonA);
+    for (const socket of art.sockets) {
+      setBoardPosition(document.querySelector('[data-pin="' + socket.id + '"]'), socket);
+    }
+
+    const select = document.querySelector("#pin-select");
+    const note = document.querySelector("#pin-note");
+    const marker = document.querySelector("#pin-marker");
+    for (const pin of art.pins) {
+      const name = pin.mark === pin.label ? pin.label : pin.mark + " / " + pin.label;
+      select.add(new Option(name + " · GPIO" + pin.gpio, pin.label));
+    }
+    select.addEventListener("change", () => {
+      const pin = art.pins.find((entry) => entry.label === select.value);
+      marker.hidden = !pin;
+      if (!pin) {
+        note.textContent = "S 是信号，V 是供电，G 是地线。";
+        return;
+      }
+      setBoardPosition(marker, { x: pin.x, y: 378 });
+      marker.style.width = (22 / art.board.width * 100) + "%";
+      marker.style.height = (93 / art.board.height * 100) + "%";
+      note.textContent = pin.label + " 的 S 排是 GPIO" + pin.gpio + "。";
+    });
+  }
+
   async function start() {
+    prepareArtwork();
     drawWires(fit());
     new ResizeObserver(fit).observe(viewport);
     const bytes = Uint8Array.from(atob(document.querySelector("#program").textContent), (value) => value.charCodeAt(0));

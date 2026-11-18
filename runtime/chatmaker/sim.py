@@ -138,6 +138,8 @@ def run_demo(demo_id: str, *, runtime_root: Path, output: Path | None, open_brow
         else:
             template = Template(assets.joinpath(demo["template"]).read_text(encoding="utf-8"))
             tokens = {"wasm": base64.b64encode(program).decode("ascii")}
+            if demo.get("artwork"):
+                tokens["artwork"] = assets.joinpath(demo["artwork"]).read_text(encoding="utf-8")
             if "lvgl" in demo.get("notices", []):
                 lvgl = assets.joinpath("lvgl-license.txt").read_text(encoding="utf-8")
                 font = package.joinpath("cad", "assets", "OFL-1.1.txt").read_text(encoding="utf-8")

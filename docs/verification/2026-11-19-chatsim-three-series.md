@@ -33,4 +33,5 @@ chatmaker-sim --demo uno-r3-button-oled --open
 
 - Windows 上四份随包示例均生成了可独立打开的 HTML。Chromium 离线能复现按下和松开的变化。星核板额外检查了 390 和 320 像素下的触控操作。
 - 两份 UNO R3 示例随包文件来自当前源码编译。微雪 V2 的真板示例使用 CST3530 适配环境编译通过，星核板示例使用 ChatMaker 管理的星核板工具链编译通过。示例在真实板上的显示与触摸待观测，WorkBuddy 对话内路由等待按上面的提示词复测。
-- 星核板外形参考公开的 [板卡机械资料](../../knowledge/mechanical/boards/idmc-0001-starcore-v4-2-2.json) 与 [OLED 机械资料](../../knowledge/mechanical/components/idmd-0021-starcore-oled-1-3.json)，针脚用接线示意表达。UNO R3 继续使用 [Wokwi Elements](https://github.com/wokwi/wokwi-elements) 和 [AVR8js](https://github.com/wokwi/avr8js)。
+- 星核板和 OLED 的网页图形参考旧版课堂资料《星核板-显示屏》里的 v4.2.2 正面图、OLED 正反面图，以及 [板卡机械资料](../../knowledge/mechanical/boards/idmc-0001-starcore-v4-2-2.json) 和 [OLED 机械资料](../../knowledge/mechanical/components/idmd-0021-starcore-oled-1-3.json)。网页图形保留跟接线有关的丝印和插口位置，OLED 的背面插口使用侧边示意。
+- 星核板的 26 列 S/V/G 排针中，S 排映射与 [板卡资料](../../packs/boards/idmc-0001-starcore-v4-2-2.yaml) 一致。复测了选择 P5 高亮、A 键松按和窄屏完整显示。UNO R3 继续使用 [Wokwi Elements](https://github.com/wokwi/wokwi-elements) 和 [AVR8js](https://github.com/wokwi/avr8js)。

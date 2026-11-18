@@ -115,12 +115,14 @@ test("SSD1306 framebuffer follows I2C commands and data", async ({ page }) => {
 });
 
 async function openWasmDemo(page, name) {
-  const [template, program] = await Promise.all([
+  const [template, program, artwork] = await Promise.all([
     readFile(new URL(name + ".html", assets), "utf8"),
     readFile(new URL(name + ".wasm", assets)),
+    name === "starcore-oled" ? readFile(new URL("starcore-board.js", assets), "utf8") : "",
   ]);
   await page.goto("about:blank");
-  await page.setContent(template.replace("$wasm", program.toString("base64")).replace("$notices", ""));
+  await page.setContent(template.replace("$wasm", program.toString("base64"))
+    .replace("$notices", "").replace("$artwork", () => artwork));
 }
 
 async function frame(canvas) {
@@ -145,6 +147,13 @@ test("Starcore A key drives the compiled OLED program off network", async ({ pag
   expect(await frame(oled)).not.toBe(rest);
   await page.keyboard.up("Space");
   expect(await frame(oled)).toBe(rest);
+  const select = page.getByLabel("查找下方排针");
+  await expect(select.locator("option")).toHaveCount(27);
+  await select.selectOption("P5");
+  await expect(page.locator("#pin-marker")).toBeVisible();
+  await expect(page.locator("#pin-note")).toHaveText("P5 的 S 排是 GPIO0。");
+  await select.selectOption("");
+  await expect(page.locator("#pin-marker")).toBeHidden();
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
 });
 
