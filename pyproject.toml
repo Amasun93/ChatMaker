@@ -22,6 +22,7 @@ chatmaker-doctor = "chatmaker.doctor:main"
 chatmaker-catalog = "chatmaker.catalog:main"
 chatmaker-route = "chatmaker.route:main"
 chatmaker-hardware = "chatmaker.hardware.workflow:main"
+chatmaker-sim = "chatmaker.sim:main"
 chatmaker-waveshare-s3 = "chatmaker.hardware.waveshare_s3:main"
 chatmaker-nano = "chatmaker.hardware.nano_mindplus:main"
 chatmaker-uno = "chatmaker.hardware.uno_mindplus:main"
@@ -54,4 +55,4 @@ package-dir = {"" = "runtime"}
 where = ["runtime"]
 
 [tool.setuptools.package-data]
-chatmaker = ["catalog_registry.json", "cad/assets/*.otf", "cad/assets/*.txt", "cad/assets/*.json", "hardware/microbit_tool/*.json", "hardware/microbit_tool/*.cjs", "installers/runtime_sources.json"]
+chatmaker = ["catalog_registry.json", "cad/assets/*.otf", "cad/assets/*.txt", "cad/assets/*.json", "hardware/microbit_tool/*.json", "hardware/microbit_tool/*.cjs", "installers/runtime_sources.json", "sim_assets/*.html", "sim_assets/*.js"]

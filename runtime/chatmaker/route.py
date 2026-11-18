@@ -105,6 +105,19 @@ def _planned_knowledge_requests(
 
 
 def route_project_intent(request: dict[str, Any]) -> dict[str, Any]:
+    if request.get("simulation") is True:
+        board_id = _exact_board_id(request)
+        ready = board_id == "arduino-uno-r3"
+        return {
+            "success": ready,
+            "route": "simulation",
+            "status": "ready" if ready else "blocked",
+            "stage": "routed" if ready else "planning",
+            "specialists": ["chatduino", "chatsim"] if ready else [],
+            "supported_boards": ["arduino-uno-r3"],
+            "contract_requirements": [],
+            "evidence_boundaries": {"physical_effect_requires_separate_verification": True},
+        }
     has_hardware = _has_hardware_intent(request)
     has_web = _has_web_intent(request)
     has_cad = _has_cad_intent(request)

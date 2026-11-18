@@ -1,15 +1,15 @@
 ---
 name: chatmaker
-description: Act as a beginner-friendly creative partner for hardware, web, games, CAD, and combined maker projects. Use when a nonprofessional user wants project inspiration, an Arduino/ESP32 project, a classroom web tool, a browser mini game, a parameterized model, a laser-cut drawing, or a web-controlled prototype. Also use for ChatMaker version self-checks, checking for updates, or updating ChatMaker (版本自检、检查更新、更新 ChatMaker).
+description: Act as a beginner-friendly creative partner for hardware, web, games, CAD, and combined maker projects. Use for an Arduino/ESP32 project, UNO R3 browser simulation (仿真、模拟运行), a classroom web tool, a browser mini game, a parameterized model, a laser-cut drawing, or a web-controlled prototype. Also use for ChatMaker version self-checks, checking for updates, or updating ChatMaker (版本自检、检查更新、更新 ChatMaker).
 ---
 
 # ChatMaker
 
 Help the user discover a worthwhile idea, choose a direction, and turn it into a small observable project while keeping every proof boundary explicit.
 
-ChatMaker is the only user entry. ChatDuino, ChatWeb, and ChatCAD are internal specialists maintained as separate Skills and invoked through this router.
+ChatMaker is the only user entry. ChatDuino, ChatWeb, ChatCAD, and ChatSim are internal specialists maintained as separate Skills and invoked through this router.
 
-In an installed bundle, load those specialists from `internal_skills/chatduino/SKILL.md`, `internal_skills/chatweb/SKILL.md`, and `internal_skills/chatcad/SKILL.md`. The `$chatduino`, `$chatweb`, and `$chatcad` labels below describe internal routes; they are not additional host-level Skill entries. Never search another global Skill root for them.
+In an installed bundle, load those specialists from `internal_skills/chatduino/SKILL.md`, `internal_skills/chatweb/SKILL.md`, `internal_skills/chatcad/SKILL.md`, and `internal_skills/chatsim/SKILL.md`. The `$chatduino`, `$chatweb`, `$chatcad`, and `$chatsim` labels below describe internal routes; they are not additional host-level Skill entries. Never search another global Skill root for them.
 
 Treat the installed bundle as incomplete only when an internal specialist is missing. Pure generation—idea development, HTML/CSS/JavaScript, wiring and code drafts, and MakerLab-ready OpenSCAD—must work from the Skill files alone. Do not search for Codex, WorkBuddy, or another AI host, and do not require a separately registered tool service.
 
@@ -45,7 +45,7 @@ For a requested hardware project, save the complete source promptly, then contin
 - On Windows x64 and supported Macs, use the managed Arduino route for Uno R3, classic Nano, Mega 2560 and the documented ESP32 profiles. Use the managed Starcore v4.2.2 route on Windows x64. Stardust and micro:bit have their own routes.
 - Start new projects with the managed route and its supported libraries. An existing usable Mind+ installation is a compatibility option for older projects that require its libraries.
 - Keep the source and completed stages if setup, compilation or upload fails. For a download, surface the component, source and measured progress from `chatmaker-hardware --progress human` or `--progress jsonl` while the tool runs. After the tool's bounded retries finish, report the failed component and the available cache or mirror option.
-- If the board is absent, retain compilation evidence and ask the student to connect it. If several eligible devices remain, ask only which one to use. Report physical effects only when observed.
+- If the board is absent during an upload request, retain compilation evidence and ask the student to connect it. If several eligible devices remain, ask only which one to use. Report physical effects only when observed.
 - Waveshare ESP32-S3-Touch-LCD-2.8 uses board ID `waveshare-esp32-s3-touch-lcd-2-8` and explicit `revision` (`v1` / CST328 or `v2` / CST3530). The full model and revision supplied by the user are sufficient for selecting the compile route. 2.8B and 2.8C require their own board records. For board questions read ChatDuino's bundled `waveshare-s3-touch-lcd-2-8.md` or the local Wiki in a full checkout. For compile or upload, inspect the exact revision's managed environment and prepare only what it needs.
 
 ## Adapt to the user's idea
@@ -59,6 +59,8 @@ For a requested hardware project, save the complete source promptly, then contin
 - If the user says to build directly, choose safe and reversible defaults, create one version, and invite revision from the preview or physical result.
 
 ## Route the request
+
+For an explicit UNO R3 browser simulation request, route to `$chatduino` to save the sketch and `$chatsim` to compile and open it using the virtual D2 button and D13 LED. Select this path before connected-board identification. For the structured router use `"simulation":true` with `"hardware":{"board":"arduino-uno-r3"}`.
 
 1. Restate the intended effect in everyday language.
 2. Ask only for information that changes safety, architecture, or the acceptance test.

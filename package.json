@@ -2,9 +2,12 @@
   "name": "chatmaker-browser-tests",
   "private": true,
   "scripts": {
+    "build:chatsim-engine": "node scripts/bundle_chatsim_engine.mjs",
     "test:browser": "playwright test"
   },
   "devDependencies": {
-    "@playwright/test": "1.62.1"
+    "@playwright/test": "1.62.1",
+    "avr8js": "0.21.1",
+    "esbuild": "0.28.2"
   }
 }

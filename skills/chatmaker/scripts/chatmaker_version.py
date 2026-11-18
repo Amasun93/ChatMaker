@@ -22,7 +22,7 @@ REPOSITORIES = {
     'GitHub': ('https://github.com/Amasun93/ChatMaker', 'https://api.github.com/repos/Amasun93/ChatMaker'),
     'Gitee': ('https://gitee.com/amasun93/ChatMaker', 'https://gitee.com/api/v5/repos/amasun93/ChatMaker'),
 }
-SPECIALISTS = ('chatduino', 'chatweb', 'chatcad')
+SPECIALISTS = ('chatduino', 'chatweb', 'chatcad', 'chatsim')
 SKILL_FILE_TYPES = {'.md', '.py', '.yaml', '.yml', '.json'}
 PACKAGE_INPUTS = ('pyproject.toml', 'distribution/core-runtime/requirements.lock')
 TOOL_SETUP_INPUTS = {

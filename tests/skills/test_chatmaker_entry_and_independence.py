@@ -15,17 +15,17 @@ class ChatMakerEntryAndIndependenceTests(unittest.TestCase):
         skills = ROOT / "skills"
         self.assertEqual(
             {path.name for path in skills.iterdir() if path.is_dir()},
-            {"chatmaker", "chatduino", "chatweb", "chatcad"},
+            {"chatmaker", "chatduino", "chatweb", "chatcad", "chatsim"},
         )
         self.assertTrue((skills / "chatmaker" / "agents" / "openai.yaml").is_file())
-        for name in ("chatduino", "chatweb", "chatcad"):
+        for name in ("chatduino", "chatweb", "chatcad", "chatsim"):
             with self.subTest(skill=name):
                 self.assertFalse((skills / name / "agents" / "openai.yaml").exists())
 
     def test_router_names_every_internal_specialist_and_each_names_its_parent(self):
         router = (ROOT / "skills" / "chatmaker" / "SKILL.md").read_text(encoding="utf-8")
         self.assertIn("only user entry", router)
-        for name in ("chatduino", "chatweb", "chatcad"):
+        for name in ("chatduino", "chatweb", "chatcad", "chatsim"):
             self.assertIn(f"${name}", router)
             self.assertIn(f"internal_skills/{name}/SKILL.md", router)
             specialist = (ROOT / "skills" / name / "SKILL.md").read_text(encoding="utf-8")
@@ -38,7 +38,7 @@ class ChatMakerEntryAndIndependenceTests(unittest.TestCase):
         self.assertIn("single execution route", router)
         self.assertNotIn("MCP", router)
         self.assertNotIn("chatmaker-install auto", router)
-        for specialist in ("chatduino", "chatweb", "chatcad"):
+        for specialist in ("chatduino", "chatweb", "chatcad", "chatsim"):
             text = (ROOT / "skills" / specialist / "SKILL.md").read_text(encoding="utf-8")
             self.assertNotIn("MCP", text)
             self.assertNotIn("WorkBuddy", text)

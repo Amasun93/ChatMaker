@@ -16,7 +16,7 @@ from typing import Any
 
 
 ROOT = Path(__file__).resolve().parents[1]
-SPECIALISTS = ("chatduino", "chatweb", "chatcad")
+SPECIALISTS = ("chatduino", "chatweb", "chatcad", "chatsim")
 
 
 def _sha256(path: Path) -> str:
@@ -36,6 +36,8 @@ def source_map(root: Path) -> dict[Path, Path]:
         if not source.is_dir() or source.is_symlink():
             raise ValueError(f"skill_source_missing_or_unsafe:{source}")
         for path in sorted(source.rglob("*")):
+            if "__pycache__" in path.relative_to(source).parts:
+                continue
             if path.is_symlink():
                 raise ValueError(f"skill_source_symlink_rejected:{path}")
             if path.is_file():

@@ -38,6 +38,7 @@ EXPECTED_COMMANDS = {
     "chatmaker-catalog",
     "chatmaker-route",
     "chatmaker-hardware",
+    "chatmaker-sim",
     "chatmaker-waveshare-s3",
     "chatmaker-board-identify",
     "chatmaker-nano",
@@ -278,7 +279,7 @@ class CleanCoreIntegrationTests(unittest.TestCase):
 
             self.assertEqual(
                 {path.name for path in (core / "skills").iterdir() if path.is_dir()},
-                {"chatmaker", "chatduino", "chatweb", "chatcad"},
+                {"chatmaker", "chatduino", "chatweb", "chatcad", "chatsim"},
             )
             self.assertFalse(any((core / "knowledge").rglob("*.md")))
             for excluded in (
@@ -367,7 +368,7 @@ class CleanCoreIntegrationTests(unittest.TestCase):
             self.assertEqual(doctor["packs"]["knowledge_indexes"], doctor["packs"]["counts"]["board"])
             self.assertEqual(
                 set(doctor["skills"]["results"]),
-                {"chatmaker", "chatduino", "chatweb", "chatcad"},
+                {"chatmaker", "chatduino", "chatweb", "chatcad", "chatsim"},
             )
 
             catalog = json.loads(

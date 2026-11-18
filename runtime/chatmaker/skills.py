@@ -38,6 +38,7 @@ def validate_skill_directory(skill_dir: Path) -> list[str]:
         "chatduino",
         "chatweb",
         "chatcad",
+        "chatsim",
     }
     if not agent_path.is_file() and not requires_ui_metadata:
         return errors

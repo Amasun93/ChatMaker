@@ -2,6 +2,11 @@
 
 这是面向老师、学生和体验者的公开更新记录。最新更新放在最上面，标明日期和对应的版本标签或主分支提交。
 
+## 2026-11-18 · ChatSim 的 UNO R3 浏览器 Demo
+
+- 对 ChatMaker 说「我手边没有板子，帮我在浏览器模拟按按钮亮灯」。ChatDuino 保存并编译 UNO R3 程序，ChatSim 把编译产物交给 AVR8js，在浏览器模拟 D2 按钮和 D13 板载灯。
+- 预览页带上固件和仿真引擎，学生用现有浏览器打开即可。仿真结果与真板结果分别记录。[WorkBuddy 复测](docs/verification/2026-11-18-chatsim-uno-r3.md)
+
 ## 2026-11-18 · 主分支新增 UNO R4 WiFi、XIAO ESP32S3 和行空板 K10
 
 - 四个板型可通过 ChatMaker 自己准备工具、编译和 USB 烧录，无需 Mind+。XIAO 普通版和带摄像头的 Sense 分别提供板卡条目和示例。

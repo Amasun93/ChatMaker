@@ -10,7 +10,7 @@
 
 ChatMaker 是面向老师、学生和黑客松参与者的 AI 创作伙伴。用户说出想法、选择喜欢的方向并确认实际效果。ChatMaker 负责启发创意、设计方案、生成代码、调用工具和检查结果。
 
-ChatMaker 是唯一入口；ChatDuino、ChatWeb 和 ChatCAD 是由它在内部调用、分别维护的专业模块。
+ChatMaker 是唯一入口。ChatDuino、ChatWeb、ChatCAD 和 ChatSim 由它在内部调用并分别维护。
 
 对话窗口就是创作环境。编译器、串口和浏览器在后台完成专业工作，学生可以直接让 ChatMaker 把程序下载到支持的板子上。
 
@@ -85,7 +85,8 @@ ChatMaker 补上四件事。
 ChatMaker
 ├─ ChatDuino   硬件、接线、固件、编译、烧录、串口
 ├─ ChatWeb     前端创作、课堂工具、设备界面、浏览器验证
-└─ ChatCAD     参数建模、二维图纸、三维模型、预览与导出
+├─ ChatCAD     参数建模、二维图纸、三维模型、预览与导出
+└─ ChatSim     UNO R3 固件、虚拟按钮和 LED 的浏览器仿真
 ```
 
 ### ChatMaker
@@ -182,7 +183,8 @@ chatmaker-pack rollback chatmaker-board-arduino-nano-classic-knowledge --version
 
 | 范围 | 状态 | 已有证据 |
 | --- | --- | --- |
-| ChatMaker 单入口和三个内部模块结构 | 已验证 | 宿主顶层只有 ChatMaker；ChatDuino、ChatWeb、ChatCAD 在内部独立维护并通过 Skill 格式校验 |
+| ChatMaker 单入口与内部模块 | 已验证 | ChatDuino、ChatWeb、ChatCAD、ChatSim 由 ChatMaker 调用 |
+| ChatSim 浏览器仿真 | UNO R3 Demo | D2 按钮和 D13 板载 LED。运行实际编译的固件。[试用与复测](docs/verification/2026-11-18-chatsim-uno-r3.md) |
 | ChatCAD V1 模式 | 开发版可用 | Chat2D 生成带可调指接榫的六面激光盒、底板拖拽孔位、四色图层、DXF/SVG 和组装预览；Chat3D 生成可旋转的打印外壳及 OpenSCAD/STL；真实试装待用户验证 |
 | 创作伙伴对话规则 | 已写入 | 尚需独立前向测试 |
 | 数据包和证据状态 | 已验证 | 自动测试与项目 doctor 通过 |

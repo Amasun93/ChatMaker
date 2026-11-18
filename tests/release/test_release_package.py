@@ -382,7 +382,7 @@ class ReleasePackageTests(unittest.TestCase):
         self.assertIn(prefix + "skills/chatweb/SKILL.md", names)
         self.assertIn(prefix + "skills/chatcad/SKILL.md", names)
         self.assertIn(prefix + "skills/chatmaker/agents/openai.yaml", names)
-        for specialist in ("chatduino", "chatweb", "chatcad"):
+        for specialist in ("chatduino", "chatweb", "chatcad", "chatsim"):
             self.assertNotIn(prefix + f"skills/{specialist}/agents/openai.yaml", names)
         self.assertIn(prefix + "runtime/chatmaker/installers/local.py", names)
         self.assertNotIn(prefix + "runtime/chatmaker/installers/codex.py", names)
