@@ -60,7 +60,7 @@ For a requested hardware project, save the complete source promptly, then contin
 
 ## Route the request
 
-For an explicit UNO R3 browser simulation request, route to `$chatduino` to save the sketch and `$chatsim` to compile and open it using the virtual D2 button and D13 LED. Select this path before connected-board identification. For the structured router use `"simulation":true` with `"hardware":{"board":"arduino-uno-r3"}`.
+For an explicit UNO R3 hardware simulation request, route to `$chatduino` to save the sketch and `$chatsim` to compile and run the firmware in a browser with virtual components. The available circuits use a D2 pushbutton with either the D13 LED or an SSD1306 I²C OLED. Select this path before connected-board identification. For the structured router use `"simulation":true` with `"hardware":{"board":"arduino-uno-r3"}`. ChatWeb handles projects in which the browser page itself is the product or the control panel.
 
 1. Restate the intended effect in everyday language.
 2. Ask only for information that changes safety, architecture, or the acceptance test.

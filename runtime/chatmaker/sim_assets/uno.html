@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>ChatSim · UNO R3 按钮亮灯</title>
+<title>ChatSim · $lesson</title>
 <style>
   :root {
     color-scheme: light;
@@ -67,6 +67,32 @@
   .switch-caption { left: 485px; top: 207px; transform: translateX(-50%); white-space: nowrap; }
   .board-caption { left: 53px; top: 300px; }
   .wires { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+  body:not([data-circuit="button-oled"]) .oled-only,
+  body[data-circuit="button-oled"] .led-only { display: none; }
+  body[data-circuit="button-oled"] .viewport { aspect-ratio: 560 / 464; max-height: 484px; }
+  body[data-circuit="button-oled"] .schematic { height: 464px; }
+  body[data-circuit="button-oled"] #uno-part { top: 70px; }
+  body[data-circuit="button-oled"] .board-caption { top: 284px; }
+  .oled-part {
+    position: absolute; left: 166px; top: 345px; width: 155px; height: 103px;
+    border: 2px solid #1c4260; border-radius: 8px; background: #225e88;
+    box-shadow: 0 3px 5px #15273a29; color: #fff;
+  }
+  .oled-part::before, .oled-part::after {
+    content: ""; position: absolute; bottom: 4px; width: 6px; height: 6px;
+    border: 2px solid #bca779; border-radius: 50%; background: #18374a;
+  }
+  .oled-part::before { left: 4px; }
+  .oled-part::after { right: 4px; }
+  .oled-pins { position: absolute; top: -4px; left: 15px; display: flex; }
+  .oled-pins span { display: grid; justify-items: center; gap: 3px; width: 30px; font: 700 9px monospace; }
+  .oled-pins i { display: block; width: 7px; height: 7px; border: 1px solid #e2c68c; background: #263743; }
+  .oled-part canvas {
+    display: block; position: absolute; left: 9px; top: 26px; width: 128px; height: 64px;
+    box-sizing: content-box; border: 2px solid #16364d; border-radius: 4px;
+    background: #06121d; image-rendering: pixelated;
+  }
+  .oled-caption { position: absolute; left: 335px; top: 384px; margin: 0; color: #3b4d58; font-size: 14px; font-weight: 700; }
   .status { margin: 0; padding: 13px 14px; min-height: 46px; color: #40515c; font-size: 14px; line-height: 1.4; }
   aside section { padding: 17px 16px; }
   aside section + section { border-top: 1px solid #e4e9eb; }
@@ -82,6 +108,10 @@
   .wire-list li::before { content: ""; display: block; height: 4px; border-radius: 4px; background: var(--wire); margin-top: .55em; }
   .signal { --wire: #176eb3; }
   .ground { --wire: #353e47; }
+  .supply { --wire: #bc3945; }
+  .data { --wire: #177956; }
+  .clock { --wire: #895714; }
+  .oled-wires { margin-top: 9px; }
   .hint { margin: 10px 0 0; color: #4b5b65; font-size: 13px; line-height: 1.55; }
   footer { margin: 15px 0 0; color: #53616a; font-size: 12px; overflow-wrap: anywhere; line-height: 1.6; }
   @media (max-width: 760px) {
@@ -92,16 +122,16 @@
   }
 </style>
 </head>
-<body>
+<body data-circuit="$circuit">
 <header><div class="page"><p class="brand">ChatSim</p></div></header>
 <main class="page">
-  <h1>UNO R3 按钮亮灯</h1>
-  <p class="intro">试按外接按钮，观察 D13 板载灯。</p>
+  <h1>$lesson</h1>
+  <p class="intro">$intro</p>
   <div class="workspace">
     <section class="preview" aria-label="电路仿真">
       <div class="toolbar">
         <button id="run" type="button" disabled>运行仿真</button>
-        <div class="lamp-row" id="led" data-led="off" aria-label="D13 板载灯">
+        <div class="lamp-row led-only" id="led" data-led="off" aria-label="D13 板载灯">
           <span class="lamp" aria-hidden="true"></span><span>D13 板载灯</span><strong id="led-state">熄灭</strong>
         </div>
       </div>
@@ -111,9 +141,17 @@
           <button id="button" type="button" aria-label="按住外接按钮" aria-pressed="false" disabled>
             <wokwi-pushbutton id="button-part" color="red" inert aria-hidden="true"></wokwi-pushbutton>
           </button>
+          <div class="oled-part oled-only">
+            <div class="oled-pins" aria-hidden="true">
+              <span><i data-oled-terminal="VCC"></i>VCC</span><span><i data-oled-terminal="GND"></i>GND</span>
+              <span><i data-oled-terminal="SDA"></i>SDA</span><span><i data-oled-terminal="SCL"></i>SCL</span>
+            </div>
+            <canvas id="oled-screen" width="128" height="64" aria-label="虚拟 OLED 屏幕"></canvas>
+          </div>
           <canvas class="wires" aria-hidden="true"></canvas>
           <p class="board-caption">Arduino UNO R3</p>
           <p class="switch-caption">外接按钮</p>
+          <p class="oled-caption oled-only">OLED 小屏幕</p>
         </div>
       </div>
       <p class="status" id="status" role="status">正在加载元件…</p>
@@ -124,16 +162,25 @@
         <ul class="parts">
           <li>Arduino UNO R3 <span>1 块</span></li>
           <li>四脚按键开关 <span>1 个</span></li>
-          <li>杜邦线 <span>2 根</span></li>
+          <li class="oled-only">SSD1306 OLED · 128 × 64 <span>1 块</span></li>
+          <li class="led-only">杜邦线 <span>2 根</span></li>
+          <li class="oled-only">杜邦线 <span>6 根</span></li>
         </ul>
       </section>
       <section>
         <h2>接线图已配好</h2>
         <ul class="wire-list">
           <li class="signal" data-board-pin="2" data-button-pin="1.l"><span><strong>D2</strong> → 图中按钮左上脚</span></li>
-          <li class="ground" data-board-pin="GND.2" data-button-pin="2.l"><span><strong>GND</strong> → 图中按钮左下脚</span></li>
+          <li class="ground" data-board-pin="$button_ground" data-button-pin="$ground_leg"><span><strong>GND</strong> → $ground_label</span></li>
         </ul>
-        <p class="hint">图中的 GND 在电源排针上，紧挨着 5V。接实物时，把按钮摆成和图中一样的方向。</p>
+        <ul class="wire-list oled-wires oled-only" aria-label="屏幕接线">
+          <li class="supply" data-board-pin="5V" data-oled-pin="VCC"><span><strong>5V</strong> → 屏幕 VCC</span></li>
+          <li class="ground" data-board-pin="GND.2" data-oled-pin="GND"><span><strong>GND</strong> → 屏幕 GND</span></li>
+          <li class="data" data-board-pin="A4" data-oled-pin="SDA"><span><strong>A4</strong> → 屏幕 SDA</span></li>
+          <li class="clock" data-board-pin="A5" data-oled-pin="SCL"><span><strong>A5</strong> → 屏幕 SCL</span></li>
+        </ul>
+        <p class="hint led-only">图中的 GND 在电源排针上，紧挨着 5V。接实物时，把按钮摆成和图中一样的方向。</p>
+        <p class="hint oled-only">按实物针脚上印的字接线。图中用的是支持 5V 供电和信号的 I²C 模块，地址为 0x3C。</p>
       </section>
     </aside>
   </div>
@@ -141,6 +188,7 @@
 </main>
 <script>$engine</script>
 <script>$parts</script>
+<script>$oled_model</script>
 <script id="firmware" type="application/octet-stream">$firmware</script>
 <script>$simulator</script>
 </body>

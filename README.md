@@ -184,7 +184,7 @@ chatmaker-pack rollback chatmaker-board-arduino-nano-classic-knowledge --version
 | 范围 | 状态 | 已有证据 |
 | --- | --- | --- |
 | ChatMaker 单入口与内部模块 | 已验证 | ChatDuino、ChatWeb、ChatCAD、ChatSim 由 ChatMaker 调用 |
-| ChatSim 浏览器仿真 | UNO R3 Demo | D2 按钮和 D13 板载 LED。运行实际编译的固件。[试用与复测](docs/verification/2026-11-18-chatsim-uno-r3.md) |
+| ChatSim 浏览器仿真 | UNO R3 Demo | 外接按钮控制板载 LED 或 SSD1306 OLED 小屏幕。运行实际编译的固件。[试用与复测](docs/verification/2026-11-18-chatsim-uno-r3.md) |
 | ChatCAD V1 模式 | 开发版可用 | Chat2D 生成带可调指接榫的六面激光盒、底板拖拽孔位、四色图层、DXF/SVG 和组装预览；Chat3D 生成可旋转的打印外壳及 OpenSCAD/STL；真实试装待用户验证 |
 | 创作伙伴对话规则 | 已写入 | 尚需独立前向测试 |
 | 数据包和证据状态 | 已验证 | 自动测试与项目 doctor 通过 |

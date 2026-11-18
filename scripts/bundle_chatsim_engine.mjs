@@ -33,6 +33,7 @@ async function bundle(filename, contents, packages, globalName) {
 await bundle("avr8js.js", `
   export { CPU, avrInstruction, AVRIOPort, PinState, portBConfig, portCConfig, portDConfig,
     AVRTimer, timer0Config, timer1Config, timer2Config, AVRUSART, usart0Config } from "avr8js";
+  export { AVRTWI, twiConfig } from "avr8js/dist/esm/peripherals/twi.js";
 `, ["avr8js"], "ChatSimAVR");
 
 await bundle("wokwi-parts.js", `

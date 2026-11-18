@@ -18,6 +18,7 @@ from .runtime_info import identity
 
 BOARD_ID = "arduino-uno-r3"
 FLASH_BYTES = 32 * 1024
+CIRCUITS = ("button-led", "button-oled")
 
 
 def read_avr_hex(text: str) -> bytes:
@@ -53,17 +54,27 @@ def read_avr_hex(text: str) -> bytes:
     return bytes(flash[:used])
 
 
-def render_preview(firmware_path: Path, *, runtime_root: Path, output: Path | None) -> dict:
+def render_preview(
+    firmware_path: Path, *, runtime_root: Path, output: Path | None, circuit: str = "button-led"
+) -> dict:
     original = firmware_path.read_bytes()
     digest = sha256(original).hexdigest()
     firmware = read_avr_hex(original.decode("ascii"))
     assets = files("chatmaker").joinpath("sim_assets")
+    oled = circuit == "button-oled"
     html = Template(assets.joinpath("uno.html").read_text(encoding="utf-8")).substitute(
+        circuit=escape(circuit),
+        lesson="UNO R3 按钮与小屏幕" if oled else "UNO R3 按钮亮灯",
+        intro="试按外接按钮，观察 OLED 上的文字。" if oled else "试按外接按钮，观察 D13 板载灯。",
+        button_ground="GND.1" if oled else "GND.2",
+        ground_leg="2.r" if oled else "2.l",
+        ground_label="图中按钮右下脚" if oled else "图中按钮左下脚",
         sketch=escape(firmware_path.name),
         sha256=digest,
         short_hash=digest[:12],
         engine=assets.joinpath("avr8js.js").read_text(encoding="utf-8"),
         parts=assets.joinpath("wokwi-parts.js").read_text(encoding="utf-8"),
+        oled_model=assets.joinpath("ssd1306.js").read_text(encoding="utf-8") if oled else "",
         firmware=base64.b64encode(firmware).decode("ascii"),
         simulator=assets.joinpath("uno.js").read_text(encoding="utf-8"),
     )
@@ -88,9 +99,14 @@ def render_preview(firmware_path: Path, *, runtime_root: Path, output: Path | No
     return {"path": str(output), "url": output.as_uri(), "firmware_sha256": digest}
 
 
-def run_simulation(sketch: Path, *, runtime_root: Path, output: Path | None, open_browser: bool) -> dict:
+def run_simulation(
+    sketch: Path, *, runtime_root: Path, output: Path | None, open_browser: bool, circuit: str = "button-led"
+) -> dict:
     state = {"success": False, "action": "simulate", "board_id": BOARD_ID, "code_compiled": False,
-             "preview_ready": False, "firmware_uploaded": False, "physical_effect_verified": False}
+             "preview_ready": False, "firmware_uploaded": False, "physical_effect_verified": False,
+             "circuit": circuit}
+    if circuit not in CIRCUITS:
+        return {**state, "stage": "source", "error": "unsupported_simulation_circuit"}
     source = sketch.resolve()
     folder = source if source.is_dir() else source.parent
     main_file = folder / (folder.name + ".ino")
@@ -114,7 +130,7 @@ def run_simulation(sketch: Path, *, runtime_root: Path, output: Path | None, ope
     state.update(code_compiled=True, compile=compiled)
     try:
         emit("stage", stage="preview", message="正在生成运行这份固件的浏览器预览")
-        preview = render_preview(firmware, runtime_root=runtime_root, output=output)
+        preview = render_preview(firmware, runtime_root=runtime_root, output=output, circuit=circuit)
     except (OSError, ValueError) as exc:
         return {**state, "stage": "preview", "error": str(exc)}
 
@@ -131,6 +147,7 @@ def run_simulation(sketch: Path, *, runtime_root: Path, output: Path | None, ope
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--sketch", type=Path)
+    parser.add_argument("--circuit", choices=CIRCUITS, default="button-led", help="Virtual UNO R3 circuit")
     parser.add_argument("--output", type=Path, help="Optional path to the generated HTML")
     parser.add_argument("--open", action="store_true", dest="open_browser")
     parser.add_argument("--version", action="store_true")
@@ -148,7 +165,7 @@ def main(argv: list[str] | None = None) -> int:
         with reporting(args.progress):
             result = run_simulation(args.sketch.expanduser(), runtime_root=Path(info["runtime_root"]),
                                     output=args.output.expanduser().resolve() if args.output else None,
-                                    open_browser=args.open_browser)
+                                    open_browser=args.open_browser, circuit=args.circuit)
     print(json.dumps({**result, "runtime": info}, ensure_ascii=True))
     return 0 if result["success"] else 1
 

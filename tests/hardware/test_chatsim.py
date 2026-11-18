@@ -38,6 +38,17 @@ class ChatSimTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "invalid_avr_hex_checksum"):
             sim.read_avr_hex(":02000000259A00\n:00000001FF\n")
 
+    def test_oled_circuit_embeds_its_peripheral_in_the_generated_page(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp).resolve()
+            firmware = root / "button.ino.hex"
+            firmware.write_bytes(b":02000000259A3F\n:00000001FF\n")
+            preview = sim.render_preview(firmware, runtime_root=root, output=None, circuit="button-oled")
+            html = Path(preview["path"]).read_text(encoding="utf-8")
+            self.assertIn('data-circuit="button-oled"', html)
+            self.assertIn('class ChatSimSSD1306', html)
+            self.assertIn('data-board-pin="A4" data-oled-pin="SDA"', html)
+
     def test_simulation_routes_only_the_exact_uno_r3_profile(self):
         uno = execute_request({"simulation": True, "hardware": {"board": "arduino-uno-r3"}})
         self.assertTrue(uno["success"])

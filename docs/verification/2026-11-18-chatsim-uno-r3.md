@@ -1,6 +1,6 @@
 # ChatSim · UNO R3 浏览器复测
 
-2026-11-18。ChatSim 用 UNO R3 的实际编译产物运行 AVR 指令。当前课堂电路是一只从 D2 接到 GND 的按钮，程序用 `INPUT_PULLUP` 读取输入，输出是 D13 板载灯。按住时灯亮，松开时灯灭。
+2026-11-18。ChatSim 在浏览器运行 UNO R3 的实际编译产物。课堂电路使用一只从 D2 接到 GND 的按钮。可用板载灯观察亮灭，也可用外接 OLED 观察汉字变化。
 
 ## WorkBuddy 复测
 
@@ -23,6 +23,18 @@ Windows 上用实际编译的课堂示例生成 HTML，并在 Chromium 离线环
 1. 用 ChatMaker 管理的 Arduino 工具编译课堂示例，核对生成的 `.ino.hex` 和预览页显示的固件哈希。
 2. 打开网页，核对蓝线从 D2 接到按钮左上脚，深灰线从电源排针 GND 接到按钮左下脚。点「运行仿真」，按住按钮看板上的灯和状态提示一起点亮，松开后一起熄灭。
 3. 可把实际程序改成「按住熄灭，松开点亮」，重新编译后核对输出反转。以上验证覆盖这条课堂电路的数字输入输出。真实板子的供电和实物效果需要另行验证。
+
+## UNO R3 按钮和 OLED
+
+> 先检查你加载的 ChatMaker 源码目录和提交号。用 ChatSim 编译随库的 `uno-r3-button-oled` 示例，选择 `button-oled` 电路，直接打开浏览器。我要看到 UNO R3、外接按钮、SSD1306 小屏幕和已经接好的六根线。启动时显示「再见」，按住按钮显示「你好」，松手变回「再见」。分别告诉我编译结果和网页里观察到的结果。
+
+```powershell
+chatmaker-sim --sketch examples/chatsim/uno-r3-button-oled --circuit button-oled --open
+```
+
+仿真里的 SSD1306 为 128×64，地址是 `0x3C`。屏幕的 SDA 接 A4，SCL 接 A5，另有 5V 和 GND。接实物时选标明支持 5V 供电及 I²C 信号的模块，按丝印对照针脚。示例用 Arduino 自带的 `Wire` 库和固件内画好的四个汉字。[Arduino I²C 引脚](https://docs.arduino.cc/learn/communication/wire/#arduino-i2c-pins) · [SSD1306 元件资料](https://docs.wokwi.com/parts/board-ssd1306)
+
+Windows 上实编译并在 Chromium 离线打开，核对了 1120 像素下的鼠标和 390 像素下的触控。启动、按住、松手、停止、重启时的屏幕像素与预期相符。实板显示和 WorkBuddy 对话加载需要各自复测。
 
 ## 开源引擎
 

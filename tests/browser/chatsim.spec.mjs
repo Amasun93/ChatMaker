@@ -1,4 +1,5 @@
 import { readFile } from "node:fs/promises";
+import { fileURLToPath } from "node:url";
 import { expect, test } from "@playwright/test";
 
 const assets = new URL("../../runtime/chatmaker/sim_assets/", import.meta.url);
@@ -18,7 +19,9 @@ async function openSimulation(page, inverted) {
   const firmware = Buffer.alloc(instructions.length * 2);
   instructions.forEach((word, index) => firmware.writeUInt16LE(word, index * 2));
   const tokens = { sketch: "fixture.hex", sha256: "fixture", short_hash: "fixture",
-    engine, parts, firmware: firmware.toString("base64"), simulator };
+    circuit: "button-led", lesson: "UNO R3 按钮亮灯", intro: "试按外接按钮，观察 D13 板载灯。",
+    button_ground: "GND.2", ground_leg: "2.l", ground_label: "图中按钮左下脚",
+    engine, parts, oled_model: "", firmware: firmware.toString("base64"), simulator };
   await page.goto("about:blank");
   await page.setContent(template.replace(/\$([a-z_0-9]+)/g, (_, name) => tokens[name]));
   await expect(page.getByRole("button", { name: "运行仿真" })).toBeEnabled();
@@ -49,7 +52,7 @@ test("virtual UNO LED follows the provided AVR program", async ({ page, context 
 test("the wired circuit is visible before running and can be used on a narrow screen", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 740 });
   await openSimulation(page, false);
-  await expect(page.locator(".wire-list li")).toHaveText(["D2 → 图中按钮左上脚", "GND → 图中按钮左下脚"]);
+  await expect(page.locator(".wire-list li:visible")).toHaveText(["D2 → 图中按钮左上脚", "GND → 图中按钮左下脚"]);
   await expect(page.locator("wokwi-arduino-uno")).toBeVisible();
   await expect(page.locator("wokwi-pushbutton")).toBeVisible();
   const hasWires = await page.locator(".wires").evaluate((canvas) =>
@@ -76,4 +79,37 @@ test("the wired circuit is visible before running and can be used on a narrow sc
   await expectLed(page, true);
   await page.keyboard.up("Enter");
   await expectLed(page, false);
+});
+
+test("SSD1306 framebuffer follows I2C commands and data", async ({ page }) => {
+  await page.setContent('<canvas width="128" height="64"></canvas>');
+  await page.addScriptTag({ path: fileURLToPath(new URL("ssd1306.js", assets)) });
+  const states = await page.evaluate(() => {
+    const screen = document.querySelector("canvas");
+    const pixel = () => screen.getContext("2d").getImageData(10, 17, 1, 1).data[0] > 100;
+    const device = new ChatSimSSD1306(screen);
+    const bus = {
+      completeStart() {}, completeStop() {}, completeRead() {}, completeWrite() {},
+      completeConnect(ack) { this.ack = ack; },
+    };
+    device.connect(bus);
+    const send = (address, bytes) => {
+      bus.eventHandler.start(false);
+      bus.eventHandler.connectToSlave(address, true);
+      if (bus.ack) bytes.forEach((value) => bus.eventHandler.writeByte(value));
+      bus.eventHandler.stop();
+      device.redraw();
+      return bus.ack;
+    };
+    send(0x3c, [0x00, 0x20, 0x00, 0x21, 10, 10, 0x22, 2, 2]);
+    send(0x3c, [0x40, 0x02]);
+    const beforePowerOn = pixel();
+    const wrongAddress = send(0x3d, [0x00, 0xaf]);
+    send(0x3c, [0x00, 0xaf]);
+    const powered = pixel();
+    send(0x3c, [0x40, 0x00]);
+    const cleared = pixel();
+    return { beforePowerOn, wrongAddress, powered, cleared };
+  });
+  expect(states).toEqual({ beforePowerOn: false, wrongAddress: false, powered: true, cleared: false });
 });

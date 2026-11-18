@@ -7,6 +7,7 @@
 - 对 ChatMaker 说「我手边没有板子，帮我在浏览器模拟按按钮亮灯」。ChatDuino 保存并编译 UNO R3 程序，ChatSim 把编译产物交给 AVR8js，在浏览器模拟 D2 按钮和 D13 板载灯。
 - 预览页带上固件和仿真引擎，学生用现有浏览器打开即可。仿真结果与真板结果分别记录。[WorkBuddy 复测](docs/verification/2026-11-18-chatsim-uno-r3.md)
 - 仿真台显示 UNO R3、外接按钮、已接好的两根线和所需元件。点「运行仿真」，再按住图里的按钮，就可以观察 D13 板载灯。
+- 增加 UNO R3 加外接按钮和 SSD1306 小屏幕的示例。按住显示「你好」，松开显示「再见」。屏幕由编译后的程序通过 I²C 更新，页面预先画好六根线。[OLED 示例复测](docs/verification/2026-11-18-chatsim-uno-r3.md#uno-r3-按钮和-oled)
 
 ## 2026-11-18 · 主分支新增 UNO R4 WiFi、XIAO ESP32S3 和行空板 K10
 
