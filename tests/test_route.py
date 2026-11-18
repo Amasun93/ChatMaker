@@ -213,7 +213,7 @@ class RouteTests(unittest.TestCase):
                 self.assertEqual(result["route"], "combined")
                 self.assertEqual(result["knowledge_requests"], [])
 
-    def test_unihiker_m10_alpha_routes_without_inventing_a_knowledge_pack(self):
+    def test_unihiker_m10_alpha_routes_to_its_protocol_wiki(self):
         result = self.route.execute_request(
             {
                 "hardware": {"board": "unihiker-m10", "effect": "show room status"},
@@ -228,7 +228,12 @@ class RouteTests(unittest.TestCase):
         self.assertTrue(result["success"], result)
         self.assertEqual(result["route"], "combined")
         self.assertEqual(result["specialists"], ["chatduino", "chatweb"])
-        self.assertEqual(result["knowledge_requests"], [])
+        self.assertEqual(result["knowledge_requests"], [{
+            "action": "section",
+            "board_id": "unihiker-m10",
+            "consumer": "chatweb",
+            "section_id": "web-and-protocol",
+        }])
 
     def test_combined_contract_rejects_non_string_or_blank_communication_fields(self):
         self.assertIsNotNone(self.route, "chatmaker.route is missing")

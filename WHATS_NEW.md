@@ -2,6 +2,11 @@
 
 这是面向老师、学生和体验者的公开更新记录。最新更新放在最上面，标明日期和对应的版本标签或主分支提交。
 
+## 2026-11-18 · 补齐板卡 Wiki 与新板接入流程
+
+- 为 Arduino Mega 2560、ESP32-C3-DevKitM-1、ESP32-C6-DevKitC-1、ESP32-S3-DevKitC-1 N8R8 和行空板 M10 补齐八节 Wiki。老师和学生可以直接查板型、接线、工具、例子和常见问题。[板卡 Wiki](https://github.com/Amasun93/ChatMaker/tree/main/knowledge_sources/published/boards)
+- 完整源码可直接读取所有已登记板卡的 Wiki。Skill 安装包附带全部板卡的速查说明。新增板卡的提交会检查 Wiki 和读取入口是否齐全。[新板接入流程](docs/contributing/board-research-workflow.md)
+
 ## 2026-11-18 · 微雪 2.8 触屏板 Wiki 和 V2 识别
 
 - 补齐微雪 ESP32-S3-Touch-LCD-2.8 的八节板卡 Wiki。源码可直接读取，安装 Skill 的用户可查随包的板卡速查说明。[板卡 Wiki](knowledge_sources/published/boards/waveshare-esp32-s3-touch-lcd-2-8/start-here.md)

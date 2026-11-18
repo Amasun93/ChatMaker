@@ -2,6 +2,8 @@ schema_version: "1.0"
 kind: board
 id: unihiker-m10
 name: UNIHIKER M10 行空板
+aliases: [行空板 M10, 行空板M10, UNIHIKER M10, DFR0706]
+summary: 运行 Debian 和完整 Python 的行空板 M10。ChatMaker 检查项目源码，项目通过 USB 网络或局域网同步到板上运行。
 family: linux-sbc
 mcu: Quad-core ARM Cortex-A35 with GD32VF103 co-processor
 logic_voltage: 3.3
@@ -9,6 +11,7 @@ chatmaker:
   runtime_cli: chatmaker-unihiker
   runtime_module: chatmaker.hardware.unihiker_m10
   identification: manual
+  knowledge_delivery: source
 mechanics:
   status: profile-available
   profile_path: knowledge/mechanical/boards/unihiker-m10.json

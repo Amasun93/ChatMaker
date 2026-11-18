@@ -1,0 +1,13 @@
+schema_version: "1.0"
+kind: knowledge-index
+board_id: arduino-mega-2560
+max_section_bytes: 65536
+sections:
+  - {section_id: start-here, title: Arduino Mega 2560 入门, summary: 先确认 ATmega2560，再按工具已经就绪或首次需要准备选择操作。用板载灯验收第一个程序。, consumers: [chatmaker, chatduino, chatweb, chatcad], topics: [mega-2560, atmega2560, classroom, blink, first-run], pack_id: chatmaker-board-arduino-mega-2560-knowledge}
+  - {section_id: identify-and-safety, title: 确认板型与用电安全, summary: 看实物型号和主芯片确认 Mega 2560，首次只接数据线。外接模块前核对供电和信号电平。, consumers: [chatmaker, chatduino, chatweb, chatcad], topics: [identity, safety, usb-b, atmega2560, voltage], pack_id: chatmaker-board-arduino-mega-2560-knowledge}
+  - {section_id: pins-and-electrical, title: Mega 引脚与电气规则, summary: 依照 Mega 自己的 SDA、SCL、串口组、模拟口与 PWM 标记选脚，确认外设电平和共地。, consumers: [chatmaker, chatduino, chatweb, chatcad], topics: [pins, electrical, gpio, i2c, spi, uart, pwm, analog], pack_id: chatmaker-board-arduino-mega-2560-knowledge}
+  - {section_id: toolchains-and-upload, title: 工具准备、编译和写入, summary: 用 ChatMaker 托管 Arduino AVR 检查本机、预览首次下载、复用缓存并选择实际串口。, consumers: [chatmaker, chatduino], topics: [compile, upload, download, cache, doctor, windows, macos, arduino-avr], pack_id: chatmaker-board-arduino-mega-2560-knowledge}
+  - {section_id: components-and-wiring, title: 板载灯与接线, summary: 第一个作品只用 USB 和板载灯。接外部 LED、I²C 屏或舵机前先认模块和检查供电。, consumers: [chatmaker, chatduino, chatweb, chatcad], topics: [onboard-hardware, wiring, led, blink, oled, servo, ground], pack_id: chatmaker-board-arduino-mega-2560-knowledge}
+  - {section_id: libraries-and-examples, title: Arduino 库和起步示例, summary: 从 Blink、按钮串口和单个 I²C 模块开始。确认库和外设型号后再把功能拼起来。, consumers: [chatmaker, chatduino], topics: [libraries, examples, blink, button, wire, analogread, serial], pack_id: chatmaker-board-arduino-mega-2560-knowledge}
+  - {section_id: web-and-protocol, title: USB 串口、网页与外接串口, summary: USB 先读一条验收消息，外设可用 Serial1。确认串口数据后再连网页或外部通信模块。, consumers: [chatmaker, chatduino, chatweb], topics: [serial, usb, uart, serial1, web, protocol, baud], pack_id: chatmaker-board-arduino-mega-2560-knowledge}
+  - {section_id: troubleshooting, title: 课堂常见问题与验收, summary: 从工具、端口、编译、写入到板载灯和串口逐步排错，每一步都给出可观察的结果。, consumers: [chatmaker, chatduino, chatweb, chatcad], topics: [troubleshooting, faq, cache, wrong-board, verification, avrdude, no-port, reboot], pack_id: chatmaker-board-arduino-mega-2560-knowledge}

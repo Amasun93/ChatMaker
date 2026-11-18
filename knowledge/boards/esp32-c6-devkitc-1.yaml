@@ -1,0 +1,13 @@
+schema_version: "1.0"
+kind: knowledge-index
+board_id: esp32-c6-devkitc-1
+max_section_bytes: 65536
+sections:
+  - {section_id: start-here, title: ESP32-C6-DevKitC-1 从这里开始, summary: 确认 8 MB 规格，先接 USB 转串口，用串口小程序和板载彩灯验收。, consumers: [chatmaker, chatduino, chatweb, chatcad], topics: [esp32-c6, classroom, uart, native-usb, 8mb], pack_id: chatmaker-board-esp32-c6-devkitc-1-knowledge}
+  - {section_id: identify-and-safety, title: 识别板型和用电安全, summary: 用板上印字和包装确认载板及模组。两个 Type-C 口要对照板图认。, consumers: [chatmaker, chatduino, chatweb, chatcad], topics: [identity, safety, n8, revision, type-c], pack_id: chatmaker-board-esp32-c6-devkitc-1-knowledge}
+  - {section_id: pins-and-electrical, title: 引脚和电气规则, summary: 为原生 USB 和上传串口预留各自的引脚，检查重启时会采样的脚。, consumers: [chatmaker, chatduino, chatweb], topics: [pins, gpio, electrical, strapping, native-usb], pack_id: chatmaker-board-esp32-c6-devkitc-1-knowledge}
+  - {section_id: toolchains-and-upload, title: 编译工具和上传, summary: 板上 USB 转串口用 uart，直连芯片的原生 USB 用 native。切换后重选端口。, consumers: [chatmaker, chatduino], topics: [toolchain, compile, upload, uart, native-usb, cdc, workbuddy], pack_id: chatmaker-board-esp32-c6-devkitc-1-knowledge}
+  - {section_id: components-and-wiring, title: 板载器件和接线, summary: J5 是测模块电流的接口，课堂默认保持出厂连接。先用 USB 和板载灯做实验。, consumers: [chatmaker, chatduino, chatweb, chatcad], topics: [wiring, onboard-hardware, rgb, j5, sensor, enclosure], pack_id: chatmaker-board-esp32-c6-devkitc-1-knowledge}
+  - {section_id: libraries-and-examples, title: 库和第一个示例, summary: 用串口小程序隔离环境与端口问题，再按板载 RGB 的实际脚测试颜色。, consumers: [chatmaker, chatduino], topics: [arduino, examples, serial, rgbledwrite, libraries], pack_id: chatmaker-board-esp32-c6-devkitc-1-knowledge}
+  - {section_id: web-and-protocol, title: 串口、网页和通信, summary: 把串口、Wi-Fi 网页和 Zigbee 或 Thread 需求分别核对。, consumers: [chatmaker, chatduino, chatweb], topics: [serial, usb, wifi, http, zigbee, thread, chatweb], pack_id: chatmaker-board-esp32-c6-devkitc-1-knowledge}
+  - {section_id: troubleshooting, title: 课堂常见问题和排错, summary: 处理端口选错、烧录后找不到串口、灯不变色和 Windows 工具路径过长。, consumers: [chatmaker, chatduino, chatweb, chatcad], topics: [faq, troubleshooting, native-usb, windows, boot, verification], pack_id: chatmaker-board-esp32-c6-devkitc-1-knowledge}

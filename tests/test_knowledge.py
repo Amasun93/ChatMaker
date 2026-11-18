@@ -467,17 +467,7 @@ class KnowledgeReaderTests(unittest.TestCase):
 
         self.assertEqual(
             BOARD_IDS,
-            (
-                "arduino-nano-classic",
-                "arduino-uno-r3",
-                "esp32-devkit-v1",
-                "idmc-0001-starcore-v4-2-2",
-                "microbit-v2",
-                "mpython-classic-v2x",
-                "mpython-v3",
-                "stardust-atmega328p",
-                "waveshare-esp32-s3-touch-lcd-2-8",
-            ),
+            tuple(sorted(path.stem for path in (ROOT / "knowledge" / "boards").glob("*.yaml"))),
         )
         self.assertEqual(PACK_IDS[BOARD_ID], PACK_ID)
         self.assertEqual(validate_index_bytes(index)["kind"], "knowledge-index")

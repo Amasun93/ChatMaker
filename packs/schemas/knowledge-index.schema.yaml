@@ -8,7 +8,8 @@ properties:
   schema_version: {const: "1.0"}
   kind: {const: knowledge-index}
   board_id:
-    enum: [arduino-nano-classic, arduino-uno-r3, esp32-devkit-v1, idmc-0001-starcore-v4-2-2]
+    type: string
+    pattern: "^[a-z0-9][a-z0-9-]*$"
   max_section_bytes: {const: 65536}
   sections:
     type: array
@@ -42,11 +43,8 @@ properties:
           uniqueItems: true
           items: {type: string, pattern: "^[a-z0-9][a-z0-9-]*$"}
         pack_id:
-          enum:
-            - chatmaker-board-arduino-nano-classic-knowledge
-            - chatmaker-board-arduino-uno-r3-knowledge
-            - chatmaker-board-esp32-devkit-v1-knowledge
-            - chatmaker-board-idmc-0001-starcore-v4-2-2-knowledge
+          type: string
+          pattern: "^chatmaker-board-[a-z0-9][a-z0-9-]*-knowledge$"
     allOf:
       - contains: {type: object, properties: {section_id: {const: start-here}}, required: [section_id]}
         minContains: 1
@@ -72,28 +70,3 @@ properties:
       - contains: {type: object, properties: {section_id: {const: troubleshooting}}, required: [section_id]}
         minContains: 1
         maxContains: 1
-allOf:
-  - if: {properties: {board_id: {const: arduino-nano-classic}}}
-    then:
-      properties:
-        sections:
-          items:
-            properties: {pack_id: {const: chatmaker-board-arduino-nano-classic-knowledge}}
-  - if: {properties: {board_id: {const: arduino-uno-r3}}}
-    then:
-      properties:
-        sections:
-          items:
-            properties: {pack_id: {const: chatmaker-board-arduino-uno-r3-knowledge}}
-  - if: {properties: {board_id: {const: esp32-devkit-v1}}}
-    then:
-      properties:
-        sections:
-          items:
-            properties: {pack_id: {const: chatmaker-board-esp32-devkit-v1-knowledge}}
-  - if: {properties: {board_id: {const: idmc-0001-starcore-v4-2-2}}}
-    then:
-      properties:
-        sections:
-          items:
-            properties: {pack_id: {const: chatmaker-board-idmc-0001-starcore-v4-2-2-knowledge}}

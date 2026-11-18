@@ -159,15 +159,14 @@ class KnowledgePublicationPipelineTests(unittest.TestCase):
             manifest = yaml.safe_load(path.read_text(encoding="utf-8"))
             actual_boards.add(manifest["board_id"])
             expected_cleaning = (
-                "verified"
+                "unverified"
                 if manifest["board_id"] in {
-                    "idmc-0001-starcore-v4-2-2",
-                    "mpython-classic-v2x",
-                    "mpython-v3",
-                    "stardust-atmega328p",
-                    "waveshare-esp32-s3-touch-lcd-2-8",
+                    "arduino-nano-classic",
+                    "arduino-uno-r3",
+                    "esp32-devkit-v1",
+                    "microbit-v2",
                 }
-                else "unverified"
+                else "verified"
             )
             self.assertEqual(manifest["cleaning_verified"]["status"], expected_cleaning)
             self.assertEqual(manifest["publication_approved"]["status"], "verified")

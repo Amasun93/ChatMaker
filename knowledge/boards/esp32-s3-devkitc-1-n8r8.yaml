@@ -1,0 +1,13 @@
+schema_version: "1.0"
+kind: knowledge-index
+board_id: esp32-s3-devkitc-1-n8r8
+max_section_bytes: 65536
+sections:
+  - {section_id: start-here, title: ESP32-S3-DevKitC-1-N8R8 从这里开始, summary: 同时确认 DevKitC-1 载板、N8R8 模组和载板版本。先用转串口做最小验证。, consumers: [chatmaker, chatduino, chatweb, chatcad], topics: [esp32-s3, n8r8, classroom, revision, psram], pack_id: chatmaker-board-esp32-s3-devkitc-1-n8r8-knowledge}
+  - {section_id: identify-and-safety, title: 识别板型和用电安全, summary: N8R8 同时说明 Flash 和 PSRAM 规格，载板 v1.0 或 v1.1 另看印字和官方图。, consumers: [chatmaker, chatduino, chatweb, chatcad], topics: [identity, safety, n8r8, psram, revision], pack_id: chatmaker-board-esp32-s3-devkitc-1-n8r8-knowledge}
+  - {section_id: pins-and-electrical, title: 引脚和电气规则, summary: 给原生 USB 和八线 PSRAM 预留专用脚。对照载板版本选择彩灯数据脚。, consumers: [chatmaker, chatduino, chatweb], topics: [pins, gpio, electrical, psram, strapping, native-usb], pack_id: chatmaker-board-esp32-s3-devkitc-1-n8r8-knowledge}
+  - {section_id: toolchains-and-upload, title: 编译工具和上传, summary: 选择 N8R8 的独立 Arduino 配置，再根据实际 USB 插口选 uart 或 native。, consumers: [chatmaker, chatduino], topics: [compile, upload, toolchain, psram, uart, native-usb, workbuddy], pack_id: chatmaker-board-esp32-s3-devkitc-1-n8r8-knowledge}
+  - {section_id: components-and-wiring, title: 板载器件和接线, summary: v1.0 与 v1.1 的彩灯数据脚不同。用对应的官方板图确认。, consumers: [chatmaker, chatduino, chatweb, chatcad], topics: [wiring, onboard-hardware, rgb, gpio48, gpio38, enclosure], pack_id: chatmaker-board-esp32-s3-devkitc-1-n8r8-knowledge}
+  - {section_id: libraries-and-examples, title: 库和第一个示例, summary: 先验证串口，再按载板版本试彩灯。需要图像缓存时单独检查 PSRAM。, consumers: [chatmaker, chatduino], topics: [arduino, examples, serial, rgbledwrite, psram], pack_id: chatmaker-board-esp32-s3-devkitc-1-n8r8-knowledge}
+  - {section_id: web-and-protocol, title: 串口、网页和通信, summary: 端口跟着 USB 用法走。网页实验先确认 Wi-Fi 和实际 HTTP 地址。, consumers: [chatmaker, chatduino, chatweb], topics: [serial, cdc, wifi, http, chatweb, protocol], pack_id: chatmaker-board-esp32-s3-devkitc-1-n8r8-knowledge}
+  - {section_id: troubleshooting, title: 课堂常见问题和排错, summary: 依次排查 USB、下载模式、彩灯版本和 N8R8 配置。, consumers: [chatmaker, chatduino, chatweb, chatcad], topics: [faq, troubleshooting, boot, usb, rgb, psram, verification], pack_id: chatmaker-board-esp32-s3-devkitc-1-n8r8-knowledge}

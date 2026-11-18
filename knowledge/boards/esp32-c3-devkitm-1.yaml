@@ -1,0 +1,13 @@
+schema_version: "1.0"
+kind: knowledge-index
+board_id: esp32-c3-devkitm-1
+max_section_bytes: 65536
+sections:
+  - {section_id: start-here, title: ESP32-C3-DevKitM-1 从这里开始, summary: 看载板和模组印字，准备一根可传数据的 Micro-USB 线，先运行串口小程序。, consumers: [chatmaker, chatduino, chatweb, chatcad], topics: [esp32-c3, classroom, micro-usb, uart], pack_id: chatmaker-board-esp32-c3-devkitm-1-knowledge}
+  - {section_id: identify-and-safety, title: 识别板型和用电安全, summary: 核对 DevKitM-1 与 MINI 系列模组。插 USB 前检查裸露排针周围。, consumers: [chatmaker, chatduino, chatweb, chatcad], topics: [identity, safety, esp32-c3-mini-1, n4x], pack_id: chatmaker-board-esp32-c3-devkitm-1-knowledge}
+  - {section_id: pins-and-electrical, title: 引脚和电气规则, summary: 先查板边 IO 丝印和排针表，绕开启动脚和板载串口使用的引脚。, consumers: [chatmaker, chatduino, chatweb], topics: [pins, gpio, electrical, strapping, uart], pack_id: chatmaker-board-esp32-c3-devkitm-1-knowledge}
+  - {section_id: toolchains-and-upload, title: 编译工具和上传, summary: 当前课堂路线用 ChatMaker 的独立 Arduino 工具和 Micro-USB 转串口。, consumers: [chatmaker, chatduino], topics: [toolchain, compile, upload, workbuddy, cache, uart], pack_id: chatmaker-board-esp32-c3-devkitm-1-knowledge}
+  - {section_id: components-and-wiring, title: 板载器件和接线, summary: 只用 USB 就能开始。加外部 LED 或传感器前先核对负载和信号。, consumers: [chatmaker, chatduino, chatweb, chatcad], topics: [wiring, onboard-hardware, rgb, sensor, enclosure], pack_id: chatmaker-board-esp32-c3-devkitm-1-knowledge}
+  - {section_id: libraries-and-examples, title: 库和第一个示例, summary: 先使用 Arduino 核心的串口，再按板载 RGB 的实际数据脚改写官方示例。, consumers: [chatmaker, chatduino], topics: [arduino, examples, serial, rgbledwrite, libraries], pack_id: chatmaker-board-esp32-c3-devkitm-1-knowledge}
+  - {section_id: web-and-protocol, title: 串口、网页和通信, summary: 串口先打印运行状态，网页先显示一条消息，接线和网络逐步验收。, consumers: [chatmaker, chatduino, chatweb], topics: [serial, uart, wifi, http, chatweb, protocol], pack_id: chatmaker-board-esp32-c3-devkitm-1-knowledge}
+  - {section_id: troubleshooting, title: 课堂常见问题和排错, summary: 从端口、编译、上传和实物观察四处定位。Windows 还要注意工具目录长度。, consumers: [chatmaker, chatduino, chatweb, chatcad], topics: [faq, troubleshooting, usb, boot, windows, verification], pack_id: chatmaker-board-esp32-c3-devkitm-1-knowledge}

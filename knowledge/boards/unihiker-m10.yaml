@@ -1,0 +1,13 @@
+schema_version: "1.0"
+kind: knowledge-index
+board_id: unihiker-m10
+max_section_bytes: 65536
+sections:
+  - {section_id: start-here, title: 行空板 M10 从这里开始, summary: 用一根 USB 数据线连上 M10，选择板上的 Python 环境，先运行屏幕问候例程。, consumers: [chatmaker, chatduino, chatweb, chatcad], topics: [unihiker, m10, debian, python, classroom], pack_id: chatmaker-board-unihiker-m10-knowledge}
+  - {section_id: identify-and-safety, title: 确认行空板型号与供电安全, summary: 核对 M10 或 DFR0706 标识及接口；先用单板测试，外设接线前断电。, consumers: [chatmaker, chatduino, chatcad], topics: [identity, safety, power, usb], pack_id: chatmaker-board-unihiker-m10-knowledge}
+  - {section_id: pins-and-electrical, title: 引脚、信号和接头方向, summary: 对照 M10 正面官方引脚图确认接口、信号电平和地线，再接入模块。, consumers: [chatmaker, chatduino, chatcad], topics: [pins, electrical, gpio, i2c, uart, spi], pack_id: chatmaker-board-unihiker-m10-knowledge}
+  - {section_id: toolchains-and-upload, title: 源码检查、同步和在板上运行, summary: ChatMaker 按 Python 3.7 检查入口；将整个项目同步至 M10，核对实际解释器再运行。, consumers: [chatmaker, chatduino], topics: [python, preflight, deploy, mindplus, jupyter, ssh, autostart], pack_id: chatmaker-board-unihiker-m10-knowledge}
+  - {section_id: components-and-wiring, title: 板载器件和外接设备, summary: 用触屏、按键和传感器做第一个练习；用外接 USB 设备采图和播放语音。, consumers: [chatmaker, chatduino, chatweb, chatcad], topics: [display, touch, buzzer, camera, audio, wiring], pack_id: chatmaker-board-unihiker-m10-knowledge}
+  - {section_id: libraries-and-examples, title: Python 库与屏幕例程, summary: 从现成屏幕问候例程起步，再按需使用 unihiker 和 PinPong；先检查板端实际依赖。, consumers: [chatmaker, chatduino], topics: [unihiker, pinpong, python, opencv, examples], pack_id: chatmaker-board-unihiker-m10-knowledge}
+  - {section_id: web-and-protocol, title: USB 网络、网页和板间通信, summary: 按 USB 直连或无线方式查看板子地址，区分板上管理页、应用网页与外设串口。, consumers: [chatmaker, chatduino, chatweb], topics: [rndis, wifi, web, protocol, jupyter, uart], pack_id: chatmaker-board-unihiker-m10-knowledge}
+  - {section_id: troubleshooting, title: 课堂常见问题与验收, summary: 逐项定位网页打不开、运行环境选错、画面和外设异常，并记录实际验收结果。, consumers: [chatmaker, chatduino, chatweb, chatcad], topics: [troubleshooting, rndis, python, camera, audio, verification], pack_id: chatmaker-board-unihiker-m10-knowledge}

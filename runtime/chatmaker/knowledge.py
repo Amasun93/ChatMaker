@@ -162,14 +162,19 @@ def execute_request(
                 manager = PackManager()
             resolver = ResourceResolver(manager=manager)
 
+        def resolve_section(item_id: str) -> ResolvedResource | None:
+            if not source_delivery:
+                installed = _resolve_optional(resolver, _section_resource(item_id), pack_id)
+                if installed is not None:
+                    return installed
+            return _resolve_source_section(root, board_id, item_id)
+
         if action == "index":
             sections: list[dict[str, Any]] = []
             for metadata in index["sections"]:
                 if consumer not in metadata["consumers"]:
                     continue
-                item_id = metadata["section_id"]
-                resolved = (_resolve_source_section(root, board_id, item_id) if source_delivery else
-                            _resolve_optional(resolver, _section_resource(item_id), pack_id))
+                resolved = resolve_section(metadata["section_id"])
                 sections.append(
                     {
                         "section_id": metadata["section_id"],
@@ -199,8 +204,7 @@ def execute_request(
                 request=request,
             )
         resource_path = _section_resource(section_id)
-        resolved = (_resolve_source_section(root, board_id, section_id) if source_delivery else
-                    _resolve_optional(resolver, resource_path, pack_id))
+        resolved = resolve_section(section_id)
         if resolved is None:
             if source_delivery:
                 return _error("source_knowledge_unavailable",

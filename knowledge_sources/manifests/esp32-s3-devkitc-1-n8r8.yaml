@@ -1,0 +1,32 @@
+schema_version: "1.0"
+id: source-esp32-s3-devkitc-1-n8r8-official
+title: 乐鑫 ESP32-S3-DevKitC-1-N8R8 和载板版本资料
+board_id: esp32-s3-devkitc-1-n8r8
+source_type: canonical-board-documentation
+canonical_url: https://docs.espressif.com/projects/esp-dev-kits/en/latest/esp32s3/esp32-s3-devkitc-1/user_guide_v1.0.html
+license_use_boundary: >
+  ChatMaker author-written classroom guidance cites the Espressif documentation and links to official examples.
+  Manufacturer diagrams, source code samples, firmware and binaries are not included in these Wiki pages.
+cleaning_version: chatmaker-esp32-s3-devkitc-1-n8r8-wiki-v1
+review_date: "2026-11-18"
+cleaning_verified:
+  status: verified
+  date: "2026-11-18"
+  evidence: Organized author-written summaries and linked references into eight independently readable Wiki sections.
+source_reviewed:
+  status: verified
+  date: "2026-11-18"
+  evidence: Compared the Espressif v1.0 ordering table and ESP-IDF v5.3.1 v1.1 guide for N8R8 flash and PSRAM. Verified both USB routes and the carrier revision RGB pin change against Espressif documentation and checked the managed ChatMaker profile.
+publication_approved:
+  status: verified
+  date: "2026-11-18"
+  evidence: ChatMaker author-written guidance reviewed for the approved repository Wiki update. Firmware and classroom hardware evidence are tracked separately.
+page_declarations:
+  - {stable_id: esp32-s3-devkitc-1-n8r8-start-here, path: published/boards/esp32-s3-devkitc-1-n8r8/start-here.md}
+  - {stable_id: esp32-s3-devkitc-1-n8r8-identify-and-safety, path: published/boards/esp32-s3-devkitc-1-n8r8/identify-and-safety.md}
+  - {stable_id: esp32-s3-devkitc-1-n8r8-pins-and-electrical, path: published/boards/esp32-s3-devkitc-1-n8r8/pins-and-electrical.md}
+  - {stable_id: esp32-s3-devkitc-1-n8r8-toolchains-and-upload, path: published/boards/esp32-s3-devkitc-1-n8r8/toolchains-and-upload.md}
+  - {stable_id: esp32-s3-devkitc-1-n8r8-components-and-wiring, path: published/boards/esp32-s3-devkitc-1-n8r8/components-and-wiring.md}
+  - {stable_id: esp32-s3-devkitc-1-n8r8-libraries-and-examples, path: published/boards/esp32-s3-devkitc-1-n8r8/libraries-and-examples.md}
+  - {stable_id: esp32-s3-devkitc-1-n8r8-web-and-protocol, path: published/boards/esp32-s3-devkitc-1-n8r8/web-and-protocol.md}
+  - {stable_id: esp32-s3-devkitc-1-n8r8-troubleshooting, path: published/boards/esp32-s3-devkitc-1-n8r8/troubleshooting.md}

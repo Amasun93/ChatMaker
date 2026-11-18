@@ -2,7 +2,12 @@
   "boards": {
     "arduino-mega-2560": {
       "identification": "manual",
-      "knowledge": null,
+      "knowledge": {
+        "delivery": "source",
+        "index_path": "knowledge/boards/arduino-mega-2560.yaml",
+        "pack_id": "chatmaker-board-arduino-mega-2560-knowledge",
+        "source_ref": "source-arduino-mega-2560-official"
+      },
       "mechanics": {
         "fit_verified": false,
         "notes": "Physical fit requires board measurements.",
@@ -49,7 +54,12 @@
     },
     "esp32-c3-devkitm-1": {
       "identification": "manual",
-      "knowledge": null,
+      "knowledge": {
+        "delivery": "source",
+        "index_path": "knowledge/boards/esp32-c3-devkitm-1.yaml",
+        "pack_id": "chatmaker-board-esp32-c3-devkitm-1-knowledge",
+        "source_ref": "source-esp32-c3-devkitm-1-official"
+      },
       "mechanics": {
         "fit_verified": false,
         "notes": "Physical fit requires board measurements.",
@@ -62,7 +72,12 @@
     },
     "esp32-c6-devkitc-1": {
       "identification": "manual",
-      "knowledge": null,
+      "knowledge": {
+        "delivery": "source",
+        "index_path": "knowledge/boards/esp32-c6-devkitc-1.yaml",
+        "pack_id": "chatmaker-board-esp32-c6-devkitc-1-knowledge",
+        "source_ref": "source-esp32-c6-devkitc-1-official"
+      },
       "mechanics": {
         "fit_verified": false,
         "notes": "Physical fit requires board measurements.",
@@ -92,7 +107,12 @@
     },
     "esp32-s3-devkitc-1-n8r8": {
       "identification": "manual",
-      "knowledge": null,
+      "knowledge": {
+        "delivery": "source",
+        "index_path": "knowledge/boards/esp32-s3-devkitc-1-n8r8.yaml",
+        "pack_id": "chatmaker-board-esp32-s3-devkitc-1-n8r8-knowledge",
+        "source_ref": "source-esp32-s3-devkitc-1-n8r8-official"
+      },
       "mechanics": {
         "fit_verified": false,
         "notes": "Physical fit requires board measurements.",
@@ -123,6 +143,7 @@
     "microbit-v2": {
       "identification": "assisted",
       "knowledge": {
+        "delivery": "source",
         "index_path": "knowledge/boards/microbit-v2.yaml",
         "pack_id": "chatmaker-board-microbit-v2-knowledge",
         "source_ref": "source-microbit-v2-official"
@@ -174,6 +195,7 @@
     "stardust-atmega328p": {
       "identification": "assisted",
       "knowledge": {
+        "delivery": "source",
         "index_path": "knowledge/boards/stardust-atmega328p.yaml",
         "pack_id": "chatmaker-board-stardust-atmega328p-knowledge",
         "source_ref": "source-stardust-atmega328p-observed"
@@ -190,7 +212,12 @@
     },
     "unihiker-m10": {
       "identification": "manual",
-      "knowledge": null,
+      "knowledge": {
+        "delivery": "source",
+        "index_path": "knowledge/boards/unihiker-m10.yaml",
+        "pack_id": "chatmaker-board-unihiker-m10-knowledge",
+        "source_ref": "source-unihiker-m10-official"
+      },
       "mechanics": {
         "fit_verified": false,
         "notes": "Official product dimensions, SVG and V1.2.0 STEP are recorded; connector envelopes and tight physical fit still require CAD use or exact-board measurement.",

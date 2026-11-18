@@ -7,6 +7,10 @@ from pathlib import Path
 import sys
 import tomllib
 import unittest
+from unittest.mock import Mock
+
+from jsonschema import Draft202012Validator
+import yaml
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -17,6 +21,8 @@ from chatmaker.catalog_registry import (
     BOARD_REGISTRATIONS,
     COMPONENT_REGISTRATIONS,
 )
+from chatmaker.knowledge import execute_request
+from chatmaker.knowledge_semantics import validate_index_bytes
 from chatmaker.packs import validate_repository
 
 
@@ -30,6 +36,41 @@ def load_sync_script():
 
 
 class CatalogRegistryTests(unittest.TestCase):
+    def test_every_registered_board_has_a_readable_wiki_route(self):
+        registry = json.loads((ROOT / "distribution/registry/registry.json").read_text(encoding="utf-8"))
+        signed_pack_ids = {pack["pack_id"] for pack in registry["packs"]}
+        schema = yaml.safe_load((ROOT / "packs/schemas/knowledge-index.schema.yaml").read_text(encoding="utf-8"))
+        validator = Draft202012Validator(schema)
+        quick_start = (ROOT / "skills/chatduino/references/managed-board-quick-start.md").read_text(encoding="utf-8")
+        for board_id, registration in BOARD_REGISTRATIONS.items():
+            with self.subTest(board_id=board_id):
+                knowledge = registration["knowledge"]
+                self.assertIsNotNone(knowledge, f"{board_id} needs its eight-section Wiki")
+                index = validate_index_bytes(
+                    (ROOT / knowledge["index_path"]).read_bytes(),
+                    expected_board_id=board_id,
+                    expected_pack_id=knowledge["pack_id"],
+                )
+                validator.validate(index)
+                self.assertTrue(
+                    knowledge.get("delivery") == "source" or knowledge["pack_id"] in signed_pack_ids,
+                    f"{board_id} needs source delivery or an entry in the official pack registry",
+                )
+                self.assertIn(f"`{board_id}`", quick_start)
+                resolver = Mock()
+                resolver.resolve.side_effect = FileNotFoundError
+                manager = Mock()
+                for section in index["sections"]:
+                    result = execute_request({
+                        "action": "section",
+                        "board_id": board_id,
+                        "section_id": section["section_id"],
+                        "consumer": section["consumers"][0],
+                    }, project_root=ROOT, resolver=resolver, manager=manager)
+                    self.assertTrue(result["success"], result)
+                    self.assertEqual(result["provenance"]["kind"], "source_checkout")
+                manager.ensure.assert_not_called()
+
     def test_all_canonical_records_validate_after_registry_changes(self):
         report = validate_repository(ROOT / "packs", ROOT / "packs" / "schemas")
         self.assertTrue(report.ok, "\n".join(report.errors))

@@ -6,6 +6,7 @@ family: stardust-avr
 mcu: ATmega328P
 logic_voltage: 5.0
 chatmaker:
+  knowledge_delivery: source
   runtime_cli: chatmaker-stardust
   runtime_module: chatmaker.hardware.stardust
   identification: assisted

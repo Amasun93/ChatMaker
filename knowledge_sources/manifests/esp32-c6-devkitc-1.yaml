@@ -1,0 +1,32 @@
+schema_version: "1.0"
+id: source-esp32-c6-devkitc-1-official
+title: 乐鑫 ESP32-C6-DevKitC-1 v1.1/v1.2 官方资料
+board_id: esp32-c6-devkitc-1
+source_type: canonical-board-documentation
+canonical_url: https://docs.espressif.com/projects/esp-dev-kits/en/latest/esp32c6/esp32-c6-devkitc-1/user_guide.html
+license_use_boundary: >
+  ChatMaker author-written classroom guidance cites the Espressif documentation and links to official examples.
+  Manufacturer diagrams, source code samples, firmware and binaries are not included in these Wiki pages.
+cleaning_version: chatmaker-esp32-c6-devkitc-1-wiki-v1
+review_date: "2026-11-18"
+cleaning_verified:
+  status: verified
+  date: "2026-11-18"
+  evidence: Organized author-written summaries and linked references into eight independently readable Wiki sections.
+source_reviewed:
+  status: verified
+  date: "2026-11-18"
+  evidence: Compared Espressif v1.1 and v1.2 guides for the 8 MB module, both Type-C data routes, RGB LED and current measurement header. Checked the USB choices against the ChatMaker managed profile.
+publication_approved:
+  status: verified
+  date: "2026-11-18"
+  evidence: ChatMaker author-written guidance reviewed for the approved repository Wiki update. Firmware and classroom hardware evidence are tracked separately.
+page_declarations:
+  - {stable_id: esp32-c6-devkitc-1-start-here, path: published/boards/esp32-c6-devkitc-1/start-here.md}
+  - {stable_id: esp32-c6-devkitc-1-identify-and-safety, path: published/boards/esp32-c6-devkitc-1/identify-and-safety.md}
+  - {stable_id: esp32-c6-devkitc-1-pins-and-electrical, path: published/boards/esp32-c6-devkitc-1/pins-and-electrical.md}
+  - {stable_id: esp32-c6-devkitc-1-toolchains-and-upload, path: published/boards/esp32-c6-devkitc-1/toolchains-and-upload.md}
+  - {stable_id: esp32-c6-devkitc-1-components-and-wiring, path: published/boards/esp32-c6-devkitc-1/components-and-wiring.md}
+  - {stable_id: esp32-c6-devkitc-1-libraries-and-examples, path: published/boards/esp32-c6-devkitc-1/libraries-and-examples.md}
+  - {stable_id: esp32-c6-devkitc-1-web-and-protocol, path: published/boards/esp32-c6-devkitc-1/web-and-protocol.md}
+  - {stable_id: esp32-c6-devkitc-1-troubleshooting, path: published/boards/esp32-c6-devkitc-1/troubleshooting.md}

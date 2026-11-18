@@ -2,6 +2,7 @@ schema_version: "1.0"
 kind: board
 id: esp32-s3-devkitc-1-n8r8
 name: Espressif ESP32-S3-DevKitC-1-N8R8
+summary: 乐鑫 S3 DevKitC-1 的 N8R8 配置，支持独立编译，按载板版本核对板载彩灯。
 family: esp32-s3
 mcu: ESP32-S3
 logic_voltage: 3.3
@@ -9,6 +10,7 @@ chatmaker:
   runtime_cli: chatmaker-hardware
   runtime_module: chatmaker.hardware.workflow
   identification: manual
+  knowledge_delivery: source
 mechanics: {status: research-required, profile_path: null, fit_verified: false, notes: Physical fit requires board measurements.}
 sources:
   - title: Espressif ESP32-S3-DevKitC-1 ordering table

@@ -1,0 +1,33 @@
+schema_version: "1.0"
+id: source-arduino-mega-2560-official
+title: Arduino Mega 2560 Rev3 官方资料
+board_id: arduino-mega-2560
+source_type: canonical-board-documentation
+canonical_url: https://docs.arduino.cc/hardware/mega-2560/
+license_use_boundary: >
+  ChatMaker author-written guidance links to the Arduino board documentation, official pinout,
+  versioned AVR core and support articles. Arduino diagrams, source files and sample sketches
+  remain at the original source links.
+cleaning_version: chatmaker-arduino-mega-2560-wiki-v1
+review_date: "2026-11-18"
+cleaning_verified:
+  status: verified
+  date: "2026-11-18"
+  evidence: Saved official board, pinout, AVR 1.8.8 and Blink sources in the ignored raw workspace and summarized board and workflow facts in the ignored cleaned classroom source notes.
+source_reviewed:
+  status: verified
+  date: "2026-11-18"
+  evidence: Cross-checked the official A000067 pinout, AVR 1.8.8 board and pin definitions, Arduino upload guidance and the checked-in ChatMaker managed AVR workflow against the exact ATmega2560 target.
+publication_approved:
+  status: verified
+  date: "2026-11-18"
+  evidence: Reviewed the eight ChatMaker-authored pages for repository publication under the board Wiki request. The pages contain original instructions and official reference links.
+page_declarations:
+  - {stable_id: arduino-mega-2560-start-here, path: published/boards/arduino-mega-2560/start-here.md}
+  - {stable_id: arduino-mega-2560-identify-and-safety, path: published/boards/arduino-mega-2560/identify-and-safety.md}
+  - {stable_id: arduino-mega-2560-pins-and-electrical, path: published/boards/arduino-mega-2560/pins-and-electrical.md}
+  - {stable_id: arduino-mega-2560-toolchains-and-upload, path: published/boards/arduino-mega-2560/toolchains-and-upload.md}
+  - {stable_id: arduino-mega-2560-components-and-wiring, path: published/boards/arduino-mega-2560/components-and-wiring.md}
+  - {stable_id: arduino-mega-2560-libraries-and-examples, path: published/boards/arduino-mega-2560/libraries-and-examples.md}
+  - {stable_id: arduino-mega-2560-web-and-protocol, path: published/boards/arduino-mega-2560/web-and-protocol.md}
+  - {stable_id: arduino-mega-2560-troubleshooting, path: published/boards/arduino-mega-2560/troubleshooting.md}

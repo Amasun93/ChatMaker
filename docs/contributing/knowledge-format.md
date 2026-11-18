@@ -46,6 +46,10 @@ a safety warning or code block across pages.
 
 ## 发布前检查 / Before publication
 
+The index schema checks the shape and identifier formats. Repository validation also
+checks the exact board, pack, and ordered sections against the catalog. Keep those
+identities in the board index and catalog instead of adding a second schema list.
+
 Complete cleaning, source review, human review, and publication approval before
 building a read-only `.cmpack`. Only `publication_approved` pages may enter an
 official knowledge pack. The Core ZIP carries compact indexes, never detailed

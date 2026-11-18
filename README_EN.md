@@ -48,9 +48,9 @@ Compilation, firmware upload, browser interaction, serial evidence, and physical
 
 ## Progressive board knowledge
 
-The source Core contains the Python runtime, four Skill directories, compact board and component records, recipes, Knowledge indexes, schemas, and runnable examples. micro:bit V2 has a pinned MicroPython HEX packaging and virtual DAPLink safety route. The independent Waveshare ESP32-S3-Touch-LCD-2.8 V1/V2 toolchain builds the screen and touch-timer examples. Flashing, serial, touch, reboot and WorkBuddy still need a physical-board retest. UNIHIKER M10 remains an alpha source-level route. For boards without a signed Knowledge pack, use the checked-in board record and applicable reference. The Core omits detailed Knowledge bodies, the knowledge workspace, tests, optional `.cmpack` artifacts, and development caches.
+Every board in the catalog has an eight-section Wiki with model identification, wiring, tools, examples, and classroom troubleshooting. Core includes compact indexes and the Skill includes board quick references. A full checkout includes all detailed pages. [Board Wikis](https://github.com/Amasun93/ChatMaker/tree/main/knowledge_sources/published/boards) · [Board onboarding workflow](docs/contributing/board-research-workflow.md)
 
-When an AI first requests a detailed board section, `chatmaker-knowledge` defaults to automatic installation. It accepts a pack only after checking the official registry signature, immutable URL, length, SHA-256, manifest, and every payload file. Later reads reuse the verified installation. An installed version remains readable after offline revalidation; an exact cache can authorize a new offline install only while its signed receipt is unexpired.
+In a full checkout, `chatmaker-knowledge` can read the local pages. Where an official signed pack is available, the CLI can use a verified installation or obtain a pack on demand when the signed registry allows it. Detailed hardware verification remains recorded separately for each board.
 
 Automatic installation is limited to passive knowledge pages. It never installs drivers, Mind+, Arduino cores, Node, Chromium, PATH changes, hooks, or administrator-level software. `chatmaker-install local` checks local capabilities without discovering or modifying an AI host.
 

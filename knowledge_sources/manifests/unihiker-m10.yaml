@@ -1,0 +1,32 @@
+schema_version: "1.0"
+id: source-unihiker-m10-official
+title: 行空板 M10 官方文档与 DFRobot 产品资料
+board_id: unihiker-m10
+source_type: canonical-board-documentation
+canonical_url: https://www.unihiker.com.cn/wiki/m10/catalog
+license_use_boundary: >
+  ChatMaker-authored classroom guidance links to the exact M10 documentation and DFRobot specifications.
+  Vendor source copies, images, schematics, sample code, drivers, and OS images stay outside the Wiki.
+cleaning_version: chatmaker-unihiker-m10-wiki-v1
+review_date: "2026-11-18"
+cleaning_verified:
+  status: verified
+  date: "2026-11-18"
+  evidence: Saved private working copies of the official references and recorded reduced notes on identity, wiring, USB networking, Python versions, libraries, and troubleshooting.
+source_reviewed:
+  status: verified
+  date: "2026-11-18"
+  evidence: Cross-checked UNIHIKER M10 and DFRobot hardware, networking, Home menu, Python version, release notes, library and FAQ references against the canonical board, existing ChatDuino reference, source checker and hello-status example.
+publication_approved:
+  status: verified
+  date: "2026-11-18"
+  evidence: Reviewed the eight ChatMaker-authored classroom pages for repository publication under the standing ChatMaker GitHub update authorization. Board execution and physical observations require separate evidence.
+page_declarations:
+  - {stable_id: unihiker-m10-start-here, path: published/boards/unihiker-m10/start-here.md}
+  - {stable_id: unihiker-m10-identify-and-safety, path: published/boards/unihiker-m10/identify-and-safety.md}
+  - {stable_id: unihiker-m10-pins-and-electrical, path: published/boards/unihiker-m10/pins-and-electrical.md}
+  - {stable_id: unihiker-m10-toolchains-and-upload, path: published/boards/unihiker-m10/toolchains-and-upload.md}
+  - {stable_id: unihiker-m10-components-and-wiring, path: published/boards/unihiker-m10/components-and-wiring.md}
+  - {stable_id: unihiker-m10-libraries-and-examples, path: published/boards/unihiker-m10/libraries-and-examples.md}
+  - {stable_id: unihiker-m10-web-and-protocol, path: published/boards/unihiker-m10/web-and-protocol.md}
+  - {stable_id: unihiker-m10-troubleshooting, path: published/boards/unihiker-m10/troubleshooting.md}

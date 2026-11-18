@@ -6,6 +6,7 @@ family: nrf52
 mcu: nRF52833
 logic_voltage: 3.3
 chatmaker:
+  knowledge_delivery: source
   runtime_cli: chatmaker-microbit
   runtime_module: chatmaker.hardware.microbit_v2
   identification: assisted

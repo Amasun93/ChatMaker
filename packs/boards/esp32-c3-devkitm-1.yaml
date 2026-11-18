@@ -2,6 +2,8 @@ schema_version: "1.0"
 kind: board
 id: esp32-c3-devkitm-1
 name: Espressif ESP32-C3-DevKitM-1
+aliases: [ESP32-C3-DevKitM-1-N4X]
+summary: 乐鑫 C3 DevKitM-1，使用 4 MB 模组，板载 Micro-USB 转串口与可寻址彩灯。
 family: esp32-c3
 mcu: ESP32-C3
 logic_voltage: 3.3
@@ -9,6 +11,7 @@ chatmaker:
   runtime_cli: chatmaker-hardware
   runtime_module: chatmaker.hardware.workflow
   identification: manual
+  knowledge_delivery: source
 mechanics: {status: research-required, profile_path: null, fit_verified: false, notes: Physical fit requires board measurements.}
 sources:
   - title: Espressif ESP32-C3-DevKitM-1 user guide

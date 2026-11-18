@@ -26,7 +26,7 @@ Apple 芯片和 Intel Mac 可从源码准备 Uno R3、经典 Nano、Mega 2560 �
 
 ## 想让 ChatMaker 支持新板卡或模块？
 
-板卡和模块适配由 ChatMaker 开发者统一维护。请附上准确型号、正反面照片和想实现的项目，通过下面任一方式联系我们：
+板卡和模块适配由 ChatMaker 开发者统一维护。推荐新板时，给出准确型号或官方链接，再说一句想让学生做出的效果。有实物时可以附上正反面照片，方便核对版本。每块新板接入时会同步整理 Wiki 和课堂常见问题。[新板接入流程](docs/contributing/board-research-workflow.md)
 
 - [提交 GitHub Issue](https://github.com/Amasun93/ChatMaker/issues/new)
 - 微信号：`13621625854`（David），添加时备注 `chatmaker`
@@ -165,9 +165,9 @@ Skill 负责告诉 AI 应该怎样判断、哪些技术事实不能猜、什么�
 
 ## 板卡知识怎样按需出现
 
-当前源码构建的 Core 只带运行层、ChatMaker / ChatDuino / ChatWeb / ChatCAD 四个 Skill、10 块板卡、35 种元器件、33 个配方、8 个紧凑索引、首批机械资料、schema 与当前案例，不带体积较大的扩展正文。M10、micro:bit V2 和微雪触屏板暂未发布签名 Knowledge 包；对应源码参考资料可以直接读取。micro:bit 和微雪触屏板已有独立软件链，M10 仍是源码检查路线。这样基础安装更小，也不会把测试或构建缓存交给普通用户。
+板卡目录中每块板都有八节 Wiki，包括型号确认、接线、工具准备、例子和课堂常见问题。完整源码可查看正文。Core 带板卡记录、紧凑索引和当前案例，安装 Skill 也能直接读随包的板卡速查说明。[完整板卡 Wiki](https://github.com/Amasun93/ChatMaker/tree/main/knowledge_sources/published/boards) · [随 Skill 的速查](skills/chatduino/references/managed-board-quick-start.md)
 
-当 AI 第一次读取某块板卡的详细章节时，`chatmaker-knowledge` 可以按需取得对应知识包并在之后复用。这个动作只安装知识资料，不会安装驱动、Mind+、Arduino Core、Node 或 Chromium。
+完整源码中的 Wiki 可以直接读。对于已有官方签名包的板卡，`chatmaker-knowledge` 也可以读取已验证的包，或在满足签名和下载条件时按需取得。读板卡知识和实际准备编译工具各自独立。
 
 ```powershell
 chatmaker-knowledge --request-json '{"action":"section","board_id":"arduino-nano-classic","consumer":"chatduino","section_id":"identify-and-safety"}'
@@ -186,7 +186,7 @@ chatmaker-pack rollback chatmaker-board-arduino-nano-classic-knowledge --version
 | ChatCAD V1 模式 | 开发版可用 | Chat2D 生成带可调指接榫的六面激光盒、底板拖拽孔位、四色图层、DXF/SVG 和组装预览；Chat3D 生成可旋转的打印外壳及 OpenSCAD/STL；真实试装待用户验证 |
 | 创作伙伴对话规则 | 已写入 | 尚需独立前向测试 |
 | 数据包和证据状态 | 已验证 | 自动测试与项目 doctor 通过 |
-| ChatMaker Knowledge 渐进知识包 | 六板卡已接入 | Nano、Uno、ESP32、星核板、经典掌控板 V2.x、掌控板 3.0 均有独立板卡索引和详细知识包；机械资料仍只对已有机械档案的板卡开放 |
+| ChatMaker 板卡 Wiki | 已登记板卡全覆盖 | 每块板有索引、八节 Wiki 和课堂排错。详情按板卡从源码或已发布的官方签名包读取。机械资料按板卡机械档案提供 |
 | 主控板自动识别 | 软件流程已实现，待实板 | 本地 CLI 可读取芯片和固件标记；允许时先完整备份，再刷入临时探针并恢复。仍不确定时引导查看丝印或拍正反面照片；三种实体板尚待验收 |
 | Nano Mind+ 编译和烧录迁移 | 部分验证 | 原 33 项行为测试已迁移；当前共有 12 个示例从 ChatMaker 路径真实编译；烧录等待有线 Nano |
 | Uno R3、经典 Nano、Mega 2560 独立工具链 | 编译已验证 | `chatmaker-hardware` 可按板准备、编译和烧录；Mac 两种架构均已真实编译闪灯示例。板卡确认和实物效果由接板复测验证 |
