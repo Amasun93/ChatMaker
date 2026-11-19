@@ -23,8 +23,11 @@ During repeated compilation of the same saved sketch, use a dedicated `--build-p
 - `examples/chatduino/waveshare-s3/screen-diagnostic`: color screen status; marker `CHATMAKER_WAVESHARE_SCREEN_READY`.
 - `examples/chatduino/waveshare-s3/classroom-timer`: 60-second START/PAUSE/RESET touch timer; marker `CHATMAKER_WAVESHARE_TIMER_READY`.
 - `examples/chatduino/waveshare-s3/v2-tilt-dot`: V2-only direct ST7789 drawing and QMI8658 input. `D` requests a `TILT_DOT` summary with bus and recent frame measurements.
+- `examples/chatduino/waveshare-s3/v2-salt-lake` (盐湖气象巡航): tilt the V2 board to bank and steer a layered pixel glider. Set the board level at startup. The screen shows FPS. Send `D` at 115200 baud for a `SALT_S3` summary with frame, drawing, and LCD transfer times. Send `C` while the board is level to recenter it.
 
 The screen and timer print one startup marker, and reply to `?` after a serial observer opens. For real-time interaction record timing in RAM and report it on demand. Host backpressure can stall hardware CDC writes even with a USB connection. Observe the device with no serial reader before querying, then check the actual screen, touch and power-cycle separately.
+
+The prepared Waveshare ST7789 driver configures little-endian RGB565 through RAMCTRL. For a `uint16_t` buffer passed to `LCD_addWindow`, use native RGB565 values such as `0xF800` for red. When changing display orientation, check tilt directions against the physical screen edges.
 
 ## Fixed technical configuration
 

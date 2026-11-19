@@ -20,9 +20,9 @@ ChatWeb is an internal specialist under the ChatMaker parent entry. Keep this Sk
 
 1. Turn the idea, audience/scene, desired feeling or core message, and primary action into the planner brief. Do not move to style selection while the planner still returns `clarify`.
 2. Define the primary user action and the visible success, loading, disconnected, and failure states.
-3. Select the direction that best fits the idea, scene and desired feeling. Build it before presenting alternatives; record the selection or assumptions internally.
+3. Select the direction that best fits the idea, scene and desired feeling. Build it before presenting alternatives; record the selection or assumptions internally. When the brief calls for pixel-art depth, rotatable or exploded slices, or a camera that moves through a pixel scene, read [pixel-depth.md](references/pixel-depth.md).
 4. Generate one self-contained HTML file with `chatmaker-web`, with CSS and JavaScript embedded. Split into multiple files only when reuse or project size makes that simpler for the user.
-   Omit `direction_id` or use `"auto"` for the strongest default treatment. The three flagship defaults are spatial-glass classroom interaction, mission-console hardware atmosphere, and stage-like timed play; the user never needs to choose React, a CLI package, or an animation library.
+   Omit `direction_id` or use `"auto"` for the strongest default treatment. The three flagship defaults are spatial-glass classroom interaction, mission-console hardware atmosphere, and stage-like timed play; the user never needs to choose React, a CLI package, or an animation library. If the chosen pixel scene requires rendering or controls outside the curated templates, author the native single-file HTML directly and use the same preview and verification workflow.
 5. Design for phone and classroom use: at least 44 px touch targets, strong contrast, concise labels, visible focus, reduced-motion support, and visible feedback.
    For every clear build, read [premium-micro-interactions.md](references/premium-micro-interactions.md) and choose content-matched signature effects. “Beginner” changes how little the user must configure, not how ordinary the result should look.
 6. Start the selected file with `chatmaker-web-preview`. Keep the default `127.0.0.1` binding; use network access only after an explicit request.
@@ -36,7 +36,7 @@ ChatWeb is an internal specialist under the ChatMaker parent entry. Keep this Sk
 
 - Use `kind="mini-game"` and read [game-creation-guide.md](references/game-creation-guide.md).
 - Ask at most two questions that reveal the desired player feeling, repeated player action, and win or ending condition. Do not begin with engine or genre jargon.
-- Offer the three beginner play patterns before visual skins: `reaction-rush`, `dodge-collect`, and `drag-puzzle`.
+- When the core play action is still open, offer the three beginner play patterns before visual skins: `reaction-rush`, `dodge-collect`, and `drag-puzzle`. Keep a clear requested mechanic such as steering through waypoints when choosing a visual direction.
 - Build the smallest complete loop: start, repeated action, immediate feedback, score or progress, ending, and restart.
 - Support touch from the first version. Use keyboard controls as an additional path when the game involves movement.
 - Games may be creative, entertaining, or educational. Do not turn every game into a quiz or force a classroom wrapper onto a playful idea.
