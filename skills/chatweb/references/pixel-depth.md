@@ -23,11 +23,15 @@ Use this reference when the visible goal depends on pixel-art volume, a movable 
 
 - Open the HTML from disk with network access disabled. Check for console errors and outgoing requests.
 - Compare at least two orientations. Check that the silhouette, visible layers and occlusion change as intended and that image scaling keeps the pixels crisp.
-- Exercise the core interaction on desktop and at a phone viewport. Check each input path, a result that visibly changes, and reset or restart. For a flight scene, also verify that a camera change leaves progress intact and that touch release clears the held action.
+- Exercise the core interaction on desktop and at a phone viewport. Check steering, surface effects, a complete lap, pause and restart. Verify that camera transitions preserve the car's lane and lap progress, and that releasing a key stops further steering input.
 - Capture performance on the intended browser before quoting a frame-rate result. Rendering size, geometry count and screen refresh each affect the result.
 
 ## Reference implementation
 
-[Salt Lake Weather Patrol](../assets/pixel-depth-glider.html) is an original, offline Canvas 2D scene with a slice-based glider, projected beacons, two camera poses and one collection loop. Read the rendering and input sections when adapting the technique to a different subject.
+[Switchback Rally / 赤线拉力](../assets/switchback-rally.html) is the offline game animation example. It uses the same 753 m course and marked surfaces as the [Waveshare V2 sketch](https://github.com/Amasun93/ChatMaker/tree/main/examples/chatduino/waveshare-s3/v2-switchback-rally).
+
+1. **Put the artwork and the rules on the same track.** The `patches` table supplies both the painted road markings and their hit zones. Passing beside a jump stays on the road. Crossing its lip while on the ramp starts the airborne state.
+2. **Read the roll from the silhouette.** In `carModel`, successive height profiles form the body. The wheels, roof and spoiler share a pivot in `drawCar`. The shadow stays on the road as the car rises and rotates.
+3. **Move the camera while the player steers.** In `step`, lap position selects the low dock chase, high quarry view or oblique bridge view. Takeoff temporarily selects a side camera. All four use the same position, speed and lap clock. Reduced-motion mode uses a stable chase view and reports the jump in text.
 
 Technical sources: [Dash's fighter project](https://remix.ui8.ai/fly), [the third-party fighter-fly implementation](https://github.com/AryanRajMaurya/fighter-fly/tree/25a5401c407177665b5c810a3684c060469ddb80), and [loktar00's MIT-licensed slice examples](https://github.com/loktar00/sprite-stacking/tree/25a6cfdc8b8f142b4cc297dd34bba24841d12213). The bundled example uses original code and artwork.

@@ -34,6 +34,7 @@ ChatMaker
 - **ChatMaker** adapts to how clear the user's idea is and routes the project.
 - **ChatDuino** turns effects into safe wiring, complete firmware, compilation, upload, and physical checks.
 - **ChatWeb** proposes two or three curated visual directions and builds classroom tools, creative interactions, and hardware interfaces.
+  Its game animation example is [Switchback Rally](skills/chatweb/assets/switchback-rally.html), an offline time trial with surface-triggered boosts, jumps and sector cameras. The [Waveshare V2 edition](examples/chatduino/waveshare-s3/v2-switchback-rally) uses tilt steering.
 - **ChatCAD** creates adjustable laser-cut drawings and 3D-printable models from trusted mechanical facts.
 
 Beginner projects use one self-contained HTML file by default. Advanced style catalogs and a playground appear only when requested. Wiring uses one plain `text` block by default; SVG diagrams are optional and never replace the text source of truth.

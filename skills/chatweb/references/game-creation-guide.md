@@ -40,6 +40,7 @@ Do not add an engine merely because the page is a game. Introduce it when it mak
 
 ## Reference projects
 
+- [Switchback Rally / 赤线拉力](../assets/switchback-rally.html) is ChatMaker's playable game animation example. Try the first ramp down the middle, then steer around it on the next lap. Use the change in speed, lap time and camera view to explain how a route choice changes the animation.
 - MDN pure JavaScript Breakout: <https://developer.mozilla.org/en-US/docs/Games/Tutorials/2D_Breakout_game_pure_JavaScript>
 - p5.js official examples: <https://p5js.org/examples/>
 - p5play sprite and physics guide: <https://p5play.org/learn/sprite>

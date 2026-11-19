@@ -34,6 +34,7 @@ ChatWeb is an internal specialist under the ChatMaker parent entry. Keep this Sk
 
 ## Create a mini game
 
+- For the game animation example, open [Switchback Rally / 赤线拉力](assets/switchback-rally.html). The road surface, lap position and steering drive the car, its roll and the four camera views. Read [pixel-depth.md](references/pixel-depth.md) for the rendering walkthrough.
 - Use `kind="mini-game"` and read [game-creation-guide.md](references/game-creation-guide.md).
 - Ask at most two questions that reveal the desired player feeling, repeated player action, and win or ending condition. Do not begin with engine or genre jargon.
 - When the core play action is still open, offer the three beginner play patterns before visual skins: `reaction-rush`, `dodge-collect`, and `drag-puzzle`. Keep a clear requested mechanic such as steering through waypoints when choosing a visual direction.
