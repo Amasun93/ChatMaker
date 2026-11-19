@@ -18,7 +18,7 @@ static float centerX, centerY;
 static int calibration;
 static unsigned imuErrors;
 static int pilot; // Zero is live IMU. Serial 1/2 exercise alternate routes on demand.
-static uint32_t previous, previousPaint, previousLcd, lastLock;
+static uint32_t previous, previousPaint, previousLcd;
 static Scene previousScene;
 struct Timing {
   uint64_t sumUs=0, paintUs=0, lcdUs=0;
@@ -62,16 +62,15 @@ static Input readControls() {
 static Input benchControls() {
   const int side=(pilot==1?-1:1)*(flight.leg?-1:1);
   if(flight.scene==Scene::Approach) {
+    if(pilot==2 && !flight.misses) return {};  // Deliberately fly past one sealed gate.
     if(flight.leg && flight.age<2.60f) {
-      if(flight.age>1.85f && flight.age<2.05f) return {float(side),0};
-      return {};
+      if(flight.age>1.85f && flight.age<2.05f) return {float(side),-1};
+      return {0,-1};
     }
     return {side*.62f,(flight.nodeY(side)-56)/28};
   }
-  if(flight.scene==Scene::Breach) {
-    const int direction=flight.age<1.25f?-side:side;
-    return {direction*.62f,(flight.nodeY(side)-56)/28};
-  }
+  if(flight.scene==Scene::Impact || flight.scene==Scene::Breach)
+    return {side*.62f,(flight.nodeY(side)-56)/28};
   return {};
 }
 static void scaleFrame() {
@@ -85,14 +84,14 @@ static void scaleFrame() {
 static void resetFlight(int mode) {
   flight=Flight{}; pilot=mode;
   for(auto &item:stats) item=Timing{};
-  previous=0; lastLock=0;
+  previous=0;
 }
 static void commands() {
   if(!Serial.available()) return;
   const int c=Serial.read();
   if(c=='D') {
-    Serial.printf("RIFT_RUNNER scene=%s leg=%d t=%.2f pilot=%d route=%d,%d shots=%u hits=%u passes=%u rolls=%u grazes=%u dodges=%u imu=%d imu_errors=%u audio=%d played=%u audio_errors=%u\n",
-      name(flight.scene),flight.leg,flight.age,pilot,flight.choice[0],flight.choice[1],flight.shots,flight.hits,
+    Serial.printf("RIFT_RUNNER build=flow scene=%s leg=%d t=%.2f pilot=%d route=%d,%d last=%d,%d laps=%u misses=%u shots=%u hits=%u passes=%u rolls=%u grazes=%u dodges=%u imu=%d imu_errors=%u audio=%d played=%u audio_errors=%u\n",
+      name(flight.scene),flight.leg,flight.age,pilot,flight.choice[0],flight.choice[1],flight.lastRoute[0],flight.lastRoute[1],flight.laps,flight.misses,flight.shots,flight.hits,
       flight.passes,flight.rolls,flight.grazes,flight.dodges,imuOk,imuErrors,RiftAudio::ready,
       unsigned(RiftAudio::played.load()),unsigned(RiftAudio::errors.load()));
   } else if(c=='M') {
@@ -137,9 +136,7 @@ void loop() {
   if(pilot) input=benchControls();
   const uint32_t drawStart=micros();
   const Cue cue=flight.step(interval?std::min(.06f,interval*1e-6f):.026f,input);
-  if(cue!=Cue::Silent && (cue!=Cue::Lock || start-lastLock>240000)) {
-    RiftAudio::play(cue); if(cue==Cue::Lock) lastLock=start;
-  }
+  if(cue!=Cue::Silent) RiftAudio::play(cue);
   previousScene=flight.scene;
   drawFrame(screen,flight);
   if(!imuOk || calibration<32) tag(screen,4,107,imuOk?"HOLD LEVEL":"IMU OFFLINE",gold);

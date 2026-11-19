@@ -10,7 +10,8 @@ inline float ease(float n) { n = unit(n); return n * n * (3 - 2 * n); }
 inline float blend(float a, float b, float t) { return a + (b - a) * t; }
 
 enum class Scene : uint8_t { Orbit, Approach, Impact, Breach, Tunnel, Dawn };
-enum class Cue : uint8_t { Silent, Launch, Lock, Fire, Break, Jump, Roll, Graze, Arrive };
+enum class Cue : uint8_t { Silent, Launch, Fire, Break, Jump, Roll, Graze, Arrive };
+constexpr float contactTime=.085f, impactTime=.40f, tunnelTime=.78f, gateDistance=3.65f;
 inline const char *name(Scene scene) {
   constexpr const char *names[] = {"orbit", "approach", "impact", "breach", "tunnel", "dawn"};
   return names[int(scene)];
@@ -20,35 +21,51 @@ struct Flight {
   Scene scene = Scene::Orbit;
   int leg = 0;                  // Orbital gate, then the gate of the selected world.
   int choice[2] = {0, 0};       // -1 is port, +1 is starboard, 0 is sealed.
+  int lastRoute[2] = {0, 0};
   float age = 0, clock = 0, travel = 0;
   float x = 0, y = 0, bank = 0;
-  float lock = 0, crossing = 0;
-  int tracking = 0, armedSide = 0;
+  float distance = 0, missFlash = 0;
+  int armedSide = 0;
   float armAge = 0, roll = 0, cool = 0;
   int rollDir = 1;
   float hazard = 0, jolt = 0;
-  bool centered = false;
-  unsigned shots = 0, hits = 0, passes = 0, rolls = 0, grazes = 0, dodges = 0;
+  unsigned shots = 0, hits = 0, passes = 0, rolls = 0, grazes = 0, dodges = 0, misses = 0, laps = 0;
 
   void cut(Scene next) { scene = next; age = 0; }
-  float gateScale() const { return 0.32f + 0.68f * ease(age / 2.45f); }
+  float gateScale() const { return .55f / std::max(.16f,1-.222f*distance); }
   float sightX() const { return 80 + 53 * x; }
   float sightY() const { return 56 + 28 * y; }
-  float nodeY(int side) const { return leg == 0 ? 56.0f : 56.0f - 7 * side; }
+  float nodeY(int side) const { return leg == 0 ? 56.0f : 56.0f - 15 * side; }
   bool frozenWorld() const { return choice[0] < 0; }
+  bool inOpening(int side) const {
+    return fabsf(x - side*.62f)<.30f && fabsf(sightY()-nodeY(side))<19;
+  }
+  // Test the whole reticle segment. A fast hand movement can cross a core between frames.
+  bool sweptCore(Input previous,int side) const {
+    const float ax=(53*previous.x-side*33)/9, ay=(56+28*previous.y-nodeY(side))/11;
+    const float vx=(x-previous.x)*53/9, vy=(y-previous.y)*28/11;
+    const float t=unit(-(ax*vx+ay*vy)/std::max(.00001f,vx*vx+vy*vy));
+    const float dx=ax+t*vx, dy=ay+t*vy;
+    return dx*dx+dy*dy<=1;
+  }
+  void nextGate() { distance=0; hazard=0; choice[leg]=0; cut(Scene::Approach); }
   Cue step(float dt, Input tilt) {
     clock += dt;
     age += dt;
     travel += dt * (scene == Scene::Tunnel ? 5.0f : 1.0f);
-    const float follow = 1 - expf(-7.5f * dt);
+    const Input previous{x,y};
+    const float follow = 1 - expf(-11.5f * dt);
     x = blend(x, tilt.x, follow);
     y = blend(y, tilt.y, follow);
     bank = blend(bank, tilt.x, 1 - expf(-4.2f * dt));
     roll = std::max(0.0f, roll - dt);
     cool = std::max(0.0f, cool - dt);
     jolt = std::max(0.0f, jolt - dt);
+    missFlash = std::max(0.0f,missFlash-dt);
+    if(scene==Scene::Approach || scene==Scene::Impact || scene==Scene::Breach)
+      distance+=dt*(choice[leg] && inOpening(choice[leg]) ? 4.0f : 1.0f);
     Cue cue = Cue::Silent;
-    if (scene == Scene::Approach || scene == Scene::Breach) {
+    if (scene != Scene::Orbit) {
       if (cool <= 0 && !armedSide && fabsf(tilt.x) > .88f) {
         armedSide = tilt.x > 0 ? 1 : -1;
         armAge = 0;
@@ -72,7 +89,7 @@ struct Flight {
 
     switch (scene) {
       case Scene::Orbit:
-        if (age > 3.15f) { cut(Scene::Approach); return Cue::Launch; }
+        if (age > 1.35f || fabsf(tilt.x)+fabsf(tilt.y)>.18f) { nextGate(); return Cue::Launch; }
         break;
       case Scene::Approach: {
         if (leg == 1) {
@@ -82,47 +99,40 @@ struct Flight {
           const float lane = cycle % 2 == 0 ? .16f : -.38f;
           if (old < .86f && hazard >= .86f && fabsf(x - lane) < .29f) {
             if (roll > 0) ++dodges;
-            else { ++grazes; lock = 0; jolt = .42f; cue = Cue::Graze; }
+            else { ++grazes; jolt = .42f; cue = Cue::Graze; }
           }
         }
-        if (age < 1.4f) break;
-        const float scale = gateScale();
-        const int side = x < 0 ? -1 : 1;
-        const float dx = (sightX() - (80 + side * 33 * scale)) / 11.0f;
-        const float dy = (sightY() - (56 + (nodeY(side) - 56) * scale)) / 15.0f;
-        if (dx * dx + dy * dy <= 1 && roll <= 0) {
-          if (tracking != side) { lock = 0; tracking = side; cue = Cue::Lock; }
-          lock += dt;
-          if (lock >= .59f) {
-            choice[leg] = side; ++shots; cut(Scene::Impact); return Cue::Fire;
+        for(int side:{-1,1}) {
+          if(sweptCore(previous,side)) {
+            choice[leg]=side; ++shots; cut(Scene::Impact); return Cue::Fire;
           }
-        } else { tracking = 0; lock = 0; }
+        }
+        if(distance>=gateDistance) { ++misses; nextGate(); missFlash=.45f; }
         break;
       }
       case Scene::Impact:
-        if (age - dt < .38f && age >= .38f) { ++hits; cue = Cue::Break; }
-        if (age > 1.65f) { crossing = 0; cut(Scene::Breach); }
+        if (age - dt < contactTime && age >= contactTime) { ++hits; cue = Cue::Break; }
+        if (age >= impactTime) cut(Scene::Breach);
         break;
       case Scene::Breach: {
-        const int open = choice[leg];
-        if (age > .35f && fabsf(x - open * .62f) < .26f &&
-            fabsf(sightY() - nodeY(open)) < 19.0f) {
-          crossing += dt;
-          if (crossing > .40f) { ++passes; cut(Scene::Tunnel); return Cue::Jump; }
-        } else crossing = 0;
+        if(distance>=gateDistance) {
+          if(inOpening(choice[leg])) { ++passes; cut(Scene::Tunnel); return Cue::Jump; }
+          ++misses; nextGate(); missFlash=.45f;
+        }
         break;
       }
       case Scene::Tunnel:
-        if (age > 1.65f) {
-          lock = 0; tracking = 0; hazard = 0;
-          if (leg == 0) { ++leg; cut(Scene::Approach); }
-          else { centered = false; cut(Scene::Dawn); return Cue::Arrive; }
+        if (age >= tunnelTime) {
+          if (leg == 0) { ++leg; nextGate(); }
+          else {
+            ++laps; lastRoute[0]=choice[0]; lastRoute[1]=choice[1];
+            cut(Scene::Dawn); return Cue::Arrive;
+          }
         }
         break;
       case Scene::Dawn:
-        if (age > 2.8f) {
-          if (fabsf(tilt.x) < .18f) centered = true;
-          if (centered && fabsf(tilt.x) > .65f) *this = Flight{};
+        if(age>1.25f || fabsf(tilt.x-previous.x)>.30f) {
+          leg=0; choice[1]=0; nextGate();
         }
         break;
     }

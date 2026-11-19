@@ -122,7 +122,7 @@ inline void drawFrame(Surface &s,const Flight &f) {
   const int open=f.choice[f.leg];
   const Color beam=signal(open);
   if(f.scene==Scene::Orbit) {
-    const float cut=ease((f.age-.75f)/2.4f);
+    const float cut=ease(f.age/1.35f);
     sky(s,w,f.clock,28*cut,77-int(35*cut),true);
     flagship(s,32-58*cut,46-15*cut,.75f,gold);
     Airframe(s,70+14*cut,69+20*cut,2.48f-1.27f*cut,1.45f*(1-cut),
@@ -131,7 +131,7 @@ inline void drawFrame(Surface &s,const Flight &f) {
     return;
   }
   if(f.scene==Scene::Dawn) {
-    const float reveal=ease(f.age/2);
+    const float reveal=ease(f.age/1.1f);
     sky(s,w,f.clock,20*sinf(f.clock*.23f),68);
     const float k=.68f+reveal*.62f;
     flagship(s,90,51,k,signal(f.choice[1]));
@@ -140,14 +140,14 @@ inline void drawFrame(Surface &s,const Flight &f) {
       s.line({x-5,67+i%2*6},{x,67+i%2*6},lilac);
       s.line({x,67+i%2*6},{x+2,65+i%2*6},milk);
     }
-    Airframe(s,43+9*reveal,85,1.25f+.15f*reveal,1.18f,.37f,-.19f+.08f*sinf(f.clock)).draw(f.clock);
+    Airframe(s,43+9*reveal+f.x*24,85+f.y*10,1.25f+.15f*reveal,1.18f,.37f,-.19f-.55f*f.bank).draw(f.clock);
     tag(s,7,9,f.frozenWorld()?"ION FJORD / CLEAR":"EMBER CITY / CLEAR",mint);
-    tag(s,7,103,f.age<2.8f?"FLEET RENDEZVOUS":(f.centered?"TILT TO REPLAY":"LEVEL TO REPLAY"),milk);
+    tag(s,7,103,"FLEET FLYBY",milk);
     return;
   }
   if(f.scene==Scene::Tunnel) {
-    const float a=unit(f.age/1.65f);
-    const int cx=80+int(open*21*(1-a)), cy=52+int(sinf(a*pi)*6);
+    const float a=unit(f.age/tunnelTime);
+    const int cx=80+int(open*16*(1-a)-f.x*15), cy=52+int(sinf(a*pi)*6-f.y*9);
     for(int y=0;y<H;++y) s.span(0,W,y,mix(ink,deep,50+int(42*sinf(y*.08f+a*6))));
     if(a>.55f) {
       World destination=f.leg?World::Dawn:(open<0?World::Glacier:World::Furnace);
@@ -184,22 +184,23 @@ inline void drawFrame(Surface &s,const Flight &f) {
     }
     streaks(s,f.clock*2,cx,cy,69*fade/255,beam);
     const float size=.89f-.55f*sinf(a*pi);
-    Airframe(s,80+15*open*(1-a),81-12*sinf(a*pi),size,.12f*open,.35f,open*.60f*sinf(a*pi)).draw(f.clock);
+    Airframe(s,80+20*f.x+9*open*(1-a),81-12*sinf(a*pi)+f.y*9,size,.12f*open,.35f,
+             open*.60f*sinf(a*pi)-f.bank*.62f).draw(f.clock);
     tag(s,5,5,f.leg?"FLEET CORRIDOR":(open<0?"JUMP / ION FJORD":"JUMP / EMBER CITY"),beam);
     return;
   }
   if(f.scene==Scene::Impact) {
-    const float t=f.age-.38f;
+    const float t=(f.age-contactTime)*2.7f;
     const float recoil=t>0?std::max(0.f,1-t/.40f)*sinf(t*60):0;
-    const float k=1.60f+.36f*ease(f.age/.55f)-.13f*ease(t/.70f);
+    const float k=1.60f+.36f*ease(f.age/.17f)-.13f*ease(t/.70f);
     const int node=int(f.nodeY(open)-56);
-    const int px=86+int(4*recoil), py=56+int(2*recoil);
+    const int px=86+int(4*recoil-f.x*12), py=56+int(2*recoil-f.y*8);
     sky(s,w,f.clock,35*open,48);
     corridor(s,f,w,48);
     const GateCamera lens{px-(33*open+.25f*open*node)*k,py-node*k,k,.25f*open};
     gate(s,f,lens,t>=0?open:0,unit(t/.70f));
     if(t<0) {
-      const float frac=ease(f.age/.38f);
+      const float frac=ease(f.age/contactTime);
       for(int side:{-1,1}) {
         const P start{open<0?155:4,87+side*8};
         const P a=xy(blend(start.x,px,std::max(0.f,frac-.31f)),blend(start.y,py,std::max(0.f,frac-.31f)));
@@ -208,6 +209,8 @@ inline void drawFrame(Surface &s,const Flight &f) {
       }
     }
     explosion(s,px,py,t,beam);
+    // The ship is still piloted in this reverse angle. Its bank carries into the exit.
+    Airframe(s,36+f.x*20+open*f.age*40,91+f.y*10,.66f,open*.9f,.32f,-.7f*f.bank).draw(f.clock);
     s.box(0,0,W,9,ink); s.box(0,111,W,9,ink); s.word(5,2,t<0?"PULSE CAM":"SEAL FRACTURE",milk);
     s.word(118,113,open<0?"PORT":"STARBOARD",beam);
     return;
@@ -215,8 +218,9 @@ inline void drawFrame(Surface &s,const Flight &f) {
   const int horizon=38+int(-f.y*5 + (f.jolt>0?2*sinf(f.clock*75):0));
   sky(s,w,f.clock,f.x*17,horizon); corridor(s,f,w,horizon);
   const bool breached=f.scene==Scene::Breach;
-  const float k=breached?1.f:f.gateScale();
-  gate(s,f,{80,56,k,0},breached?open:0,breached?1.f:0.f);
+  const float k=f.gateScale();
+  const GateCamera chase{80-53*f.x*(k-1),56-28*f.y*(k-1),k,0};
+  gate(s,f,chase,breached?open:0,breached?1.f:0.f);
   if(f.leg && !breached) {
     const float q=f.hazard;
     const float lane=int(f.age/2.8f)%2==0?.16f:-.38f;
@@ -230,28 +234,13 @@ inline void drawFrame(Surface &s,const Flight &f) {
   if(f.roll>0) streaks(s,f.clock,80,59,17,mint);
   Airframe ship(s,80+f.x*35,93+f.y*9,1.15f,-.22f*f.bank,.47f,-.67f*f.bank+turn);
   ship.draw(f.clock);
-  if(!breached && f.lock>.17f) {
-    const float charge=unit((f.lock-.17f)/.42f);
-    for(int side:{-1,1}) {
-      float depth;
-      const P port=ship.point({side*8.f,1,0},depth);
-      const int radius=1+int(3*charge);
-      s.disk(port.x,port.y,radius,signal(f.tracking));
-      s.line({port.x-radius-2,port.y},{port.x+radius+2,port.y},milk);
-      s.dot(port.x,port.y-1,milk);
-    }
-  }
   const int aimX=int(f.sightX()), aimY=int(f.sightY());
   if(!breached) {
-    bracket(s,aimX,aimY,6,f.tracking?milk:mint);
+    bracket(s,aimX,aimY,5,mint);
     s.dot(aimX,aimY,milk);
-    if(f.tracking) {
-      const int cx=80+int(f.tracking*33*k), cy=56+int((f.nodeY(f.tracking)-56)*k);
-      bracket(s,cx,cy,12-int(5*unit(f.lock/.59f)),signal(f.tracking),4);
-      s.box(cx-8,cy+11,16,2,ink); s.box(cx-8,cy+11,int(16*unit(f.lock/.59f)),2,signal(f.tracking));
-    }
   } else {
-    const int cx=80+33*open, cy=int(f.nodeY(open));
+    const P exit=chase.at(33*open,f.nodeY(open)-56);
+    const int cx=exit.x, cy=exit.y;
     const int n=int(fmodf(f.age*12,7));
     for(int i=0;i<2;++i) {
       const int x=cx-open*(16+i*7-n);
@@ -262,6 +251,6 @@ inline void drawFrame(Surface &s,const Flight &f) {
   tag(s,4,4,place,p.lamp);
   if(f.jolt>0) tag(s,119,4,"GRAZE",red);
   else if(f.roll>0) tag(s,119,4,"ROLL",mint);
-  tag(s,4,107,breached?(open<0?"FLY LEFT":"FLY RIGHT"):(f.tracking?"HOLD LOCK":"AIM AT A CORE"),breached?beam:milk);
+  tag(s,4,107,breached?(open<0?"CUT LEFT":"CUT RIGHT"):(f.missFlash>0?"NEXT GATE":"SWEEP TO FIRE"),breached?beam:milk);
 }
 } // namespace Rift
